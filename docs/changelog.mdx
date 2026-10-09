@@ -11,6 +11,15 @@ again.
 
 ## Unreleased
 
+- **A long Codex turn stays working until it ends.** Codex's `notify` comes
+  at the end of each of its messages, not only the turn's, so a turn read as
+  finished after its first message. Once a session's Codex hooks have said a
+  prompt started, only its `Stop` hook ends the turn; Codex versions without
+  hooks still finish with `notify`. `berthd integrations install codex` (and
+  an upgrade) also adds `PreToolUse` and `PostToolUse` hooks: a question in
+  Codex's question box shows as needs you, and answering it, or Codex carrying
+  on by itself after a turn ended, shows it working again. If Codex asks,
+  trust the new hooks with `/hooks`.
 - **A box newer than the app is no longer called outdated.** An older
   Shipyard used to offer to update a box that already ran a newer release,
   and *Update all* (or updating boxes automatically) would put its older
