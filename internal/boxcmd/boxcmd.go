@@ -42,7 +42,8 @@ var usageSections = []struct {
 		{"%[1]s services%[3]s [--json]", "Which worktree each running server belongs to"},
 		{"%[1]s service list|start|stop|restart|log %[2]sLOC/WORKTREE [SERVICE]", "A worktree's services from the repo's config"},
 		{"%[1]s preview %[2]s[LOC/WORKTREE] [PORT] [--path /x]", "Open a worktree's page in the Shipyard app"},
-		{"%[1]s worktree new %[2]sLOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME]", "Create a git worktree and run its setup; --pr checks out a\npull request (BRANCH should be its head branch; a fork's head\nis fetched from REF, default pull/N/head); --parent nests it\nunder another worktree of the location"},
+		{"%[1]s worktree new %[2]sLOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME] [--no-setup]", "Create a git worktree and run its setup; --pr checks out a\npull request (BRANCH should be its head branch; a fork's head\nis fetched from REF, default pull/N/head); --parent nests it\nunder another worktree of the location; --no-setup skips setup\nand autostart (the worktree shows setup_pending)"},
+		{"%[1]s worktree setup %[2]sLOC/NAME [--wait]", "Run the location's setup script and autostart services in a\nworktree; --wait blocks until it finishes and fails if setup does"},
 		{"%[1]s worktree rm %[2]sLOC/NAME [--force]", "Remove a worktree"},
 		{"%[1]s worktree rename %[2]sLOC/NAME [TITLE]", "Give a worktree a display name (its branch and folder keep\ntheir names; no TITLE clears it)"},
 		{"%[1]s reviews%[3]s [--idle-days N] [--json]", "Pull requests opened for review here; --idle-days sets how long\none may sit unused before it is cleaned up (0: never)"},
@@ -362,6 +363,8 @@ func Run(ctx context.Context, c *box.Client, args []string, out io.Writer) error
 		return nil
 	case "worktree new":
 		return worktreeNew(ctx, c, rest, out)
+	case "worktree setup":
+		return worktreeSetup(ctx, c, rest, out)
 	case "worktree rm":
 		fs, _ := flags(rest)
 		force := fs.Bool("force", false, "remove even with uncommitted changes")
@@ -901,9 +904,10 @@ func worktreeNew(ctx context.Context, c *box.Client, args []string, out io.Write
 	fs.IntVar(&req.PR, "pr", 0, "pull request to check out: origin's --branch if it has one, else REF")
 	fs.StringVar(&req.Ref, "ref", "", "ref holding the pull request's head (default: pull/N/head)")
 	fs.StringVar(&req.Parent, "parent", "", "another worktree of the location to nest this one under")
+	fs.BoolVar(&req.NoSetup, "no-setup", false, "skip the setup script and autostart; run them later with worktree setup")
 	pos, err := parse(fs, args)
 	if err != nil || len(pos) != 1 || req.PR < 0 || (req.Ref != "" && req.PR == 0) {
-		return usageErr("worktree new LOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME]")
+		return usageErr("worktree new LOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME] [--no-setup]")
 	}
 	loc, name, ok := strings.Cut(pos[0], "/")
 	if !ok || name == "" {
@@ -917,6 +921,61 @@ func worktreeNew(ctx context.Context, c *box.Client, args []string, out io.Write
 	return show(out, *asJSON, wt, func() {
 		fmt.Fprintf(out, "Created %s/%s at %s on %s\n", loc, wt.Name, wt.Path, wt.Branch)
 	})
+}
+
+func worktreeSetup(ctx context.Context, c *box.Client, args []string, out io.Writer) error {
+	fs, _ := flags(args)
+	wait := fs.Bool("wait", false, "block until setup finishes; exit non-zero if it fails")
+	pos, err := parse(fs, args)
+	if err != nil || len(pos) != 1 {
+		return usageErr("worktree setup LOC/NAME [--wait]")
+	}
+	loc, name, ok := strings.Cut(pos[0], "/")
+	if !ok || name == "" {
+		return usageErr("worktree setup LOC/NAME [--wait]")
+	}
+	started, err := c.SetupWorktree(ctx, loc, name)
+	if err != nil {
+		return err
+	}
+	if !*wait {
+		fmt.Fprintf(out, "Started setup of %s/%s\n", loc, name)
+		return nil
+	}
+	if started.Script == "" {
+		fmt.Fprintf(out, "Nothing to set up in %s/%s: the location has no setup script\n", loc, name)
+		return nil
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var result error
+	done := false
+	err = c.EventsSince(ctx, started.Since, func(e events.Event) {
+		if done || (e.Type != "worktree.setup.finished" && e.Type != "worktree.setup.failed") {
+			return
+		}
+		if n, _ := e.Data["name"].(string); n != started.Name {
+			return
+		}
+		if l, _ := e.Data["location"].(string); l != started.Location {
+			return
+		}
+		done = true
+		if e.Type == "worktree.setup.failed" {
+			result = fmt.Errorf("setup of %s/%s failed: %s", loc, name, e.Error)
+		}
+		cancel()
+	})
+	if done {
+		if result == nil {
+			fmt.Fprintf(out, "Finished setup of %s/%s\n", loc, name)
+		}
+		return result
+	}
+	if err == nil {
+		err = ctx.Err()
+	}
+	return err
 }
 
 func sessions(ctx context.Context, c *box.Client, args []string, out io.Writer) error {
