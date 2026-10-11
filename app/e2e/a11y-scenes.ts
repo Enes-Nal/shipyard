@@ -315,7 +315,7 @@ export const scenes: Scene[] = [
       await expect(page.getByTestId("install-plan")).toBeVisible();
     },
   },
-  ...["general", "notifications", "appearance", "terminal", "boxes", "computers", "phone", "agents", "plugins", "shortcuts", "labs", "about", "developer"].map(settings),
+  ...["general", "notifications", "appearance", "terminal", "boxes", "computers", "phone", "agents", "integrations", "plugins", "shortcuts", "labs", "about", "developer"].map(settings),
   {
     id: "sidebar-rename",
     async run(app, theme) {

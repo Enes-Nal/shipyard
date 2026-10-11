@@ -331,6 +331,65 @@ export interface BerthPrompts {
   openBroadcast(opts?: { promptId?: string; text?: string; targets?: PromptTarget[] }): void;
 }
 
+// Linear, once the person has added an API key in Settings → Integrations.
+// The laptop holds the key and makes the calls; a plugin never sees it.
+export interface LinearStatus {
+  connected: boolean;
+  viewer?: { id: string; name: string; email?: string };
+  workspace?: { name: string; url_key: string };
+  // Where the key is, or would be, kept on this computer.
+  file?: string;
+}
+
+export interface LinearTeam {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface LinearIssue {
+  id: string;
+  // "WEB-12", as people say it.
+  identifier: string;
+  title: string;
+  url: string;
+  // 0 none, 1 urgent, 2 high, 3 medium, 4 low.
+  priority: number;
+  priority_label?: string;
+  // type is Linear's own: triage, backlog, unstarted, started, completed or
+  // canceled. color is hex with its #.
+  state: { name: string; type: string; color: string };
+  team: LinearTeam;
+  assignee?: { id: string; name: string };
+  creator?: string;
+  labels: { name: string; color: string }[];
+  // The branch name Linear suggests for the issue.
+  branch?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LinearIssueDetail extends LinearIssue {
+  // Markdown.
+  description: string;
+  comments: { author?: string; body: string; created_at: string; url?: string }[];
+  // What is attached to it, the pull requests Linear linked among them.
+  links: { title: string; url: string; source?: string }[];
+}
+
+export interface BerthLinear {
+  // Whose key it is. Not connected is an answer, not an error.
+  status(): Promise<LinearStatus>;
+  teams(): Promise<LinearTeam[]>;
+  // Up to 100 issues that are not done or cancelled, the most recently
+  // updated first: a team's (by its key), the person's own, or both.
+  issues(opts?: { team?: string; mine?: boolean }): Promise<LinearIssue[]>;
+  // By id or identifier ("WEB-12").
+  issue(id: string): Promise<LinearIssueDetail>;
+  // Comments as the key's owner. id is the issue's id, not its identifier.
+  comment(id: string, body: string): Promise<void>;
+}
+
 export interface BerthPluginContext {
   // The plugin's id: the name of its folder under ~/.berth/plugins (or the
   // built-in's folder), not a field in berth-plugin.json.
@@ -338,6 +397,7 @@ export interface BerthPluginContext {
   readonly api: BerthApi;
   readonly orchestrate: BerthOrchestrate;
   readonly prompts: BerthPrompts;
+  readonly linear: BerthLinear;
   addSidebarItem(item: SidebarItem): Dispose;
   addScreen(screen: Screen): Dispose;
   addWorktreePanel(panel: WorktreePanel): Dispose;
@@ -353,6 +413,8 @@ export interface BerthPluginContext {
   // A toast in the app, and a system notification when it is not focused.
   notify(title: string, body?: string): void;
   openScreen(id: string): void;
+  // Opens the app's Settings, on a section when given one ("integrations").
+  openSettings(section?: string): void;
   openTerminal(box: string, session: string): void;
   openUrl(url: string): void;
   // Brings a worktree's workspace to the front, as clicking it in the

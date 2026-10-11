@@ -13,7 +13,7 @@ of the SDK and is not built in.
 | [box-monitor](box-monitor) | Screen, sidebar item | Memory, disk and load with an hour of history, and a warning before a box runs out. |
 | [activity](activity) | Screen, sidebar item | What happened on every box while you were away. |
 | [notes](notes) | Worktree panel "Notes" | A scratchpad per worktree that its agents can read too. |
-| [issues](issues) | Screen, sidebar item, commands | Open GitHub issues for each project, and an agent on any of them (or a batch) in one step. |
+| [issues](issues) | Screen, sidebar item, commands, Home widget | Open GitHub issues for each project, or your Linear issues, and an agent on any of them (or a batch) in one step. |
 | [prompts](prompts) | Screen, sidebar item, command | Saved prompts with `{{variables}}`, sent to one agent from ⌘K or a pane's menu, or to several at once. |
 
 ## How built-ins ship
