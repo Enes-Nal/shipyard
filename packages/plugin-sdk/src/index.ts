@@ -390,6 +390,59 @@ export interface BerthLinear {
   comment(id: string, body: string): Promise<void>;
 }
 
+// A plugin's helper: a program of its own that Shipyard installs and runs on
+// a box the person turns it on for (berth-plugin.json's "box.helper" names
+// it, with its builds and their checksums). The box daemon keeps it running,
+// gives it a folder for its data and passes requests through to its HTTP
+// API; a plugin only ever reaches its own.
+export type HelperState =
+  // Not installed on this box.
+  | "none"
+  // This box can't run it: its berthd is older than helpers, or the plugin
+  // has no build for its platform.
+  | "unsupported"
+  // Installed, and turned off.
+  | "off"
+  | "installing"
+  | "starting"
+  | "running"
+  // It was installed or started and that went wrong; error says how.
+  | "failed";
+
+export interface HelperStatus {
+  plugin: string;
+  box: string;
+  state: HelperState;
+  // The box's platform, as the manifest's assets name it: "linux-amd64".
+  platform: string;
+  // The version on the box, and the one the installed plugin carries.
+  version?: string;
+  latest?: string;
+  // The box runs an older version than the plugin carries: install() updates it.
+  update?: true;
+  error?: string;
+}
+
+export interface BerthHelper {
+  // What the box has of this plugin's helper. A box that can't run one is
+  // an answer ("unsupported"), not an error; a box that is offline rejects.
+  status(box: string): Promise<HelperStatus>;
+  // Installs the helper on the box, or updates it, and turns it on. Ask the
+  // person first: it puts a program on their machine. It resolves with the
+  // state it reached, which can still be "installing" or "starting": read
+  // status() until it settles.
+  install(box: string): Promise<HelperStatus>;
+  // Stops the helper and removes it from the box. What it recorded stays in
+  // its folder for the next install, unless purge.
+  remove(box: string, opts?: { purge?: boolean }): Promise<void>;
+  // The helper's own HTTP API, through the box: request("devl", "GET",
+  // "queries?limit=50") asks the helper for /api/queries?limit=50. It
+  // rejects with code "helper_off" (status 409) when the helper isn't
+  // running there, and with the helper's own code and message when it
+  // refuses the request.
+  request<T = unknown>(box: string, method: string, path: string, body?: unknown): Promise<T>;
+}
+
 export interface BerthPluginContext {
   // The plugin's id: the name of its folder under ~/.berth/plugins (or the
   // built-in's folder), not a field in berth-plugin.json.
@@ -398,6 +451,10 @@ export interface BerthPluginContext {
   readonly orchestrate: BerthOrchestrate;
   readonly prompts: BerthPrompts;
   readonly linear: BerthLinear;
+  // This plugin's helper on a box (see BerthHelper). Every call is for the
+  // plugin's own id; one without "box.helper" in its manifest has none to
+  // install.
+  readonly helper: BerthHelper;
   addSidebarItem(item: SidebarItem): Dispose;
   addScreen(screen: Screen): Dispose;
   addWorktreePanel(panel: WorktreePanel): Dispose;

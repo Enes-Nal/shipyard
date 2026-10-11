@@ -171,6 +171,15 @@ Turning a plugin off forgets the permission.
 plugin on: only the built-in plugins that ship inside the app can be on by
 default.
 
+A plugin can also carry a program for your boxes (a
+[helper](/reference/plugin-sdk#helper), under `box.helper` in its
+manifest), as [Leadline](/guides/leadline) does. The dialog then adds that
+it can install and run that program, by name, on the boxes you turn it on
+for, and its row in Settings → Plugins says the same. Allowing the plugin
+installs nothing: the program reaches a box only when you turn the plugin
+on for that box, and a different program, or a different build of it, is a
+different manifest, so Shipyard asks again.
+
 On a box, where there is no app to ask, a plugin's hooks run only once it is
 listed in the box's `~/.berth/plugins.json`. An entry without a hash trusts
 whatever the folder holds:

@@ -28,6 +28,7 @@ that gives `activate` its types.
 | `orchestrate` | [`BerthOrchestrate`](#orchestrate): agents driving agents |
 | `prompts` | [`BerthPrompts`](#prompts): the saved prompt library |
 | `linear` | [`BerthLinear`](#linear): the person's Linear issues, once they added a key |
+| `helper` | [`BerthHelper`](#helper): the plugin's own program on a box, for a plugin whose manifest carries one |
 | `storage` | `get<T>(key, fallback)`, `set(key, value)`: small JSON values kept on this computer, apart from other plugins' |
 
 ### Adding things
@@ -229,6 +230,53 @@ Without a key the calls other than `status()` reject with `code:
 "linear_off"`; with a key Linear refuses, `"linear_auth"`. Send the person
 to the key with `berth.openSettings("integrations")`.
 
+## helper
+
+A plugin can carry a program of its own that runs on a box: a **helper**.
+The plugin's `berth-plugin.json` names it under `box.helper`, with a build
+for each platform and each build's checksum; the laptop agent downloads the
+one for a box, checks it, and hands it to the box, which keeps it running,
+gives it a folder for its data and passes requests through to its HTTP API.
+[Leadline](/guides/leadline) is built this way.
+
+`berth.helper` is always the calling plugin's own helper: there is no
+plugin id to pass, and no way to reach another plugin's.
+
+| Call | What it does |
+| --- | --- |
+| `status(box)` | `HelperStatus`: `{ plugin, box, state, platform, version?, latest?, update?, error? }`. `state` is `none` (not installed), `off`, `installing`, `starting`, `running`, `failed` (with `error`), or `unsupported`: the box's `berthd` is from before helpers, or there is no build for its `platform`. `update` is true when the box runs an older `version` than the plugin carries (`latest`). A box that is offline rejects |
+| `install(box)` | Installs the helper on the box, or updates it, and turns it on. Resolves with the `HelperStatus` it reached, which can still be `installing` or `starting`: read `status` until it settles |
+| `remove(box, { purge? })` | Stops the helper and removes it. What it recorded stays in its folder for the next install, unless `purge` |
+| `request(box, method, path, body?)` | The helper's own API through the box: `request("devl", "GET", "queries?limit=50")` asks the helper for `/api/queries?limit=50`. Rejects with `code: "helper_off"` (status 409) when the helper isn't running there, and with the helper's own `code` and `message` when it refuses |
+
+Installing puts a program on someone's machine, so **ask first**, saying
+which program and which box: Shipyard doesn't ask for you. The consent
+dialog and the plugin's row in Settings already say the plugin can do
+this, by the program's name, and because the manifest is part of what is
+allowed, a plugin can't gain a helper or change it without being asked
+about again.
+
+```json title="berth-plugin.json"
+{
+  "box": {
+    "helper": {
+      "name": "berth-leadline",
+      "version": "0.1.0",
+      "args": ["serve", "--dir", "{dir}", "--addr", "127.0.0.1:0"],
+      "ready": "helper.json",
+      "assets": {
+        "linux-amd64": { "url": "https://…", "sha256": "…", "size": 123 }
+      }
+    }
+  }
+}
+```
+
+`{dir}` is the folder the box gives the helper, and `ready` a file the
+helper writes there once it is listening. A request goes through the box
+as JSON, one answer for one request, so a helper's event stream can't be
+followed this way: read again on a timer while your view is on screen.
+
 ## React hooks
 
 From `@berth/plugin`, backed by the app's live state:
@@ -266,6 +314,7 @@ the same props as in the app:
 | Display | `Badge`, `Kbd`, `Spinner`, `Skeleton`, `Icon` (any lucide icon by name), `AgentIcon`, `Alert`, `AlertTitle`, `AlertDescription`, `Meter`, `MeterLabel`, `MeterTrack`, `MeterIndicator`, `MeterValue`, `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Empty`, `EmptyHeader`, `EmptyTitle`, `EmptyDescription` |
 | Overlays | `Tip`, `Tooltip`, `TooltipTrigger`, `TooltipPopup`, `AlertDialog` and its parts, `Sheet`, `SheetPopup`, `SheetHeader`, `SheetTitle`, `SheetDescription`, `SheetPanel`, `SheetFooter`, `SheetClose` |
 | Home widgets | `WidgetRow` (one 36px line, a button with `onClick`), `WidgetEmpty` (`scene`, `title`, `hint`, `action`, `onAction`), `WidgetSkeleton` (`rows`) |
+| Charts | `Chart`: bars, lines or areas drawn by the app's own chart components, in the theme's colours. `<Chart spec={{ type: "area", x: "x", y: [{ key: "calls", label: "Calls", color: "1" }], data: rows }} />`, where `spec` is a [chart artifact](/guides/artifacts)'s `type`, `data`, `x`, `y`, `units` and `stacked`. It fills its box, 16rem high unless `className` says otherwise. Give a time series' `x` as short labels (`"14:05"`) |
 | Utility | `cn(...classes)` |
 | Diffs | `loadDiffs()`: the app's diff renderer ([@pierre/diffs](https://diffs.com), highlighted in workers, themed like the app), loaded on first call and shared with the app. `parse(patch)` reads a git patch; `<default>` draws its files as a scrolling list, split or unified. The built-in Diff panel uses it. |
 
