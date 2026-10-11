@@ -14,6 +14,7 @@ import { initPrReviewMock, prReviewLaptopCall } from "@/lib/mock-pr-review";
 import { reviewCall, reviewExec } from "@/lib/mock-review";
 import { editorsCall } from "@/lib/mock-editors";
 import { imageGenCall } from "@/lib/mock-imagegen";
+import { linearCall } from "@/lib/mock-linear";
 import { mockShell } from "@/lib/mock-shell";
 import { mockServiceAttach, wireMockServices } from "@/lib/mock-services";
 import { mockIssueTitle } from "@/lib/mock-issues";
@@ -1372,6 +1373,8 @@ function mockAgent(): Client {
       if (prReview) return prReview as Promise<T>;
       const eds = editorsCall(method, path, body, delay);
       if (eds) return eds as Promise<T>;
+      const linear = linearCall(method, path, body, delay);
+      if (linear) return linear as Promise<T>;
       const gen = imageGenCall(method, path, delay);
       if (gen) return gen as Promise<T>;
       return Promise.reject(new Error(`mock: no fixture for ${method} ${path}`));
