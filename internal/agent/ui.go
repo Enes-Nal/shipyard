@@ -99,6 +99,7 @@ func (a *Agent) ui(token, hostport string, inner http.Handler) http.Handler {
 	mux.HandleFunc("POST /v1/boxes/{box}/attach-local", a.uiAttachLocal)
 	mux.HandleFunc("GET /v1/boxes/{box}/sessions/{name}/attach", a.uiAttach)
 	a.manageRoutes(mux)
+	a.marketplaceRoutes(mux)
 	a.guidedRoutes(mux)
 	a.outdatedRoutes(mux)
 	a.localBoxRoutes(mux)
@@ -499,15 +500,25 @@ type PluginInfo struct {
 	Changed bool `json:"changed,omitempty"`
 	// Entry is the URL the app imports, when the plugin has a main module.
 	Entry string `json:"entry,omitempty"`
-	Error string `json:"error,omitempty"`
+	// Source is "marketplace" for a plugin installed from the listing
+	// (marketplace.go), which the app can update and remove.
+	Source string `json:"source,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 func (a *Agent) plugins() []PluginInfo {
 	manifests, _ := filepath.Glob(filepath.Join(a.cfg.UserDir, "plugins", "*", hooks.PluginManifest))
 	out := []PluginInfo{}
+	sources := a.readPluginSources()
 	for _, m := range manifests {
 		dir := filepath.Dir(m)
 		p := PluginInfo{ID: filepath.Base(dir)}
+		// A link in its place is someone's own plugin, whatever was there.
+		if _, ok := sources[p.ID]; ok {
+			if fi, err := os.Lstat(dir); err == nil && fi.IsDir() {
+				p.Source = "marketplace"
+			}
+		}
 		var raw struct {
 			PluginInfo
 			Hooks []json.RawMessage `json:"hooks"`

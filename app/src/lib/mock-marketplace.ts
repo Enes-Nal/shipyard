@@ -1,0 +1,179 @@
+import { ApiError } from "@/lib/api";
+import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
+
+// Mock mode's plugin marketplace, behaving like internal/agent/marketplace.go
+// closely enough to build the UI on. Three plugins are listed, one in each
+// state a row has: hello-ports, which mock mode already has as a plugin of
+// your own (Replace); Standup notes, which isn't installed (Install); and
+// Deploy board, installed from the listing in an older version (Update).
+// Installing one gives it a small module of its own, so the consent dialog
+// has real bytes to hash and allowing it really loads it.
+//
+// ?market=offline fails every read of the listing, ?market=flaky only the
+// first, and ?market=mismatch fails every install on its checksum.
+
+// MockPlugin is a plugin in the mock's ~/.berth/plugins, as GET /v1/plugins
+// lists it.
+export interface MockPlugin {
+  id: string;
+  name: string;
+  version: string;
+  main: string;
+  description: string;
+  entry: string;
+  enabled: boolean;
+  defaultEnabled?: boolean;
+  allowed: string | undefined;
+  changed?: boolean;
+  source?: "marketplace";
+}
+
+type Delay = <T>(v: T) => Promise<T>;
+
+const REGISTRY = "https://berthd.app/plugins/index.json";
+const MAIN = "dist/index.js";
+const scenario = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("market");
+
+interface Listed {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  homepage?: string;
+  // The one command the stand-in module adds.
+  command: string;
+}
+
+const listing: Listed[] = [
+  {
+    id: "hello-ports",
+    name: "Hello ports (example)",
+    description: "An example plugin to copy from: every dev server on every box, one click from your browser.",
+    version: "0.1.0",
+    author: "Shipyard",
+    homepage: "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
+    command: "Say hello to the ports",
+  },
+  {
+    id: "acme-standup",
+    name: "Standup notes",
+    description: "What each agent finished since yesterday, ready to paste into standup.",
+    version: "1.0.0",
+    author: "Acme",
+    homepage: "https://example.com/acme-standup",
+    command: "Copy standup notes",
+  },
+  {
+    id: "acme-deploys",
+    name: "Deploy board",
+    description: "Which branch is on which Acme environment, and who put it there.",
+    version: "1.2.0",
+    author: "Acme",
+    command: "Show the deploy board",
+  },
+];
+
+const manifestOf = (l: Listed, version: string) => `${JSON.stringify({ id: l.id, name: l.name, version, description: l.description, main: MAIN }, null, 2)}\n`;
+
+// A stand-in for the bundle a real listing carries: one command.
+const sourceOf = (l: Listed, version: string) =>
+  `// ${l.name} ${version}\nexport default function activate(berth) {\n  berth.addCommand({ id: "run", title: ${JSON.stringify(l.command)}, run: () => berth.notify(${JSON.stringify(l.name)}, "Installed from the listing.") });\n}\n`;
+
+const enc = new TextEncoder();
+const filesOf = (l: Listed, version: string) => ({ "berth-plugin.json": enc.encode(manifestOf(l, version)), [MAIN]: enc.encode(sourceOf(l, version)) }) as Record<string, Uint8Array>;
+
+const installedAs = (l: Listed, version: string): MockPlugin => ({
+  id: l.id,
+  name: l.name,
+  version,
+  main: MAIN,
+  description: l.description,
+  entry: `/v1/plugins/${l.id}/${MAIN}`,
+  enabled: false,
+  allowed: undefined,
+  source: "marketplace",
+});
+
+// What the marketplace has installed, by plugin: the files the mock agent
+// serves for it (GET /v1/plugins/{id}/{file}).
+const installedFiles = new Map<string, Record<string, Uint8Array>>();
+
+// seededPlugins are in ~/.berth/plugins from the start: Deploy board, from
+// the listing before its newest version, and never turned on.
+const deploys = listing[2];
+installedFiles.set(deploys.id, filesOf(deploys, "1.1.0"));
+export const seededPlugins: MockPlugin[] = [installedAs(deploys, "1.1.0")];
+
+// marketplaceFile is a file of a plugin the marketplace installed, or
+// undefined for a plugin that came some other way.
+export function marketplaceFile(id: string, file: string): Uint8Array | undefined {
+  return installedFiles.get(id)?.[file];
+}
+
+function view(l: Listed, installed: MockPlugin[]): MarketPlugin {
+  const files = Object.entries(filesOf(l, l.version)).map(([path, data]) => ({ path, url: `${l.id}/${l.version}/${path}`, sha256: "0".repeat(64), size: data.length }));
+  const have = installed.find((p) => p.id === l.id);
+  const mine = have?.source === "marketplace";
+  return {
+    id: l.id,
+    name: l.name,
+    description: l.description,
+    version: l.version,
+    author: l.author,
+    homepage: l.homepage,
+    files,
+    size: files.reduce((n, f) => n + f.size, 0),
+    installed: have ? true : undefined,
+    installed_version: have?.version,
+    update: have && mine && have.version !== l.version ? true : undefined,
+    by_hand: have && !mine ? true : undefined,
+  };
+}
+
+let reads = 0;
+
+// The agent takes a moment over the web, and its refusals come after it.
+const refuse = (delay: Delay, message: string, status: number, code?: string) =>
+  delay(null).then(() => {
+    throw new ApiError(message, status, code);
+  });
+
+export function marketplaceCall(method: string, path: string, body: unknown, installed: MockPlugin[], delay: Delay): Promise<unknown> | undefined {
+  if (method === "GET" && /^\/v1\/marketplace(\?fresh=1)?$/.test(path)) {
+    reads++;
+    if (scenario === "offline" || (scenario === "flaky" && reads === 1)) return refuse(delay, `could not reach ${REGISTRY}: dial tcp: lookup berthd.app: no such host`, 502, "registry_unreachable");
+    const out: Marketplace = { registry: REGISTRY, host: "berthd.app", fetched: new Date().toISOString(), plugins: listing.map((l) => view(l, installed)) };
+    return delay(out);
+  }
+  const install = /^\/v1\/marketplace\/([^/]+)\/install$/.exec(path);
+  if (method === "POST" && install) {
+    const id = decodeURIComponent(install[1]);
+    const l = listing.find((x) => x.id === id);
+    if (!l) return refuse(delay, `the listing has no plugin called ${id}`, 404);
+    const req = (body ?? {}) as { version?: string; replace?: boolean };
+    if (req.version && req.version !== l.version) return refuse(delay, `the listing now has ${id} ${l.version}, not ${req.version}; look at it again`, 409, "listing_changed");
+    const have = installed.find((p) => p.id === id);
+    if (have && have.source !== "marketplace" && !req.replace)
+      return refuse(delay, `~/.berth/plugins/${id} wasn't installed from the listing, or was changed since; replace it to install over it`, 409, "plugin_by_hand");
+    if (scenario === "mismatch") return refuse(delay, `${MAIN} of ${id} does not match the listing's checksum; nothing was installed`, 502, "plugin_mismatch");
+    installedFiles.set(id, filesOf(l, l.version));
+    // Installing never turns a plugin on: one that was allowed is off as
+    // changed until it is reviewed again, and keeps what was allowed.
+    const same = have?.source === "marketplace" && have.version === l.version;
+    const next: MockPlugin = same ? have : { ...installedAs(l, l.version), allowed: have?.allowed, changed: have?.allowed ? true : undefined };
+    if (have) Object.assign(have, next);
+    else installed.push(next);
+    return delay(view(l, installed));
+  }
+  const remove = /^\/v1\/marketplace\/([^/]+)$/.exec(path);
+  if (method === "DELETE" && remove) {
+    const id = decodeURIComponent(remove[1]);
+    const at = installed.findIndex((p) => p.id === id && p.source === "marketplace");
+    if (at < 0) return refuse(delay, `${id} wasn't installed from the listing; remove ~/.berth/plugins/${id} yourself`, 409, "plugin_by_hand");
+    installed.splice(at, 1);
+    installedFiles.delete(id);
+    return delay({ removed: id });
+  }
+  return undefined;
+}

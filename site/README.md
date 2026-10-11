@@ -62,6 +62,15 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   GitHub's light and dark themes.
 - `demo/`: the live demo, built from `app/` (see below). Committed, so the
   site still has no build step.
+- `plugins/`: the plugin listing the app's Settings → Plugins → Browse
+  installs from (`plugins/index.json`, and each plugin's files under
+  `plugins/<id>/<version>/`). Built by `pnpm -C app build:marketplace` from
+  the folders in the repository's `plugins/` that say `"marketplace": true`,
+  and committed for the same reason. The laptop agent fetches it, never the
+  app's own page, and checks every file against the index's SHA-256
+  (`docs/guides/plugins.mdx`, "Publish it to the listing"). Don't edit it by
+  hand: `pnpm -C app check:marketplace` says when it isn't what the sources
+  build.
 - `assets/og-film.jpg`: the 1200×630 link preview for Open Graph and
   Twitter, cut from the film's poster (`assets/og.png`, the earlier one, is
   kept but no longer referenced); `assets/favicon.svg` and `assets/apple-touch-icon.png`.

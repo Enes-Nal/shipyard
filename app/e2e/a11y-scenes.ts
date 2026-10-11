@@ -87,7 +87,9 @@ const settings = (section: string): Scene => ({
   key: section === "appearance" || section === "general",
   async run(app, theme) {
     await app.open({ theme });
-    await app.openSettings(section);
+    const body = await app.openSettings(section);
+    // Plugins reads its lists after the page: wait for the listing's rows.
+    if (section === "plugins") await expect(body.getByTestId("market-plugin").first()).toBeVisible();
   },
 });
 

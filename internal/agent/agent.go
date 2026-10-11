@@ -91,7 +91,10 @@ type Config struct {
 	// UserDir holds hooks, themes, templates and plugins. Defaults to
 	// ~/.berth.
 	UserDir string
-	Log     *log.Logger
+	// PluginRegistry is the index.json the plugin marketplace lists
+	// (marketplace.go); defaults to DefaultPluginRegistry.
+	PluginRegistry string
+	Log            *log.Logger
 	// Now reads the wall clock; tests replace it to simulate sleep.
 	Now func() time.Time
 	// Networks reaches boxes on other tailnets. Defaults to embedded
@@ -251,6 +254,9 @@ type Agent struct {
 	work      workSet
 	// suggest is what team suggestions know (teamsuggest.go).
 	suggest teamSuggest
+	// market is the plugin listing last read, and the one install or
+	// removal under way (marketplace.go).
+	market marketState
 
 	// ctx lives as long as the agent; forwards added through the API run under
 	// it rather than under the request that created them.
