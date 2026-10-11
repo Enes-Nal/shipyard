@@ -23,6 +23,33 @@ yours with the same id replaces a built-in.
   plugins you trust. See [Trust and consent](#trust-and-consent).
 </Callout>
 
+## Install one from the app
+
+**Settings → Plugins → Browse** lists plugins that aren't built in.
+**Install** puts one in `~/.berth/plugins/<id>/`, and it shows under
+**Installed**, off. Turn it on there: Shipyard shows what it will be able to
+do and a hash of its code, and it runs only once you choose **Allow and turn
+on** (see [Trust and consent](#trust-and-consent)). Installing never turns a
+plugin on.
+
+- **Update** shows when the listing has a newer version. It replaces the
+  plugin's whole folder. The new code is not the code you allowed, so the
+  plugin is off until you review it again, and the app asks straight away
+  if it was on.
+- **Remove…**, beside a plugin under Installed, deletes one the listing
+  installed and forgets that you allowed it.
+- **Replace…** shows instead of Install when `~/.berth/plugins` already has
+  a plugin with that id that the listing didn't install: a folder or a link
+  you put there, or a listed plugin whose files you changed. Shipyard never
+  installs over one of those without asking, and Remove… leaves them alone.
+
+The app's own page can't reach the web, so the Shipyard agent on your
+computer reads the listing, `https://berthd.app/plugins/index.json`, and
+downloads the files. To browse another listing, start the agent with
+`BERTH_PLUGIN_REGISTRY` set to an `https://` link to its `index.json`. See
+[what the checksum proves](#what-the-checksum-proves) for what the agent
+checks, and what it can't.
+
 ## The smallest plugin
 
 ```tsx title="src/index.tsx"
@@ -113,6 +140,7 @@ The folder's name is the plugin's id. The manifest's fields:
 | `hooks` | [Hooks](/guides/hooks) to run while the plugin is on, in its folder, with `BERTH_PLUGIN_DIR` set |
 | `themes` | Theme JSON files to offer, relative to the folder |
 | `kits` | Kit folders to offer, relative to the folder |
+| `author`, `homepage`, `marketplace` | For a plugin in [the listing](#publish-it-to-the-listing): who it is from, a web page about it, and `true` to list it |
 
 A plugin folder in `~/.berth/plugins` on a box gives that box its hooks
 too, once it is allowed there (see below).
@@ -155,6 +183,102 @@ whatever the folder holds:
   does once it runs. Running each plugin in its own isolated view behind a
   bridge that grants only the capabilities it asked for is planned.
 </Callout>
+
+## Publish it to the listing
+
+The listing people browse in Settings → Plugins is a folder of this
+repository, [`site/plugins/`](https://github.com/cosscom/shipyard/tree/main/site/plugins),
+served at `berthd.app/plugins/`. To add a plugin to it:
+
+1. Put the plugin in `plugins/<id>/`, laid out like
+   [`hello-ports`](https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports)
+   with its code in `src/index.tsx`. The id is lowercase letters, digits and
+   dashes, at most 48 characters.
+2. In its `berth-plugin.json`, set `"marketplace": true` and a `version`,
+   and say who it is from:
+
+   ```json title="plugins/hello-ports/berth-plugin.json"
+   {
+     "id": "hello-ports",
+     "name": "Hello ports (example)",
+     "version": "0.1.0",
+     "description": "An example plugin to copy from.",
+     "main": "dist/index.js",
+     "author": "Shipyard",
+     "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
+     "marketplace": true
+   }
+   ```
+
+3. Run `pnpm -C app build:marketplace`. It bundles every marketplace plugin
+   the way `build.mjs` above does, into `site/plugins/<id>/<version>/`
+   (the manifest, the `main` module, and any `themes` and `kits` the
+   manifest names), and writes `site/plugins/index.json`. Bundles are not
+   minified, so the code someone is asked to allow can be read.
+4. Commit `site/plugins/` with the plugin and open a pull request. Once it
+   is merged and the site is deployed, the plugin is in everyone's Browse.
+
+To publish a change, raise `version` and run the build again: people who
+installed the plugin see **Update**. `pnpm -C app check:marketplace` fails
+when `site/plugins/` is not what `plugins/` builds.
+
+The index lists each plugin and every file it has, with links relative to
+the index:
+
+```json title="site/plugins/index.json"
+{
+  "plugins": [
+    {
+      "id": "hello-ports",
+      "name": "Hello ports (example)",
+      "description": "An example plugin to copy from.",
+      "version": "0.1.0",
+      "author": "Shipyard",
+      "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
+      "files": [
+        { "path": "berth-plugin.json", "url": "hello-ports/0.1.0/berth-plugin.json", "sha256": "b8d54d1d…", "size": 382 },
+        { "path": "dist/index.js", "url": "hello-ports/0.1.0/dist/index.js", "sha256": "f9902943…", "size": 5335 }
+      ]
+    }
+  ]
+}
+```
+
+| Field | What the agent holds it to |
+| --- | --- |
+| `id` | Lowercase letters, digits and dashes, at most 48 characters. It becomes the folder's name; an entry with any other id is not listed |
+| `version` | Must be the `version` in the plugin's own `berth-plugin.json` |
+| `author`, `homepage` | Optional. A `homepage` that is not an `https://` link is dropped |
+| `files[].path` | Where the file goes inside the plugin's folder: a relative path with no `..`. One of them is `berth-plugin.json`, and the `main` it names is another |
+| `files[].url` | Where the file is, relative to the index, on the same address as the index |
+| `files[].sha256`, `files[].size` | The file's SHA-256, in hex, and its size in bytes. A file is at most 16 MB, a plugin 64 MB in 256 files, and the index 1 MB |
+
+A plugin the index describes wrongly is listed with the reason and can't be
+installed. Fields the agent doesn't know are ignored, so a newer index still
+reads. Any static host can serve a listing of your own in this format: point
+`BERTH_PLUGIN_REGISTRY` at its `index.json`. It must be `https://`; plain
+`http://` is read only from `localhost` or `127.0.0.1`.
+
+### What the checksum proves
+
+Before anything is installed, the agent downloads every file the listing
+names, from the listing's own address, and compares each with the size and
+SHA-256 the listing gives. If one differs, nothing is installed and what was
+there stays as it was.
+
+That proves **the files are the ones the listing describes**: a download cut
+short, a file changed on the server after the listing was written, or two
+versions mixed together is refused.
+
+It does not prove the plugin is safe, or who wrote it. The checksums come
+from the same place as the files, so whoever can change the listing can
+change both. It is not a signature. What stands between a listing and your
+boxes is still you: a plugin runs only once you allow it, the consent dialog
+shows the hash of the code that was installed, and that permission is for
+exactly that code. An update is new code, so it is asked about again; when
+an update changes only files other than the manifest and `main`, which the
+permission's hash doesn't cover, Shipyard forgets the permission rather than
+carry it over.
 
 ## What a plugin can add
 

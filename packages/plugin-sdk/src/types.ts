@@ -501,6 +501,9 @@ export interface PluginInfo {
   allowed?: string;
   // Allowed once, but changed since: off until it is reviewed again.
   changed?: boolean;
+  // "marketplace" for a plugin installed from the listing in Settings →
+  // Plugins, which the app can update and remove.
+  source?: "marketplace";
   hooks?: PluginHook[];
   // The titles of the Home widgets it adds, from berth-plugin.json's
   // "homeWidgets", so Home's picker can offer them while it is off.

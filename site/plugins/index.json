@@ -1,0 +1,26 @@
+{
+  "plugins": [
+    {
+      "id": "hello-ports",
+      "name": "Hello ports (example)",
+      "description": "An example plugin to copy from: every dev server on every box, one click from your browser. Off until you turn it on.",
+      "version": "0.1.0",
+      "author": "Shipyard",
+      "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
+      "files": [
+        {
+          "path": "berth-plugin.json",
+          "url": "hello-ports/0.1.0/berth-plugin.json",
+          "sha256": "b8d54d1dd7757044e0c566b786dc8ea0fc0be6b8b400cfd760935958ba43e9e4",
+          "size": 382
+        },
+        {
+          "path": "dist/index.js",
+          "url": "hello-ports/0.1.0/dist/index.js",
+          "sha256": "f99029431a0d64d8ceb938476c0cd3a4386043ee4f6a7f9d882cefba7ee35b3c",
+          "size": 5335
+        }
+      ]
+    }
+  ]
+}

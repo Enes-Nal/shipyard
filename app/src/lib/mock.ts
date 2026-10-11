@@ -9,6 +9,7 @@ import { mockDevtoolsCall } from "@/lib/mock-devtools";
 import { phoneCall } from "@/lib/mock-phone";
 import { worktreesCall } from "@/lib/mock-worktrees";
 import { kitsCall, kitsStream } from "@/lib/mock-kits";
+import { marketplaceCall, marketplaceFile, type MockPlugin, seededPlugins } from "@/lib/mock-marketplace";
 import { initTeamMock, isTeamSession, teamAttach, teamBoxCall, teamLaptopCall } from "@/lib/mock-team";
 import { initPrReviewMock, prReviewLaptopCall } from "@/lib/mock-pr-review";
 import { reviewCall, reviewExec } from "@/lib/mock-review";
@@ -969,9 +970,14 @@ const discoverNetwork = (_network: string) => ({ user: "me", machines: networkMa
 
 const mockNetworks = fresh ? [] : [{ name: "personal", state: "Running", tailnet: "example.ts.net", ips: ["100.64.0.73"] }];
 
-// The live demo lists none: a plugin from ~/.berth/plugins would load from
-// the dev server, which the demo doesn't have.
-const mockPlugins = [{ id: "hello-ports", name: "Hello ports", version: "0.1.0", main: "dist/index.js", description: "Every dev server on every box, one click from your browser.", entry: "/__dev-plugins/hello-ports/dist/index.js", enabled: false, defaultEnabled: false, allowed: undefined as string | undefined }].filter(() => !__BERTH_DEMO__);
+// The live demo starts with none: a plugin from ~/.berth/plugins would load
+// from the dev server, which the demo doesn't have. One installed from the
+// mock listing (mock-marketplace.ts) carries its own files, so it works
+// there too.
+const mockPlugins: MockPlugin[] = [
+  { id: "hello-ports", name: "Hello ports", version: "0.1.0", main: "dist/index.js", description: "Every dev server on every box, one click from your browser.", entry: "/__dev-plugins/hello-ports/dist/index.js", enabled: false, defaultEnabled: false, allowed: undefined },
+  ...seededPlugins,
+].filter(() => !__BERTH_DEMO__);
 
 
 function addMockBox(name: string, address: string, network?: string) {
@@ -1131,6 +1137,7 @@ function laptopBoxes(method: string, path: string, body: unknown): Promise<unkno
     if (toggle[2] === "enable" && !hash) return Promise.reject(new Error("review the plugin in the app to turn it on"));
     p.enabled = toggle[2] === "enable";
     p.allowed = p.enabled ? hash : undefined;
+    p.changed = undefined;
     return delay(p);
   }
   return undefined;
@@ -1306,6 +1313,8 @@ function mockAgent(): Client {
       ]),
     plugins: () => delay(mockPlugins),
     async pluginFile(p, file) {
+      const listed = marketplaceFile(p.id, file);
+      if (listed) return listed;
       const res = await fetch(`/__dev-plugins/${encodeURIComponent(p.id)}/${file}`);
       if (!res.ok) throw new Error(`${p.id}: ${res.status} (run pnpm build in plugins/${p.id})`);
       return new Uint8Array(await res.arrayBuffer());
@@ -1367,6 +1376,8 @@ function mockAgent(): Client {
       if (queued) return queued as Promise<T>;
       const kits = kitsCall(method, path, body, emit, delay);
       if (kits) return kits as Promise<T>;
+      const market = marketplaceCall(method, path, body, mockPlugins, delay);
+      if (market) return market as Promise<T>;
       const team = teamLaptopCall(method, path, body, delay);
       if (team) return team as Promise<T>;
       const prReview = prReviewLaptopCall(method, path, body, delay);

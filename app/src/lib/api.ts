@@ -1,4 +1,5 @@
 import type { ToolDetail } from "@/lib/transcript";
+import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
 import { invoke } from "@tauri-apps/api/core";
 import { readTimeout, reconnectDelay, STREAM_SILENCE_MS } from "@/lib/net";
 import { IS_LINUX } from "@/lib/platform";
@@ -508,6 +509,16 @@ export const laptopApi = {
   // plugins/consent.ts); the agent refuses it if they have changed since.
   allowPlugin: (c: Client, id: string, hash: string) => c.laptop<PluginInfo>("POST", `/v1/plugins/${encodeURIComponent(id)}/enable`, { hash }),
   disablePlugin: (c: Client, id: string) => c.laptop<PluginInfo>("POST", `/v1/plugins/${encodeURIComponent(id)}/disable`),
+  // The plugin listing (lib/marketplace.ts). The agent reads it from the
+  // web, since the app's own page may talk only to the agent; fresh reads
+  // it again rather than the copy the agent keeps for a few minutes.
+  marketplace: (c: Client, fresh = false) => c.laptop<Marketplace>("GET", `/v1/marketplace${fresh ? "?fresh=1" : ""}`),
+  // Installing puts the plugin in ~/.berth/plugins and never turns it on.
+  // version is the one shown, so a listing that moved on is refused (409
+  // listing_changed); replace installs over a folder the listing didn't.
+  installPlugin: (c: Client, id: string, version: string, replace = false) =>
+    c.laptop<MarketPlugin>("POST", `/v1/marketplace/${encodeURIComponent(id)}/install`, replace ? { version, replace } : { version }),
+  uninstallPlugin: (c: Client, id: string) => c.laptop<{ removed: string }>("DELETE", `/v1/marketplace/${encodeURIComponent(id)}`),
 };
 
 export function httpClient(ep: Endpoint): Client {

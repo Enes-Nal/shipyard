@@ -106,6 +106,8 @@ func runAgent(l laptop) error {
 	if a := os.Getenv("BERTH_UI_ADDR"); a != "" {
 		cfg.UIAddr = a
 	}
+	// Another plugin listing than the public one (Settings → Plugins → Browse).
+	cfg.PluginRegistry = os.Getenv("BERTH_PLUGIN_REGISTRY")
 	err := agent.Run(ctx, cfg)
 	if errors.Is(err, agent.ErrAlreadyRunning) {
 		fmt.Fprintln(os.Stderr, "berth: an agent is already running for this home; exiting")

@@ -5,16 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toastManager } from "@/components/ui/toast";
-import { laptopApi, type PluginInfo } from "@/lib/api";
-import { errorMessage } from "@/lib/format";
-import { openDocs } from "@/lib/open-url";
+import { ApiError, laptopApi, type PluginInfo } from "@/lib/api";
+import { plainError } from "@/lib/errors";
+import { bytes, errorMessage } from "@/lib/format";
+import { marketAction, marketNote, type Marketplace, type MarketPlugin } from "@/lib/marketplace";
+import { openDocs, openUrl } from "@/lib/open-url";
 import { builtinOn, setBuiltinOn, usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { askToAllow } from "@/plugins/consent";
+import { askToAllow, usePluginConsent } from "@/plugins/consent";
 import { builtinPlugins, loadPlugins } from "@/plugins/host";
 import { useRegistry } from "@/plugins/registry";
+import { ConfirmDialog } from "@/views/settings/confirm";
 import { Code, SettingsGroup, SettingsPage } from "@/views/settings/rows";
+import { ErrorText } from "@/components/error-note";
 import { Tip } from "@/components/tip";
 
 export function PluginsSection() {
@@ -28,13 +32,37 @@ export function PluginsSection() {
   const refresh = useCallback(async () => {
     if (client) setInstalled(await client.plugins().catch(() => []));
   }, [client]);
-  useEffect(() => void refresh(), [refresh]);
+  // Read again whenever the consent dialog closes: it also opens by itself,
+  // for a plugin an update changed, and allowing it there turns it on.
+  const consenting = usePluginConsent((s) => !!s.request);
+  useEffect(() => {
+    if (!consenting) void refresh();
+  }, [refresh, consenting]);
+
+  // The listing: what the agent read from the registry, merged with what is
+  // installed here. error is in plain words; old is an agent from before
+  // the marketplace.
+  const [market, setMarket] = useState<{ list?: Marketplace; error?: string; old?: boolean; reading?: boolean }>({ reading: true });
+  const browse = useCallback(
+    async (fresh = false) => {
+      if (!client) return;
+      setMarket((m) => ({ ...m, reading: true }));
+      try {
+        setMarket({ list: await laptopApi.marketplace(client, fresh) });
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404 && !err.code) setMarket({ old: true });
+        else setMarket({ error: plainError(err) });
+      }
+    },
+    [client],
+  );
+  useEffect(() => void browse(), [browse]);
 
   const reload = async () => {
     if (!client) return;
     setReloading(true);
     await loadPlugins(client);
-    await refresh();
+    await Promise.all([refresh(), browse()]);
     setReloading(false);
   };
 
@@ -70,9 +98,9 @@ export function PluginsSection() {
           <div className="px-4 py-6 text-center text-muted-foreground text-sm">Loading…</div>
         ) : installed.length === 0 ? (
           <div className="px-4 py-6 text-center text-muted-foreground text-sm">
-            No plugins yet.{" "}
+            No plugins yet. Install one from Browse, or{" "}
             <button type="button" onClick={() => void openDocs("/guides/plugins")} className="underline underline-offset-2 hover:text-foreground">
-              Write one
+              write one
             </button>
             .
           </div>
@@ -80,11 +108,136 @@ export function PluginsSection() {
           installed.map((p) => <PluginRow key={p.id} plugin={p} status={loaded.find((l) => l.id === p.id)} onChanged={() => void reload()} />)
         )}
       </SettingsGroup>
+      <SettingsGroup
+        title="Browse"
+        description={
+          market.list ? (
+            <>
+              Plugins that aren't built in, listed at <Code>{market.list.host}</Code>. Installing one puts it under Installed, off until you allow it.
+            </>
+          ) : (
+            "Plugins that aren't built in. Installing one puts it under Installed, off until you allow it."
+          )
+        }
+        actions={
+          !market.old && (
+            <Tip label="Read the listing again">
+              <Button size="icon-xs" variant="ghost" aria-label="Read the listing again" disabled={market.reading} onClick={() => void browse(true)}>
+                <RefreshCwIcon className={cn(market.reading && "animate-spin")} />
+              </Button>
+            </Tip>
+          )
+        }
+      >
+        {market.old ? (
+          <p className="px-4 py-3 text-muted-foreground text-sm">The Shipyard agent on this computer is older than this app, so it can't read the listing yet.</p>
+        ) : market.error ? (
+          <div className="flex items-center gap-4 px-4 py-3" data-testid="market-error">
+            <ErrorText className="min-w-0 flex-1 text-destructive-foreground text-sm" text={market.error} />
+            <Button size="xs" variant="outline" className="min-w-24" loading={market.reading} onClick={() => void browse(true)}>
+              Try again
+            </Button>
+          </div>
+        ) : !market.list ? (
+          <div className="px-4 py-6 text-center text-muted-foreground text-sm">Loading…</div>
+        ) : market.list.plugins.length === 0 ? (
+          <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nothing is listed yet.</div>
+        ) : (
+          market.list.plugins.map((p) => <MarketRow key={p.id} plugin={p} was={installed?.find((u) => u.id === p.id)} onChanged={() => void reload()} onStale={() => void browse(true)} />)
+        )}
+      </SettingsGroup>
     </SettingsPage>
   );
 }
 
+// MarketRow is one listed plugin: what it is, and the one thing to do about
+// it. Installing only puts it in ~/.berth/plugins; turning it on is the
+// Installed row's switch, which asks first.
+function MarketRow({ plugin: p, was, onChanged, onStale }: { plugin: MarketPlugin; was?: PluginInfo; onChanged(): void; onStale(): void }) {
+  const [busy, setBusy] = useState(false);
+  const [replacing, setReplacing] = useState(false);
+  const action = marketAction(p);
+  const note = marketNote(p);
+
+  const install = async (replace = false) => {
+    const client = useStore.getState().client;
+    if (!client) return;
+    setBusy(true);
+    try {
+      await laptopApi.installPlugin(client, p.id, p.version, replace);
+      toastManager.add({
+        title: action === "update" ? `Updated ${p.name} to ${p.version}` : `Installed ${p.name}`,
+        description: was?.allowed ? "Shipyard asks again before the new code runs." : "It's off until you turn it on under Installed.",
+        type: "success",
+      });
+      onChanged();
+    } catch (err) {
+      toastManager.add({ title: `Couldn't ${action === "update" ? "update" : "install"} ${p.name}`, description: errorMessage(err), type: "error" });
+      // The row showed something that is no longer so: read the listing again.
+      if (err instanceof ApiError && (err.code === "listing_changed" || err.code === "plugin_by_hand")) onStale();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-4 px-4 py-3" data-testid="market-plugin" data-plugin={p.id}>
+      <span className="size-2 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2 text-sm">
+          <span>{p.name}</span>
+          <span className="text-muted-foreground text-xs">{p.version}</span>
+        </div>
+        {p.description && <div className="mt-0.5 text-muted-foreground text-xs">{p.description}</div>}
+        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
+          {p.id}
+          {p.author && ` · by ${p.author}`}
+          {` · ${bytes(p.size)}`}
+          {/* The agent keeps only https links; the app opens nothing else either. */}
+          {p.homepage?.startsWith("https://") && (
+            <>
+              {" · "}
+              <button type="button" onClick={() => void openUrl(p.homepage!)} className="underline underline-offset-2 hover:text-foreground">
+                homepage
+              </button>
+            </>
+          )}
+        </div>
+        {note && <div className="mt-1 text-muted-foreground text-xs">{note}</div>}
+        {p.error && (
+          <div className="mt-1 text-xs">
+            <span className="text-destructive-foreground">It can't be installed:</span> <span className="text-muted-foreground">{p.error}.</span>
+          </div>
+        )}
+      </div>
+      {action === "installed" ? (
+        <Badge variant="outline" size="sm">
+          Installed
+        </Badge>
+      ) : action === "replace" ? (
+        <Button size="xs" variant="outline" className="min-w-24" loading={busy} onClick={() => setReplacing(true)}>
+          Replace…
+        </Button>
+      ) : action !== "unavailable" ? (
+        <Button size="xs" variant="outline" className="min-w-24" loading={busy} onClick={() => void install()}>
+          {action === "update" ? "Update" : "Install"}
+        </Button>
+      ) : null}
+      <ConfirmDialog
+        open={replacing}
+        onOpenChange={setReplacing}
+        destructive
+        title={`Replace your ${p.name}?`}
+        description={`~/.berth/plugins/${p.id} holds a plugin the listing didn't install, or one changed since. Its folder is deleted and ${p.name} ${p.version} from the listing takes its place, off until you allow it.`}
+        confirm="Replace"
+        onConfirm={() => install(true)}
+      />
+    </div>
+  );
+}
+
 function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; status?: { state: string; error?: string }; onChanged(): void }) {
+  const [removing, setRemoving] = useState(false);
   // Never on until you allow it, and off again when it changes.
   const enabled = p.enabled === true;
   const review = !enabled && (p.changed || status?.state === "review");
@@ -94,7 +247,7 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
   const state = review ? "review" : !enabled ? "off" : error ? "failed" : (status?.state ?? "loading");
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3">
+    <div className="flex items-center gap-4 px-4 py-3" data-testid="plugin-row" data-plugin={p.id}>
       <StatusDot state={state} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">
@@ -106,6 +259,7 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
         <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
           {p.id}
           {hooks > 0 && ` · ${hooks} hook${hooks === 1 ? "" : "s"}`}
+          {p.source === "marketplace" && " · from the listing"}
         </div>
         {review && (
           <div className="mt-1 text-xs">
@@ -121,6 +275,31 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
           </div>
         )}
       </div>
+      {/* One the listing installed is the app's to remove; a folder of your own is yours. */}
+      {p.source === "marketplace" && (
+        <Button size="xs" variant="ghost" className="text-muted-foreground" onClick={() => setRemoving(true)}>
+          Remove…
+        </Button>
+      )}
+      <ConfirmDialog
+        open={removing}
+        onOpenChange={setRemoving}
+        destructive
+        title={`Remove ${p.name}?`}
+        description={`Its folder, ~/.berth/plugins/${p.id}, is deleted and what you allowed is forgotten. You can install it again from Browse.`}
+        confirm="Remove"
+        onConfirm={async () => {
+          const client = useStore.getState().client;
+          if (!client) return;
+          try {
+            await laptopApi.uninstallPlugin(client, p.id);
+            toastManager.add({ title: `Removed ${p.name}`, type: "success" });
+            onChanged();
+          } catch (err) {
+            toastManager.add({ title: `Couldn't remove ${p.name}`, description: errorMessage(err), type: "error" });
+          }
+        }}
+      />
       <Switch
         checked={enabled}
         aria-label={enabled ? `Turn off ${p.name}` : `Turn on ${p.name}`}
