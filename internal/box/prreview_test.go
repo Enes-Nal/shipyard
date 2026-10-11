@@ -232,8 +232,14 @@ func TestAReviewIsMadeAtTheConfirmedCommitAndNothingElse(t *testing.T) {
 	if got := headOf(t, wt.Path); got != sha {
 		t.Fatalf("the review moved by itself to %s", got)
 	}
-	// Updating to a commit the reviewer was not shown is refused.
-	if _, err := f.b.UpdateReview(context.Background(), "app", ReviewUpdate{Location: "shop", Worktree: "review-42", SHA: sha[:39] + "0"}); codeOf(err) != "moved" {
+	// Updating to a commit the reviewer was not shown is refused. The unseen
+	// one differs in its last digit, whatever that digit is: one commit in
+	// sixteen already ends in 0.
+	unseen := sha[:39] + "0"
+	if unseen == sha {
+		unseen = sha[:39] + "1"
+	}
+	if _, err := f.b.UpdateReview(context.Background(), "app", ReviewUpdate{Location: "shop", Worktree: "review-42", SHA: unseen}); codeOf(err) != "moved" {
 		t.Fatalf("update to an unseen commit: %v", err)
 	}
 	// With uncommitted changes it stays put.
