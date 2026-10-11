@@ -95,6 +95,7 @@ const SETTINGS_SECTIONS: [SettingsSectionId, string, string][] = [
   ["computers", "Computers", "laptops devices"],
   ["phone", "Phone", "mobile pair"],
   ["agents", "Agents", "claude codex install"],
+  ["integrations", "Integrations", "linear api key issues"],
   ["plugins", "Plugins", "extensions"],
   ["shortcuts", "Shortcuts", "keys keyboard"],
   ["labs", "Labs", "experiments"],

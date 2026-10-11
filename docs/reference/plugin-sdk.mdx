@@ -27,6 +27,7 @@ that gives `activate` its types.
 | `api` | [`BerthApi`](#api): a typed client for the laptop agent and every box |
 | `orchestrate` | [`BerthOrchestrate`](#orchestrate): agents driving agents |
 | `prompts` | [`BerthPrompts`](#prompts): the saved prompt library |
+| `linear` | [`BerthLinear`](#linear): the person's Linear issues, once they added a key |
 | `storage` | `get<T>(key, fallback)`, `set(key, value)`: small JSON values kept on this computer, apart from other plugins' |
 
 ### Adding things
@@ -51,6 +52,7 @@ Each returns a `Dispose`. Everything is also removed when the plugin unloads.
 | --- | --- |
 | `notify(title, body?)` | A toast in the app, and a system notification when it is not focused (by default: Settings → Notifications decides, under messages from plugins) |
 | `openScreen(id)` | One of the plugin's screens |
+| `openSettings(section?)` | The app's Settings, on a section when given one (`"integrations"`, `"plugins"`) |
 | `openTerminal(box, session)` | A session's terminal |
 | `openUrl(url)` | A URL in the system browser |
 | `openWorktree({ box, location, worktree, path, main? })` | Brings a worktree's workspace to the front |
@@ -147,7 +149,7 @@ export default definePlugin((berth) => {
 });
 ```
 
-That is how a Linear plugin would add its issues to Home (Shipyard has no Linear integration yet). The built-in widgets from plugins are worth reading: Pull requests and CI failures in `plugins/pull-request/src/home.tsx`, Agent usage in `plugins/usage/src/home.tsx`, Notes in `plugins/notes/src/home.tsx`, and the smallest, Hello ports, in `plugins/hello-ports`.
+The built-in Linear widget (`plugins/issues/src/home.tsx`) is this, reading through [`berth.linear`](#linear) so it never holds a key. The other built-in widgets from plugins are worth reading: Pull requests and CI failures in `plugins/pull-request/src/home.tsx`, Agent usage in `plugins/usage/src/home.tsx`, Notes in `plugins/notes/src/home.tsx`, and the smallest, Hello ports, in `plugins/hello-ports`.
 
 A built-in plugin that is off until turned on can list its widgets' titles in `berth-plugin.json` (`"homeWidgets": ["Agent usage"]`), so the picker offers to turn it on.
 
@@ -208,6 +210,24 @@ sending.
 | `newId()` | An id for a new prompt |
 | `openPicker({ box?, session?, promptId? })` | The app's picker: choose a prompt, fill it in, send it |
 | `openBroadcast({ promptId?, text?, targets? })` | The app's broadcast: one prompt to several agents |
+
+## linear
+
+[Linear](/guides/linear) through the laptop agent, which holds the person's
+API key and makes the calls. A plugin never sees the key, and can't reach
+`api.linear.app` itself: the app's window only talks to the agent.
+
+| Call | Returns |
+| --- | --- |
+| `status()` | `LinearStatus`: `{ connected, viewer?, workspace? }`. Not connected is an answer, not an error |
+| `teams()` | `LinearTeam[]`: `{ id, key, name }` |
+| `issues({ team?, mine? })` | `LinearIssue[]`: up to 100 that are not done or cancelled, the most recently updated first; a team's (by its key), the person's own, or both |
+| `issue(id)` | `LinearIssueDetail` by id or identifier (`"WEB-12"`): the issue with `description`, `comments` and `links` |
+| `comment(id, body)` | Comments as the person. `id` is the issue's id, not its identifier |
+
+Without a key the calls other than `status()` reject with `code:
+"linear_off"`; with a key Linear refuses, `"linear_auth"`. Send the person
+to the key with `berth.openSettings("integrations")`.
 
 ## React hooks
 

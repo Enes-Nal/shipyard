@@ -1,4 +1,4 @@
-import { BellIcon, BotIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
+import { BellIcon, BotIcon, CableIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Tip } from "@/components/tip";
@@ -11,6 +11,7 @@ import { BoxesSection } from "@/views/settings/boxes-section";
 import { ComputersSection } from "@/views/settings/computers-section";
 import { DeveloperSection } from "@/views/settings/developer-section";
 import { GeneralSection } from "@/views/settings/general-section";
+import { IntegrationsSection } from "@/views/settings/integrations-section";
 import { LabsSection } from "@/views/settings/labs-section";
 import { NotificationsSection } from "@/views/settings/notifications-section";
 import { PhoneSection } from "@/views/settings/phone-section";
@@ -32,6 +33,7 @@ const SECTIONS: { id: SettingsSectionId; title: string; icon: ComponentType<{ cl
   { id: "computers", title: "Computers", icon: LaptopIcon, Component: ComputersSection },
   { id: "phone", title: "Phone", icon: SmartphoneIcon, Component: PhoneSection },
   { id: "agents", title: "Agents", icon: BotIcon, Component: AgentsSection },
+  { id: "integrations", title: "Integrations", icon: CableIcon, Component: IntegrationsSection },
   { id: "plugins", title: "Plugins", icon: PuzzleIcon, Component: PluginsSection },
   { id: "shortcuts", title: "Shortcuts", icon: KeyboardIcon, Component: ShortcutsSection },
   { id: "labs", title: "Labs", icon: FlaskConicalIcon, Component: LabsSection },

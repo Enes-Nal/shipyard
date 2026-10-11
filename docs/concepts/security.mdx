@@ -134,6 +134,10 @@ Shipyard's own pinned TLS still runs on top: the tailnet only provides the route
   before it is copied out, and the copy is checked again
   (`codesign --verify`) before launchd runs it. That box listens on
   `127.0.0.1` only.
+- **Service keys.** A [Linear](/guides/linear) API key is kept by the laptop
+  agent in a file only your user can read. The agent makes every call to
+  Linear itself, a fixed set of reads and one write (a comment); the app's
+  window, plugins and boxes are told who is connected, never the key.
 - **SSH config.** `berth ssh-config --write` writes a host per box for
   editors. The SSH user a box reports is checked against a strict pattern
   first, so a box can't add lines of its own to your SSH config.
