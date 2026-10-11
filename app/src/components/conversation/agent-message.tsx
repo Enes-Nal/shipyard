@@ -54,8 +54,11 @@ export function BerthAvatar() {
   return (
     <span aria-hidden className="am-c-slate am-avatar inline-flex size-5 shrink-0 items-center justify-center rounded-md">
       <svg viewBox="0 0 512 512" className="size-3">
-        <path d="M116 84 H300 a96 96 0 0 1 0 192 H116 Z M116 276 H324 a104 104 0 0 1 0 208 H116 Z" transform="translate(0,-28)" fill="none" stroke="currentColor" strokeWidth="68" strokeLinejoin="round" />
-        <circle cx="296" cy="152" r="28" fill="#f5a524" />
+        <path d="M88 96H424Q410 300 256 350Q102 300 88 96Z" fill="none" stroke="currentColor" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="138" y="404" width="58" height="44" rx="9" fill="currentColor" />
+        <rect x="227" y="404" width="58" height="44" rx="9" fill="currentColor" />
+        <rect x="316" y="404" width="58" height="44" rx="9" fill="currentColor" />
+        <circle cx="256" cy="190" r="30" fill="#f5a524" />
       </svg>
     </span>
   );
