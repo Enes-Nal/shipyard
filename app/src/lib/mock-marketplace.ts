@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api";
 import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
+import { hashPluginFiles } from "@/plugins/consent-core";
 
 // Mock mode's plugin marketplace, behaving like internal/agent/marketplace.go
 // closely enough to build the UI on. Three plugins are listed, one in each
@@ -11,6 +12,12 @@ import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
 //
 // ?market=offline fails every read of the listing, ?market=flaky only the
 // first, and ?market=mismatch fails every install on its checksum.
+//
+// Leadline is listed too, and it is the real thing: the files the listing
+// ships (site/plugins/leadline/, built by scripts/build-marketplace.mjs),
+// installed and allowed from the start, so mock mode and the live demo show
+// its panels on the mock helper's fixtures (mock-helper.ts). A new account
+// (?fresh=1) starts without it.
 
 // MockPlugin is a plugin in the mock's ~/.berth/plugins, as GET /v1/plugins
 // lists it.
@@ -43,6 +50,8 @@ interface Listed {
   homepage?: string;
   // The one command the stand-in module adds.
   command: string;
+  // Its real files, for a plugin this repository builds (see shipped).
+  files?: Record<string, Uint8Array>;
 }
 
 const listing: Listed[] = [
@@ -81,7 +90,7 @@ const sourceOf = (l: Listed, version: string) =>
   `// ${l.name} ${version}\nexport default function activate(berth) {\n  berth.addCommand({ id: "run", title: ${JSON.stringify(l.command)}, run: () => berth.notify(${JSON.stringify(l.name)}, "Installed from the listing.") });\n}\n`;
 
 const enc = new TextEncoder();
-const filesOf = (l: Listed, version: string) => ({ "berth-plugin.json": enc.encode(manifestOf(l, version)), [MAIN]: enc.encode(sourceOf(l, version)) }) as Record<string, Uint8Array>;
+const filesOf = (l: Listed, version: string) => l.files ?? ({ "berth-plugin.json": enc.encode(manifestOf(l, version)), [MAIN]: enc.encode(sourceOf(l, version)) } as Record<string, Uint8Array>);
 
 const installedAs = (l: Listed, version: string): MockPlugin => ({
   id: l.id,
@@ -104,6 +113,38 @@ const installedFiles = new Map<string, Record<string, Uint8Array>>();
 const deploys = listing[2];
 installedFiles.set(deploys.id, filesOf(deploys, "1.1.0"));
 export const seededPlugins: MockPlugin[] = [installedAs(deploys, "1.1.0")];
+
+// Leadline as the listing ships it, read when the mock first lists plugins:
+// its manifest and its bundle, as text, in chunks of their own.
+const shipped = import.meta.glob<string>("../../../site/plugins/leadline/*/{berth-plugin.json,dist/index.js}", { query: "?raw", import: "default" });
+
+let ready: Promise<void> | undefined;
+
+// marketplaceReady resolves once Leadline's files are read and, unless this
+// is a new account, it is installed and allowed in installed (the mock's
+// ~/.berth/plugins): allowed for exactly the bytes the mock serves, as the
+// consent dialog would have recorded.
+export function marketplaceReady(installed: MockPlugin[], fresh: boolean): Promise<void> {
+  ready ??= (async () => {
+    const files: Record<string, Uint8Array> = {};
+    let version = "";
+    for (const [path, read] of Object.entries(shipped)) {
+      const at = /\/leadline\/([^/]+)\/(.+)$/.exec(path);
+      if (!at) continue;
+      version = at[1];
+      files[at[2]] = enc.encode(await read());
+    }
+    const manifest = files["berth-plugin.json"];
+    if (!manifest || !files[MAIN]) return;
+    const m = JSON.parse(new TextDecoder().decode(manifest)) as { name: string; description: string; author: string; homepage?: string };
+    const l: Listed = { id: "leadline", name: m.name, description: m.description, version, author: m.author, homepage: m.homepage, command: "", files };
+    listing.push(l);
+    if (fresh || installed.some((p) => p.id === l.id)) return;
+    installedFiles.set(l.id, files);
+    installed.push({ ...installedAs(l, version), enabled: true, allowed: await hashPluginFiles(manifest, files[MAIN]) });
+  })().catch((err) => console.warn("mock: could not read Leadline's files", err));
+  return ready;
+}
 
 // marketplaceFile is a file of a plugin the marketplace installed, or
 // undefined for a plugin that came some other way.
@@ -143,8 +184,8 @@ export function marketplaceCall(method: string, path: string, body: unknown, ins
   if (method === "GET" && /^\/v1\/marketplace(\?fresh=1)?$/.test(path)) {
     reads++;
     if (scenario === "offline" || (scenario === "flaky" && reads === 1)) return refuse(delay, `could not reach ${REGISTRY}: dial tcp: lookup berthd.app: no such host`, 502, "registry_unreachable");
-    const out: Marketplace = { registry: REGISTRY, host: "berthd.app", fetched: new Date().toISOString(), plugins: listing.map((l) => view(l, installed)) };
-    return delay(out);
+    // Leadline joins the listing once its files are read (marketplaceReady).
+    return (ready ?? Promise.resolve()).then(() => delay<Marketplace>({ registry: REGISTRY, host: "berthd.app", fetched: new Date().toISOString(), plugins: listing.map((l) => view(l, installed)) }));
   }
   const install = /^\/v1\/marketplace\/([^/]+)\/install$/.exec(path);
   if (method === "POST" && install) {

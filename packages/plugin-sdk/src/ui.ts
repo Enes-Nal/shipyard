@@ -117,6 +117,23 @@ export declare const ViewHeader: ComponentType<{ title: ReactNode; description?:
 export declare const PluginPage: ComponentType<{ className?: string; children?: ReactNode }>;
 // Any lucide icon by name: <Icon name="Server" />.
 export declare const Icon: ComponentType<{ name: string; className?: string }>;
+// A chart drawn by the app's own chart components, in the theme's colours:
+// bars, lines or areas over rows, as an agent's chart artifact is (the
+// berth.chart format, docs/guides/artifacts). x names the row's label ("x"
+// when left out) and y its series, by key; a color is "1" to "5" (the
+// theme's series palette), "good", "bad", "warn" or "muted". The chart
+// fills its box, 16rem high unless className says otherwise.
+export interface ChartSpec {
+  type: "bar" | "line" | "area";
+  data: Record<string, string | number | null>[];
+  x?: string;
+  y: (string | { key: string; label?: string; color?: string })[];
+  // "ms", "%", "$": written after (or before) a value in the tooltip.
+  units?: string;
+  stacked?: boolean;
+  orientation?: "vertical" | "horizontal";
+}
+export declare const Chart: ComponentType<{ spec: ChartSpec; className?: string }>;
 export declare function cn(...classes: unknown[]): string;
 
 // The app's diff renderer (@pierre/diffs, diffs.com: highlighted in two

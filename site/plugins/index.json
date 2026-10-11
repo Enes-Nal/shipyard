@@ -21,6 +21,28 @@
           "size": 5335
         }
       ]
+    },
+    {
+      "id": "leadline",
+      "name": "Leadline",
+      "description": "What your code did in development, as tabs on a worktree: database queries with their N+1s, request traces, logs and endpoints. Installs berth-leadline on the boxes you turn it on for.",
+      "version": "0.1.0",
+      "author": "Shipyard",
+      "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/leadline",
+      "files": [
+        {
+          "path": "berth-plugin.json",
+          "url": "leadline/0.1.0/berth-plugin.json",
+          "sha256": "ad6f2610c9fe636878a8c1509e88733ada4ab2b3efdade9843bf04739e8136cc",
+          "size": 818
+        },
+        {
+          "path": "dist/index.js",
+          "url": "leadline/0.1.0/dist/index.js",
+          "sha256": "acf73502ad2e8b6648f98906a73c3c899195b4d308eaad8a7e537ab32e9daae2",
+          "size": 120421
+        }
+      ]
     }
   ]
 }

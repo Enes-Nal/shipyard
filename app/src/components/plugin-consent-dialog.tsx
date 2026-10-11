@@ -6,7 +6,7 @@ import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, Dia
 import { laptopApi } from "@/lib/api";
 import { plainError } from "@/lib/errors";
 import { useStore } from "@/lib/store";
-import { answerConsent, PLUGIN_POWERS, type PluginFiles, readPluginFiles, usePluginConsent } from "@/plugins/consent";
+import { answerConsent, helperPower, PLUGIN_POWERS, type PluginFiles, readPluginFiles, usePluginConsent } from "@/plugins/consent";
 import { ErrorText } from "@/components/error-note";
 
 // PluginConsentDialog asks before a plugin from ~/.berth/plugins first runs,
@@ -73,6 +73,7 @@ export function PluginConsentDialog() {
               {PLUGIN_POWERS.map((p) => (
                 <li key={p}>{p}</li>
               ))}
+              {files?.helper && <li data-testid="consent-helper">{helperPower(files.helper)}</li>}
             </ul>
           </div>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
@@ -87,6 +88,16 @@ export function PluginConsentDialog() {
             <dd className="truncate font-mono">{files ? (files.mainPath ? `${files.mainPath} · ${(files.main.length / 1024).toFixed(1)} KB` : "none (hooks, themes or kits only)") : "Reading…"}</dd>
             <dt className="text-muted-foreground">Hash</dt>
             <dd className="truncate font-mono">{files ? files.hash.slice(0, 7 + 16) : "…"}</dd>
+            {files?.helper && (
+              <>
+                <dt className="text-muted-foreground">Program</dt>
+                <dd className="font-mono">
+                  {files.helper.name}
+                  {files.helper.version ? ` ${files.helper.version}` : ""}
+                  <span className="font-sans text-muted-foreground"> · runs on a box, as you, once you turn it on there</span>
+                </dd>
+              </>
+            )}
           </dl>
           {files && files.hooks.length > 0 && (
             <div>

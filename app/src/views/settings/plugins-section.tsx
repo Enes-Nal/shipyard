@@ -13,7 +13,7 @@ import { openDocs, openUrl } from "@/lib/open-url";
 import { builtinOn, setBuiltinOn, usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { askToAllow, usePluginConsent } from "@/plugins/consent";
+import { askToAllow, type PluginHelper, readPluginHelper, usePluginConsent } from "@/plugins/consent";
 import { builtinPlugins, loadPlugins } from "@/plugins/host";
 import { useRegistry } from "@/plugins/registry";
 import { ConfirmDialog } from "@/views/settings/confirm";
@@ -245,6 +245,20 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
   const hooks = Array.isArray(p.hooks) ? p.hooks.length : typeof p.hooks === "number" ? (p.hooks as number) : 0;
   const error = p.error ?? status?.error;
   const state = review ? "review" : !enabled ? "off" : error ? "failed" : (status?.state ?? "loading");
+  // The program it carries for boxes, if any: its manifest says, and the
+  // row says so too, on or off.
+  const [helper, setHelper] = useState<PluginHelper>();
+  useEffect(() => {
+    const client = useStore.getState().client;
+    if (!client) return;
+    let live = true;
+    void readPluginHelper(client, p).then((h) => live && setHelper(h));
+    return () => {
+      live = false;
+    };
+    // Read again when its files change: a new version, or a new permission.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.id, p.version, p.allowed, p.changed]);
 
   return (
     <div className="flex items-center gap-4 px-4 py-3" data-testid="plugin-row" data-plugin={p.id}>
@@ -261,6 +275,11 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
           {hooks > 0 && ` · ${hooks} hook${hooks === 1 ? "" : "s"}`}
           {p.source === "marketplace" && " · from the listing"}
         </div>
+        {helper && (
+          <div className="mt-1 text-muted-foreground text-xs" data-testid="plugin-helper">
+            It can also install and run a program, <Code>{helper.name}</Code>, on the boxes you turn it on for.
+          </div>
+        )}
         {review && (
           <div className="mt-1 text-xs">
             <span className="text-warning-foreground">Changed since you allowed it, so it's off.</span>{" "}

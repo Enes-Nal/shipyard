@@ -9,13 +9,14 @@ import { mockDevtoolsCall } from "@/lib/mock-devtools";
 import { phoneCall } from "@/lib/mock-phone";
 import { worktreesCall } from "@/lib/mock-worktrees";
 import { kitsCall, kitsStream } from "@/lib/mock-kits";
-import { marketplaceCall, marketplaceFile, type MockPlugin, seededPlugins } from "@/lib/mock-marketplace";
+import { marketplaceCall, marketplaceFile, marketplaceReady, type MockPlugin, seededPlugins } from "@/lib/mock-marketplace";
 import { initTeamMock, isTeamSession, teamAttach, teamBoxCall, teamLaptopCall } from "@/lib/mock-team";
 import { initPrReviewMock, prReviewLaptopCall } from "@/lib/mock-pr-review";
 import { reviewCall, reviewExec } from "@/lib/mock-review";
 import { editorsCall } from "@/lib/mock-editors";
 import { imageGenCall } from "@/lib/mock-imagegen";
 import { linearCall } from "@/lib/mock-linear";
+import { helperBoxCall, helperLaptopCall } from "@/lib/mock-helper";
 import { mockShell } from "@/lib/mock-shell";
 import { mockServiceAttach, wireMockServices } from "@/lib/mock-services";
 import { mockIssueTitle } from "@/lib/mock-issues";
@@ -630,6 +631,9 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
   if (!online) return Promise.reject(new ApiError(`${box} is offline`, 503));
   const doc = mockBoxDoctor(box, !!status.boxes.find((b) => b.name === box)?.local, method, path);
   if (doc) return doc;
+  // A plugin's helper on the box (lib/mock-helper.ts).
+  const helper = helperBoxCall(box, method, path, delay);
+  if (helper) return helper;
   // In-app artifacts (lib/art/mock-artifacts.ts, loaded when first asked).
   if (/^locations\/[^/]+\/worktrees\/[^/]+\/artifacts/.test(path)) return artifactsMock().then((m) => delay(m.artifactsMockCall(box, method, path) ?? null));
   // Visual diffs' baselines and Accept as baseline (internal/box/shots.go).
@@ -787,7 +791,7 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
     return delay(session);
   }
   if (key === "POST sessions") {
-    const r = body as { location: string; name?: string; command?: string; agent?: string; prompt?: string; title?: string };
+    const r = body as { location: string; name?: string; command?: string; agent?: string; prompt?: string; title?: string; open?: string };
     const [locName, wtName] = r.location.split("/");
     const loc = locations[box].find((l) => l.name === locName)!;
     const wt = loc.worktrees?.find((w) => w.name === (wtName ?? locName)) ?? loc.worktrees![0];
@@ -796,6 +800,8 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
     const title = titleOf(r.title || r.prompt || "", r.title ? 80 : undefined) || undefined;
     const session: Session = { name: r.name ?? `${wt.name}-${command || "shell"}-${sessions[box].length}`, location: r.location, dir: wt.path, command, created: new Date().toISOString(), attached: 0, exited: false, agent, agent_state: agent ? "running" : undefined, title };
     sessions[box].push(session);
+    // Asked to show it, the box says so, as for a task's agent.
+    if (r.open) setTimeout(() => emit({ type: "session.open", box, data: { name: session.name, location: session.location, path: wt.path, open: r.open, agent } }), 120);
     return delay(session);
   }
   // Removing a worktree or a project. A worktree with uncommitted work
@@ -970,10 +976,10 @@ const discoverNetwork = (_network: string) => ({ user: "me", machines: networkMa
 
 const mockNetworks = fresh ? [] : [{ name: "personal", state: "Running", tailnet: "example.ts.net", ips: ["100.64.0.73"] }];
 
-// The live demo starts with none: a plugin from ~/.berth/plugins would load
-// from the dev server, which the demo doesn't have. One installed from the
-// mock listing (mock-marketplace.ts) carries its own files, so it works
-// there too.
+// The live demo starts with none of these: a plugin from ~/.berth/plugins
+// would load from the dev server, which the demo doesn't have. One installed
+// from the mock listing (mock-marketplace.ts) carries its own files, so it
+// works there too: Leadline is added that way, when plugins are first listed.
 const mockPlugins: MockPlugin[] = [
   { id: "hello-ports", name: "Hello ports", version: "0.1.0", main: "dist/index.js", description: "Every dev server on every box, one click from your browser.", entry: "/__dev-plugins/hello-ports/dist/index.js", enabled: false, defaultEnabled: false, allowed: undefined },
   ...seededPlugins,
@@ -1311,7 +1317,8 @@ function mockAgent(): Client {
         },
         { id: "review", name: "Review a branch", description: "Codex reviews the changes against main.", agent: "codex", prompt: "Review {{branch_name}} against main and list risks." },
       ]),
-    plugins: () => delay(mockPlugins),
+    // Leadline is read from the listing's own files first (mock-marketplace.ts).
+    plugins: () => marketplaceReady(mockPlugins, fresh).then(() => delay(mockPlugins)),
     async pluginFile(p, file) {
       const listed = marketplaceFile(p.id, file);
       if (listed) return listed;
@@ -1386,6 +1393,8 @@ function mockAgent(): Client {
       if (eds) return eds as Promise<T>;
       const linear = linearCall(method, path, body, delay);
       if (linear) return linear as Promise<T>;
+      const helper = helperLaptopCall(method, path, (box) => status.boxes.find((b) => b.name === box)?.state === "online", delay);
+      if (helper) return helper as Promise<T>;
       const gen = imageGenCall(method, path, delay);
       if (gen) return gen as Promise<T>;
       return Promise.reject(new Error(`mock: no fixture for ${method} ${path}`));
