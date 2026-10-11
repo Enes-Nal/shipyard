@@ -28,5 +28,8 @@ func TestMain(m *testing.M) {
 	agentFinder = func() *agentpath.Finder { return testFinder }
 	// Login scripts run with the test's PATH, never the developer's shell's.
 	loginPATH = func(context.Context) string { return "" }
-	os.Exit(m.Run())
+	code := m.Run()
+	// The fake helper the helpers' tests built (helpers_test.go).
+	removeFakeHelper()
+	os.Exit(code)
 }

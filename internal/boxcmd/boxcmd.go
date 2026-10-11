@@ -119,6 +119,11 @@ var usageSections = []struct {
 		{"%[1]s unit restart %[2]sNAME", "Start a unit again"},
 		{"%[1]s unit rm %[2]sNAME", "Stop and remove a unit (its log stays)"},
 	}},
+	{"Plugin helpers (programs plugins run on the box)", [][2]string{
+		{"%[1]s helpers%[3]s [--json]", "The helpers of plugins on the box, and whether each runs"},
+		{"%[1]s helper log %[2]sPLUGIN", "What a plugin's helper has printed"},
+		{"%[1]s helper rm %[2]sPLUGIN [--purge]", "Stop and remove a plugin's helper (its data stays; --purge\nremoves that too)"},
+	}},
 	{"Skills for agents", [][2]string{
 		{"%[1]s skills%[3]s [list|install|uninstall] [SKILL...] [--agent claude|codex|all]\n         [--target user|project] [--location LOC] [--commit]", "Teach Claude Code and Codex to use berth"},
 	}},
@@ -179,6 +184,7 @@ var Commands = map[string]int{
 	"emit": 1, "events": 1,
 	"skills": 1, "preview": 1, "service": 2,
 	"units": 1, "unit": 2,
+	"helpers": 1, "helper": 2,
 	"secret": 2,
 	"runs":   1, "run": 2, "flow": 2, "browser": 2, "shots": 2,
 	"artifact": 2,
@@ -716,6 +722,62 @@ func Run(ctx context.Context, c *box.Client, args []string, out io.Writer) error
 			return err
 		}
 		fmt.Fprintf(out, "Stopped and removed unit %s; its log is still at %s\n", u.Name, u.LogPath)
+		return nil
+	case "helpers":
+		fs, asJSON := flags(rest)
+		parse(fs, rest)
+		all, err := c.Helpers(ctx)
+		if err != nil {
+			return err
+		}
+		return show(out, *asJSON, all, func() {
+			if len(all.Helpers) == 0 {
+				fmt.Fprintf(out, "No plugin has a helper on this box (%s).\n", all.Platform)
+				return
+			}
+			w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(w, "PLUGIN\tHELPER\tVERSION\tSTATE\tPID\tNOTE")
+			for _, h := range all.Helpers {
+				pid := ""
+				if h.PID > 0 {
+					pid = strconv.Itoa(h.PID)
+				}
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", h.Plugin, h.Name, h.Version, h.State, pid, h.Error)
+			}
+			w.Flush()
+		})
+	case "helper log":
+		if len(rest) != 1 {
+			return usageErr("helper log PLUGIN")
+		}
+		log, err := c.HelperLog(ctx, rest[0], 1<<20)
+		if err != nil {
+			return err
+		}
+		if len(log) == 0 {
+			fmt.Fprintf(out, "The helper of %s has printed nothing yet.\n", rest[0])
+			return nil
+		}
+		out.Write(log)
+		if log[len(log)-1] != '\n' {
+			fmt.Fprintln(out)
+		}
+		return nil
+	case "helper rm":
+		fs, _ := flags(rest)
+		purge := fs.Bool("purge", false, "remove its data too")
+		pos, err := parse(fs, rest)
+		if err != nil || len(pos) != 1 {
+			return usageErr("helper rm PLUGIN [--purge]")
+		}
+		if _, err := c.RemoveHelper(ctx, pos[0], *purge); err != nil {
+			return err
+		}
+		if *purge {
+			fmt.Fprintf(out, "Stopped and removed the helper of %s, and its data\n", pos[0])
+		} else {
+			fmt.Fprintf(out, "Stopped and removed the helper of %s; its data is kept\n", pos[0])
+		}
 		return nil
 	case "unshare":
 		if len(rest) != 1 {

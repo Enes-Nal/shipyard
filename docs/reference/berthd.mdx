@@ -118,6 +118,52 @@ owns, not the journal.
 | `berthd unit restart NAME` | Start it again |
 | `berthd unit rm NAME` | Stop and remove it (its log stays) |
 
+## Plugin helpers
+
+A plugin can bring a [helper](/guides/plugins#give-a-plugin-a-helper): a
+program that runs on the box beside your dev servers, such as Leadline's
+`berth-leadline`, which records their queries, traces and logs. You turn one
+on for a box from the plugin in the app; your laptop downloads it, checks it
+against the checksum in the plugin's manifest and uploads it. These commands
+are the box's own view of what was put there.
+
+| Command | What it does |
+| --- | --- |
+| `berthd helpers [--json]` | The helpers of plugins on this box: the plugin, the program and its version, whether it runs, its PID, and why not when it doesn't |
+| `berthd helper log PLUGIN` | What a plugin's helper has printed, and when berthd started and stopped it |
+| `berthd helper rm PLUGIN [--purge]` | Stop and remove a plugin's helper. Its data stays for the next time; `--purge` removes that too |
+
+How berthd runs a helper:
+
+- **As you, in its own folder.** A helper is the box user's own program,
+  with what that user can reach. Its files are in
+  `<state>/box/helpers/<plugin>/`: the program in `bin/<version>/`, its data
+  in `data/`, its log beside them ([files](/reference/files#on-a-box)). The
+  program that runs is the one whose SHA-256 the laptop sent: berthd checks
+  the upload against it before keeping a byte, and checks the file again
+  each time it starts it. Its arguments are the manifest's and nothing else,
+  with `{dir}` filled in with its data folder, and it gets a
+  [small environment](/reference/files#what-a-helper-gets), not berthd's.
+- **For as long as berthd runs.** berthd starts every installed helper when
+  it starts, before it serves anything, and stops them when it stops: asked
+  first (`SIGTERM`), killed after five seconds, with whatever they started.
+  A helper that exits is started again: after a second, then two, four, up
+  to a minute. After three failures in a row it is shown as `failed`, with
+  why, and berthd keeps trying. One left running by a berthd that was killed
+  is ended before the next berthd starts its own.
+- **Reached on loopback only.** A helper says where it listens in a file in
+  its data folder, and berthd relays to that address only if it is on this
+  machine. The app reaches a helper's API through berthd
+  ([`helpers/{plugin}/api/…`](/reference/app-api#boxes)); nothing of it is
+  open to the network.
+- **Never in the way of a service.** Before berthd starts a worktree's
+  service it asks each running helper that wants to know, and waits at most
+  two seconds for [what it adds to the service's environment](/guides/plugins#attach-what-a-helper-adds-to-a-service).
+  A helper that is down, slow or wrong changes nothing.
+
+A `before:helper.install` [gate](/reference/events#gates) on the box can
+refuse a helper; `helper.installed` and `helper.removed` are announced.
+
 ## Skills, secrets and events
 
 | Command | What it does |

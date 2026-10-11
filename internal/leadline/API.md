@@ -36,7 +36,7 @@ berth-leadline version
 | flag | variable | default | what |
 | --- | --- | --- | --- |
 | `--dir` | `BERTH_LEADLINE_DIR` | none: required | The data directory. Made if missing, mode `0700`. |
-| `--addr` | `BERTH_LEADLINE_ADDR` | `127.0.0.1:4325` | Where the API and OTLP/HTTP are served. Must be loopback (`127.0.0.1`, `[::1]`, `localhost`); anything else is refused at the start. Port `0` takes any free port; see `helper.json`. |
+| `--addr` | `BERTH_LEADLINE_ADDR` | `127.0.0.1:4325` | Where the API and OTLP/HTTP are served. Must be loopback (`127.0.0.1`, `[::1]`, `localhost`); anything else is refused at the start. Port `0` takes any free port, and at the next start the same one again if it is still free; see `helper.json`. |
 | `--otlp` | `BERTH_LEADLINE_OTLP_ADDR` | off | A second loopback address that takes OTLP and answers nothing else: an address to give to apps. `off` or empty for none. |
 | `--retain` | `BERTH_LEADLINE_RETAIN` | `72h` | How long a row is kept: a Go duration (`72h`, `90m`) or days (`7d`). `0` or `off` keeps rows whatever their age. |
 | `--max-size` | `BERTH_LEADLINE_MAX_SIZE` | `2GB` | Past this much data the oldest rows go early. `2GB`, `500MB`, `64K`, or plain bytes. `0` or `off` is no cap. |
@@ -56,6 +56,7 @@ What it keeps, all in `--dir`, all readable by its owner alone (`0600`):
 | `leadline.db` | Everything recorded: one SQLite file, with `leadline.db-wal` and `leadline.db-shm` beside it while the helper runs. |
 | `proxies.json` | The proxies opened over the API: id, port, upstream address, label. No URL, no user, no password: the helper is never given one. They are opened again, on the same ports, at the next start. |
 | `helper.json` | Where the running helper listens. Written once it is listening, removed when it stops. Read it to find a helper started on port 0. |
+| `listen.json` | The addresses a helper started on port 0 was given (`api`, and `otlp` for `--otlp`), kept when it stops. The next start asks for the same ports first, so a dev server that was told the helper's address when it started still reaches it after the helper restarts; a port something else has taken since is replaced by any free one. |
 
 `helper.json`:
 
@@ -337,6 +338,7 @@ clients expect.
 | [`GET /api/proxies`](#get-apiproxies) | The Postgres proxies |
 | [`POST /api/proxies`](#post-apiproxies) | Open a proxy for a source |
 | [`DELETE /api/proxies/{id}`](#delete-apiproxiesid) | Close one |
+| [`POST /api/attach`](#post-apiattach) | Point a worktree's command at the helper: its telemetry and its database |
 | [`POST /api/detach`](#post-apidetach) | Forget a worktree: its proxies and its data |
 | [`POST /v1/traces`, `/v1/logs`, `/v1/metrics`](#otlphttp) | OTLP/HTTP in |
 
@@ -1625,6 +1627,82 @@ had recorded is stored first.
 An unknown id is a `404` (`not_found`). A proxy from the `--pg` flag is not
 closed this way (`400`, `bad_request`).
 
+### POST /api/attach
+
+```
+POST /api/attach
+{"box": "devbox", "project": "acme", "worktree": "fix-orders", "branch": "fix/orders-n-plus-one",
+ "path": "/home/dev/acme-fix-orders", "command": "web",
+ "env": {"DATABASE_URL": "postgres://app:hunter2@localhost:5432/acme?sslmode=prefer",
+         "OTEL_RESOURCE_ATTRIBUTES": "deployment.environment=dev"}}
+```
+
+| field | default | what |
+| --- | --- | --- |
+| `project` | required | The repository, as Shipyard names it. |
+| `worktree` | `""` | The worktree's name; empty for the project's main checkout. |
+| `branch`, `box` | none | For showing with the source. |
+| `path` | none | Where the worktree is. Taken and not used. |
+| `command` | `""` | The name of this command among several run in the worktree (a service's name in the project's config). |
+| `env` | `{}` | The command's environment, or the part of it the caller shows: the helper reads the database URLs and the `OTEL_*` variables in it. |
+
+Points a worktree's command at the helper, in one call: what the box daemon
+asks before it starts a worktree's service. It is the
+[attach helper](#the-attach-helper-go) and
+[`POST /api/proxies`](#post-apiproxies) together, for a caller that knows
+nothing of either. The answer's `env` is what to set in the command's
+environment, over what it has.
+
+```json
+{
+  "env": {
+    "DATABASE_URL": "postgres://app:hunter2@127.0.0.1:59199/acme?sslmode=prefer",
+    "OTEL_BLRP_SCHEDULE_DELAY": "500",
+    "OTEL_BSP_SCHEDULE_DELAY": "500",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://127.0.0.1:59197",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_RESOURCE_ATTRIBUTES": "deployment.environment=dev,shipyard.project=acme,shipyard.worktree=fix-orders,shipyard.branch=fix%2Forders-n-plus-one,shipyard.box=devbox",
+    "OTEL_SERVICE_NAME": "acme/fix-orders:web"
+  },
+  "service": "acme/fix-orders:web",
+  "source": "acme/fix-orders",
+  "proxies": ["p_597c677fea"]
+}
+```
+
+- `env`:
+  - **Telemetry.** The six variables of the attach helper's `Env`, with the
+    helper's own address as the endpoint (the `--otlp` address when it was
+    started with one). What the project's `OTEL_RESOURCE_ATTRIBUTES` sets is
+    kept and the worktree's four attributes are added to it. An
+    `OTEL_SERVICE_NAME`, `OTEL_BSP_SCHEDULE_DELAY` or
+    `OTEL_BLRP_SCHEDULE_DELAY` the project set itself is left out of the
+    answer, so it stands.
+  - **A project with a collector of its own keeps it.** When `env` sets
+    `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or
+    `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`, the answer has no `OTEL_*` variable
+    at all: the endpoint is never replaced, and its service name and
+    resource are not changed for a collector that is not this one. Its
+    queries still show, through the proxy.
+  - **The database.** Each variable whose value `LocalPostgres` accepts (a
+    Postgres on this machine, whatever the variable is called) comes back
+    as the same URL through the worktree's proxy, which is opened if it is
+    not there: one proxy for each worktree and server, the same port every
+    time, so asking again when the service restarts changes nothing. A URL
+    that cannot go through a proxy (a remote host, one that insists on TLS)
+    is left out of the answer, and so is one that already names a proxy of
+    this helper's, and one whose proxy could not be opened: the command
+    then reaches its database directly, as it would have.
+- `service`: the name the command's telemetry is filed under
+  (`ServiceFor(command)`, or the project's own `OTEL_SERVICE_NAME`).
+  `source`: the worktree's name, which the proxies are labelled with.
+- `proxies`: the ids of the proxies the URLs in `env` go through.
+
+**Asking again is safe**, and so is not asking: nothing is recorded of the
+call itself. A missing `project` is a `400` (`bad_request`). Like every
+route that changes something, it is taken from the box daemon and from
+Shipyard's own window, not from another page.
+
 ### POST /api/detach
 
 ```
@@ -1664,9 +1742,13 @@ are kept: detach is for a source that has stopped.
 ## The attach helper (Go)
 
 Package `github.com/cosscom/shipyard/internal/leadline` (this folder's own
-`attach.go`) is what the box daemon uses to point a dev server at the helper.
-It imports only the standard library; the packages beside it bring SQLite
-and protobuf and must not be imported by `berthd` or `berth`.
+`attach.go`) is what points a dev server at the helper: the names, the
+variables and the database URL. [`POST /api/attach`](#post-apiattach) is
+these functions behind one call, which is how the box daemon uses them: it
+asks the helper, and imports nothing of it. A caller that sets a command's
+environment itself can use the package directly. It imports only the
+standard library; the packages beside it bring SQLite and protobuf and must
+not be imported by `berthd` or `berth`.
 
 ```go
 // Worktree is one checkout of a project. Name is empty for the project's
@@ -1798,8 +1880,10 @@ for Leadline reads these. What is different:
   Proxies are kept across restarts. A proxy has no `connection_ids`.
   `GET` has `total`.
 - **`/api/detach`** takes the same body; its answer has no `connections`
-  and its `deleted` no `metric_points`. There is no `/api/attach`: a
-  worktree is attached by opening its proxies and setting its environment.
+  and its `deleted` no `metric_points`.
+- **`/api/attach`** is not Leadline's, which attaches a saved connection:
+  here it takes a worktree's command and its environment, and answers with
+  the variables to set. Nothing is saved but the proxy it opens.
 - **Errors** under `/api/` are always the JSON object; Leadline answers its
   older routes' errors with a line of text.
 - **Logs of one nanosecond** come last-stored first (Leadline: first-stored

@@ -137,6 +137,8 @@ events.
 | `secret.resolved` | `location`, `name`, `path`, `variable`, `ref`: one that failed reads again |
 | `share.started`, `share.stopped` | `id`, `port`, `url` |
 | `unit.started`, `unit.stopped`, `unit.restarted` | `name` |
+| `helper.installed` | `plugin`, `name`, `version`: a [plugin's helper](/guides/plugins#give-a-plugin-a-helper) was installed on the box and turned on |
+| `helper.removed` | `plugin`, `purged`, `attached`: one was stopped and removed, with its data when `purged`; `attached` counts the running services that still point at it |
 | `phone.changed` | `enabled` |
 | `box.upgraded` | `build` |
 | `pairing.invited` | `for`, `by`, `expires`: a paired laptop (`by`, as `laptop:<name>`) asked for a pairing code for another computer (`berth invite`); never the code |
@@ -222,6 +224,7 @@ exits non-zero refuses it with what it printed. Gates in a laptop's
 | `before:share.stop` | `id` |
 | `before:flow.test` | `flow`, `scope` |
 | `before:box.upgrade` | `build` |
+| `before:helper.install` | `plugin`, `name`, `version`: a paired laptop installing a plugin's helper, a program that will run on the box |
 | `before:pairing.invite` | `for`, `by`: a paired laptop asking for a pairing code for another computer |
 | `before:client.revoke` | `name`, `fingerprint`: removing a laptop from the box |
 | `before:event.emit` | `type` |

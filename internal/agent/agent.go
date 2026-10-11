@@ -257,6 +257,8 @@ type Agent struct {
 	// market is the plugin listing last read, and the one install or
 	// removal under way (marketplace.go).
 	market marketState
+	// helperWork is the helpers being installed on boxes now (helpers.go).
+	helperWork helperWork
 
 	// ctx lives as long as the agent; forwards added through the API run under
 	// it rather than under the request that created them.

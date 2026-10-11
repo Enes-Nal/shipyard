@@ -314,6 +314,61 @@ you allow it again. On a box, a plugin's hooks run only once the plugin is
 listed in the box's `~/.berth/plugins.json`. See
 [trust and consent](/guides/plugins#trust-and-consent).
 
+### A plugin's helper
+
+A plugin can also bring a [helper](/guides/plugins#give-a-plugin-a-helper):
+a program berthd keeps running on a box, such as the one that records your
+dev servers' queries for Leadline. It is not sandboxed. **A helper is a
+program that runs on the box as you**, for as long as berthd runs, and can
+read and do there whatever your account can. Turning one on for a box is
+deciding to run its author's program on that box.
+
+What Shipyard holds it to:
+
+- **Only an allowed plugin gets one, and only when you turn it on, box by
+  box.** The plugin's manifest names the helper and the SHA-256 of its build
+  for each platform, and the manifest is part of the hash you allowed. When
+  the plugin changes, the permission lapses and its helper is not installed
+  or updated until you allow it again. A helper that is already running
+  keeps running until you turn it off (turning one off never needs the
+  plugin to be allowed).
+- **The program that runs is the one the manifest names.** Your laptop
+  downloads the build, from whatever address the manifest gives, and uploads
+  it over Shipyard's own connection only if its size and SHA-256 match.
+  berthd checks the bytes again before it keeps them, and checks the file
+  again each time it starts it. A download that was tampered with or
+  replaced at its address is never run.
+- **It runs what the manifest says, where berthd put it.** The program
+  lives in its own folder under berthd's state directory, with a name and a
+  version that cannot be a path. Its arguments are the manifest's alone. It
+  gets a [small environment](/reference/files#what-a-helper-gets), not
+  berthd's own, so a token berthd was started with is not handed to it.
+- **It is reached on loopback only.** berthd relays the app's requests to
+  the address the helper says it listens on, and refuses one that is not on
+  the box itself. A request reaches the helper with its own loopback address
+  as the `Host` and no `Origin`, so the helper can refuse every web page.
+  Nothing of it is opened to the network.
+- **What it can change about your dev servers is named in the manifest.**
+  Before a worktree's service starts, a helper may be shown, and may set,
+  only the variables its manifest lists (`attach_env`): for Leadline the
+  database URL and the OpenTelemetry variables. Variables that name a secret
+  are never shown to it or replaced, a helper that is slow or failing
+  changes nothing, and berthd logs none of it.
+- **Only a paired laptop installs one.** berthd takes a helper from a laptop
+  you paired, which is where the plugin was allowed. An agent or a script on
+  the box, which reaches berthd through its socket, can list helpers and
+  remove one, but cannot hand berthd a program to keep running.
+- **The box's owner has the last word.** `berthd helpers` lists what runs,
+  `berthd helper rm` removes one, and a `before:helper.install`
+  [gate](#gates) can refuse them all.
+
+What the checksum does not do: it is not a signature, and says nothing about
+who built the program or whether it is safe. Whoever writes a plugin's
+manifest chooses the checksum in it, and whoever can change the listing a
+plugin is installed from can offer a manifest with another. What stands
+between that and your box is the consent dialog, which is for exactly the
+manifest you saw.
+
 ## The agent browser
 
 An agent's browser runs on the box, never on the laptop: it has none of your

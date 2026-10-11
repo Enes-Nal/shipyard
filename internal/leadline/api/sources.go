@@ -239,6 +239,7 @@ func (s *Server) proxyRoutes(mux *routes) {
 	mux.HandleFunc("GET /api/proxies", s.listProxies)
 	mux.HandleFunc("POST /api/proxies", s.openProxy)
 	mux.HandleFunc("DELETE /api/proxies/{id}", s.closeProxy)
+	mux.HandleFunc("POST /api/attach", s.attach)
 	mux.HandleFunc("POST /api/detach", s.detach)
 }
 

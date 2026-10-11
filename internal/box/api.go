@@ -106,6 +106,9 @@ type Box struct {
 	// worktrees of projects that turn it on (reviewbutton.go); nil on a box
 	// without it.
 	ReviewButtons *ReviewButtons
+	// Helpers runs the helper programs plugins bring (helpers.go); nil on a
+	// box without them.
+	Helpers *Helpers
 }
 
 func (b *Box) own(path string) {
@@ -248,6 +251,7 @@ func (b *Box) Mount(s *wire.Server) {
 	b.mountBrowser(route)
 	b.mountNotify(route)
 	b.mountArtifacts(route)
+	b.mountHelpers(s, route)
 	b.mountPairing(s, route)
 }
 
