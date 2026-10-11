@@ -192,6 +192,11 @@ func (b *Box) Capabilities() []string {
 		// sessions' usage, and guard's session_memory_gb (boxprocs.go).
 		caps = append(caps, "processes")
 	}
+	if b.Helpers != nil {
+		// helpers: plugins' helper programs, installed, run and relayed
+		// (/v1/helpers, helpers.go).
+		caps = append(caps, "helpers")
+	}
 	return caps
 }
 

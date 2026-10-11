@@ -388,8 +388,8 @@ func TestAWorktreesDevServerEndToEnd(t *testing.T) {
 			t.Errorf("%s can be read by others: %v", e.Name(), fi.Mode().Perm())
 		}
 	}
-	if len(entries) != 2 {
-		t.Errorf("the data directory holds %d files after a stop, want the database and proxies.json", len(entries))
+	if len(entries) != 3 {
+		t.Errorf("the data directory holds %d files after a stop, want the database, proxies.json and %s", len(entries), helper.ListenFile)
 	}
 
 	// ---- Started again in the same directory, it has what it had, and
@@ -474,5 +474,52 @@ func TestASecondHelperOnTheSameAddressFails(t *testing.T) {
 	get(t, h.State().API, "/api/health", &health)
 	if !health.OK {
 		t.Errorf("the first helper no longer answers: %+v", health)
+	}
+}
+
+// A dev server is told where the helper is once, when it starts. So a
+// helper started on "any port" comes back on the port it had: what was
+// pointed at it still reaches it after it restarts.
+func TestAHelperOnAnyPortComesBackOnTheOneItHad(t *testing.T) {
+	dir := t.TempDir()
+	opts := helper.Options{Dir: dir, Addr: "127.0.0.1:0", OTLPAddr: "127.0.0.1:0"}
+	first, err := helper.Start(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	was := first.State()
+	if len(was.OTLP) != 2 || was.OTLP[1] == was.API {
+		t.Fatalf("state = %+v", was)
+	}
+	if err := first.Close(); err != nil {
+		t.Fatal(err)
+	}
+	second, err := helper.Start(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if now := second.State(); now.API != was.API || now.OTLP[1] != was.OTLP[1] {
+		t.Errorf("after a restart the helper listens on %s and %s, not %s and %s as before", now.API, now.OTLP[1], was.API, was.OTLP[1])
+	}
+	second.Close()
+
+	// Something else has the port by the next start: any other will do.
+	taken, err := net.Listen("tcp", strings.TrimPrefix(was.API, "http://"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer taken.Close()
+	third, err := helper.Start(opts)
+	if err != nil {
+		t.Fatalf("the helper did not start with its old port taken: %v", err)
+	}
+	defer third.Close()
+	if now := third.State(); now.API == was.API || now.OTLP[1] != was.OTLP[1] {
+		t.Errorf("with its API port taken the helper listens on %s and %s", now.API, now.OTLP[1])
+	}
+	var health api.Health
+	get(t, third.State().API, "/api/health", &health)
+	if !health.OK {
+		t.Errorf("the helper does not answer on its new port: %+v", health)
 	}
 }

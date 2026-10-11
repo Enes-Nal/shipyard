@@ -33,7 +33,33 @@ const (
 	// the listeners are up and removed when the helper stops, so whoever
 	// started the helper on port 0 can find it.
 	StateFile = "helper.json"
+	// ListenFile remembers where a helper started on port 0 came to
+	// listen, and stays when it stops: the next start asks for the same
+	// ports first. A dev server is told the helper's address once, when it
+	// starts, and keeps sending there across the helper's restarts.
+	ListenFile = "listen.json"
 )
+
+// listened is what ListenFile holds: the host:port of each listener.
+type listened struct {
+	API  string `json:"api,omitempty"`
+	OTLP string `json:"otlp,omitempty"`
+}
+
+// listenAgain listens on addr. For port 0, "any free port", it first asks
+// for the port this helper had the last time, which is free again unless
+// something else took it since.
+func listenAgain(addr, last string) (net.Listener, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err == nil && port == "0" && last != "" {
+		if lastHost, lastPort, err := net.SplitHostPort(last); err == nil && lastHost == host && lastPort != "0" {
+			if ln, err := net.Listen("tcp", last); err == nil {
+				return ln, nil
+			}
+		}
+	}
+	return net.Listen("tcp", addr)
+}
 
 // Options is how to start a helper.
 type Options struct {
@@ -134,26 +160,36 @@ func Start(o Options) (*Helper, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	h.cancel = cancel
 	base := func(net.Listener) context.Context { return ctx }
-	listen := func(addr string, handler http.Handler) (string, error) {
-		ln, err := net.Listen("tcp", addr)
+	var last, now listened
+	if raw, err := os.ReadFile(filepath.Join(o.Dir, ListenFile)); err == nil {
+		json.Unmarshal(raw, &last)
+	}
+	listen := func(addr, last string, handler http.Handler) (url, at string, err error) {
+		ln, err := listenAgain(addr, last)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second, BaseContext: base}
 		h.servers = append(h.servers, server)
 		go func() { h.errs <- server.Serve(ln) }()
-		return "http://" + ln.Addr().String(), nil
+		return "http://" + ln.Addr().String(), ln.Addr().String(), nil
 	}
-	if h.state.API, err = listen(o.Addr, srv.Handler()); err != nil {
+	if h.state.API, now.API, err = listen(o.Addr, last.API, srv.Handler()); err != nil {
 		return fail(err)
 	}
 	h.state.OTLP = []string{h.state.API}
 	if o.OTLPAddr != "" {
-		url, err := listen(o.OTLPAddr, srv.OTLPHandler())
-		if err != nil {
+		var url string
+		if url, now.OTLP, err = listen(o.OTLPAddr, last.OTLP, srv.OTLPHandler()); err != nil {
 			return fail(fmt.Errorf("the OTLP address: %w", err))
 		}
 		h.state.OTLP = append(h.state.OTLP, url)
+	}
+	// Not being able to remember the ports is no reason not to start.
+	if raw, err := json.Marshal(now); err == nil && now != last {
+		if err := os.WriteFile(filepath.Join(o.Dir, ListenFile), append(raw, '\n'), 0o600); err != nil {
+			slog.Warn("could not remember where the helper listens", "err", err)
+		}
 	}
 	srv.SetOTLP(h.state.OTLP...)
 	h.state.PID, h.state.Version = os.Getpid(), version.Version

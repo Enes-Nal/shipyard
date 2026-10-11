@@ -368,6 +368,13 @@ func serve(b boxHome, args []string) error {
 			BeforeRestart: func() { shares.StopAll(); ln.Close() },
 		},
 	}
+	// Plugins' helpers run as berthd's own children: started before it
+	// serves anything, so the first service finds them up, and stopped
+	// with it. A new build taking over starts them again itself.
+	bx.Helpers = &box.Helpers{Dir: filepath.Join(b.dir, "helpers"), Box: hostname, Logf: logger.Printf}
+	bx.Update.BeforeRestart = func() { shares.StopAll(); bx.Helpers.Stop(); ln.Close() }
+	bx.Helpers.Start()
+	defer bx.Helpers.Stop()
 	bx.AutoFix = &box.AutoFixStore{Path: filepath.Join(b.dir, "autofix.json")}
 	bx.Triggers = &box.TriggerSecrets{Path: filepath.Join(b.dir, "trigger-secrets.json")}
 	rc := box.LoadRunsConfig(filepath.Join(userDir, "runs.json"))

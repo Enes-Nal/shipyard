@@ -103,6 +103,9 @@ Who may be reviewed is read from GitHub with this laptop's `gh`, as you. See
 | `berth unit log BOX/NAME` | What a unit has written, for one that will not stay up |
 | `berth unit restart BOX/NAME` | Start a unit again |
 | `berth unit rm BOX/NAME` | Stop and remove a unit (its log stays) |
+| `berth helpers BOX [--json]` | The [helpers of plugins](/reference/berthd#plugin-helpers) on a box, and whether each runs |
+| `berth helper log BOX/PLUGIN` | What a plugin's helper has printed |
+| `berth helper rm BOX/PLUGIN [--purge]` | Stop and remove a plugin's helper (its data stays; `--purge` removes that too) |
 
 ## The agent
 

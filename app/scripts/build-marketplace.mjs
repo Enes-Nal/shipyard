@@ -14,16 +14,47 @@
 // Shipyard SDK stay external, and it is not minified, so the code a person is
 // asked to allow can be read.
 //
+// A plugin's helper ("box": {"helper": …}, a program it runs on a box) goes
+// into the listed manifest as it is written, with the address, size and
+// SHA-256 of its build for each platform ("assets"). Those checksums are
+// what a person allows with the plugin, so they are only ever the ones of
+// builds that were released:
+//
+//   - For a helper built in this repository (REPO_HELPERS), the assets are
+//     worked out here and whatever the plugin's own manifest says of them
+//     is dropped. --helper-bin DIR reads the four builds `make leadline`
+//     writes (DIR/<name>-<os>-<arch>) and lists them at their release's
+//     address; scripts/release-leadline-helper.sh does that, and uploads
+//     those very files. Without it, the assets the listing already has for
+//     that version of the helper are kept, so rebuilding the listing never
+//     needs the builds; a version with no release yet is listed with no
+//     assets, and installs nowhere until it has one.
+//   - Any other helper's assets are the plugin's own to give, and are checked.
+//
 //   node scripts/build-marketplace.mjs           build site/plugins/
 //   node scripts/build-marketplace.mjs --check   fail if site/plugins/ is not what the sources build
+//
+//   --helper-bin DIR   take the builds of this repository's helpers from DIR
+//   --plugins DIR      read plugins from DIR instead of plugins/   (tests)
+//   --out DIR          the listing's folder instead of site/plugins/ (tests)
 import { build } from "esbuild";
 import { createHash } from "node:crypto";
+import { rmSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 
-const root = resolve(import.meta.dirname, "..", "..", "plugins");
-const site = resolve(import.meta.dirname, "..", "..", "site", "plugins");
+function option(name) {
+  const i = process.argv.indexOf(name);
+  if (i < 0) return undefined;
+  const value = process.argv[i + 1];
+  if (!value || value.startsWith("--")) fail(`${name} needs a folder`);
+  return resolve(value);
+}
+
+const root = option("--plugins") ?? resolve(import.meta.dirname, "..", "..", "plugins");
+const site = option("--out") ?? resolve(import.meta.dirname, "..", "..", "site", "plugins");
+const helperBin = option("--helper-bin");
 // Packages a plugin bundles (not React or the SDK) come from the app's.
 const nodePaths = [resolve(import.meta.dirname, "..", "node_modules")];
 const check = process.argv.includes("--check");
@@ -34,8 +65,27 @@ const ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const VERSION = /^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/;
 const MAX_FILE = 16 << 20;
 
+// And the ones berthd holds a helper to (internal/box/helpers.go).
+const HELPER_NAME = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const MAX_HELPER = 128 << 20;
+const PLATFORMS = ["linux-amd64", "linux-arm64", "darwin-arm64", "darwin-amd64"];
+
+// The helpers built in this repository, by the name of their program, and
+// the release each version's builds are attached to.
+const RELEASES = "https://github.com/cosscom/shipyard/releases/download";
+const REPO_HELPERS = {
+  "berth-leadline": { release: (version) => `leadline-helper-v${version}`, script: "scripts/release-leadline-helper.sh" },
+};
+
+// The listing is put together in a folder of its own and takes the place of
+// the old one only when all of it built: a build that fails leaves the
+// listing as it was. scratch is that folder, for fail to remove.
+let scratch;
+
 function fail(message) {
   console.error(`build-marketplace: ${message}`);
+  if (scratch) rmSync(scratch, { recursive: true, force: true });
   process.exit(1);
 }
 
@@ -56,8 +106,93 @@ async function walk(dir, base = dir) {
   return out.sort();
 }
 
+// checkAssets says what is wrong with a helper's assets, or nothing.
+function checkAssets(assets) {
+  if (!assets || typeof assets !== "object" || Array.isArray(assets)) return "its assets must be an object, by platform";
+  for (const [platform, a] of Object.entries(assets)) {
+    if (!PLATFORMS.includes(platform)) return `${platform} is not a platform (${PLATFORMS.join(", ")})`;
+    let url;
+    try {
+      url = new URL(a?.url);
+    } catch {
+      return `its ${platform} build has no address`;
+    }
+    if (url.protocol !== "https:" || url.username || url.password) return `its ${platform} build must be at a plain https:// address`;
+    if (!SHA256.test(a.sha256 ?? "")) return `its ${platform} build has no SHA-256 checksum`;
+    if (!Number.isInteger(a.size) || a.size <= 0 || a.size > MAX_HELPER) return `its ${platform} build's size must be between 1 byte and ${MAX_HELPER >> 20} MB`;
+  }
+  return "";
+}
+
+// listedHelpers is the helper each plugin has in the listing as it stands,
+// read before the listing is built again.
+async function listedHelpers(dir) {
+  const out = new Map();
+  let index;
+  try {
+    index = JSON.parse(await readFile(join(dir, "index.json"), "utf8"));
+  } catch {
+    return out;
+  }
+  for (const p of index.plugins ?? []) {
+    try {
+      const m = JSON.parse(await readFile(join(dir, p.id, p.version, MANIFEST), "utf8"));
+      if (m.box?.helper) out.set(p.id, m.box.helper);
+    } catch {
+      // A listing that names a manifest it does not have keeps nothing.
+    }
+  }
+  return out;
+}
+
+// helperOf is a plugin's helper as the listing carries it: the manifest's
+// own words, with the assets worked out for one built in this repository.
+async function helperOf(id, helper, listed) {
+  if (!helper || typeof helper !== "object") fail(`${id}: box.helper must be an object`);
+  if (!HELPER_NAME.test(helper.name ?? "")) fail(`${id}: its helper's name ${JSON.stringify(helper.name)} must be lowercase letters, digits, dots and dashes`);
+  if (!VERSION.test(helper.version ?? "")) fail(`${id}: its helper needs a version`);
+  const repo = REPO_HELPERS[helper.name];
+  if (!repo) {
+    const problem = checkAssets(helper.assets);
+    if (problem) fail(`${id}: its helper ${helper.name}: ${problem}`);
+    return helper;
+  }
+  // The builds this version of it is listed with now, if it has any.
+  const same = listed?.name === helper.name && listed?.version === helper.version;
+  const before = same && !checkAssets(listed.assets) && Object.keys(listed.assets).length > 0 ? listed.assets : undefined;
+  let assets = {};
+  if (helperBin) {
+    for (const platform of PLATFORMS) {
+      const file = join(helperBin, `${helper.name}-${platform}`);
+      let data;
+      try {
+        data = await readFile(file);
+      } catch {
+        fail(`${id}: ${file} is not there. Build the helper for every platform first (${repo.script} does).`);
+      }
+      if (data.length === 0 || data.length > MAX_HELPER) fail(`${id}: ${file} must be between 1 byte and ${MAX_HELPER >> 20} MB`);
+      assets[platform] = {
+        url: `${RELEASES}/${repo.release(helper.version)}/${helper.name}-${platform}`,
+        sha256: createHash("sha256").update(data).digest("hex"),
+        size: data.length,
+      };
+    }
+    // A release's files do not change: what people allowed names them by
+    // checksum. Other builds are another version.
+    if (before && JSON.stringify(before) !== JSON.stringify(assets)) {
+      fail(`${id}: ${helper.name} ${helper.version} is already listed with other checksums. Bump box.helper.version to release new builds.`);
+    }
+  } else if (before) {
+    assets = before;
+  } else if (!check) {
+    console.error(`build-marketplace: ${id}: ${helper.name} ${helper.version} has no released builds yet, so it is listed with none and installs on no box. Release them with ${repo.script}.`);
+  }
+  return { ...helper, assets };
+}
+
 async function buildAll(out) {
-  await rm(out, { recursive: true, force: true });
+  // What the listing has now, from the folder it is kept in.
+  const listed = await listedHelpers(site);
   await mkdir(out, { recursive: true });
   const plugins = [];
   const dirs = (await readdir(root, { withFileTypes: true })).filter((d) => d.isDirectory()).sort((a, b) => a.name.localeCompare(b.name));
@@ -102,6 +237,7 @@ async function buildAll(out) {
     // The manifest as it is installed: "marketplace" is about this
     // repository, not about the plugin.
     const { marketplace, ...manifest } = { ...m, id, main };
+    if (m.box?.helper !== undefined) manifest.box = { ...m.box, helper: await helperOf(id, m.box.helper, listed.get(id)) };
     await writeFile(join(target, MANIFEST), JSON.stringify(manifest, null, 2) + "\n");
 
     const files = [];
@@ -116,21 +252,22 @@ async function buildAll(out) {
   return plugins;
 }
 
-if (check) {
-  const tmp = await mkdtemp(join(tmpdir(), "berth-marketplace-"));
-  try {
-    await buildAll(tmp);
-    const [want, have] = await Promise.all([walk(tmp), walk(site).catch(() => [])]);
+scratch = await mkdtemp(join(tmpdir(), "berth-marketplace-"));
+try {
+  const plugins = await buildAll(scratch);
+  if (check) {
+    const [want, have] = await Promise.all([walk(scratch), walk(site).catch(() => [])]);
     const stale = new Set([...want.filter((p) => !have.includes(p)), ...have.filter((p) => !want.includes(p))]);
     for (const p of want.filter((p) => have.includes(p))) {
-      if (!(await readFile(join(tmp, p))).equals(await readFile(join(site, p)))) stale.add(p);
+      if (!(await readFile(join(scratch, p))).equals(await readFile(join(site, p)))) stale.add(p);
     }
     if (stale.size) fail(`site/plugins/ is not what plugins/ builds (${[...stale].sort().join(", ")}). Run pnpm -C app build:marketplace and commit it.`);
     console.log("marketplace: site/plugins/ is up to date");
-  } finally {
-    await rm(tmp, { recursive: true, force: true });
+  } else {
+    await rm(site, { recursive: true, force: true });
+    await cp(scratch, site, { recursive: true });
+    console.log(`marketplace: ${plugins.map((p) => `${p.id} ${p.version}`).join(", ") || "none"}`);
   }
-} else {
-  const plugins = await buildAll(site);
-  console.log(`marketplace: ${plugins.map((p) => `${p.id} ${p.version}`).join(", ") || "none"}`);
+} finally {
+  await rm(scratch, { recursive: true, force: true });
 }

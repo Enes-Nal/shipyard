@@ -342,3 +342,39 @@ func TestLogInAsFromTheCommandLine(t *testing.T) {
 		}
 	}
 }
+
+func TestHelpersListsWhatRunsForPlugins(t *testing.T) {
+	reply := `{"platform":"linux-arm64","helpers":[{"plugin":"leadline","state":"failed","platform":"linux-arm64","name":"berth-leadline","version":"0.1.0","error":"it ended (exit status 1); berthd tries again in 4s"}]}`
+	rec, out := run(t, reply, "helpers")
+	if rec.method != "GET" || rec.path != "/v1/helpers" {
+		t.Fatalf("called %s %q; want GET /v1/helpers", rec.method, rec.path)
+	}
+	for _, want := range []string{"leadline", "berth-leadline", "0.1.0", "failed", "exit status 1"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("helpers output lacks %q: %q", want, out)
+		}
+	}
+	if _, out = run(t, `{"platform":"linux-arm64","helpers":[]}`, "helpers"); !strings.Contains(out, "No plugin has a helper") {
+		t.Fatalf("with no helpers: %q", out)
+	}
+}
+
+func TestHelperRmKeepsTheDataUnlessPurged(t *testing.T) {
+	reply := `{"plugin":"leadline","state":"off","platform":"linux-arm64"}`
+	rec, out := run(t, reply, "helper", "rm", "leadline")
+	if rec.method != "DELETE" || rec.path != "/v1/helpers/leadline" || !strings.Contains(out, "its data is kept") {
+		t.Fatalf("helper rm: %s %q, %q", rec.method, rec.path, out)
+	}
+	rec, out = run(t, reply, "helper", "rm", "leadline", "--purge")
+	if rec.method != "DELETE" || rec.path != "/v1/helpers/leadline?purge=1" || !strings.Contains(out, "and its data") {
+		t.Fatalf("helper rm --purge: %s %q, %q", rec.method, rec.path, out)
+	}
+	if rec, out = run(t, "started\nlistening\n", "helper", "log", "leadline"); rec.path != "/v1/helpers/leadline/log?limit=1048576" || out != "started\nlistening\n" {
+		t.Fatalf("helper log: %q, %q", rec.path, out)
+	}
+	for _, args := range [][]string{{"helper", "rm"}, {"helper", "log"}, {"helper", "rm", "a", "b"}} {
+		if err := Run(context.Background(), &box.Client{Doer: &recorder{reply: reply}}, args, io.Discard); err == nil {
+			t.Errorf("%v accepted", args)
+		}
+	}
+}

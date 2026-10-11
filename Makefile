@@ -33,8 +33,12 @@ endif
 # berth-leadline is the box-side helper that records what code did in
 # development: queries, traces and logs (internal/leadline/API.md). It is
 # built like berthd, static and without cgo, for every box platform and for
-# a Mac that is its own box, side by side in bin/. Nothing installs it yet:
-# it is not part of `all`, of the app or of a release.
+# a Mac that is its own box, side by side in bin/. It is not part of `all`,
+# of the app or of Shipyard's own releases: the Leadline plugin's manifest
+# names these builds by checksum, and Shipyard installs the one for a box
+# when the plugin's helper is turned on there (internal/box/helpers.go).
+# scripts/release-leadline-helper.sh builds them with this target, lists
+# them in site/plugins/ and uploads them to a release of their own.
 .PHONY: leadline
 leadline:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -trimpath -ldflags="$(LDFLAGS)" -o $(BIN)/berth-leadline-linux-amd64 ./cmd/berth-leadline
