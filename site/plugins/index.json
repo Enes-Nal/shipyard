@@ -33,8 +33,8 @@
         {
           "path": "berth-plugin.json",
           "url": "leadline/0.1.0/berth-plugin.json",
-          "sha256": "ad6f2610c9fe636878a8c1509e88733ada4ab2b3efdade9843bf04739e8136cc",
-          "size": 818
+          "sha256": "b24e46a0db161d338117fbe2ac5becb8dc67624dca1912ed17268502bd1b0948",
+          "size": 1928
         },
         {
           "path": "dist/index.js",

@@ -25,7 +25,28 @@
         "POSTGRES_URL",
         "OTEL_*"
       ],
-      "assets": {}
+      "assets": {
+        "linux-amd64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/leadline-helper-v0.1.0/berth-leadline-linux-amd64",
+          "sha256": "e7714b8883a382f101585959b1278bfce9888c2a8cdbb50843b6f1adefa8a0d2",
+          "size": 15306912
+        },
+        "linux-arm64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/leadline-helper-v0.1.0/berth-leadline-linux-arm64",
+          "sha256": "3be63161205dff5344b55bbeccc5731db183a44fa335526506313dbedb34d8a0",
+          "size": 14483616
+        },
+        "darwin-arm64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/leadline-helper-v0.1.0/berth-leadline-darwin-arm64",
+          "sha256": "f2583ef938b2739a5806ead7d5e2e744a2920323c44650f69d986874b8cded7a",
+          "size": 14654146
+        },
+        "darwin-amd64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/leadline-helper-v0.1.0/berth-leadline-darwin-amd64",
+          "sha256": "5c9d4f316e95db818991f573b2d4f1d5ed736126a8bb0518f0d41c65a453781a",
+          "size": 15417968
+        }
+      }
     }
   }
 }
