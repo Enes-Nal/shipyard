@@ -737,20 +737,124 @@ test("where Database is off, the panel says so, and turns it on after a confirm 
   await app.page.getByRole("alertdialog").getByRole("button", { name: "Install and turn on" }).click();
   await expect(said).toContainText(/(Installing|Starting) berth-database on gpu/);
   await expect(p).toHaveAttribute("data-state", "running");
-  // It runs, and has not seen this worktree's services start.
+  // It runs, has not seen this worktree's services start, and the worktree
+  // has no .env for it to have found a database in.
   await expect(said).toContainText("No database for ci-flake yet");
-  await expect(said).toContainText("Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked for .env, .env.development, .env.local and .env.development.local in this worktree on gpu: there is none.");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart.");
 });
 
-test("a worktree with no database yet says which databases show, and why others don't", async ({ app }) => {
+test("a worktree with no database yet says where it looked, which databases show, and why others don't", async ({ app }) => {
   mockOnly();
   const p = await open(app, undefined, { db: "none" });
   const said = notice(p);
   await expect(said).toContainText("No database for checkout-fix yet");
-  await expect(said).toContainText("DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked for .env, .env.development, .env.local and .env.development.local in this worktree on devl: there is none.");
+  await expect(said).toContainText("Database shows the Postgres a worktree's DATABASE_URL or POSTGRES_URL points at when it is on devl itself. It reads that from the worktree's .env files when this tab opens.");
   await expect(said).toContainText("A database on another host, or one whose address is a secret reference, is not shown.");
   await said.getByRole("button", { name: "Which databases show" }).click();
-  await expect(app.page.getByTestId("database-screen")).toContainText("Which databases show");
+  const screen = app.page.getByTestId("database-screen");
+  await expect(screen).toContainText("Which databases show");
+  await expect(screen).toContainText("Or from the worktree's .env files");
+  await expect(screen).toContainText("the box reads .env, .env.development, .env.local and .env.development.local in the worktree's own folder, a later file winning");
+});
+
+// The ?db=env scenarios are a project whose dev servers Shipyard does not
+// start: the helper has been told of no database, and the worktree's
+// DATABASE_URL is in its .env files, which the box reads when the tab opens.
+const looks = (app: App) => app.page.evaluate(() => (window as unknown as { __berthMockDatabase: { looks(): number } }).__berthMockDatabase.looks());
+const dotenv = (app: App, kind: string) => app.page.evaluate((k) => (window as unknown as { __berthMockDatabase: { dotenv(kind: string): void } }).__berthMockDatabase.dotenv(k), kind);
+const ORIGIN = "berth.plugin.database.env:devl/shop/checkout-fix";
+
+test("a worktree whose database is only in its .env is found when the tab opens, and says where it came from", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-slow" });
+  // While the box looks, the panel says so.
+  await expect(p.getByTestId("database-looking")).toHaveText("Looking in checkout-fix's .env files on devl for its database…");
+  // Then the database, as any other.
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_checkout_fix");
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByTestId("database-looking")).toHaveCount(0);
+  await expect(lock(p)).toHaveAttribute("data-writes", "off");
+  // Where Database learned of it: the variable, and the file it was in.
+  const from = p.getByTestId("database-from-env");
+  await expect(from).toHaveText(".env.local");
+  await expect(from).toHaveAccessibleName("From DATABASE_URL in checkout-fix's .env.local");
+  await from.hover();
+  await expect(app.page.getByText("DATABASE_URL, read from checkout-fix's .env.local on devl. Reading the tables again looks in the file again.")).toBeVisible();
+  // It looked once, and remembers what the look gave: ids and file names, never an address.
+  await expect.poll(() => looks(app)).toBe(1);
+  await expect.poll(() => app.stored(ORIGIN)).toEqual({ ids: ["c_1c28ba20e1b6"], files: { DATABASE_URL: ".env.local" } });
+  // A table opens and reads as one of a database a service gave.
+  await openTable(p, "customers");
+  await expect(range(p)).toHaveText("Rows 1–100 of about 240");
+});
+
+test("a database a service gave says nothing of .env, and reading its tables again does not look there", async ({ app }) => {
+  mockOnly();
+  const p = await open(app);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByTestId("database-from-env")).toHaveCount(0);
+  await p.getByRole("button", { name: "Read the tables again" }).click();
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  expect(await looks(app)).toBe(0);
+  expect(await app.stored(ORIGIN)).toBeNull();
+});
+
+test("a .env with no database address says which files were read, and looking again picks up a change to them", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-none" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them.");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started");
+  await expect.poll(() => looks(app)).toBe(1);
+
+  // The file gets a DATABASE_URL: Look again reads it.
+  await dotenv(app, "env");
+  await said.getByRole("button", { name: "Look again" }).click();
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_checkout_fix");
+  await expect(p.getByTestId("database-from-env")).toHaveText(".env.local");
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect.poll(() => looks(app)).toBe(2);
+
+  // And loses it again: reading the tables again looks in the files again,
+  // because that is where this database came from.
+  await dotenv(app, "env-none");
+  await p.getByRole("button", { name: "Read the tables again" }).click();
+  await expect(notice(p).getByTestId("database-looked")).toHaveText("Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them.");
+  await expect(p.getByTestId("database-connection")).toHaveCount(0);
+  await expect.poll(() => app.stored(ORIGIN)).toBeNull();
+});
+
+test("a .env whose database address can't be shown says which variable and why", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-refused" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  const looked = said.getByTestId("database-looked");
+  // Another host, a secret's name, and a file that links out of the worktree.
+  await expect(looked).toContainText("DATABASE_URL in .env.local doesn't point at a Postgres on devl itself, so it isn't opened.");
+  await expect(looked).toContainText("POSTGRES_URL in .env is a reference to a secret, not an address, so it isn't read.");
+  await expect(looked).toContainText(".env.development is a link to a file outside the worktree, which isn't followed.");
+  await expect(looked).not.toContainText("Looked in");
+  await expect(said.getByRole("button", { name: "Look again" })).toBeEnabled();
+});
+
+test("a box too old to look in .env says what it always said, and nothing went wrong", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-old" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with a DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
+  await expect(said.getByTestId("database-looked")).toHaveCount(0);
+  await expect(said).not.toContainText("older berthd");
+  await expect(said).not.toContainText("Couldn't");
+  await expect(p).toHaveAttribute("data-state", "running");
+  // Look again asks again, and is as quiet.
+  await said.getByRole("button", { name: "Look again" }).click();
+  await expect(said).toContainText("Database learns of a database when a service starts");
+  await expect(said.getByTestId("database-looked")).toHaveCount(0);
 });
 
 test("a database that isn't answering says so in the helper's words, and can be tried again", async ({ app }) => {

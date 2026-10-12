@@ -809,6 +809,24 @@ export const scenes: Scene[] = [
       await expect(p.getByTestId("database-browse-only")).toBeVisible();
     },
   },
+  // A database found in the worktree's .env: the file's name in the bar.
+  {
+    id: "database-from-env",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "env" });
+      await expect(p.getByTestId("database-from-env")).toBeVisible();
+    },
+  },
+  // A look that found none: what it looked at, over what always showed.
+  {
+    id: "database-env-refused",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "env-refused" });
+      await expect(p.getByTestId("database-looked")).toBeVisible();
+    },
+  },
   {
     id: "database-screen",
     async run(app, theme) {

@@ -1,7 +1,7 @@
 {
   "id": "database",
   "name": "Database",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A worktree's own development database, as a tab on the worktree: browse its tables, edit rows and run SQL, read-only until you unlock it. Postgres for now. Installs berth-database on the boxes you turn it on for.",
   "main": "dist/index.js",
   "defaultEnabled": false,

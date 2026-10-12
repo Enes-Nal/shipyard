@@ -39,6 +39,41 @@ A worktree's `source` is `<project>/<worktree>`, or the project alone for
 its main checkout: the same rule as Leadline's helper, copied into
 `src/source.ts` and tested on its own.
 
+## Where a worktree's database comes from
+
+The helper is told of a database by the box, never by the panel, in one of
+two ways:
+
+- **A service Shipyard starts.** Before the box starts one of the
+  worktree's services it calls the helper's `/api/attach` with the
+  service's `DATABASE_URL` and `POSTGRES_URL` (the manifest's
+  `attach_env`), and the service's name as `command`.
+- **The worktree's `.env` files.** A project whose dev servers Shipyard
+  does not start never gets there. So when the panel opens and
+  `db/connections` is empty for the worktree, it asks the box to look:
+  `berth.helper.attachEnv(box, { location, worktree })`, which is
+  `POST helpers/database/attach-env` on the box. The box reads `.env`,
+  `.env.development`, `.env.local` and `.env.development.local` in the
+  worktree's own folder (a later file winning), keeps those two variables
+  and calls the same `/api/attach` with **`.env` as `command`**. The helper
+  did not change for this: it files a database under the commands that
+  claim it, so a look replaces what the last look found, and a database a
+  service also has stays while the service has it.
+
+The panel looks once each time it is opened (opening the tab is the person
+asking), and again from **Look again** and from the refresh button above
+the tables, when the worktree has no database or has one the files gave.
+`src/dotenv.ts` is the rules, with no React in them: what a look's answer
+means, what to keep of it (the connection ids and the file each variable
+was in, in the plugin's storage, since the helper lists a connection by
+its variable and not by who said so), and the sentences for a look that
+found nothing to show. The box sends file and variable names, never a
+value.
+
+A box whose `berthd` is from before the route answers `box_outdated`, and
+a Shipyard from before `attachEnv` has no such function: in both the panel
+is as it was, with no error.
+
 What the panel holds to, from `API.md`:
 
 - **Errors are told apart by `code`, never by status.** `query_failed` may
@@ -86,7 +121,8 @@ to keep that true.
 
 | File | What is in it |
 | --- | --- |
-| `src/panel.tsx` | The panel: the helper's state, the connections, the lock, and the states with nothing to show |
+| `src/panel.tsx` | The panel: the helper's state, the connections, the look in the worktree's `.env`, the lock, and the states with nothing to show |
+| `src/dotenv.ts` | What a look in the worktree's `.env` files found, and what to say of it |
 | `src/browser.tsx` | The table list, a table's rows and structure, staging and Review |
 | `src/grid.tsx` | The grid, shared with the console. Only the rows near the view are in the page |
 | `src/console.tsx` | The console, on the app's `SqlEditor` |
@@ -107,7 +143,10 @@ so rebuild the listing to see a change there. Its helper is
 filters, paging, edits, conflicts, the lock and a console that runs a small
 set of statements. It answers in the real helper's fields, codes and
 sentences. `?db=none`, `?db=refused`, `?db=old` and `?db=unauthorized` are
-the states with nothing to show.
+the states with nothing to show. `?db=env` is a project whose database is
+only in a worktree's `.env`, found when the tab opens; `?db=env-none`,
+`?db=env-refused` and `?db=env-old` are a look that found no variable, one
+that found a variable it can't show, and a box that can't look.
 
 To see what the real helper says, run it against a throwaway Postgres (on
 a spare port, never 5432), attach a URL and ask it:

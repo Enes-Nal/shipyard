@@ -4,21 +4,21 @@
       "id": "database",
       "name": "Database",
       "description": "A worktree's own development database, as a tab on the worktree: browse its tables, edit rows and run SQL, read-only until you unlock it. Postgres for now. Installs berth-database on the boxes you turn it on for.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": "Shipyard",
       "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/database",
       "files": [
         {
           "path": "berth-plugin.json",
-          "url": "database/0.1.0/berth-plugin.json",
-          "sha256": "b7f7ae87a1703ef8ebcb1295b6b020ad28a4d162e01f620d1febe0780f2c9487",
+          "url": "database/0.2.0/berth-plugin.json",
+          "sha256": "e1d51b5e87499526d29201dc82c2295f9a0f92504f7f0caf1ffda4684c653a7b",
           "size": 1965
         },
         {
           "path": "dist/index.js",
-          "url": "database/0.1.0/dist/index.js",
-          "sha256": "7c88f7809599adb8834f5e5f2fa53b65247b4157d4612647f17a7418dc0d3735",
-          "size": 123418
+          "url": "database/0.2.0/dist/index.js",
+          "sha256": "43145a936b4eca3e6bd9f2428e5cf6b2fa86ab71b6cf8e34aa9088e003cd1edb",
+          "size": 131298
         }
       ]
     },

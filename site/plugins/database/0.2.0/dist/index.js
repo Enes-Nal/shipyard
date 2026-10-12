@@ -22,6 +22,12 @@ function database(berth) {
     // have not been started since the helper was turned on, or use no
     // database the helper can reach.
     connections: (box, source) => berth.helper.request(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
+    // Whether this Shipyard can have a box look in a worktree's .env files.
+    canLook: typeof berth.helper.attachEnv === "function",
+    // The box looks in the worktree's .env files and tells the helper of
+    // the database it finds there (dotenv.ts). worktree "" is the main
+    // checkout. This is the box's own route, not one of the helper's.
+    look: (box, location, worktree) => berth.helper.attachEnv(box, { location, worktree }),
     schema: (box, conn) => berth.helper.request(box, "GET", on(conn, "schema")).then((r) => r.schemas ?? []),
     rows: (box, conn, req) => post(box, on(conn, "rows"), { ...req, schema: req.schema || void 0 }),
     query: (box, conn, sql, limit = QUERY_LIMIT) => post(box, on(conn, "query"), { sql, limit }),
@@ -843,7 +849,7 @@ var COPY = {
   name: "Database",
   program: HELPER,
   icon: "table-2",
-  does: (box) => `It notes the development database of each worktree whose services Shipyard starts on that box (a DATABASE_URL or POSTGRES_URL that points at a database on the box itself), keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
+  does: (box) => `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Shipyard starts there or in the worktree's own .env files, which the box reads when you open the worktree's Database tab. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
   about: (box) => /* @__PURE__ */ jsxs3(Fragment2, { children: [
     "It shows a worktree's own development database: its tables and rows, and a console for SQL, read-only until you unlock it. Turning it on installs and runs ",
     /* @__PURE__ */ jsx3("code", { children: HELPER }),
@@ -854,7 +860,7 @@ var COPY = {
   off: (box) => `No worktree's database is shown while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; the addresses it kept before, if any, stay on the box until you remove them.`,
   remove: {
     title: (box) => `Remove what Database kept on ${box}?`,
-    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and start a worktree's services to see its database here again.",
+    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and open a worktree's Database tab, or start its services, to see its database here again.",
     done: (box) => `Removed Database's data on ${box}`
   }
 };
@@ -1740,6 +1746,55 @@ function Console({ ctx, schemas, put }) {
   ] });
 }
 
+// src/dotenv.ts
+var FILES = [".env", ".env.development", ".env.local", ".env.development.local"];
+var cannotLook = (f) => f.code === "box_outdated" || f.code === "helper_no_attach" || f.status === 404 || f.status === 405;
+function originOf(look) {
+  const ids = (look.answer?.connections ?? []).filter((id) => typeof id === "string");
+  if (ids.length === 0) return void 0;
+  const files = {};
+  for (const v of look.variables ?? []) if (v.sent) files[v.name] = v.file;
+  return { ids, files };
+}
+function fromFile(origin, conn) {
+  if (!origin?.ids?.includes(conn.id)) return void 0;
+  return origin.files?.[conn.label] ?? FILES[0];
+}
+function lookAgain(origin, conns) {
+  return conns.length === 0 || conns.some((c) => !!origin?.ids?.includes(c.id));
+}
+function list(names) {
+  if (names.length < 2) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+var SKIPPED = {
+  outside: "is a link to a file outside the worktree, which isn't followed",
+  not_a_file: "isn't a plain file",
+  too_large: "is larger than 256 KB, so it wasn't read",
+  not_text: "isn't text",
+  unreadable: "couldn't be read"
+};
+function said(look, box) {
+  const out = [];
+  const files = look.files ?? [];
+  const skipped = look.skipped ?? [];
+  const variables = look.variables ?? [];
+  if (files.length === 0 && skipped.length === 0) {
+    out.push(`Looked for ${list(FILES)} in this worktree on ${box}: there is none.`);
+  } else if (files.length > 0 && variables.length === 0) {
+    out.push(`Looked in ${list(files)}: no DATABASE_URL or POSTGRES_URL in ${files.length === 1 ? "it" : "them"}.`);
+  }
+  for (const v of variables) {
+    if (v.sent) out.push(`${v.name} in ${v.file} doesn't point at a Postgres on ${box} itself, so it isn't opened.`);
+    else if (v.reason === "secret") out.push(`${v.name} in ${v.file} is a reference to a secret, not an address, so it isn't read.`);
+    else if (v.reason === "unresolved") out.push(`${v.name} in ${v.file} refers to a variable that these files don't set.`);
+    else if (v.reason === "empty") out.push(`${v.name} in ${v.file} is empty.`);
+    else out.push(`${v.name} in ${v.file} is too long to be an address.`);
+  }
+  for (const s of skipped) out.push(`${s.file} ${SKIPPED[s.reason] ?? SKIPPED.unreadable}.`);
+  return out;
+}
+
 // src/lock.tsx
 import { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle, Badge as Badge3, Button as Button5, Icon as Icon5, Tip as Tip4 } from "@berth/plugin/ui";
 import { useState as useState6 } from "react";
@@ -1877,7 +1932,7 @@ function DatabasePanel({ berth, box, location, worktree, main }) {
     else if (online && state && GONE.has(state)) setKept(false);
   }, [running, online, state]);
   return /* @__PURE__ */ jsxs7("div", { ref, "data-testid": "database", "data-state": online ? state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: [
-    (running || kept) && /* @__PURE__ */ jsx7("div", { className: running ? "contents" : "hidden", children: /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, active: visible && running }) }),
+    (running || kept) && /* @__PURE__ */ jsx7("div", { className: running ? "contents" : "hidden", children: /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, at: { location, worktree: main ? "" : worktree }, active: visible && running }) }),
     !running && kept && /* @__PURE__ */ jsx7(Line, { tone: "note", testId: "database-kept", children: online ? /* @__PURE__ */ jsxs7(Fragment5, { children: [
       "What you staged and typed in this tab is kept, and is here again once ",
       /* @__PURE__ */ jsx7("code", { children: HELPER }),
@@ -1893,18 +1948,59 @@ function DatabasePanel({ berth, box, location, worktree, main }) {
   ] });
 }
 var skews = /* @__PURE__ */ new Map();
-function Connections({ berth, box, source, worktree, active }) {
+function Connections({ berth, box, source, worktree, at, active }) {
   const api = useMemo4(() => database(berth), [berth]);
   const helper = useHelperState(berth, box, false);
   const refresh = helper.refresh;
-  const conns = useRead(() => api.connections(box, source), `${box}
-${source}`, { active, every: 1e4 });
   const onFault = useCallback4(
     (fault) => {
       if (lostHelper(fault)) refresh();
     },
     [refresh]
   );
+  const key = `${box}
+${source}`;
+  const originKey = `env:${box}/${source}`;
+  const [origin, setOrigin] = useState7(() => berth.storage.get(originKey, null));
+  const [looking, setLooking] = useState7(false);
+  const [looked, setLooked] = useState7();
+  const lookedFor = useRef5(void 0);
+  const again = useRef5(false);
+  const known = useRef5(origin);
+  known.current = origin;
+  const read = async () => {
+    const asked = again.current;
+    again.current = false;
+    const list2 = await api.connections(box, source);
+    const first = lookedFor.current !== key;
+    if (!(first && list2.length === 0) && !(asked && lookAgain(known.current, list2))) return list2;
+    lookedFor.current = key;
+    let result = { kind: "old" };
+    if (api.canLook) {
+      setLooking(true);
+      try {
+        const look = await api.look(box, at.location, at.worktree);
+        result = { kind: "looked", look };
+        const found = originOf(look) ?? null;
+        berth.storage.set(originKey, found);
+        setOrigin(found);
+      } catch (err) {
+        const fault = faultOf(err);
+        onFault(fault);
+        result = cannotLook(fault) ? { kind: "old" } : { kind: "failed", message: fault.message };
+      } finally {
+        setLooking(false);
+      }
+    }
+    setLooked({ key, result });
+    return result.kind === "looked" ? api.connections(box, source) : list2;
+  };
+  const conns = useRead(read, key, { active, every: 1e4 });
+  const reload = conns.reload;
+  const relook = useCallback4(() => {
+    again.current = true;
+    reload();
+  }, [reload]);
   useEffect5(() => {
     if (conns.fault) onFault(conns.fault);
   }, [conns.fault, onFault]);
@@ -1976,15 +2072,43 @@ ${source}`, { active, every: 1e4 });
         }
       );
     }
+    if (looking && !conns.fault) {
+      return /* @__PURE__ */ jsxs7(Fragment5, { children: [
+        /* @__PURE__ */ jsxs7(Line, { tone: "note", testId: "database-looking", children: [
+          "Looking in ",
+          worktree,
+          "'s ",
+          /* @__PURE__ */ jsx7("code", { children: ".env" }),
+          " files on ",
+          box,
+          " for its database\u2026"
+        ] }),
+        /* @__PURE__ */ jsx7(Waiting, {})
+      ] });
+    }
     return /* @__PURE__ */ jsx7(Waiting, { fault: conns.fault, onRetry: conns.reload, title: `Couldn't ask ${box} for ${worktree}'s database` });
   }
   if (conns.data.length === 0) {
+    const result = looked?.key === key ? looked.result : void 0;
     return /* @__PURE__ */ jsx7(
       Notice,
       {
         icon: "table-2",
         title: `No database for ${worktree} yet`,
-        body: /* @__PURE__ */ jsxs7(Fragment5, { children: [
+        body: result?.kind === "looked" || result?.kind === "failed" ? /* @__PURE__ */ jsxs7(Fragment5, { children: [
+          /* @__PURE__ */ jsx7("span", { className: "block text-foreground", "data-testid": "database-looked", children: result.kind === "looked" ? said(result.look, box).join(" ") : `Couldn't look in ${worktree}'s .env files on ${box}: ${result.message}` }),
+          /* @__PURE__ */ jsxs7("span", { className: "mt-2 block", children: [
+            "Database shows the Postgres a worktree's ",
+            /* @__PURE__ */ jsx7("code", { children: "DATABASE_URL" }),
+            " or ",
+            /* @__PURE__ */ jsx7("code", { children: "POSTGRES_URL" }),
+            " points at when it is on ",
+            box,
+            " itself. It reads that from the worktree's ",
+            /* @__PURE__ */ jsx7("code", { children: ".env" }),
+            " files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
+          ] })
+        ] }) : /* @__PURE__ */ jsxs7(Fragment5, { children: [
           "A service of this worktree that Shipyard starts with a ",
           /* @__PURE__ */ jsx7("code", { children: "DATABASE_URL" }),
           " or ",
@@ -1994,7 +2118,7 @@ ${source}`, { active, every: 1e4 });
           " itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
         ] }),
         actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-          /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: conns.reload, children: "Look again" }),
+          /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", loading: looking, onClick: relook, children: "Look again" }),
           /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: () => berth.openScreen("database"), children: "Which databases show" })
         ] })
       }
@@ -2008,6 +2132,8 @@ ${source}`, { active, every: 1e4 });
       api,
       conn,
       all: conns.data,
+      origin,
+      relook,
       stale: conns.fault,
       onPick: (id) => {
         setPicked(id);
@@ -2019,8 +2145,20 @@ ${source}`, { active, every: 1e4 });
     conn.id
   );
 }
-function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }) {
+function Connected({
+  scope,
+  api,
+  conn,
+  all,
+  origin,
+  relook,
+  stale,
+  onPick,
+  onFault,
+  reread
+}) {
   const { berth, box, source, worktree, active } = scope;
+  const file = fromFile(origin, conn);
   const engine = useMemo4(() => engineOf(conn.engine), [conn.engine]);
   const caps = conn.capabilities ?? NO_CAPABILITIES;
   const [mode, setMode] = useState7("browse");
@@ -2091,7 +2229,8 @@ ${conn.id}`, { active });
           /* @__PURE__ */ jsx7("span", { className: "min-w-0 flex-1 truncate", children: c.database }),
           /* @__PURE__ */ jsxs7("span", { className: "ml-3 shrink-0 text-muted-foreground text-xs", children: [
             engineOf(c.engine).name,
-            c.label && ` \xB7 ${c.label}`
+            c.label && ` \xB7 ${c.label}`,
+            fromFile(origin, c) && ` in ${fromFile(origin, c)}`
           ] })
         ] }, c.id)) })
       ] }) : /* @__PURE__ */ jsxs7("span", { className: "flex min-w-0 items-center gap-1.5 font-medium", "data-testid": "database-connection", children: [
@@ -2099,6 +2238,8 @@ ${conn.id}`, { active });
         /* @__PURE__ */ jsx7("span", { className: "truncate", children: conn.database })
       ] }),
       /* @__PURE__ */ jsx7(Tip5, { label: `${engine.name}${where ? ` at ${where}` : ""}${conn.user ? `, as ${conn.user}` : ""}${conn.label ? `, from ${conn.label}` : ""}`, children: /* @__PURE__ */ jsx7(Badge4, { variant: "outline", size: "sm", className: "hidden shrink-0 font-normal @lg:inline-flex", children: engine.name }) }),
+      file && // Where Database learned of it: not a service Shipyard started.
+      /* @__PURE__ */ jsx7(Tip5, { label: `${conn.label}, read from ${worktree}'s ${file} on ${box}. Reading the tables again looks in the file again.`, children: /* @__PURE__ */ jsx7(Badge4, { variant: "outline", size: "sm", className: "shrink-0 font-mono font-normal text-muted-foreground", "data-testid": "database-from-env", "aria-label": `From ${conn.label} in ${worktree}'s ${file}`, children: file }) }),
       /* @__PURE__ */ jsx7(
         PickOne2,
         {
@@ -2146,7 +2287,10 @@ ${conn.id}`, { active });
         {
           ctx,
           schemas: schema.data,
-          onReload: schema.reload,
+          onReload: () => {
+            relook();
+            schema.reload();
+          },
           toConsole: (sql) => {
             setPut((p) => ({ sql, n: (p?.n ?? 0) + 1 }));
             setMode("console");
@@ -2196,24 +2340,43 @@ function DatabaseScreen({ berth }) {
     /* @__PURE__ */ jsxs8(Frame, { variant: "card", children: [
       /* @__PURE__ */ jsxs8(FrameHeader, { children: [
         /* @__PURE__ */ jsx8(FrameTitle, { children: "Which databases show" }),
-        /* @__PURE__ */ jsx8(FrameDescription, { children: "A worktree's Database tab shows the database its own services use, once Shipyard has started one of them." })
+        /* @__PURE__ */ jsx8(FrameDescription, { children: "A worktree's Database tab shows the worktree's own development database. It learns of it in one of two ways." })
       ] }),
       /* @__PURE__ */ jsx8(FramePanel, { children: /* @__PURE__ */ jsxs8("ol", { className: "space-y-3 text-sm", children: [
-        /* @__PURE__ */ jsxs8(Step, { n: 1, title: "Start the app as a service of its worktree", children: [
+        /* @__PURE__ */ jsxs8(Step, { n: 1, title: "From a service Shipyard starts in the worktree", children: [
           "With Database on for a box, Shipyard tells it about each service it starts there: the ones under ",
           /* @__PURE__ */ jsx8("code", { children: "services" }),
           " in the repository's ",
           /* @__PURE__ */ jsx8("code", { children: ".berth/config.json" }),
-          ". A service that was already running needs a restart to be noticed. A server you start by hand in a terminal isn't."
+          ". A service that was already running needs a restart to be noticed."
         ] }),
-        /* @__PURE__ */ jsxs8(Step, { n: 2, title: "Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box", children: [
+        /* @__PURE__ */ jsxs8(Step, { n: 2, title: "Or from the worktree's .env files", children: [
+          "When you open a worktree's Database tab and no service has said, the box reads ",
+          /* @__PURE__ */ jsx8("code", { children: ".env" }),
+          ", ",
+          /* @__PURE__ */ jsx8("code", { children: ".env.development" }),
+          ", ",
+          /* @__PURE__ */ jsx8("code", { children: ".env.local" }),
+          " and ",
+          /* @__PURE__ */ jsx8("code", { children: ".env.development.local" }),
+          " in the worktree's own folder, a later file winning, and takes the ",
+          /* @__PURE__ */ jsx8("code", { children: "DATABASE_URL" }),
+          " or ",
+          /* @__PURE__ */ jsx8("code", { children: "POSTGRES_URL" }),
+          " it finds. So a server you start by hand in a terminal works too. Reading the tables again looks in the files again."
+        ] }),
+        /* @__PURE__ */ jsxs8(Step, { n: 3, title: "Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box", children: [
           "On the box itself: ",
           /* @__PURE__ */ jsx8("code", { children: "localhost" }),
           ", ",
           /* @__PURE__ */ jsx8("code", { children: "127.0.0.1" }),
-          " or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in the service's environment is changed."
+          " or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in a service's environment is changed, and no file is written."
         ] }),
-        /* @__PURE__ */ jsx8(Step, { n: 3, title: "What doesn't show", children: "A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself. Other engines than Postgres don't show yet." })
+        /* @__PURE__ */ jsxs8(Step, { n: 4, title: "What doesn't show", children: [
+          "A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself, or a ",
+          /* @__PURE__ */ jsx8("code", { children: ".env" }),
+          " that is a link to a file outside the worktree. Other engines than Postgres don't show yet."
+        ] })
       ] }) })
     ] })
   ] });
