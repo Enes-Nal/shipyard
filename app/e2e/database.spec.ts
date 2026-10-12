@@ -566,6 +566,10 @@ test("a SQL error is shown under the editor in Postgres's words, with its place 
   await expect(error).toContainText('Relation "ordrs" does not exist.');
   await expect(error).toContainText("At line 2, column 15");
   await expect(p.locator(".cm-sql-error")).toHaveText("ordrs");
+  // A dotted name is marked whole: the database points at where it starts.
+  await run(app, p, "SELECT * FROM analytics.page_viewz");
+  await expect(error).toContainText('Relation "analytics.page_viewz" does not exist.');
+  await expect(p.locator(".cm-sql-error")).toHaveText("analytics.page_viewz");
 
   // A statement that ran too long was stopped, in the helper's words and with what it suggests.
   await run(app, p, "SELECT pg_sleep(60)");

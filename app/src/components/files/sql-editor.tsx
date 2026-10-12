@@ -67,7 +67,19 @@ const errorField = StateField.define<DecorationSet>({
       const at = e.value;
       const size = tr.state.doc.length;
       if (!at || at.from < 0 || at.from > size) return Decoration.none;
-      let to = at.to ?? tr.state.wordAt(at.from)?.to ?? at.from + 1;
+      let to = at.to;
+      if (to === undefined) {
+        // The word the database stopped at, and the rest of a dotted name
+        // with it: for o.statuss or analytics.page_views a database points
+        // at where the whole name starts, and one letter underlined is easy
+        // to miss.
+        to = tr.state.wordAt(at.from)?.to ?? at.from + 1;
+        while (to + 1 < size && tr.state.sliceDoc(to, to + 1) === ".") {
+          const next = tr.state.wordAt(to + 1);
+          if (!next || next.from !== to + 1) break;
+          to = next.to;
+        }
+      }
       to = Math.min(size, Math.max(to, at.from + 1));
       return at.from >= to ? Decoration.none : Decoration.set([errorMark.range(at.from, to)]);
     }
