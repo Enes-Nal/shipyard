@@ -62,7 +62,8 @@ const languageFor = (path: string) => LANGS.find(([re]) => re.test(path))?.[1];
 
 const v = (role: string) => ({ color: `var(--syn-${role}, var(--syn-text))`, fontStyle: `var(--syn-${role}-i, normal)`, fontWeight: `var(--syn-${role}-b, inherit)` });
 
-const highlight = HighlightStyle.define([
+// Shared with the SQL editor plugins get (sql-editor.tsx).
+export const highlight = HighlightStyle.define([
   { tag: t.keyword, ...v("keyword") },
   { tag: t.controlKeyword, ...v("control") },
   { tag: t.moduleKeyword, ...v("module") },
@@ -127,7 +128,7 @@ function fallbackVars(theme: Theme): Record<string, string> {
 const shikiCache = new Map<string, Record<string, string>>();
 
 // useSyntaxVars is the active theme's code colours as custom properties.
-function useSyntaxVars(theme: Theme): Record<string, string> {
+export function useSyntaxVars(theme: Theme): Record<string, string> {
   const name = theme.appearance === "dark" ? syntaxThemes(theme).dark : syntaxThemes(theme).light;
   // Each colour reads on this theme's background (4.5:1, lightness only),
   // the active line's tint included.
@@ -156,7 +157,7 @@ function useSyntaxVars(theme: Theme): Record<string, string> {
 
 // ---- The editor's chrome, in the app's tokens ----
 
-const chrome = EditorView.theme({
+export const chrome = EditorView.theme({
   "&": { height: "100%", backgroundColor: "transparent", color: "var(--syn-text)", fontSize: "var(--ed-font)" },
   "&.cm-focused": { outline: "none" },
   ".cm-scroller": {

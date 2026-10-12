@@ -1,35 +1,11 @@
 import { useBoxes, type BerthPluginContext, type ScreenProps } from "@berth/plugin";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-  Badge,
-  Button,
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-  Frame,
-  FrameDescription,
-  FrameHeader,
-  FramePanel,
-  FrameTitle,
-  Icon,
-  Skeleton,
-  Spinner,
-  ViewHeader,
-  cn,
-} from "@berth/plugin/ui";
-import { useMemo, useState } from "react";
+import { Button, Empty, EmptyDescription, EmptyHeader, EmptyTitle, Frame, FrameDescription, FrameHeader, FramePanel, FrameTitle, HelperBox, Icon, Skeleton, ViewHeader, cn, useHelperState } from "@berth/plugin/ui";
+import { useMemo } from "react";
 
 import { leadline } from "./api";
-import { ago, bytes, count, plural, serviceNames, span } from "./format.ts";
-import { readHelper, turnOff, useHelper, useLeft, useLive, useVisible } from "./live";
-import { cantRun, Command, HELPER, TurnOnDialog } from "./ui";
+import { ago, bytes, count, plural, span } from "./format.ts";
+import { useLive, useVisible } from "./live";
+import { Command, COPY, HELPER } from "./ui";
 
 // The Leadline screen: which boxes run the helper, with the switch for
 // each, what each one has heard from, and what an app needs before it shows
@@ -70,7 +46,9 @@ export function LeadlineScreen({ berth }: ScreenProps) {
           ) : (
             <ul className="divide-y">
               {boxes.map((b) => (
-                <BoxRow key={b.name} berth={berth} box={b.name} online={b.state === "online"} active={visible} />
+                <HelperBox key={b.name} berth={berth} box={b.name} online={b.state === "online"} active={visible} copy={COPY} testId="leadline">
+                  <Heard berth={berth} box={b.name} active={visible} />
+                </HelperBox>
               ))}
             </ul>
           )}
@@ -112,180 +90,13 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-const STATE: Record<string, { label: string; variant: string }> = {
-  running: { label: "Running", variant: "success" },
-  off: { label: "Off", variant: "outline" },
-  none: { label: "Can't run it", variant: "warning" },
-  installing: { label: "Installing…", variant: "info" },
-  starting: { label: "Starting…", variant: "info" },
-  failed: { label: "Failed", variant: "error" },
-  unsupported: { label: "Can't run it", variant: "warning" },
-};
-
-function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box: string; online: boolean; active: boolean }) {
-  const view = useHelper(berth, box, active && online);
-  const [asking, setAsking] = useState<"on" | "update">();
-  const [removing, setRemoving] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const s = view?.status;
-  const state = s?.state;
-  const running = state === "running";
-  const badge = !online ? { label: "Offline", variant: "outline" } : state ? STATE[state] : undefined;
-  const left = useLeft(box);
-  // The services that still point at a helper that has gone, in a sentence.
-  const restart = left.length > 0 && `Restart ${serviceNames(left)}: ${left.length === 1 ? "it was" : "they were"} started while Leadline was on, and ${left.length === 1 ? "its" : "their"} telemetry and database connection still go to it.`;
-
-  const off = async () => {
-    setBusy(true);
-    try {
-      const still = await turnOff(berth, box);
-      if (still.length) berth.notify(`Leadline is off on ${box}`, `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.`);
-    } catch (err) {
-      berth.notify(`Couldn't turn Leadline off on ${box}`, String((err as Error)?.message ?? err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <li className="px-4 py-3" data-testid="leadline-box" data-box={box} data-state={online ? (state ?? "reading") : "offline"}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Icon name="Server" className="size-4 shrink-0 text-muted-foreground" />
-        <span className="font-medium text-sm">{box}</span>
-        {badge ? (
-          <Badge variant={badge.variant} size="sm" className="gap-1">
-            {(state === "installing" || state === "starting") && <Spinner className="size-3" />}
-            {badge.label}
-          </Badge>
-        ) : view?.old || view?.fault ? (
-          <Badge variant="warning" size="sm">
-            Unknown
-          </Badge>
-        ) : (
-          <Skeleton className="h-4 w-14" />
-        )}
-        {s?.version && state !== "none" && (
-          <span className="font-mono text-muted-foreground text-xs">
-            {HELPER} {s.version}
-            {s.platform && ` · ${s.platform}`}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-2">
-          {online && running && s?.update && (
-            <Button size="xs" variant="outline" onClick={() => setAsking("update")}>
-              Update to {s.latest}…
-            </Button>
-          )}
-          {online && state === "off" && (
-            <Button size="xs" onClick={() => setAsking("on")}>
-              Turn on…
-            </Button>
-          )}
-          {online && state === "failed" && (
-            <Button size="xs" onClick={() => setAsking("on")}>
-              Try again…
-            </Button>
-          )}
-          {online && (running || state === "failed") && (
-            <Button size="xs" variant="outline" loading={busy} onClick={() => void off()}>
-              Turn off
-            </Button>
-          )}
-          {online && (running || state === "off" || state === "failed") && (
-            <Button size="xs" variant="ghost" className="text-muted-foreground" onClick={() => setRemoving(true)}>
-              Remove data…
-            </Button>
-          )}
-        </span>
-      </div>
-      <div className="mt-1 pl-7 text-muted-foreground text-xs">
-        {!online ? (
-          "Its helper can't be reached until the box is back."
-        ) : view?.old ? (
-          "Shipyard on this computer is older than Leadline needs: its agent can't install a plugin's program on a box yet. Update Shipyard."
-        ) : !s ? (
-          view?.fault ? (
-            <span className="text-destructive-foreground">
-              {view.fault.message}{" "}
-              <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => void readHelper(berth, box)}>
-                Try again
-              </button>
-            </span>
-          ) : null
-        ) : state === "unsupported" ? (
-          cantRun(s, box).update ? (
-            <>
-              {cantRun(s, box).why} Update the box in{" "}
-              <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => berth.openSettings("boxes")}>
-                Settings → Boxes
-              </button>
-              .
-            </>
-          ) : (
-            cantRun(s, box).why
-          )
-        ) : state === "failed" ? (
-          <span className="whitespace-pre-wrap text-destructive-foreground">{s.error ?? "The box didn't say why."}</span>
-        ) : state === "installing" ? (
-          "Downloading the program, checking it against its checksum and handing it to the box."
-        ) : state === "starting" ? (
-          "The box has it and is starting it."
-        ) : state === "off" ? (
-          <>
-            Nothing is recorded while it is off. Turning it on installs {HELPER} on {box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.
-            {restart && (
-              <span className="mt-1 block text-warning-foreground" data-testid="leadline-restart">
-                {restart}
-              </span>
-            )}
-          </>
-        ) : state === "none" ? (
-          `This copy of the plugin names no program to install. Install Leadline again from Settings → Plugins.`
-        ) : null}
-      </div>
-      {online && running && <Heard berth={berth} box={box} active={active} />}
-      <TurnOnDialog berth={berth} box={asking ? box : undefined} update={asking === "update"} onClose={() => setAsking(undefined)} />
-      <AlertDialog open={removing} onOpenChange={setRemoving}>
-        <AlertDialogPopup>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove what Leadline recorded on {box}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This stops <code>{HELPER}</code> on {box}, removes it, and deletes everything it recorded there: every worktree's queries, traces and logs. It can't be undone. Turn Leadline on again to start afresh.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="ghost" />}>Cancel</AlertDialogClose>
-            <Button
-              variant="destructive"
-              loading={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const still = await turnOff(berth, box, true);
-                  setRemoving(false);
-                  berth.notify(`Removed Leadline's data on ${box}`, still.length ? `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.` : undefined);
-                } catch (err) {
-                  berth.notify(`Couldn't remove Leadline's data on ${box}`, String((err as Error)?.message ?? err));
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Remove data
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogPopup>
-      </AlertDialog>
-    </li>
-  );
-}
-
 // Heard is what a running helper holds: how much, for how long, and which
 // worktrees it has heard from.
 function Heard({ berth, box, active }: { berth: BerthPluginContext; box: string; active: boolean }) {
   const api = useMemo(() => leadline(berth), [berth]);
+  const { refresh } = useHelperState(berth, box, false);
   const onFault = (fault: { code?: string }) => {
-    if (fault.code === "helper_off") void readHelper(berth, box);
+    if (fault.code === "helper_off") refresh();
   };
   const live = useLive(async () => ({ sources: await api.sources(box), storage: await api.storage(box) }), box, { every: 10_000, active, onFault });
   if (!live.data) return live.fault ? <p className="mt-2 pl-7 text-destructive-foreground text-xs">{live.fault.message}</p> : <Skeleton className="mt-2 ml-7 h-4 w-64" />;

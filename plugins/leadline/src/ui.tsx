@@ -1,44 +1,36 @@
-import { useBoxes, worktreeLocation, type BerthPluginContext, type HelperStatus, type WorktreePanelProps } from "@berth/plugin";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-  Badge,
-  Button,
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-  Icon,
-  Input,
-  PickOne,
-  Skeleton,
-  Spinner,
-  Tip,
-  cn,
-} from "@berth/plugin/ui";
-import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { useBoxes, worktreeLocation, type BerthPluginContext, type WorktreePanelProps } from "@berth/plugin";
+import { Badge, Button, Empty, EmptyDescription, EmptyHeader, EmptyTitle, HelperBox, type HelperCopy, Icon, Input, PickOne, Skeleton, Tip, cn, useHelperState } from "@berth/plugin/ui";
+import { type ReactNode, useCallback, useMemo } from "react";
 
 import { leadline, type Leadline, type Scope, type Source } from "./api";
-import { ago, sentence, span } from "./format.ts";
-import { type Fault, readHelper, turnOn, useHelper, useLive, useVisible, useWindow, type Window, WINDOWS } from "./live";
+import { ago, span } from "./format.ts";
+import { type Fault, useLive, useVisible, useWindow, type Window, WINDOWS } from "./live";
 import { commandOf, sourceOf } from "./source.ts";
 
 // The program this plugin installs on a box, as its manifest names it.
 export const HELPER = "berth-leadline";
 
-// Why a box can't run the helper, and whether updating the box would help.
-// The laptop answers "unsupported" for two things: the box's berthd can't
-// run helpers at all (it never said its platform), or it can and the plugin
-// has no build for that platform, which no update of the box changes.
-export function cantRun(s: HelperStatus, box: string): { why: string; update: boolean } {
-  if (s.platform) return { why: `${HELPER} has no build for ${s.platform} yet, so it can't be installed on ${box}.`, update: false };
-  return { why: sentence(s.error ?? `${box}'s berthd is from before plugins could install a program on a box`), update: true };
-}
+// What Leadline says of its helper where the app's HelperBox draws a box's
+// state and its switch (the Leadline screen's rows, and a panel on a box
+// where it is off).
+export const COPY: HelperCopy = {
+  name: "Leadline",
+  program: HELPER,
+  icon: "Anchor",
+  does: (box) => `It records what the dev servers Shipyard starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves ${box}.`,
+  about: (box) => (
+    <>
+      It shows what your code did in development: every database query, each request's trace, and the logs. Turning it on installs and runs <code>{HELPER}</code> on {box}; what it records stays there.
+    </>
+  ),
+  off: (box) => `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.`,
+  remove: {
+    title: (box) => `Remove what Leadline recorded on ${box}?`,
+    body: () => "deletes everything it recorded there: every worktree's queries, traces and logs. It can't be undone. Turn Leadline on again to start afresh.",
+    done: (box) => `Removed Leadline's data on ${box}`,
+  },
+  left: (services, n) => `Restart ${services}: ${n === 1 ? "it was" : "they were"} started while Leadline was on, and ${n === 1 ? "its" : "their"} telemetry and database connection still go to it.`,
+};
 
 // What a panel's body is given once the helper is running on its box.
 export interface PanelContext {
@@ -67,16 +59,17 @@ export interface PanelContext {
 export function PanelShell({ berth, box, location, worktree, main, path, panel, children }: WorktreePanelProps & { panel: string; children(ctx: PanelContext): ReactNode }) {
   const [ref, visible] = useVisible<HTMLDivElement>();
   const online = useBoxes().find((b) => b.name === box)?.state === "online";
-  const view = useHelper(berth, box, visible && online);
+  const helper = useHelperState(berth, box, visible && online);
   const [window] = useWindow(berth);
   const source = sourceOf({ location, worktree, main });
   const api = useMemo(() => leadline(berth), [berth]);
-  const running = view?.status?.state === "running";
+  const running = helper.status?.state === "running";
+  const refresh = helper.refresh;
   const onFault = useCallback(
     (fault: Fault) => {
-      if (fault.code === "helper_off" || fault.status === 503) void readHelper(berth, box);
+      if (fault.code === "helper_off" || fault.status === 503) refresh();
     },
-    [berth, box],
+    [refresh],
   );
   const ctx: PanelContext = {
     berth,
@@ -92,158 +85,15 @@ export function PanelShell({ berth, box, location, worktree, main, path, panel, 
     onFault,
   };
   return (
-    <div ref={ref} data-testid="leadline" data-leadline={panel} data-state={online ? (view?.status?.state ?? "reading") : "offline"} className="@container flex h-full min-h-0 flex-col bg-background text-sm">
+    <div ref={ref} data-testid="leadline" data-leadline={panel} data-state={online ? (helper.status?.state ?? "reading") : "offline"} className="@container flex h-full min-h-0 flex-col bg-background text-sm">
       {!online ? (
         <Notice icon="CloudOff" title={`${box} is offline`} body="Leadline's helper runs on the box and keeps what it records there, so there is nothing to read until the box is back." />
       ) : running ? (
         children(ctx)
       ) : (
-        <HelperNotice berth={berth} box={box} />
+        <HelperBox variant="panel" berth={berth} box={box} copy={COPY} testId="leadline" onAbout={() => berth.openScreen("leadline")} />
       )}
     </div>
-  );
-}
-
-// HelperNotice says why a box has nothing to show, and what to do about it.
-export function HelperNotice({ berth, box }: { berth: BerthPluginContext; box: string }) {
-  const view = useHelper(berth, box, false);
-  const [asking, setAsking] = useState(false);
-  const about = (
-    <Button size="sm" variant="ghost" onClick={() => berth.openScreen("leadline")}>
-      About Leadline
-    </Button>
-  );
-  if (!view) {
-    return (
-      <div className="space-y-3 p-5" aria-busy="true">
-        <Skeleton className="h-7 w-full" />
-        <Skeleton className="h-7 w-full" />
-        <Skeleton className="h-7 w-2/3" />
-      </div>
-    );
-  }
-  if (view.old) return <Notice icon="CircleAlert" title="Shipyard on this computer is older than Leadline needs" body="Its agent can't install a plugin's program on a box yet. Update Shipyard, then reload plugins in Settings → Plugins." />;
-  const s = view.status;
-  if (!s) return <Notice icon="TriangleAlert" title={`Couldn't ask ${box} about Leadline`} body={view.fault?.message} actions={<Button size="sm" variant="outline" onClick={() => void readHelper(berth, box)}>Try again</Button>} />;
-  switch (s.state) {
-    case "unsupported": {
-      const { why, update } = cantRun(s, box);
-      return (
-        <Notice
-          icon="ServerOff"
-          title={`${box} can't run Leadline yet`}
-          body={update ? `${why} Update the box in Settings → Boxes, then turn Leadline on.` : why}
-          actions={
-            <>
-              {update && (
-                <Button size="sm" variant="outline" onClick={() => berth.openSettings("boxes")}>
-                  Open Settings → Boxes
-                </Button>
-              )}
-              {about}
-            </>
-          }
-        />
-      );
-    }
-    case "installing":
-    case "starting":
-      return (
-        <Notice
-          icon={<Spinner className="mx-auto mb-2 size-5 text-muted-foreground" />}
-          title={s.state === "installing" ? `Installing ${HELPER} on ${box}…` : `Starting ${HELPER} on ${box}…`}
-          body="This takes a moment the first time: the program is downloaded, checked against its checksum and handed to the box."
-        />
-      );
-    case "failed":
-      return (
-        <Notice
-          icon="TriangleAlert"
-          title={`${HELPER} couldn't start on ${box}`}
-          body={<span className="whitespace-pre-wrap font-mono text-xs">{s.error ?? "The box didn't say why."}</span>}
-          actions={
-            <>
-              <Button size="sm" onClick={() => void turnOn(berth, box).catch((err) => berth.notify(`Couldn't turn Leadline on on ${box}`, String((err as Error)?.message ?? err)))}>
-                Try again
-              </Button>
-              {about}
-            </>
-          }
-        />
-      );
-    default:
-      return (
-        <>
-          <Notice
-            icon="Anchor"
-            title={`Leadline is off on ${box}`}
-            body={
-              <>
-                It shows what your code did in development: every database query, each request's trace, and the logs. Turning it on installs and runs <code>{HELPER}</code> on {box}; what it records stays there.
-              </>
-            }
-            actions={
-              <>
-                <Button size="sm" onClick={() => setAsking(true)}>
-                  Turn on…
-                </Button>
-                {about}
-              </>
-            }
-          />
-          <TurnOnDialog berth={berth} box={asking ? box : undefined} onClose={() => setAsking(false)} />
-        </>
-      );
-  }
-}
-
-// TurnOnDialog asks before a program is put on a box, saying which.
-export function TurnOnDialog({ berth, box, update, onClose }: { berth: BerthPluginContext; box?: string; update?: boolean; onClose(): void }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  const [last, setLast] = useState(box);
-  if (box && box !== last) setLast(box);
-  // The box stays in the words while the dialog closes.
-  const name = box ?? last ?? "";
-  const go = async () => {
-    if (!box) return;
-    setBusy(true);
-    setError(undefined);
-    try {
-      await turnOn(berth, box);
-      onClose();
-    } catch (err) {
-      setError(String((err as Error)?.message ?? err));
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <AlertDialog
-      open={!!box}
-      onOpenChange={(open: boolean) => {
-        if (!open) {
-          setError(undefined);
-          onClose();
-        }
-      }}
-    >
-      <AlertDialogPopup className="sm:max-w-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{update ? `Update Leadline on ${name}?` : `Turn on Leadline on ${name}?`}</AlertDialogTitle>
-          <AlertDialogDescription>
-            This {update ? "replaces" : "installs"} <code>{HELPER}</code>, a program this plugin carries, on {name} and keeps it running there. It records what the dev servers Shipyard starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves {name}.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {error && <p className="mx-6 whitespace-pre-wrap rounded-md bg-destructive/8 p-2 font-mono text-destructive-foreground text-xs">{error}</p>}
-        <AlertDialogFooter>
-          <AlertDialogClose render={<Button variant="ghost" />}>Cancel</AlertDialogClose>
-          <Button loading={busy} onClick={() => void go()}>
-            {update ? "Update" : "Install and turn on"}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogPopup>
-    </AlertDialog>
   );
 }
 
