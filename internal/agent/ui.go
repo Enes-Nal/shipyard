@@ -101,6 +101,7 @@ func (a *Agent) ui(token, hostport string, inner http.Handler) http.Handler {
 	a.manageRoutes(mux)
 	a.marketplaceRoutes(mux)
 	a.helperRoutes(mux)
+	a.helperTidyRoutes(mux)
 	a.guidedRoutes(mux)
 	a.outdatedRoutes(mux)
 	a.localBoxRoutes(mux)
@@ -547,6 +548,9 @@ func (a *Agent) plugins() []PluginInfo {
 }
 
 func (a *Agent) uiPlugins(w http.ResponseWriter, r *http.Request) {
+	// The app is looking at its plugins: a good moment to notice one that
+	// changed on disk, and what that means for its helper.
+	a.wakeHelperTidy()
 	writeJSON(w, http.StatusOK, a.plugins())
 }
 

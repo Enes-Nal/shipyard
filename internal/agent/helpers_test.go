@@ -28,6 +28,8 @@ type helperBox struct {
 	uploads []helperUpload
 	// removed is each removal asked for, with its query (purge or not).
 	removed []string
+	// failRemove has the box answer a removal with an error of its own.
+	failRemove bool
 }
 
 type helperUpload struct {
@@ -76,6 +78,12 @@ func (hb *helperBox) mount(s *wire.Server) {
 		hb.mu.Lock()
 		defer hb.mu.Unlock()
 		plugin := r.PathValue("plugin")
+		if hb.failRemove {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"its folder could not be removed","code":"internal"}`))
+			return
+		}
 		_, had := hb.have[plugin]
 		delete(hb.have, plugin)
 		hb.removed = append(hb.removed, plugin+"?"+r.URL.RawQuery)

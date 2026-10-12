@@ -604,10 +604,18 @@ func (a *Agent) installPlugin(ctx context.Context, id, version string, replace b
 	// other files may have changed: unless this put back exactly what was
 	// there, it is forgotten, and the person is asked again.
 	unchanged := before.managed && sameFiles(before.source.Files, p.Files)
+	forgot := false
 	if !unchanged && hooks.PluginEnabled(dest) {
 		if err := hooks.ForbidPlugin(dest); err != nil {
 			return p, err
 		}
+		forgot = true
+	}
+	// Its helper on the boxes, if it was on with one: held while the
+	// person is asked about the new files when they name the same helper,
+	// removed when they name another or none (helpercleanup.go).
+	if !unchanged {
+		a.helperPluginReplaced(id, forgot)
 	}
 	sources[id] = pluginSource{Registry: safeURL(registry), Version: p.Version, At: a.cfg.Now().UTC(), Files: files}
 	if err := a.writePluginSources(sources); err != nil {
@@ -698,10 +706,21 @@ func (a *Agent) marketplaceRoutes(mux *http.ServeMux) {
 			writeError(w, http.StatusBadRequest, "not a plugin id")
 			return
 		}
+		// Read before its folder goes: whether it brings a helper.
+		carries := a.carriesHelper(id)
 		if err := a.uninstallPlugin(id); err != nil {
 			writeMarketError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]string{"removed": id})
+		out := struct {
+			Removed string          `json:"removed"`
+			Helpers []HelperRemoved `json:"helpers,omitempty"`
+		}{Removed: id}
+		// Its helper goes from the boxes with it, and what it recorded
+		// there too (helpercleanup.go).
+		if carries {
+			out.Helpers = a.removeHelpers(id, true, "its plugin was uninstalled", helperRemovalWait)
+		}
+		writeJSON(w, http.StatusOK, out)
 	})
 }
