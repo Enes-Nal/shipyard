@@ -419,3 +419,75 @@ func TestABoxThatCannotHaveAHelperIsSaidToBeUnsupported(t *testing.T) {
 		t.Fatalf("a plugin's file: %d %s", resp.StatusCode, body)
 	}
 }
+
+// A helper that asks for a token answers 401 to a box whose berthd sends
+// none, and that berthd relays the answer as it came. It must reach the app
+// as the helper's refusal: to the laptop's connection a 401 otherwise means
+// the box no longer trusts it.
+func TestAHelpersOwnRefusalIsNotTheBoxDistrustingTheLaptop(t *testing.T) {
+	refuse := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		io.WriteString(w, `{"error":{"code":"unauthorized","message":"This route needs the helper's token."}}`)
+	})
+	b := newBoxWith(t, func(s *wire.Server) {
+		s.Handle("/v1/helpers/{plugin}/api/{path...}", refuse)
+		// Anything else of the box's that answers 401 is the box's word.
+		s.Handle("GET /v1/sessions", refuse)
+	})
+	a := startAgent(t, b.pairLaptop())
+	token := uiToken(t, a)
+	eventually(t, "box online", func() bool { return stateOf(t, a) == StateOnline })
+	said := func(body string) (out struct{ Error, Code string }) {
+		json.Unmarshal([]byte(body), &out)
+		return out
+	}
+
+	for _, path := range []string{"/v1/boxes/devbox/api/helpers/database/api/api/db/connections?source=acme%2Ffix-orders", "/v1/boxes/devbox/api/helpers/database/api/api/db/c_1/schema"} {
+		resp, body := uiCall(t, a, "GET", path, token)
+		got := said(body)
+		if resp.StatusCode != http.StatusUnauthorized || got.Code != "unauthorized" {
+			t.Fatalf("%s: %d %s, want the helper's 401 as code unauthorized", path, resp.StatusCode, body)
+		}
+		if !strings.Contains(got.Error, "database helper on devbox") || !strings.Contains(got.Error, "update the box") || strings.Contains(got.Error, "pair again") {
+			t.Errorf("%s: it says %q", path, got.Error)
+		}
+	}
+	// Nothing about the box changed: it is online, and trusted.
+	if s := stateOf(t, a); s != StateOnline {
+		t.Errorf("the box is %s after a helper's refusal, want it online", s)
+	}
+
+	// A 401 from any other route of the box is still the box's own.
+	if resp, body := uiCall(t, a, "GET", "/v1/boxes/devbox/api/sessions", token); resp.StatusCode != http.StatusBadGateway || said(body).Code != "box_unreachable" || !strings.Contains(body, "no longer trusts") {
+		t.Errorf("another route's 401: %d %s, want the box's distrust", resp.StatusCode, body)
+	}
+
+	// And a box that really stopped trusting this laptop says so on a
+	// helper's route too: its own 401 is not taken for the helper's.
+	if _, err := b.server.Clients.Remove("laptop"); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "untrusted", func() bool { return stateOf(t, a) == StateUntrusted })
+	if resp, body := uiCall(t, a, "GET", "/v1/boxes/devbox/api/helpers/database/api/api/db/connections", token); resp.StatusCode == http.StatusUnauthorized || said(body).Code == "unauthorized" {
+		t.Errorf("a revoked laptop's request of a helper: %d %s, want the box's distrust, not a helper's refusal", resp.StatusCode, body)
+	}
+}
+
+func TestOnlyAHelpersRelayIsTakenForOne(t *testing.T) {
+	for target, want := range map[string]string{
+		"/v1/helpers/database/api/api/db/connections?source=a": "database",
+		"/v1/helpers/leadline/api/v1/traces":                   "leadline",
+		"/v1/helpers/database/api":                             "database",
+		"/v1/helpers/database":                                 "",
+		"/v1/helpers/database/log":                             "",
+		"/v1/helpers":                                          "",
+		"/v1/helpers//api/x":                                   "",
+		"/v1/sessions?x=/v1/helpers/database/api/":             "",
+	} {
+		plugin, ok := helperRelayed(target)
+		if ok != (want != "") || (ok && plugin != want) {
+			t.Errorf("helperRelayed(%q) = %q, %v; want %q", target, plugin, ok, want)
+		}
+	}
+}

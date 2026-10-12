@@ -251,6 +251,18 @@ func (a *Agent) uiBoxAPI(w http.ResponseWriter, r *http.Request) {
 	a.relayBox(w, r, c, r.Method, target, body, header)
 }
 
+// helperRelayed reports whether a box path is a request the box relays to a
+// plugin's helper (box/helpersapi.go), and names the plugin.
+func helperRelayed(target string) (plugin string, ok bool) {
+	route, _, _ := strings.Cut(target, "?")
+	rest, ok := strings.CutPrefix(route, "/v1/helpers/")
+	if !ok {
+		return "", false
+	}
+	plugin, rest, ok = strings.Cut(rest, "/")
+	return plugin, ok && plugin != "" && (rest == "api" || strings.HasPrefix(rest, "api/"))
+}
+
 // relayBox sends one request to a box and streams its answer back.
 func (a *Agent) relayBox(w http.ResponseWriter, r *http.Request, c *wire.Client, method, target string, body io.Reader, header http.Header) {
 	// A box slow to answer may have gone: check it now rather than at the
@@ -259,6 +271,22 @@ func (a *Agent) relayBox(w http.ResponseWriter, r *http.Request, c *wire.Client,
 	resp, err := c.DoWithHeader(r.Context(), method, target, body, header)
 	slow.Stop()
 	if err != nil {
+		// A plugin's helper may turn a request away with a 401 of its own:
+		// one that asks for a token does, of a box whose berthd is from
+		// before it sent one, and that berthd relays the answer as it came.
+		// To the connection that carries it a 401 is the box's, and means
+		// the box no longer trusts this laptop, which it does. So the box
+		// is asked: when it still answers this laptop, the refusal was the
+		// helper's, and is passed on as one.
+		if plugin, ok := helperRelayed(target); ok && errors.Is(err, wire.ErrUntrusted) {
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+			_, perr := c.Ping(ctx)
+			cancel()
+			if perr == nil {
+				writeCoded(w, http.StatusUnauthorized, "the "+plugin+" helper on "+r.PathValue("box")+" turned the box's request away: the box's berthd did not send the token the helper asks for. A berthd from before helpers had tokens sends none: update the box", "unauthorized")
+				return
+			}
+		}
 		a.checkSoon()
 		// 503: the request never reached the box, so it is safe to queue
 		// or retry. 502: it may have; the box could have acted on it.
