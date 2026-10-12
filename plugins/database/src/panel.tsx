@@ -2,7 +2,8 @@ import { useBoxes, type BerthPluginContext, type WorktreePanelProps } from "@ber
 import { Badge, Button, HelperBox, Icon, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Tip, useHelperState } from "@berth/plugin/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { type Connection, database, type Fault, isOldHelper, NO_CAPABILITIES, type Schema } from "./api";
+import { type Connection, database, type Fault, isOldBox, isOldHelper, lostHelper, NO_CAPABILITIES, type Schema } from "./api";
+import { skewOf, untilHere, WRITES_FOR_MS } from "./clock.ts";
 import { Browser } from "./browser";
 import { Console } from "./console";
 import type { Ctx } from "./context";
@@ -35,6 +36,10 @@ export function DatabasePanel({ berth, box, location, worktree, main }: Worktree
   );
 }
 
+// How far each box's clock is ahead of this computer's, learned when writes
+// were turned on there.
+const skews = new Map<string, number>();
+
 interface Scope {
   berth: BerthPluginContext;
   box: string;
@@ -52,7 +57,7 @@ function Connections({ berth, box, source, worktree, active }: Scope) {
   const conns = useRead(() => api.connections(box, source), `${box}\n${source}`, { active, every: 10_000 });
   const onFault = useCallback(
     (fault: Fault) => {
-      if (fault.code === "helper_off" || fault.status === 503) refresh();
+      if (lostHelper(fault)) refresh();
     },
     [refresh],
   );
@@ -63,6 +68,31 @@ function Connections({ berth, box, source, worktree, active }: Scope) {
   const [picked, setPicked] = useState(() => berth.storage.get<string>(pickKey, ""));
 
   if (!conns.data) {
+    // The helper is there and won't answer the box: the box's berthd is from
+    // before it sent a helper its token.
+    if (conns.fault && isOldBox(conns.fault)) {
+      return (
+        <Notice
+          icon="CircleFadingArrowUp"
+          title={`${box} needs updating for Database`}
+          body={
+            <>
+              <code>{HELPER}</code> runs on {box} and answers only the box's own daemon, which proves itself with a token. {box}'s <code>berthd</code> is from before it sent one, so every request is turned away. Update the box in Settings → Boxes; nothing needs installing again.
+            </>
+          }
+          actions={
+            <>
+              <Button size="sm" onClick={() => berth.openSettings("boxes")}>
+                Open Settings → Boxes
+              </Button>
+              <Button size="sm" variant="ghost" onClick={conns.reload}>
+                Check again
+              </Button>
+            </>
+          }
+        />
+      );
+    }
     // The helper answers, and has never heard of db/: it is from before this panel.
     if (conns.fault && isOldHelper(conns.fault)) {
       const s = helper.status;
@@ -108,7 +138,7 @@ function Connections({ berth, box, source, worktree, active }: Scope) {
         title={`No database for ${worktree} yet`}
         body={
           <>
-            A service of this worktree that Shipyard starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. One that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
+            A service of this worktree that Shipyard starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
           </>
         }
         actions={
@@ -151,10 +181,12 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }: { 
   const [put, setPut] = useState<{ sql: string; n: number }>();
 
   // The lock: what the helper last said, or what it just answered to this
-  // panel until it is read again.
+  // panel until it is read again. Both are put on this computer's clock
+  // (clock.ts): the helper's times are the box's.
   const [answered, setAnswered] = useState<{ until?: number }>();
   useEffect(() => setAnswered(undefined), [conn.writes_until]);
-  const until = answered ? answered.until : conn.writes_until;
+  const read = useMemo(() => (conn.writes_until === undefined ? undefined : untilHere(conn.writes_until, skews.get(box) ?? 0, Date.now())), [conn.writes_until, box]);
+  const until = answered ? answered.until : read;
   const now = useNow(until !== undefined);
   const on = caps.writes && until !== undefined && until > now;
   const [asking, setAsking] = useState(false);
@@ -169,8 +201,11 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }: { 
 
   const unlock = async () => {
     const r = await api.writes(box, conn.id, true);
+    // Fifteen minutes from now, whatever the box's clock reads.
+    const arrived = Date.now();
+    if (r.writes_until !== undefined) skews.set(box, skewOf(r.writes_until, arrived));
     setRanOut(false);
-    setAnswered({ until: r.writes_until });
+    setAnswered({ until: r.writes_until === undefined ? undefined : arrived + WRITES_FOR_MS });
     reread();
   };
   const lock = async () => {
@@ -198,8 +233,12 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }: { 
 
   const schema = useRead<Schema[]>(() => api.schema(box, conn.id), `${box}\n${conn.id}`, { active });
   useEffect(() => {
-    if (schema.fault) onFault(schema.fault);
-  }, [schema.fault, onFault]);
+    if (!schema.fault) return;
+    onFault(schema.fault);
+    // The connection is gone (its worktree was removed, or its services
+    // start without it now): what the worktree has is read again.
+    if (schema.fault.code === "not_found") reread();
+  }, [schema.fault, onFault, reread]);
   const ctx: Ctx = { berth, api, box, source, worktree, conn, caps, engine, writes, active, onFault };
   const where = `${conn.host}${conn.port ? `:${conn.port}` : ""}`;
 
@@ -257,7 +296,9 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }: { 
       )}
       {stale && <Line tone="bad">Couldn't ask {box} again: {stale.message}</Line>}
       {!schema.data || !schema.fresh ? (
-        schema.fault ? (
+        schema.fault && schema.fault.code !== "db_unavailable" ? (
+          <Waiting fault={schema.fault} onRetry={schema.reload} title={`Couldn't read ${conn.database}'s tables`} />
+        ) : schema.fault ? (
           // The helper has the connection, and the database isn't answering it.
           <Notice
             icon="Unplug"

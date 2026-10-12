@@ -5,7 +5,7 @@ import { type Fault, faultOf, type QueryResult, QUERY_LIMIT, type Schema } from 
 import type { Ctx } from "./context";
 import { Grid, type GridColumn, type GridRow } from "./grid";
 import { ValueSheet, type Viewed } from "./sheet";
-import { errorAt, oneLine, type Ran, remember, type Statement, statementAt } from "./statements.ts";
+import { lineAndColumn, markAt, oneLine, type Ran, remember, type Statement, statementAt } from "./statements.ts";
 import { Line, ms, Notice, plural } from "./ui";
 
 // The SQL console: an editor, Run for the statement under the cursor (or
@@ -82,21 +82,14 @@ export function Console({ ctx, schemas, put }: { ctx: Ctx; schemas: Schema[]; pu
     }
   };
 
-  // Where the error is in the editor: the helper counts from the start of
+  // Where the database stopped, in the editor: it counts from the start of
   // what was sent, which may begin with a word the console added.
   const mark = useMemo(() => {
-    if (run?.state !== "failed" || run.fault?.code !== "sql_error") return undefined;
-    const at = errorAt(run.fault.hint);
-    if (at === undefined) return undefined;
-    const lead = run.sent.length - run.statement.text.length;
-    const from = run.statement.from + at - lead;
-    return from >= run.statement.from && from <= run.statement.to ? { from } : undefined;
+    if (run?.state !== "failed") return undefined;
+    const from = markAt(run.statement, run.sent, run.fault?.position);
+    return from === undefined ? undefined : { from };
   }, [run]);
-  const where = useMemo(() => {
-    if (!mark) return undefined;
-    const before = text.slice(0, mark.from).split("\n");
-    return `line ${before.length}, column ${before[before.length - 1].length + 1}`;
-  }, [mark, text]);
+  const where = useMemo(() => (mark ? lineAndColumn(text, mark.from) : undefined), [mark, text]);
 
   const result = run?.result;
   const columns = useMemo<GridColumn[]>(() => (result?.columns ?? []).map((c) => ({ name: c.name, type: c.type, family: engine.family(c.type) })), [result, engine]);
@@ -189,6 +182,7 @@ export function Console({ ctx, schemas, put }: { ctx: Ctx; schemas: Schema[]; pu
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-destructive-foreground">
               <span className="min-w-0 flex-1">
                 <b>Not run:</b> {writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`}
+                {run.fault.detail && <span className="mt-0.5 block font-mono text-muted-foreground">{run.fault.detail}</span>}
               </span>
               {writes.can && (
                 <Button size="xs" variant="outline" onClick={writes.ask}>
@@ -196,14 +190,14 @@ export function Console({ ctx, schemas, put }: { ctx: Ctx; schemas: Schema[]; pu
                 </Button>
               )}
             </div>
-          ) : run.fault.code === "timeout" ? (
-            <p className="text-destructive-foreground">
-              <b>Stopped:</b> the statement took longer than the console allows. {run.fault.message}
-            </p>
           ) : (
+            // The helper's own sentence, the database's detail, where it
+            // stopped, and what the helper suggests.
             <>
               <p className="whitespace-pre-wrap font-mono text-destructive-foreground">{run.fault.message}</p>
-              {where ? <p className="text-muted-foreground">At {where}, underlined in the editor.</p> : run.fault.hint && <p className="whitespace-pre-wrap text-muted-foreground">{run.fault.hint}</p>}
+              {run.fault.detail && <p className="whitespace-pre-wrap font-mono text-muted-foreground">{run.fault.detail}</p>}
+              {where && <p className="text-muted-foreground">At {where}, underlined in the editor.</p>}
+              {run.fault.hint && <p className="whitespace-pre-wrap text-muted-foreground">{run.fault.hint}</p>}
             </>
           )}
         </div>

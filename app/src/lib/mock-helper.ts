@@ -339,7 +339,8 @@ export function helperBoxCall(box: string, method: string, path: string, delay: 
   const empty = box !== "devl" || !!h.purged;
   if (plugin === "database") {
     // A berth-database from before db/ has no such routes.
-    if (!route.startsWith("db/") || h.version !== latestOf(plugin)) return noRoute();
+    // In berth-database's own words.
+    if (!route.startsWith("db/") || h.version !== latestOf(plugin)) return delay(null).then(() => Promise.reject(refusal(404, "not_found", "There is no such route.")));
     return (databaseMock ??= import("@/lib/mock-database")).then((m) => {
       try {
         return delay(m.databaseCall(method, route, new URLSearchParams(to.query), body, empty));

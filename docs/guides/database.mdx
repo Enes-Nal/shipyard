@@ -31,7 +31,9 @@ views are listed with the tables and say what they are.
 A table opens as a grid:
 
 - **A page at a time.** A hundred rows, or five hundred, with **Previous**
-  and **Next**. The count is the database's own estimate.
+  and **Next**. The count is the database's own estimate. A page of very
+  wide rows can hold fewer than you asked for; **Next** carries on from
+  where it stopped.
 - **Sort** by clicking a column's heading: once for ascending, again for
   descending, a third time for the table's own order.
 - **Filter** from a heading's filter button, or **Filter** in the toolbar.
@@ -56,18 +58,29 @@ Nothing can be edited until [writes are unlocked](#the-lock). After that:
   NULL** is its own button: an empty box means the empty string in a text
   column, and is not accepted in any other.
 - **Add row** adds a row at the top. A cell you leave alone takes the
-  column's default.
+  column's default. A column the database always generates (an identity, a
+  computed column) can't be typed in.
 - Tick rows in the margin and **Delete** them.
 
 Nothing is written as you go. Each change is **staged**: marked in the
 grid, counted in a bar under it. **Review** lists every staged change as
 old → new, and lets you take any one back. **Apply** sends them all as one
-edit, in one transaction: all of them apply, or none do.
+edit, in one transaction: all of them apply, or none do. One edit takes up
+to 1,000 changes.
 
 If a row you changed is no longer there when you apply (something else
 deleted it, or changed its key), nothing is applied. The panel says which
 rows are gone, keeps everything staged, and offers to reload the rows or
-drop the changes to the missing ones.
+drop the changes to the missing ones. A value the table refuses (a
+duplicate key, a foreign key with nothing to point at, text in a number
+column) stops the edit the same way, in the database's own words.
+
+<Callout title="An edit doesn't notice someone else's change">
+  A row is found by its primary key, and nothing else is checked. If your
+  app, an agent or a migration changed a row after you read it and the row
+  is still there, your values replace theirs without a warning. Only a row
+  that is gone stops an edit. Reload the rows first when that matters.
+</Callout>
 
 Two kinds of table can't be edited this way, and say why above the grid:
 
@@ -85,8 +98,11 @@ grid, with the command, the number of rows and how long it took.
 
 - At most 1,000 rows are kept. When a statement returned more, a line says
   the result was cut off.
-- An error is shown under the editor in the database's own words, and the
-  place it points at is underlined in the editor.
+- An error is shown under the editor in the database's own words, with its
+  detail and what it suggests, and the place it points at is underlined in
+  the editor.
+- A statement that runs for more than 10 seconds is stopped, and the
+  console says so.
 - **Explain** shows the statement's plan without running it.
 - **History** lists what was run in this worktree, newest first. It keeps
   the statements only, on your computer, never what they returned.
@@ -95,6 +111,17 @@ grid, with the command, the number of rows and how long it took.
 The console is under the same lock as the grid. A statement that writes is
 refused until writes are unlocked. Unlocked, it runs whatever you type,
 including `DROP TABLE`.
+
+A few things can't be run from it at all, and say why when you try:
+
+- **Statements that can't run inside a transaction**: `VACUUM`,
+  `CREATE DATABASE`, `CREATE INDEX CONCURRENTLY`. Every statement here runs
+  in a transaction of its own.
+- **`COPY … FROM STDIN` and `COPY … TO STDOUT`.** There is nowhere for the
+  data to go.
+- **Anything that needs the statement before it.** Each statement has a
+  session to itself: a `SET`, a temporary table or a `BEGIN` is gone by the
+  next one.
 
 ## The lock
 
@@ -110,8 +137,14 @@ tab.
   `berth-database` restarts. Changes you had staged stay staged; applying
   them asks you to unlock again.
 
-The lock is the helper's, not the tab's: while it is locked, the helper
-refuses a write whoever sends it.
+The lock is the helper's, not the tab's. While it is locked, every
+statement runs in a transaction Postgres itself holds read-only, so a write
+is refused by the database, whoever sends it and however it is written. The
+countdown is from the moment you unlocked, whatever the box's clock reads.
+
+It is a guard against accidents in a development database, not a sandbox:
+see [the database editor](/concepts/security#the-database-editor) for what
+it does and doesn't keep out.
 
 ## Turning it on for a box
 
@@ -131,6 +164,12 @@ boxes and what each one has.
 A worktree's tab on a box where Database is off says so, with the same
 **Turn on…**.
 
+If a tab says **the box needs updating for Database**, the program is
+running and the box's `berthd` is too old to be let in: `berth-database`
+answers only the box's own daemon, which proves itself with a token, and an
+older `berthd` doesn't send one. Update the box in **Settings → Boxes**;
+nothing needs installing again.
+
 **Update** appears when the plugin carries a newer program than the box
 runs. **Turn off** stops and removes the program. **Remove data** also
 deletes what it kept on that box; it can't be undone. Your databases
@@ -149,6 +188,10 @@ A worktree's tab shows a database once all of this is true:
 3. **It points at a Postgres on the box itself**: `localhost`, `127.0.0.1`
    or a Unix socket. That is the worktree's own development database.
 
+A worktree's services share what they have: the same database in `web` and
+`worker` is listed once. It stays listed across restarts of the box and of
+the program, and goes when the worktree is removed.
+
 These never appear:
 
 - **A database on another host.** A shared staging database or a hosted
@@ -162,8 +205,12 @@ Until a worktree has one, its tab says so, and says this.
 ## What it keeps, and where
 
 `berth-database` keeps each worktree's database address, with the
-password that is part of it, in a folder the box gives it. It needs the
-address to connect. **Remove data** deletes it.
+password that is part of it, in one file in a folder the box gives it,
+readable only by you on that box. It needs the address to connect, and
+keeps it so the tab isn't empty after every restart until each dev server
+is started again. A worktree's entry goes when the worktree is removed, and
+**Remove data** deletes the file. It holds nothing else: no rows, no
+results.
 
 - The address never leaves the box. The app asks the helper through the
   box's own API, and never sees a password.
@@ -173,6 +220,9 @@ address to connect. **Remove data** deletes it.
   about.
 - What you run in the console is remembered on your computer, as the
   statements alone.
+- On the box, the program's log notes each edit and each statement run
+  while writes are on by its shape: the table and its columns, or the
+  statement with every value replaced by `?`. Never a value.
 
 It also has nothing to do with what Leadline records. Leadline's
 **Queries** tab lists the statements your *app* sent; what you browse,
@@ -187,7 +237,11 @@ edit and run here is not recorded as your app's queries.
   [which databases appear](#which-databases-appear).
 - **One statement at a time** in the console, and at most 1,000 rows of a
   result.
-- **A statement that runs too long is stopped**, and the console says so.
+- **A statement is stopped after 10 seconds.**
+- **Nothing carries over between statements**, and what can't run in a
+  transaction can't run here. See [Console](#console).
+- **An edit checks only that each row is still there**, not that it is
+  unchanged. See [Editing](#editing).
 - **A cell longer than 4,000 characters is read cut.** It can be read that
   far and not edited in the grid; use the console for the whole value.
 - **No schema changes in the grid.** Creating, altering and dropping

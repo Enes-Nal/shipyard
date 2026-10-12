@@ -1,7 +1,7 @@
 import { Badge, Button, Card, CardHeader, CardPanel, Icon, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetPopup, SheetTitle, Tip, cn } from "@berth/plugin/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { type Cell, type Edited, type Fault, faultOf, MOST, PAGE, type Order, type Rows, type Schema, type Table } from "./api";
+import { type Cell, type Change, type Edited, type Fault, faultOf, MOST, MOST_CHANGES, PAGE, type Order, type Rows, type Schema, type Table } from "./api";
 import type { Ctx } from "./context";
 import { quote } from "./engines/families.ts";
 import { tableName } from "./engines/index.ts";
@@ -26,6 +26,10 @@ interface Open {
 }
 
 const tableKey = (schema: string, table: string) => `${schema}\n${table}`;
+
+// The change a refusal is about: the helper counts them from 1 ("Change 2: …").
+const changeOf = (message: string) => Number(/^Change (\d+)\b/.exec(message)?.[1] ?? 0);
+const keyOfChange = (c?: Change) => (c && c.op !== "insert" ? c.key : undefined);
 
 export function Browser({ ctx, schemas, onReload, toConsole }: { ctx: Ctx; schemas: Schema[]; onReload(): void; toConsole(sql: string): void }) {
   const [open, setOpen] = useState<Open>();
@@ -55,7 +59,8 @@ export function Browser({ ctx, schemas, onReload, toConsole }: { ctx: Ctx; schem
 function Tree({ ctx, schemas, open, staged, onOpen, onReload }: { ctx: Ctx; schemas: Schema[]; open?: Open; staged: Record<string, Staged>; onOpen(schema: string, table: string): void; onReload(): void }) {
   const [text, setText] = useState("");
   const q = text.trim().toLowerCase();
-  const shown = schemas.map((s) => ({ ...s, tables: s.tables.filter((t) => !q || t.name.toLowerCase().includes(q) || (ctx.caps.schemas && `${s.name}.${t.name}`.toLowerCase().includes(q))) })).filter((s) => s.tables.length > 0);
+  // Narrowed, a schema with nothing left is not shown; otherwise an empty one is listed, as the database has it.
+  const shown = schemas.map((s) => ({ ...s, tables: s.tables.filter((t) => !q || t.name.toLowerCase().includes(q) || (ctx.caps.schemas && `${s.name}.${t.name}`.toLowerCase().includes(q))) })).filter((s) => s.tables.length > 0 || (!q && ctx.caps.schemas));
   const total = schemas.reduce((n, s) => n + s.tables.length, 0);
   return (
     <nav aria-label="Tables" data-testid="database-tree" className={cn("min-h-0 w-full shrink-0 flex-col @2xl:w-60 @2xl:border-r", open ? "hidden @2xl:flex" : "flex")}>
@@ -77,6 +82,7 @@ function Tree({ ctx, schemas, open, staged, onOpen, onReload }: { ctx: Ctx; sche
             <section key={s.name} className="pb-1">
               {/* An engine without schemas has one list, with no heading. */}
               {ctx.caps.schemas && <h3 className="px-3 pt-2 pb-1 font-medium text-muted-foreground text-xs">{s.name}</h3>}
+              {s.tables.length === 0 && <p className="px-3 py-1 text-muted-foreground text-xs">No tables.</p>}
               <ul>
                 {s.tables.map((t) => {
                   const on = open?.schema === s.name && open.table === t.name;
@@ -118,6 +124,9 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   const { api, box, conn, engine, caps, writes } = ctx;
   const [mode, setMode] = useState<"rows" | "structure">("rows");
   const [offset, setOffset] = useState(0);
+  // Where each page before this one started: a page can stop short of its
+  // size, so the way back is remembered, not worked out.
+  const [trail, setTrail] = useState<number[]>([]);
   const [size, setSize] = useState(PAGE);
   const [order, setOrder] = useState<Order[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>(initial ?? []);
@@ -148,7 +157,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     () =>
       (data?.columns ?? table.columns).map((c) => {
         const known = table.columns.find((k) => k.name === c.name);
-        return { name: c.name, type: c.type, family: engine.family(c.type), key: pk.includes(c.name), nullable: known?.nullable ?? true, fk: table.foreign_keys.find((f) => f.columns.includes(c.name)) };
+        return { name: c.name, type: c.type, family: engine.family(c.type), key: pk.includes(c.name), nullable: known?.nullable ?? true, fk: table.foreign_keys.find((f) => f.columns.includes(c.name)), generated: known?.default?.startsWith("generated always") };
       }),
     [data?.columns, table, engine, pk],
   );
@@ -178,12 +187,13 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   const editing = writes.on && (rules.rows || rules.inserts);
   const canEdit = useCallback(
     (row: GridRow, col: number) => {
-      if (!editing) return false;
+      // A column the database always generates takes nothing from anyone.
+      if (!editing || columns[col]?.generated) return false;
       if (row.state === "new") return rules.inserts;
       // A row whose key arrived cut can't be named.
       return rules.rows && row.state !== "deleted" && !row.cut?.has(col) && !keyColumns.some((k) => row.cut?.has(k));
     },
-    [editing, rules, keyColumns],
+    [editing, rules, keyColumns, columns],
   );
   const onEdit = useCallback(
     (row: GridRow, col: number, value: Cell) => {
@@ -210,13 +220,26 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     [columns, originals, onJump],
   );
 
-  const page = (to: number) => {
+  const first = () => {
     setPicked(NO_ROWS);
-    setOffset(Math.max(0, to));
+    setTrail([]);
+    setOffset(0);
+  };
+  // The next page starts after the rows that came, however many that was.
+  const next = () => {
+    if (!data) return;
+    setPicked(NO_ROWS);
+    setTrail([...trail, offset]);
+    setOffset(offset + data.rows.length);
+  };
+  const previous = () => {
+    setPicked(NO_ROWS);
+    setOffset(trail[trail.length - 1] ?? 0);
+    setTrail(trail.slice(0, -1));
   };
   const narrow = (next: Draft[]) => {
     setDrafts(next);
-    page(0);
+    first();
   };
   const addFilter = (column: string) => {
     const ops = opsFor(caps.operators, familyOf(column));
@@ -251,9 +274,14 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   };
 
   const apply = async () => {
-    setApplying(true);
     setRefused(undefined);
     setGone([]);
+    if (countOf(staged) > MOST_CHANGES) {
+      setRefused({ message: `One edit takes at most ${MOST_CHANGES.toLocaleString("en-US")} changes, and ${countOf(staged).toLocaleString("en-US")} are staged.`, hint: "Take some back in Review, apply, and stage the rest again." });
+      setReviewing(false);
+      return;
+    }
+    setApplying(true);
     try {
       const result = await api.edit(box, conn.id, schema, table.name, changes(staged));
       setStaged(NOTHING);
@@ -264,7 +292,13 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     } catch (err) {
       const fault = faultOf(err);
       if (fault.code === "read_only") writes.refused();
-      if (fault.code === "row_conflict") setGone(await missing());
+      if (fault.code === "row_conflict") {
+        const found = await missing();
+        // The helper names one change by its place in what was sent ("Change
+        // 2: …"): that row at least, when asking for each found none.
+        const named = keyed(staged).find((k) => JSON.stringify(k.key) === JSON.stringify(keyOfChange(changes(staged)[changeOf(fault.message) - 1])));
+        setGone(found.length ? found : named ? [named.id] : []);
+      }
       setRefused(fault);
       setReviewing(false);
       ctx.onFault(fault);
@@ -422,7 +456,8 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
               ) : (
                 <>
                   <b>Nothing was applied.</b> {refused.message}
-                  {refused.hint && ` ${refused.hint}`} Your changes are still staged.
+                  {refused.detail && ` ${refused.detail}`}
+                  {refused.hint && refused.code !== "query_failed" && ` ${refused.hint}`} Your changes are still staged.
                 </>
               )}
             </Line>
@@ -440,7 +475,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
               {rows.length === 0 ? (
                 <Notice icon={filters.length ? "Search" : "table-2"} title={filters.length ? "No rows match" : offset > 0 ? "No more rows" : `${name} is empty`} body={filters.length ? "Nothing in the table matches the filters above." : offset > 0 ? "The page before was the last." : rules.inserts && !editing ? "Unlock writes to add a row." : undefined} />
               ) : (
-                <Grid label={`Rows of ${name}`} columns={columns} rows={rows} offset={offset} order={order} onSort={(column) => (setOrder(nextOrder(order, column)), page(0))} onFilter={caps.operators.length ? addFilter : undefined} canEdit={canEdit} onEdit={editing ? onEdit : undefined} onView={onView} onJump={jump} picked={picked} canPick={(r) => r.state === "new" || (rules.rows && r.state !== "deleted")} onPick={editing ? (ids, on) => setPicked((p) => new Set(on ? [...p, ...ids] : [...p].filter((id) => !ids.includes(id)))) : undefined} />
+                <Grid label={`Rows of ${name}`} columns={columns} rows={rows} offset={offset} order={order} onSort={(column) => (setOrder(nextOrder(order, column)), first())} onFilter={caps.operators.length ? addFilter : undefined} canEdit={canEdit} onEdit={editing ? onEdit : undefined} onView={onView} onJump={jump} picked={picked} canPick={(r) => r.state === "new" || (rules.rows && r.state !== "deleted")} onPick={editing ? (ids, on) => setPicked((p) => new Set(on ? [...p, ...ids] : [...p].filter((id) => !ids.includes(id)))) : undefined} />
               )}
             </>
           )}
@@ -480,17 +515,17 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
                   label="Rows a page"
                   className="mr-2"
                   value={String(size)}
-                  onChange={(v) => (setSize(Number(v)), page(0))}
+                  onChange={(v) => (setSize(Number(v)), first())}
                   options={[
                     { value: String(PAGE), label: String(PAGE) },
                     { value: String(MOST), label: String(MOST) },
                   ]}
                 />
-                <Button size="xs" variant="ghost" disabled={offset === 0} onClick={() => page(offset - size)}>
+                <Button size="xs" variant="ghost" disabled={offset === 0} onClick={previous}>
                   <Icon name="ChevronLeft" className="size-3.5" />
                   Previous
                 </Button>
-                <Button size="xs" variant="ghost" disabled={!data.more} onClick={() => page(offset + size)}>
+                <Button size="xs" variant="ghost" disabled={!data.more || data.rows.length === 0} onClick={next}>
                   Next
                   <Icon name="ChevronRight" className="size-3.5" />
                 </Button>
@@ -506,7 +541,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             <SheetHeader className="gap-1.5 pb-3">
               <SheetTitle className="text-base">Review changes to {name}</SheetTitle>
               <SheetDescription className="text-[13px]">
-                {caps.transactions ? `${plural(n, "change")}, sent together: all of them apply, or none do.` : `${plural(n, "change")}. ${engine.name} has no transactions, so they apply one after another, and one that fails leaves the ones before it applied.`}
+                {caps.transactions ? `${plural(n, "change")}, sent together: all of them apply, or none do.` : `${plural(n, "change")}. ${engine.name} has no transactions, so they apply one after another, and one that fails leaves the ones before it applied.`} A row is found by its key: if something else changed it since you read it, your values replace theirs without a word. Only a row that is gone stops the edit.
               </SheetDescription>
             </SheetHeader>
             <SheetPanel className="min-h-0 flex-1 space-y-2 overflow-auto">

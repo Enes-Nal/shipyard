@@ -1,7 +1,8 @@
 import { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle, Badge, Button, Icon, Tip } from "@berth/plugin/ui";
 import { useState } from "react";
 
-import { type Connection, type Fault, faultOf, WRITES_FOR_MS } from "./api";
+import { type Connection, type Fault, faultOf } from "./api";
+import { WRITES_FOR_MS } from "./clock.ts";
 import type { Engine } from "./engines/index.ts";
 import { HELPER, left } from "./ui";
 

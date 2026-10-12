@@ -25,6 +25,9 @@ export interface GridColumn {
   // The foreign key it is part of: its cells jump to the row they point at.
   fk?: ForeignKey;
   nullable?: boolean;
+  // The database always fills it in (an identity, a computed column): it
+  // takes no value from an edit.
+  generated?: boolean;
 }
 
 export interface GridRow {
@@ -106,9 +109,11 @@ export function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter
 
   // Other rows: the selection is about the ones that were there.
   const shape = `${rows.length}:${columns.length}:${rows[0]?.id ?? ""}`;
+  // They start from their top: another page, another order.
   useEffect(() => {
     setSel(undefined);
     setEditing(false);
+    if (scroller.current) scroller.current.scrollTop = 0;
   }, [shape]);
 
   const first = Math.max(0, Math.floor(view.top / ROW) - SPARE);
@@ -373,7 +378,7 @@ const RowView = memo(function RowView({ at, number, row, columns, sel, tab, edit
               <CellEditor initial={unset ? "" : editText(cell)} column={c} onCommit={(v) => commit(at, col, v)} onCancel={cancel} />
             ) : (
               <span className="flex items-center gap-1">
-                <span className={cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic")}>{unset ? "default" : shown.text}</span>
+                <span className={cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic")}>{unset ? (c.generated ? "generated" : "default") : shown.text}</span>
                 {more && (
                   <Tip label={cut ? "Cut at 4,000 characters: show what was read" : "Show the whole value"}>
                     <button type="button" tabIndex={on ? 0 : -1} aria-label={`Show the whole value of ${c.name}`} onClick={(e) => (e.stopPropagation(), view(at, col))} className="-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">

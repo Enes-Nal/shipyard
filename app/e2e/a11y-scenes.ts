@@ -842,6 +842,14 @@ export const scenes: Scene[] = [
     },
   },
   {
+    id: "database-old-box",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "unauthorized" });
+      await expect(p.getByTestId("database-notice")).toContainText("devl needs updating for Database");
+    },
+  },
+  {
     id: "database-refused",
     extra: true,
     async run(app, theme) {

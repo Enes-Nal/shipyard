@@ -96,15 +96,22 @@ export function statementAt(sql: string, selection: { from: number; to: number }
   return { text: found.text, from: found.from, to: found.to };
 }
 
-// errorAt reads where in the statement a SQL error is, from the helper's
-// hint: Postgres counts characters from 1 ("position 15", "at character
-// 15", "LINE 1 … position: 15"). Undefined when the hint is advice instead.
-export function errorAt(hint: string | undefined): number | undefined {
-  if (!hint) return undefined;
-  const m = /\b(?:position|character|char|offset)\b\D{0,3}(\d+)/i.exec(hint) ?? /^\s*(\d+)\s*$/.exec(hint);
-  if (!m) return undefined;
-  const n = Number(m[1]);
-  return n >= 1 ? n - 1 : undefined;
+// markAt is where in the editor a refused statement stopped. The helper
+// says where in what it was sent, as a character counted from 1 (an error's
+// `position`); what was sent is the statement, or the statement after a
+// word the console put in front of it (EXPLAIN). Undefined when the place
+// is not in the statement itself.
+export function markAt(statement: Statement, sent: string, position: number | undefined): number | undefined {
+  if (position === undefined || position < 1) return undefined;
+  const lead = sent.length - statement.text.length;
+  const at = statement.from + (position - 1) - lead;
+  return at >= statement.from && at <= statement.to ? at : undefined;
+}
+
+// A place in the editor in words: "line 2, column 15".
+export function lineAndColumn(text: string, at: number): string {
+  const before = text.slice(0, at).split("\n");
+  return `line ${before.length}, column ${before[before.length - 1].length + 1}`;
 }
 
 // What the console remembers of a run: the statement and when. Never what

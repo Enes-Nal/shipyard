@@ -22,7 +22,9 @@ The data comes from `berth-database`, a program the plugin's manifest
 carries under `box.helper`. The laptop agent installs it on a box when the
 person turns Database on there, and the box runs it; the plugin reads its
 API through the box with `berth.helper.request`, so a real box sees
-`helpers/database/api/api/db/…`. `src/api.ts` types the six routes:
+`helpers/database/api/api/db/…`. Every route and answer is in
+[internal/database/API.md](../../internal/database/API.md), which is the
+source of truth; `src/api.ts` types the six routes the panel uses:
 
 | Route (from the helper's `/api/`) | What it is |
 | --- | --- |
@@ -36,6 +38,22 @@ API through the box with `berth.helper.request`, so a real box sees
 A worktree's `source` is `<project>/<worktree>`, or the project alone for
 its main checkout: the same rule as Leadline's helper, copied into
 `src/source.ts` and tested on its own.
+
+What the panel holds to, from `API.md`:
+
+- **Errors are told apart by `code`, never by status.** `query_failed` may
+  carry `position` (a character of the statement, from 1: the console marks
+  it), `sqlstate` and `detail`; `not_found` on `db/connections` is a helper
+  from before the route; `unauthorized` is a box whose `berthd` doesn't
+  send the helper its token yet.
+- **The next page starts at `offset + rows.length`.** A page can stop short
+  of its limit with `more: true`.
+- **`writes_until` is the box's clock.** The countdown starts when the
+  answer to turning writes on arrives (`src/clock.ts`).
+- **A cell goes back as it came.** An integer past 2^53 is a string of its
+  digits, in a key too.
+- **An edit conflicts only when a row is gone.** A row something else
+  changed is overwritten, and Review says so.
 
 ## Engines
 
@@ -87,8 +105,19 @@ Mock mode (`?mock=1`) runs the listing's own bundle, installed and allowed,
 so rebuild the listing to see a change there. Its helper is
 `app/src/lib/mock-database.ts`: a made-up "acme" shop kept in memory, with
 filters, paging, edits, conflicts, the lock and a console that runs a small
-set of statements. `?db=none`, `?db=refused` and `?db=old` are the states
-with nothing to show.
+set of statements. It answers in the real helper's fields, codes and
+sentences. `?db=none`, `?db=refused`, `?db=old` and `?db=unauthorized` are
+the states with nothing to show.
+
+To see what the real helper says, run it against a throwaway Postgres (on
+a spare port, never 5432), attach a URL and ask it:
+
+```sh
+go build -o /tmp/berth-database ./cmd/berth-database
+/tmp/berth-database serve --dir /tmp/berth-database-data --addr 127.0.0.1:4391
+# helper.json in that folder has "api" and "token"; every route but
+# /api/health needs Authorization: Bearer <token>.
+```
 
 Raise `version` in `berth-plugin.json` when the code changes. The
 manifest's `assets` are empty here: the listing's build fills in each

@@ -1,17 +1,20 @@
 import { ApiError } from "@/lib/api";
 
 // Mock mode's berth-database helper (plugins/database): what a box's
-// helpers/database/api/api/db/… answers, closely enough to build the panel
-// on. It is loaded when the panel first asks (mock-helper.ts routes to it).
+// helpers/database/api/api/db/… answers, as internal/database/API.md says
+// the real one does: the same fields, the same codes, and the real helper's
+// own sentences, taken from a run of it against a Postgres 17. It is loaded
+// when the panel first asks (mock-helper.ts routes to it).
 //
 // The data is a made-up "acme" shop, built here from a seed so it is the
 // same on every load: customers, products, orders and their items, an
 // inventory with a two-column key, an audit log with no key at all, a view
 // and a materialized view, foreign keys between them, and a second schema
 // with a 41-column table. Every kind of value the helper sends is in it:
-// NULLs and empty strings side by side, numerics and big integers as text,
-// timestamps, uuids, bytea, jsonb, arrays, one long description and one
-// over 4,000 characters, which arrives cut.
+// NULLs and empty strings side by side, integers as numbers and, past 2^53
+// (page_views' ids), as their digits; numerics as text; timestamps, uuids,
+// bytea, jsonb, arrays, one long description and one over 4,000 characters,
+// which arrives cut.
 //
 // shop / checkout-fix on devl has two connections: that Postgres, and
 // "events" on a made-up engine ("driftdb") that says it has no schemas,
@@ -20,15 +23,20 @@ import { ApiError } from "@/lib/api";
 // shop's main checkout has the Postgres alone. No other worktree has a
 // database yet.
 //
-// Everything is in memory: filters, ordering and paging, the lock and its
-// fifteen minutes, edits (all or nothing, 409 row_conflict for a keyed row
-// that is gone) and a console that runs a small set of statements and
-// answers anything else with a sql_error that says what it does run.
+// Everything is in memory: filters, ordering and paging (a page of the wide
+// table stops short, as one does at the helper's size cap), the lock and
+// its fifteen minutes, edits (all or nothing, row_conflict for a keyed row
+// that is gone, query_failed for a value or a key the table refuses) and a
+// console. The real helper hands a statement to Postgres; this one runs a
+// small set itself and answers anything else query_failed, saying what it
+// does run. That sentence is the only one here the real helper never says.
 //
 // ?db=none is a fleet where no worktree has a database yet, ?db=refused one
-// whose database isn't answering the helper, and ?db=old a devl whose
-// berth-database is from before the db/ routes (mock-helper.ts: it answers
-// 404 until it is updated).
+// whose database isn't answering the helper (db_unavailable), ?db=old a
+// devl whose berth-database is from before the db/ routes (mock-helper.ts:
+// it answers not_found until it is updated), and ?db=unauthorized a devl
+// whose berthd is from before it sent a helper its token (every route
+// answers unauthorized).
 
 type Cell = null | boolean | number | string;
 
@@ -71,10 +79,12 @@ const WRITES_FOR_MS = 15 * 60_000;
 const CUT_AT = 4000;
 
 // A helper's own refusal, as the box passes it through: the words are
-// inside "error" (lib/helper.ts lifts them out).
-function refusal(status: number, code: string, message: string, hint?: string): ApiError {
+// inside "error" (lib/helper.ts lifts them out). For a statement the
+// database refused there may be its sqlstate, where it stopped and its
+// detail.
+function refusal(status: number, code: string, message: string, more: { hint?: string; sqlstate?: string; position?: number; detail?: string } = {}): ApiError {
   const err = new ApiError(String({}), status);
-  err.detail = { error: { code, message, ...(hint ? { hint } : {}) } };
+  err.detail = { error: { code, message, ...more } };
   return err;
 }
 
@@ -154,7 +164,7 @@ function shopTables(): MockTable[] {
   const items: Cell[][] = [];
   let item = 20_000;
   for (let n = 0; n < 1280; n++) {
-    const id = String(5001 + n);
+    const id = 5001 + n;
     const status = STATUS[int(0, STATUS.length - 1)];
     const placed = NOW - (1280 - n) * 3_600_000 * 2.1;
     let total = 0;
@@ -164,7 +174,7 @@ function shopTables(): MockTable[] {
       const quantity = int(1, 4);
       const price = products[product - 1][4] as number;
       total += quantity * price;
-      items.push([String(++item), id, product, quantity, price]);
+      items.push([++item, id, product, quantity, price]);
     }
     orders.push([id, int(1, 240), status, total, n % 17 === 0 ? "EUR" : "USD", iso(placed), status === "pending" || status === "cancelled" ? null : iso(placed + int(60_000, 900_000)), status === "shipped" ? uuid() : null, n % 29 === 0 ? "Leave with the neighbour at 14." : n % 31 === 0 ? "" : null]);
   }
@@ -187,7 +197,7 @@ function shopTables(): MockTable[] {
   const totals = customers
     .map((c) => {
       const mine = orders.filter((o) => o[1] === c[0]);
-      return [c[0], c[2], String(mine.length), String(mine.reduce((sum, o) => sum + (o[3] as number), 0)), mine.length ? (mine[mine.length - 1][5] as string) : null] as Cell[];
+      return [c[0], c[2], mine.length, String(mine.reduce((sum, o) => sum + (o[3] as number), 0)), mine.length ? (mine[mine.length - 1][5] as string) : null] as Cell[];
     })
     .sort((a, b) => Number(b[3]) - Number(a[3]));
 
@@ -195,7 +205,7 @@ function shopTables(): MockTable[] {
   for (let d = 0; d < 30; d++) {
     const day = iso(NOW - d * DAY).slice(0, 10);
     const mine = orders.filter((o) => (o[5] as string).startsWith(day));
-    revenue.push([day, String(mine.length), `${mine.reduce((sum, o) => sum + (o[3] as number), 0)}.00`]);
+    revenue.push([day, mine.length, `${mine.reduce((sum, o) => sum + (o[3] as number), 0)}.00`]);
   }
 
   const pk = (table: string, type = "integer"): Column => ({ name: "id", type, nullable: false, primary_key: true, default: `nextval('${table}_id_seq'::regclass)` });
@@ -342,7 +352,7 @@ function pageViews(r: () => number): MockTable {
   const text = (name: string, values: (string | null)[]) => ({ name, type: "text", make: () => pick(values) as Cell });
   const num = (name: string, lo: number, hi: number, type = "integer") => ({ name, type, make: () => int(lo, hi) as Cell });
   const spec: { name: string; type: string; make(n: number): Cell }[] = [
-    { name: "id", type: "bigint", make: (n) => String(900_000 + n) },
+    { name: "id", type: "bigint", make: (n) => String(9007199254740993n + BigInt(n)) },
     { name: "session", type: "uuid", make: () => `${hex(8)}-${hex(4)}-4${hex(3)}-a${hex(3)}-${hex(12)}` },
     { name: "customer_id", type: "integer", make: () => (r() < 0.4 ? null : int(1, 240)) },
     text("path", ["/", "/products", "/products/harbor-kettle", "/cart", "/checkout", "/orders", "/search?q=lamp"]),
@@ -408,7 +418,7 @@ function driftTables(): MockTable[] {
     const ok = n % 7 !== 0;
     return [`dlv_${String(3000 + n)}`, TOPICS[n % TOPICS.length], ok ? 200 : 503, ok, n % 7 === 0 ? int(1, 5) : 0, iso(NOW - n * 97_000), ok ? null : "upstream timed out"];
   });
-  const events: Cell[][] = Array.from({ length: 180 }, (_, n) => [String(88_000 + n), TOPICS[(n * 3) % TOPICS.length], JSON.stringify({ order: 5001 + n, attempt: 1 + (n % 3) }), iso(NOW - n * 31_000)]);
+  const events: Cell[][] = Array.from({ length: 180 }, (_, n) => [88_000 + n, TOPICS[(n * 3) % TOPICS.length], JSON.stringify({ order: 5001 + n, attempt: 1 + (n % 3) }), iso(NOW - n * 31_000)]);
   const c = (name: string, type: string, nullable = false): Column => ({ name, type, nullable });
   return [
     { schema: "", name: "deliveries", kind: "table", columns: [{ ...c("id", "str"), primary_key: true }, c("topic", "str"), c("status", "i32"), c("ok", "bool"), c("retries", "i32"), c("sent", "ts"), c("error", "str", true)], primary_key: ["id"], indexes: [], foreign_keys: [], rows: deliveries },
@@ -423,9 +433,9 @@ let conns: MockConn[] | undefined;
 
 function all(): MockConn[] {
   conns ??= [
-    { id: "c1f04e2a", source: "shop/checkout-fix", label: "DATABASE_URL", engine: "postgres", database: "shop_checkout_fix", host: "127.0.0.1", port: 5432, user: "acme", capabilities: POSTGRES, tables: shopTables() },
-    { id: "d7a93b10", source: "shop/checkout-fix", label: "EVENTS_URL", engine: "driftdb", database: "events", host: "127.0.0.1", port: 8765, user: "", capabilities: DRIFT, tables: driftTables() },
-    { id: "a02c77e9", source: "shop", label: "DATABASE_URL", engine: "postgres", database: "shop_dev", host: "127.0.0.1", port: 5432, user: "acme", capabilities: POSTGRES, tables: shopTables() },
+    { id: "c_1c28ba20e1b6", source: "shop/checkout-fix", label: "DATABASE_URL", engine: "postgres", database: "shop_checkout_fix", host: "localhost", port: 5432, user: "acme", capabilities: POSTGRES, tables: shopTables() },
+    { id: "c_7d90a3b1e44f", source: "shop/checkout-fix", label: "EVENTS_URL", engine: "driftdb", database: "events", host: "localhost", port: 8765, user: "", capabilities: DRIFT, tables: driftTables() },
+    { id: "c_a02c77e9b513", source: "shop", label: "DATABASE_URL", engine: "postgres", database: "shop_dev", host: "localhost", port: 5432, user: "acme", capabilities: POSTGRES, tables: shopTables() },
   ];
   return conns;
 }
@@ -439,13 +449,21 @@ const base = (type: string) =>
     .toLowerCase()
     .replace(/\s*\([^)]*\)/g, "")
     .trim();
-const NUMERIC = new Set(["integer", "bigint", "smallint", "numeric", "double precision", "real", "i32", "i64"]);
-const isNumeric = (type: string) => NUMERIC.has(base(type));
+const INTEGER = new Set(["integer", "bigint", "smallint", "i32", "i64"]);
+const FLOAT = new Set(["double precision", "real"]);
+const isInteger = (type: string) => INTEGER.has(base(type));
+const isNumeric = (type: string) => isInteger(type) || FLOAT.has(base(type)) || base(type) === "numeric";
 const isBool = (type: string) => base(type) === "boolean" || base(type) === "bool";
-// What JSON's numbers hold: the rest go as text, as the helper sends them.
-const asNumber = (type: string) => ["integer", "smallint", "double precision", "real", "i32"].includes(base(type));
+// An integer as the helper sends it: a number while a double holds it
+// exactly, its digits as a string past 2^53.
+const int = (digits: string): Cell => (Number.isSafeInteger(Number(digits)) ? Number(digits) : digits.replace(/^\+/, ""));
 
 function compare(a: Cell, b: Cell, type: string): number {
+  if (isInteger(type)) {
+    const x = BigInt(String(a));
+    const y = BigInt(String(b));
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
   if (isNumeric(type)) return Number(a) - Number(b);
   if (typeof a === "boolean" || typeof b === "boolean") return Number(a) - Number(b);
   return String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0;
@@ -481,59 +499,66 @@ function matches(cell: Cell, op: string, value: Cell, type: string): boolean {
   }
 }
 
-// A value as it is stored for a column, from what was sent: a JSON scalar,
-// or a string the database casts. A cast that can't be made is the error
-// Postgres gives.
-function cast(value: Cell, column: Column, table: MockTable): Cell {
-  if (value === null) {
-    if (!column.nullable) throw refusal(400, "sql_error", `null value in column "${column.name}" of relation "${table.name}" violates not-null constraint`);
+// What the database says of a value a column cannot be, in the helper's
+// words (Postgres's own, as a sentence).
+const invalid = (type: string, text: string, lead = "") => refusal(400, "query_failed", `${lead}Invalid input syntax for type ${base(type)}: "${text}".`, { sqlstate: "22P02" });
+
+// A value as it is stored for a column, from what was sent: a JSON scalar
+// the database casts, or an object or an array for a json column. lead is
+// "Change 2: " in an edit.
+function cast(value: unknown, column: Column, table: MockTable, lead = ""): Cell {
+  if (value === null || value === undefined) {
+    if (!column.nullable) throw refusal(400, "query_failed", `${lead}Null value in column "${column.name}" of relation "${table.name}" violates not-null constraint.`, { sqlstate: "23502" });
     return null;
   }
   const type = base(column.type);
+  if (type === "jsonb" || type === "json") {
+    if (typeof value === "object") return JSON.stringify(value);
+    try {
+      JSON.parse(String(value));
+    } catch {
+      throw refusal(400, "query_failed", `${lead}Invalid input syntax for type json.`, { sqlstate: "22P02", detail: "The input string ended unexpectedly, or a token is not valid JSON." });
+    }
+    return String(value);
+  }
   if (isNumeric(type)) {
     const text = String(value).trim();
-    const whole = ["integer", "bigint", "smallint"].includes(type);
-    if (!(whole ? /^[+-]?\d+$/ : /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i).test(text)) throw refusal(400, "sql_error", `invalid input syntax for type ${type}: "${text}"`);
-    return asNumber(type) ? Number(text) : text;
+    if (isInteger(type)) {
+      if (!/^[+-]?\d+$/.test(text)) throw invalid(type, text, lead);
+      return int(text);
+    }
+    if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(text) && !/^[+-]?(nan|infinity)$/i.test(text)) throw invalid(type, text, lead);
+    return FLOAT.has(type) && Number.isFinite(Number(text)) ? Number(text) : text;
   }
   if (isBool(type)) {
     if (typeof value === "boolean") return value;
     if (/^(t|true|1|yes|on)$/i.test(String(value))) return true;
     if (/^(f|false|0|no|off)$/i.test(String(value))) return false;
-    throw refusal(400, "sql_error", `invalid input syntax for type boolean: "${value}"`);
+    throw invalid(type, String(value), lead);
   }
-  if (type === "jsonb" || type === "json") {
-    try {
-      JSON.parse(String(value));
-    } catch {
-      throw refusal(400, "sql_error", "invalid input syntax for type json", "The value is not valid JSON.");
-    }
-  }
-  if (type === "uuid" && !/^[0-9a-f-]{32,36}$/i.test(String(value))) throw refusal(400, "sql_error", `invalid input syntax for type uuid: "${value}"`);
+  if (type === "uuid" && !/^[0-9a-f-]{32,36}$/i.test(String(value))) throw invalid(type, String(value), lead);
   return String(value);
 }
 
 // What a column takes when a new row leaves it out.
-function fallback(column: Column, table: MockTable): Cell {
+function fallback(column: Column, table: MockTable, lead: string): Cell {
   if (column.default?.startsWith("nextval")) {
     const at = table.columns.indexOf(column);
-    const next = table.rows.reduce((max, row) => Math.max(max, Number(row[at]) || 0), 0) + 1;
-    return asNumber(column.type) ? next : String(next);
+    return table.rows.reduce((max, row) => Math.max(max, Number(row[at]) || 0), 0) + 1;
   }
   if (column.default === "now()") return new Date().toISOString();
   if (column.default !== undefined) {
     const d = column.default.replace(/::[\w\s[\]]+$/, "");
     if (d === "true" || d === "false") return d === "true";
-    if (/^-?\d+$/.test(d)) return asNumber(column.type) ? Number(d) : d;
+    if (/^-?\d+$/.test(d)) return isInteger(column.type) ? Number(d) : d;
     return d.replace(/^'|'$/g, "");
   }
-  if (!column.nullable) throw refusal(400, "sql_error", `null value in column "${column.name}" of relation "${table.name}" violates not-null constraint`, `Failing row has no value for ${column.name}.`);
-  return null;
+  return cast(null, column, table, lead);
 }
 
 // Rows as they are sent: a cell longer than 4,000 characters is cut, and
-// "cut" says which.
-function sent(rows: Cell[][]): { rows: Cell[][]; cut?: [number, number][] } {
+// "cut" says which. It is always there, empty when nothing was.
+function sent(rows: Cell[][]): { rows: Cell[][]; cut: [number, number][] } {
   const cut: [number, number][] = [];
   const out = rows.map((row, r) =>
     row.map((cell, c) => {
@@ -542,20 +567,22 @@ function sent(rows: Cell[][]): { rows: Cell[][]; cut?: [number, number][] } {
       return cell.slice(0, CUT_AT);
     }),
   );
-  return cut.length ? { rows: out, cut } : { rows: out };
+  return { rows: out, cut };
 }
 
 // ---- Routes ----
 
+const quoted = (table: MockTable) => (table.schema ? `"${table.schema}"."${table.name}"` : `"${table.name}"`);
+
 function tableOf(conn: MockConn, schema: string, name: string): MockTable {
   const t = conn.tables.find((x) => x.name === name && (x.schema === schema || (!conn.capabilities.schemas && !schema)));
-  if (!t) throw refusal(404, "not_found", `No such table: ${schema ? `${schema}.` : ""}${name}.`);
+  if (!t) throw refusal(404, "not_found", `There is no table ${schema ? `"${schema}".` : ""}"${name}" in this database.`);
   return t;
 }
 
-const at = (table: MockTable, column: string): number => {
+const at = (table: MockTable, column: string, what: string): number => {
   const i = table.columns.findIndex((c) => c.name === column);
-  if (i < 0) throw refusal(400, "bad_request", `${table.name} has no column called ${column}.`);
+  if (i < 0) throw refusal(400, "bad_request", `There is no column "${column}" ${what}.`);
   return i;
 };
 
@@ -581,17 +608,28 @@ interface RowsBody {
   filters?: { column: string; op: string; value?: Cell }[];
 }
 
+// The helper stops a page at about 8 MB, short of its limit, and says more
+// follow. Here a table as wide as page_views stops at this many rows, so the
+// panel is seen to ask for the next page from where this one ended.
+const WIDE = 30;
+const SHORT_PAGE = 420;
+
 function rowsOf(conn: MockConn, body: RowsBody) {
   const table = tableOf(conn, body.schema ?? "", body.table ?? "");
   const limit = Math.max(1, Math.min(500, body.limit ?? 100));
   const offset = Math.max(0, body.offset ?? 0);
   let rows = table.rows;
   for (const f of body.filters ?? []) {
-    if (!conn.capabilities.operators.includes(f.op)) throw refusal(400, "bad_request", `${conn.engine} has no ${f.op} filter.`);
-    const i = at(table, f.column);
-    rows = rows.filter((row) => matches(row[i], f.op, f.value ?? null, table.columns[i].type));
+    if (!conn.capabilities.operators.includes(f.op)) throw refusal(400, "bad_request", `"${f.op}" is not a filter this database has.`, { hint: `It has ${conn.capabilities.operators.join(", ")}.` });
+    const i = at(table, f.column, "to filter on");
+    const type = table.columns[i].type;
+    const takes = f.op !== "is_null" && f.op !== "not_null";
+    if (takes && (f.value === null || f.value === undefined)) throw refusal(400, "bad_request", `The filter on "${f.column}" needs a value.`, { hint: "To find rows without one, use is_null." });
+    // A value the column cannot be is the database's to refuse.
+    if (takes && f.op !== "like" && f.op !== "ilike" && isNumeric(type) && !/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(String(f.value).trim())) throw invalid(type, String(f.value));
+    rows = rows.filter((row) => matches(row[i], f.op, f.value ?? null, type));
   }
-  const order = (body.order_by ?? []).map((o) => ({ i: at(table, o.column), desc: !!o.desc }));
+  const order = (body.order_by ?? []).map((o) => ({ i: at(table, o.column, "to sort by"), desc: !!o.desc }));
   if (order.length) {
     rows = [...rows].sort((a, b) => {
       for (const o of order) {
@@ -604,75 +642,99 @@ function rowsOf(conn: MockConn, body: RowsBody) {
       return 0;
     });
   }
-  const page = rows.slice(offset, offset + limit);
-  return { columns: table.columns.map((c) => ({ name: c.name, type: c.type })), ...sent(page), primary_key: table.primary_key, rows_estimate: table.rows.length, more: offset + limit < rows.length };
+  const most = table.columns.length > WIDE ? Math.min(limit, SHORT_PAGE) : limit;
+  const page = rows.slice(offset, offset + most);
+  return { columns: table.columns.map((c) => ({ name: c.name, type: c.type })), ...sent(page), primary_key: table.primary_key, rows_estimate: table.kind === "view" ? 0 : table.rows.length, more: offset + page.length < rows.length };
 }
 
-type Change = { op: "update"; key: Record<string, Cell>; set: Record<string, Cell> } | { op: "insert"; set: Record<string, Cell> } | { op: "delete"; key: Record<string, Cell> };
+type Change = { op: "update"; key: Record<string, Cell>; set: Record<string, unknown> } | { op: "insert"; set: Record<string, unknown> } | { op: "delete"; key: Record<string, Cell> };
 
-function readOnly(conn: MockConn, what: string): ApiError {
-  return refusal(403, "read_only", conn.capabilities.writes ? `Writes to ${conn.database} are locked: ${what} was not run.` : `${conn.engine} takes no writes.`, conn.capabilities.writes ? "Unlock writes first: POST db/{conn}/writes." : undefined);
-}
+const OFF = { message: "Writes are off for this connection.", hint: "Turn writes on; they stay on for 15 minutes." };
+const noWrites = (conn: MockConn) => refusal(400, "bad_request", `A ${conn.engine} database cannot be written to from the editor.`);
 
 function edit(conn: MockConn, body: { schema?: string; table?: string; changes?: Change[] }) {
-  if (!writing(conn)) throw readOnly(conn, "the edit");
+  if (!conn.capabilities.writes) throw noWrites(conn);
+  if (!writing(conn)) throw refusal(403, "read_only", OFF.message, { hint: OFF.hint });
   const table = tableOf(conn, body.schema ?? "", body.table ?? "");
-  if (table.kind !== "table") throw refusal(400, "bad_request", `${table.name} is a ${table.kind.replaceAll("_", " ")}: its rows can't be edited.`);
+  const changes = body.changes ?? [];
+  if (changes.length < 1 || changes.length > 1000) throw refusal(400, "bad_request", "An edit is 1 to 1,000 changes.");
   // All or nothing: the changes are made to a copy, which takes the
   // table's place only when every one of them went through.
   const work: MockTable = { ...table, rows: table.rows.map((r) => [...r]) };
   const out = { updated: 0, inserted: 0, deleted: 0 };
-  const find = (key: Record<string, Cell>) => {
-    if (table.primary_key.length === 0) throw refusal(400, "bad_request", `${table.name} has no primary key: it takes inserts only.`);
-    const cols = table.primary_key.map((c) => at(table, c));
-    const i = work.rows.findIndex((row) => cols.every((c, n) => String(row[c]) === String(key[table.primary_key[n]])));
-    if (i < 0) throw refusal(409, "row_conflict", `No row in ${table.name} with ${table.primary_key.map((c) => `${c} = ${key[c]}`).join(", ")} any more: it was changed or deleted since it was read.`, "Read the rows again.");
+  const pk = table.primary_key;
+  const find = (key: Record<string, Cell>, n: number) => {
+    // A view has no key either: the same refusal.
+    if (pk.length === 0 || table.kind !== "table") throw refusal(400, "no_primary_key", `${quoted(table)} has no primary key, so the editor cannot tell one of its rows from another.`, { hint: "Rows can be added to it. To change or remove one, run a statement." });
+    if (Object.keys(key ?? {}).length !== pk.length || pk.some((c) => key[c] === null || key[c] === undefined)) throw refusal(400, "bad_request", `Change ${n}: key must be the whole primary key (${pk.join(", ")}), each with a value.`);
+    const cols = pk.map((c) => at(table, c, "in the key"));
+    const i = work.rows.findIndex((row) => cols.every((c, k) => String(row[c]) === String(key[pk[k]])));
+    if (i < 0) throw refusal(409, "row_conflict", `Change ${n}: the row is not there any more.`, { hint: "Nothing was changed. Load the rows again and repeat the edit." });
     return i;
   };
-  const unique = () => {
-    if (table.primary_key.length === 0) return;
-    const cols = table.primary_key.map((c) => at(table, c));
+  const unique = (n: number) => {
+    if (pk.length === 0) return;
+    const cols = pk.map((c) => at(table, c, "in the key"));
     const seen = new Set<string>();
     for (const row of work.rows) {
       const id = JSON.stringify(cols.map((c) => String(row[c])));
-      if (seen.has(id)) throw refusal(400, "sql_error", `duplicate key value violates unique constraint "${table.name}_pkey"`, `Key (${table.primary_key.join(", ")})=(${cols.map((c) => row[c]).join(", ")}) already exists.`);
+      if (seen.has(id)) throw refusal(400, "query_failed", `Change ${n}: Duplicate key value violates unique constraint "${table.name}_pkey".`, { sqlstate: "23505", detail: `Key (${pk.join(", ")})=(${cols.map((c) => row[c]).join(", ")}) already exists.` });
       seen.add(id);
     }
   };
-  for (const change of body.changes ?? []) {
+  changes.forEach((change, index) => {
+    const n = index + 1;
+    const lead = `Change ${n}: `;
     if (change.op === "delete") {
-      work.rows.splice(find(change.key), 1);
+      work.rows.splice(find(change.key, n), 1);
       out.deleted++;
     } else if (change.op === "update") {
-      const i = find(change.key);
-      for (const [name, value] of Object.entries(change.set)) work.rows[i][at(table, name)] = cast(value, table.columns[at(table, name)], table);
+      const i = find(change.key, n);
+      for (const [name, value] of Object.entries(change.set)) work.rows[i][at(table, name, "to set")] = cast(value, table.columns[at(table, name, "to set")], table, lead);
       out.updated++;
     } else {
-      for (const name of Object.keys(change.set)) at(table, name);
-      work.rows.push(table.columns.map((c) => (c.name in change.set ? cast(change.set[c.name], c, work) : fallback(c, work))));
+      if (table.kind !== "table") throw refusal(400, "query_failed", `${lead}Cannot insert into ${table.kind.replaceAll("_", " ")} "${table.name}".`, { sqlstate: "55000" });
+      for (const name of Object.keys(change.set)) at(table, name, "to set");
+      work.rows.push(table.columns.map((c) => (c.name in change.set ? cast(change.set[c.name], c, work, lead) : fallback(c, work, lead))));
       out.inserted++;
     }
-  }
-  unique();
+    unique(n);
+  });
   table.rows = work.rows;
   return out;
 }
 
 // ---- The console ----
 
-const UNDERSTOOD = "It runs SELECT from one table with WHERE (conditions joined by AND), ORDER BY, LIMIT and OFFSET; count(*); EXPLAIN; and UPDATE … SET … WHERE and DELETE FROM … WHERE.";
-const WRITERS = new Set(["INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP", "TRUNCATE", "GRANT", "REVOKE", "COMMENT", "VACUUM", "REINDEX"]);
-const STARTS = new Set([...WRITERS, "SELECT", "EXPLAIN", "SHOW", "WITH", "VALUES", "TABLE", "DO", "BEGIN", "COMMIT", "ROLLBACK", "SET"]);
+// The real helper hands a statement to Postgres. This mock runs a few
+// shapes of statement itself and says so of the rest, in the helper's
+// envelope: the code is the helper's, the words are the mock's own.
+const UNDERSTOOD = "The mock runs SELECT from one table with WHERE (conditions joined by AND), ORDER BY, LIMIT and OFFSET; count(*); EXPLAIN; and UPDATE … SET … WHERE and DELETE FROM … WHERE.";
+const WRITERS = new Set(["INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP", "TRUNCATE", "GRANT", "REVOKE", "COMMENT", "REINDEX"]);
+const STARTS = new Set([...WRITERS, "SELECT", "EXPLAIN", "SHOW", "WITH", "VALUES", "TABLE", "DO", "BEGIN", "COMMIT", "ROLLBACK", "SET", "VACUUM", "COPY"]);
 
-const sqlError = (message: string, position?: number, hint?: string) => refusal(400, "sql_error", message, position !== undefined ? `position ${position + 1}` : hint);
+// The database refused the statement: its words as a sentence, its
+// sqlstate, and where it stopped (a character of the statement, from 1).
+const failed = (message: string, sqlstate: string, at?: number, hint?: string) => refusal(400, "query_failed", message, { sqlstate, ...(at !== undefined ? { position: at + 1 } : {}), ...(hint ? { hint } : {}) });
+const notRun = () => refusal(400, "query_failed", "The mock database does not run this statement.", { hint: UNDERSTOOD });
 const bare = (name: string) => name.replace(/^"|"$/g, "");
 
 // The table a statement names, wherever in the text its name is.
 function named(conn: MockConn, sql: string, name: string): MockTable {
   const [a, b] = name.split(".").map(bare);
   const table = conn.tables.find((t) => (b === undefined ? t.name === a && (t.schema === "public" || t.schema === "") : t.schema === a && t.name === b));
-  if (!table) throw sqlError(`relation "${name}" does not exist`, sql.indexOf(name));
+  if (!table) throw failed(`Relation "${name}" does not exist.`, "42P01", sql.indexOf(name));
   return table;
+}
+
+// A column a statement names: when it is not there, Postgres suggests the
+// one it looks like, and so does this.
+function columnOf(table: MockTable, name: string, sql: string, from = 0): number {
+  const i = table.columns.findIndex((c) => c.name === name);
+  if (i >= 0) return i;
+  const letters = (s: string) => [...s].sort().join("");
+  const near = table.columns.find((c) => letters(c.name) === letters(name) || (Math.abs(c.name.length - name.length) <= 1 && (c.name.startsWith(name.slice(0, 3)) || c.name.endsWith(name.slice(-3)))));
+  throw failed(`Column "${name}" does not exist.`, "42703", sql.indexOf(name, from), near ? `Perhaps you meant to reference the column "${table.name}.${near.name}".` : undefined);
 }
 
 interface Condition {
@@ -689,9 +751,7 @@ function conditions(sql: string, where: string, table: MockTable): Condition[] {
   let m: RegExpExecArray | null;
   let last = 0;
   while (last < where.length && (m = part.exec(where))) {
-    const column = bare(m[1]);
-    const i = table.columns.findIndex((c) => c.name === column);
-    if (i < 0) throw sqlError(`column "${column}" does not exist`, offset + m.index + m[0].indexOf(m[1]));
+    const i = columnOf(table, bare(m[1]), sql, offset + m.index);
     if (m[2]) out.push({ i, op: /not/i.test(m[2]) ? "not_null" : "is_null", value: null });
     else {
       const raw = m[4];
@@ -701,7 +761,10 @@ function conditions(sql: string, where: string, table: MockTable): Condition[] {
     }
     last = part.lastIndex;
   }
-  if (last < where.length) throw sqlError(`syntax error at or near "${where.slice(last).trim().split(/\s+/)[0]}"`, offset + last + (where.slice(last).length - where.slice(last).trimStart().length), UNDERSTOOD);
+  if (last < where.length) {
+    const rest = where.slice(last);
+    throw failed(`Syntax error at or near "${rest.trim().split(/\s+/)[0]}".`, "42601", offset + last + (rest.length - rest.trimStart().length));
+  }
   return out;
 }
 
@@ -709,17 +772,31 @@ const holds = (row: Cell[], table: MockTable, where: Condition[]) => where.every
 
 function query(conn: MockConn, body: { sql?: string; limit?: number }) {
   const limit = Math.max(1, Math.min(5000, body.limit ?? 1000));
+  const plain = (body.sql ?? "").replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
   const sql = (body.sql ?? "").trim().replace(/;\s*$/, "");
-  if (!sql) throw sqlError("there is no statement to run");
-  if (/;\s*\S/.test(sql.replace(/'(?:[^']|'')*'/g, "''").replace(/\$\$[\s\S]*?\$\$/g, ""))) throw sqlError("cannot run more than one statement at a time", undefined, "Run them one by one.");
+  if (!plain.replace(/;/g, "").trim()) throw refusal(400, "bad_request", "sql is required.");
+  const several = sql
+    .replace(/'(?:[^']|'')*'/g, "''")
+    .replace(/\$\$[\s\S]*?\$\$/g, "")
+    .split(";")
+    .filter((s) => s.trim()).length;
+  if (several > 1) throw refusal(400, "multiple_statements", `That is ${several} statements; the editor runs one at a time.`, { hint: "Run them one by one." });
   const first = /^[A-Za-z]+/.exec(sql)?.[0] ?? "";
   const word = first.toUpperCase();
-  if (!STARTS.has(word)) throw sqlError(`syntax error at or near "${first || sql[0]}"`, 0);
-  if (WRITERS.has(word) && !writing(conn)) throw readOnly(conn, `cannot execute ${word} in a read-only transaction`);
-  const answer = (command: string, columns: { name: string; type: string }[], rows: Cell[][], count = rows.length, notices: string[] = []) => ({ columns, ...sent(rows.slice(0, limit)), row_count: Math.min(count, columns.length ? limit : count), command, duration_ms: Math.round((0.4 + rows.length * 0.004) * 100) / 100, truncated: rows.length > limit, notices });
+  if (!STARTS.has(word)) throw failed(`Syntax error at or near "${first || sql[0]}".`, "42601", 0);
+  // Postgres refuses a write in a read-only transaction; the helper passes that on.
+  if (WRITERS.has(word) && !writing(conn)) throw refusal(403, "read_only", OFF.message, { hint: OFF.hint, sqlstate: "25006", detail: `cannot execute ${word === "CREATE" || word === "ALTER" || word === "DROP" ? sql.split(/\s+/).slice(0, 2).join(" ").toUpperCase() : word} in a read-only transaction` });
+  // rows is every row the statement has; what is sent stops at the limit,
+  // and row_count is then only the rows that are here.
+  const answer = (command: string, columns: { name: string; type: string }[], rows: Cell[][], changed = 0, notices: string[] = []) => {
+    const here = rows.slice(0, limit);
+    return { columns, ...sent(here), row_count: columns.length ? here.length : changed, command, duration_ms: Math.round((0.4 + rows.length * 0.004) * 1000) / 1000, truncated: rows.length > limit, notices };
+  };
 
-  if (/^select\s+pg_sleep\(/i.test(sql)) throw refusal(408, "timeout", "canceling statement due to statement timeout", "The console stops a statement after 30 seconds.");
-  if (/^do\b/i.test(sql)) {
+  if (word === "VACUUM") throw failed("VACUUM cannot run inside a transaction block.", "25001");
+  if (word === "COPY" && /\b(stdin|stdout)\b/i.test(sql)) throw refusal(400, "bad_request", "COPY to or from the editor is not something this API can carry.");
+  if (/^select\s+pg_sleep\(/i.test(sql)) throw refusal(400, "timeout", "The statement ran longer than 10s and was stopped.", { hint: "Narrow it, or add a LIMIT.", sqlstate: "57014" });
+  if (word === "DO") {
     const said = /raise\s+notice\s+'((?:[^']|'')*)'/i.exec(sql);
     return answer("DO", [], [], 0, said ? [`NOTICE: ${said[1].replaceAll("''", "'")}`] : []);
   }
@@ -732,7 +809,7 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
   if (explain) {
     const inner = explain[1];
     const from = /\b(?:from|update|into)\s+((?:"?\w+"?\.)?"?\w+"?)/i.exec(inner);
-    if (!from) throw sqlError("mock database: EXPLAIN needs a statement that names a table", undefined, UNDERSTOOD);
+    if (!from) throw notRun();
     const table = named(conn, sql, from[1]);
     const where = /\bwhere\s+([\s\S]+?)(?:\s+order\s+by|\s+limit|$)/i.exec(inner)?.[1];
     const key = where && table.primary_key.length === 1 && new RegExp(`^"?${table.primary_key[0]}"?\\s*=`, "i").test(where.trim());
@@ -751,21 +828,17 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
     const table = named(conn, sql, select[2]);
     const where = select[3] ? conditions(sql, select[3], table) : [];
     let rows = table.rows.filter((row) => holds(row, table, where));
-    if (/^count\(\s*\*\s*\)$/i.test(select[1].trim())) return answer("SELECT", [{ name: "count", type: "bigint" }], [[String(rows.length)]]);
+    // A count is a bigint, which is a number while it fits in one.
+    if (/^count\(\s*\*\s*\)$/i.test(select[1].trim())) return answer("SELECT", [{ name: "count", type: "bigint" }], [[rows.length]]);
     const wanted =
       select[1].trim() === "*"
         ? table.columns.map((_, i) => i)
         : select[1].split(",").map((raw) => {
-            const name = bare(raw.trim());
-            const i = table.columns.findIndex((c) => c.name === name);
-            if (!/^"?\w+"?$/.test(raw.trim())) throw sqlError(`mock database: it selects columns by name, * or count(*), and “${raw.trim()}” is none of those`, sql.indexOf(raw.trim()), UNDERSTOOD);
-            if (i < 0) throw sqlError(`column "${name}" does not exist`, sql.indexOf(raw.trim()));
-            return i;
+            if (!/^"?\w+"?$/.test(raw.trim())) throw notRun();
+            return columnOf(table, bare(raw.trim()), sql);
           });
     if (select[4]) {
-      const name = bare(select[4]);
-      const i = table.columns.findIndex((c) => c.name === name);
-      if (i < 0) throw sqlError(`column "${name}" does not exist`, sql.lastIndexOf(select[4]));
+      const i = columnOf(table, bare(select[4]), sql, sql.toLowerCase().lastIndexOf("order by"));
       const desc = /desc/i.test(select[5] ?? "");
       rows = [...rows].sort((a, b) => {
         const c = a[i] === null ? (b[i] === null ? 0 : 1) : b[i] === null ? -1 : compare(a[i], b[i], table.columns[i].type);
@@ -780,6 +853,13 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
       rows.map((row) => wanted.map((i) => row[i])),
     );
   }
+  if (word === "SELECT") {
+    // SELECT id FORM customers: Postgres reads FORM as the column's new
+    // name, and stops at the word after it.
+    const stray = /^(select\s+"?\w+"?\s+\w+\s+)(\w+)/i.exec(sql);
+    if (stray && !/\bfrom\b/i.test(sql)) throw failed(`Syntax error at or near "${stray[2]}".`, "42601", stray[1].length);
+    throw notRun();
+  }
 
   const remove = /^delete\s+from\s+((?:"?\w+"?\.)?"?\w+"?)\s+where\s+([\s\S]+)$/i.exec(sql);
   if (remove) {
@@ -792,9 +872,7 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
   const update = /^update\s+((?:"?\w+"?\.)?"?\w+"?)\s+set\s+("?\w+"?)\s*=\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?|true|false|null)\s+where\s+([\s\S]+)$/i.exec(sql);
   if (update) {
     const table = named(conn, sql, update[1]);
-    const column = bare(update[2]);
-    const i = table.columns.findIndex((c) => c.name === column);
-    if (i < 0) throw sqlError(`column "${column}" of relation "${table.name}" does not exist`, sql.indexOf(update[2]));
+    const i = columnOf(table, bare(update[2]), sql);
     const raw = update[3];
     const value = cast(/^null$/i.test(raw) ? null : raw.startsWith("'") ? raw.slice(1, -1).replaceAll("''", "'") : /^(true|false)$/i.test(raw) ? raw.toLowerCase() === "true" : raw, table.columns[i], table);
     const where = conditions(sql, update[4], table);
@@ -806,33 +884,37 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
     }
     return answer("UPDATE", [], [], n);
   }
-  throw sqlError("mock database: this statement isn't one it understands", undefined, UNDERSTOOD);
+  throw notRun();
 }
 
 // databaseCall answers the helper's /api/db/… routes. empty is a helper
 // that knows no worktree's database: one just installed, or one whose data
 // was removed.
 export function databaseCall(method: string, route: string, q: URLSearchParams, body: unknown, empty: boolean): unknown {
+  // The box's berthd is from before it sent a helper its token: the helper
+  // turns every request away.
+  if (scenario === "unauthorized") throw refusal(401, "unauthorized", "This route needs the helper's token.", { hint: "The box daemon sends it with what it relays: ask through the box, not the helper." });
   if (method === "GET" && route === "db/connections") {
     const source = q.get("source") ?? "";
-    const mine = empty || scenario === "none" ? [] : all().filter((c) => c.source === source);
-    return { connections: mine.map((c) => ({ id: c.id, source: c.source, label: c.label, engine: c.engine, database: c.database, host: c.host, port: c.port, user: c.user, capabilities: c.capabilities, ...(writing(c) ? { writes_until: c.writesUntil } : {}) })) };
+    const mine = empty || scenario === "none" ? [] : all().filter((c) => !source || c.source === source);
+    return { connections: mine.map((c) => ({ id: c.id, source: c.source, label: c.label, engine: c.engine, database: c.database, host: c.host, port: c.port, user: c.user, ...(writing(c) ? { writes_until: c.writesUntil } : {}), capabilities: c.capabilities })) };
   }
   const m = /^db\/([^/]+)\/(schema|rows|query|edit|writes)$/.exec(route);
   const conn = m && !empty && scenario !== "none" ? all().find((c) => c.id === decodeURIComponent(m[1])) : undefined;
-  if (!m) throw refusal(404, "not_found", `No such route: ${method} /api/${route}.`);
-  if (!conn) throw refusal(404, "not_found", "No such connection: its worktree's services may have been restarted.");
+  if (!m) throw refusal(404, "not_found", "There is no such route.", { hint: "internal/database/API.md lists them." });
+  if (!conn) throw refusal(404, "not_found", "There is no such connection.", { hint: "GET /api/db/connections lists them; one goes when its worktree is removed." });
   const what = m[2];
   if (what === "writes" && method === "POST") {
-    if (!conn.capabilities.writes) throw readOnly(conn, "");
+    // The switch is the helper's own: it opens no connection to turn.
+    if (!conn.capabilities.writes) throw noWrites(conn);
     conn.writesUntil = (body as { on?: boolean } | undefined)?.on ? Date.now() + WRITES_FOR_MS : undefined;
     return conn.writesUntil ? { writes_until: conn.writesUntil } : {};
   }
   // The helper has the address, and nothing answers at it.
-  if (scenario === "refused") throw refusal(502, "db_unreachable", `dial tcp ${conn.host}:${conn.port}: connect: connection refused`, `Is ${conn.database}'s server running on the box?`);
+  if (scenario === "refused") throw refusal(503, "db_unavailable", "The database could not be opened: connect: connection refused.", { hint: "Check that the worktree's database is running." });
   if (what === "schema" && method === "GET") return schemaOf(conn);
   if (what === "rows" && method === "POST") return rowsOf(conn, (body ?? {}) as RowsBody);
   if (what === "query" && method === "POST") return query(conn, (body ?? {}) as { sql?: string; limit?: number });
   if (what === "edit" && method === "POST") return edit(conn, (body ?? {}) as { schema?: string; table?: string; changes?: Change[] });
-  throw refusal(405, "method_not_allowed", `${method} is not how /api/${route} is asked.`);
+  throw refusal(404, "not_found", "There is no such route.", { hint: "internal/database/API.md lists them." });
 }

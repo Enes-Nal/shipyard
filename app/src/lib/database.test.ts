@@ -2,14 +2,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { Cell } from "../../../plugins/database/src/api.ts";
+import { type Cell, faultOf, isOldBox, isOldHelper, lostHelper } from "../../../plugins/database/src/api.ts";
+import { skewOf, untilHere, WRITES_FOR_MS } from "../../../plugins/database/src/clock.ts";
 import { editText, isLong, parseInput, pretty, quote, sameCell, show } from "../../../plugins/database/src/engines/families.ts";
 import { engineOf, tableName } from "../../../plugins/database/src/engines/index.ts";
 import { type Draft, filtersOf, jumpFilters, nextOrder, opsFor } from "../../../plugins/database/src/filters.ts";
 import { kindOf, rulesFor } from "../../../plugins/database/src/rules.ts";
 import { namePart, sourceOf } from "../../../plugins/database/src/source.ts";
 import { addRow, changes, count, dropRows, keyed, keyText, NOTHING, removeNew, removeRows, review, rowId, setCell, setNew, summary, undo } from "../../../plugins/database/src/staged.ts";
-import { errorAt, oneLine, remember, split, statementAt } from "../../../plugins/database/src/statements.ts";
+import { lineAndColumn, markAt, oneLine, remember, split, statementAt } from "../../../plugins/database/src/statements.ts";
 
 const pg = engineOf("postgres");
 
@@ -394,14 +395,75 @@ test("Run means the statement under the cursor, the one just finished, or the se
   assert.equal(statementAt("SELECT 1", { from: 2, to: 5 })?.text, "LEC");
 });
 
-test("a SQL error's place is read from the helper's hint, counted from one", () => {
-  assert.equal(errorAt("position 15"), 14);
-  assert.equal(errorAt("at character 1"), 0);
-  assert.equal(errorAt("Position: 8"), 7);
-  assert.equal(errorAt("8"), 7);
-  assert.equal(errorAt('Perhaps you meant to reference the column "orders.status".'), undefined);
-  assert.equal(errorAt(undefined), undefined);
-  assert.equal(errorAt("position 0"), undefined);
+test("a refused statement's place in the editor is the helper's position, counted from one, in what was sent", () => {
+  const text = "SELECT 1;\nSELECT id, emial FROM customers";
+  const statement = statementAt(text, { from: text.length, to: text.length })!;
+  // "emial" is the twelfth character of the statement, which starts on line 2.
+  const at = markAt(statement, statement.text, 12)!;
+  assert.equal(text.slice(at, at + 5), "emial");
+  assert.equal(lineAndColumn(text, at), "line 2, column 12");
+  // Explain sends the statement after a word of the console's own.
+  const explained = markAt(statement, `EXPLAIN ${statement.text}`, 20)!;
+  assert.equal(text.slice(explained, explained + 5), "emial");
+  // A place in the word the console added, or past the end, marks nothing.
+  assert.equal(markAt(statement, `EXPLAIN ${statement.text}`, 3), undefined);
+  assert.equal(markAt(statement, statement.text, 400), undefined);
+  assert.equal(markAt(statement, statement.text, undefined), undefined);
+  assert.equal(markAt(statement, statement.text, 0), undefined);
+  assert.equal(lineAndColumn("SELECT 1", 0), "line 1, column 1");
+});
+
+// ---- What the helper said went wrong ----
+
+// The app hands a helper's refusal over as an error with its code and
+// message, and the helper's whole answer in detail (app/src/lib/helper.ts).
+const refused = (status: number, error: Record<string, unknown>) => Object.assign(new Error(String(error.message)), { status, code: error.code, detail: { error } });
+
+test("a refusal is read by its code, with the database's place, state and detail", () => {
+  // Real answers of berth-database (internal/database/API.md).
+  const column = faultOf(refused(400, { code: "query_failed", message: 'Column "emial" does not exist.', hint: 'Perhaps you meant to reference the column "customers.email".', sqlstate: "42703", position: 12 }));
+  assert.deepEqual(column, { message: 'Column "emial" does not exist.', code: "query_failed", status: 400, hint: 'Perhaps you meant to reference the column "customers.email".', position: 12, sqlstate: "42703", detail: undefined });
+  const duplicate = faultOf(refused(400, { code: "query_failed", message: 'Change 1: Duplicate key value violates unique constraint "orders_pkey".', sqlstate: "23505", detail: "Key (id)=(1001) already exists." }));
+  assert.equal(duplicate.detail, "Key (id)=(1001) already exists.");
+  assert.equal(duplicate.position, undefined);
+  // A timeout is a 400 like any other: only its code says what it is.
+  assert.equal(faultOf(refused(400, { code: "timeout", message: "The statement ran longer than 10s and was stopped.", hint: "Narrow it, or add a LIMIT.", sqlstate: "57014" })).code, "timeout");
+  assert.equal(faultOf(new Error("the network went away")).message, "the network went away");
+  assert.equal(faultOf("plain words").message, "plain words");
+});
+
+test("which update is needed is told by the code: the helper's, or the box's", () => {
+  const noRoute = faultOf(refused(404, { code: "not_found", message: "There is no such route." }));
+  const noToken = faultOf(refused(401, { code: "unauthorized", message: "This route needs the helper's token." }));
+  const down = faultOf(refused(503, { code: "db_unavailable", message: "The database could not be opened: connect: connection refused." }));
+  const off = faultOf(Object.assign(new Error("database's helper isn't running on devl"), { status: 409, code: "helper_off" }));
+  const offline = faultOf(Object.assign(new Error("devl is offline"), { status: 503 }));
+  assert.deepEqual([isOldHelper(noRoute), isOldBox(noRoute), lostHelper(noRoute)], [true, false, false]);
+  assert.deepEqual([isOldHelper(noToken), isOldBox(noToken), lostHelper(noToken)], [false, true, false]);
+  // A database that is down is the database's trouble, not the helper's.
+  assert.deepEqual([isOldHelper(down), isOldBox(down), lostHelper(down)], [false, false, false]);
+  assert.equal(lostHelper(off), true);
+  assert.equal(lostHelper(offline), true);
+});
+
+// ---- The lock's clock ----
+
+test("writes count down from when they were turned on, whatever the box's clock reads", () => {
+  const asked = 1_000_000;
+  // A box seven minutes ahead says writes end 22 minutes from now.
+  const ahead = asked + WRITES_FOR_MS + 7 * 60_000;
+  const skew = skewOf(ahead, asked);
+  assert.equal(skew, 7 * 60_000);
+  assert.equal(untilHere(ahead, skew, asked), asked + WRITES_FOR_MS);
+  // The same box, read again five minutes later: ten minutes are left.
+  assert.equal(untilHere(ahead, skew, asked + 5 * 60_000) - (asked + 5 * 60_000), 10 * 60_000);
+  // A box three minutes behind would otherwise show writes ending early.
+  const behind = asked + WRITES_FOR_MS - 3 * 60_000;
+  assert.equal(untilHere(behind, skewOf(behind, asked), asked), asked + WRITES_FOR_MS);
+  // With nothing known of the box, its time is taken as it is, and never
+  // as more than fifteen minutes from now.
+  assert.equal(untilHere(asked + 4 * 60_000, 0, asked), asked + 4 * 60_000);
+  assert.equal(untilHere(asked + 60 * 60_000, 0, asked), asked + WRITES_FOR_MS);
 });
 
 test("the history holds statements, newest first, each once, and never past its length", () => {

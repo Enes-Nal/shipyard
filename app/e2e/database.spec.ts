@@ -6,7 +6,8 @@ import { type App, expect, mockOnly, test } from "./fixtures";
 // panel on the worktree, read from a helper on its box (berth-database). In
 // mock mode the plugin is the listing's own bundle, installed and allowed,
 // and the helper is src/lib/mock-database.ts: a made-up "acme" shop kept in
-// memory. It runs on devl and is off on gpu. shop / checkout-fix has two
+// memory, answering in the real helper's fields, codes and sentences
+// (internal/database/API.md). It runs on devl and is off on gpu. shop / checkout-fix has two
 // connections (a Postgres, and "events" on an engine nobody has heard of),
 // shop's main checkout has the Postgres alone, and no other worktree has a
 // database yet.
@@ -223,19 +224,37 @@ test("a table is read a page at a time, of a hundred rows or five hundred", asyn
   await expect(pages.getByRole("button", { name: "Next" })).toBeDisabled();
 });
 
-test("five hundred rows of forty columns scroll without the whole table being in the page", async ({ app }) => {
+test("hundreds of rows of forty columns scroll without the whole table being in the page, and a page that stops short is followed from where it ended", async ({ app }) => {
   mockOnly();
   const p = await open(app, "page_views");
-  await p.getByTestId("database-pages").getByRole("group", { name: "Rows a page" }).getByRole("button", { name: "500" }).click();
-  await expect(range(p)).toHaveText("Rows 1–500 of about 1,500");
+  const pages = p.getByTestId("database-pages");
+  await pages.getByRole("group", { name: "Rows a page" }).getByRole("button", { name: "500" }).click();
+  // Five hundred were asked for: the helper stops a page at its size cap,
+  // short of that, and says more follow.
+  await expect(range(p)).toHaveText("Rows 1–420 of about 1,500");
   await expect(p.getByRole("grid")).toHaveAttribute("aria-colcount", "42");
+  await expect(p.getByRole("grid")).toHaveAttribute("aria-rowcount", "421");
+  // Its ids are past what a number holds exactly: they are shown digit for digit.
+  await expect(cell(p, 0, "id")).toHaveText("9007199254740993");
   const grid = p.getByTestId("database-grid");
   // To the last row: it is drawn, the first is not, and the header stayed.
   await grid.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-  await expect(rows(p).last().locator('[data-col="id"]')).toHaveText("900499");
-  await expect(column(p, "id").filter({ hasText: /^900000$/ })).toHaveCount(0);
+  await expect(rows(p).last().locator('[data-col="id"]')).toHaveText("9007199254741412");
+  await expect(column(p, "id").filter({ hasText: /^9007199254740993$/ })).toHaveCount(0);
   await expect(p.getByRole("columnheader", { name: /^session/ })).toBeInViewport();
   expect(await rows(p).count()).toBeLessThan(80);
+
+  // The next page starts after the rows that came, not a page-size further on.
+  await pages.getByRole("button", { name: "Next" }).click();
+  await expect(range(p)).toHaveText("Rows 421–840 of about 1,500");
+  await expect(cell(p, 0, "id")).toHaveText("9007199254741413");
+  await pages.getByRole("button", { name: "Next" }).click();
+  await pages.getByRole("button", { name: "Next" }).click();
+  await expect(range(p)).toHaveText("Rows 1,261–1,500 of about 1,500");
+  await expect(pages.getByRole("button", { name: "Next" })).toBeDisabled();
+  // And back the way it came.
+  await pages.getByRole("button", { name: "Previous" }).click();
+  await expect(range(p)).toHaveText("Rows 841–1,260 of about 1,500");
 });
 
 test("Structure shows a table's columns, its key, its indexes and what it points at", async ({ app }) => {
@@ -280,7 +299,7 @@ test("writes are locked until unlocked: the confirm names the database and the b
   const confirm = app.page.getByRole("alertdialog");
   await expect(confirm).toContainText("Unlock writes to shop_checkout_fix on devl?");
   await expect(confirm).toContainText("For 15 minutes");
-  await expect(confirm).toContainText("the PostgreSQL database checkout-fix's services use on devl (127.0.0.1:5432)");
+  await expect(confirm).toContainText("the PostgreSQL database checkout-fix's services use on devl (localhost:5432)");
   await expect(confirm).toContainText("It locks again by itself after 15 minutes");
   // Nothing happens until it is confirmed.
   await confirm.getByRole("button", { name: "Cancel" }).click();
@@ -357,6 +376,8 @@ test("edits are staged and marked, reviewed as old → new, and applied as one",
   await bar.getByRole("button", { name: "Review…" }).click();
   const review = app.page.getByTestId("database-review");
   await expect(review).toContainText("4 changes, sent together: all of them apply, or none do.");
+  // What an edit does not protect against is said, not implied.
+  await expect(review).toContainText("if something else changed it since you read it, your values replace theirs without a word. Only a row that is gone stops the edit.");
   const change = review.getByTestId("database-change");
   await expect(change).toHaveCount(4);
   await expect(change.nth(0)).toContainText("Delete");
@@ -493,8 +514,10 @@ test("a SQL error is shown under the editor in Postgres's words, with its place 
   await mode(p, "Console").click();
   await run(app, p, "SELECT id, emial FROM customers");
   const error = p.getByTestId("database-error");
-  await expect(error).toContainText('column "emial" does not exist');
+  await expect(error).toContainText('Column "emial" does not exist.');
   await expect(error).toContainText("At line 1, column 12, underlined in the editor.");
+  // What the database suggests is said too.
+  await expect(error).toContainText('Perhaps you meant to reference the column "customers.email".');
   await expect(p.locator(".cm-sql-error")).toHaveText("emial");
   // Typing takes the mark away.
   await app.page.keyboard.type(" ");
@@ -505,15 +528,26 @@ test("a SQL error is shown under the editor in Postgres's words, with its place 
   await app.page.keyboard.press("Enter");
   await app.page.keyboard.type("SELECT * FROM ordrs");
   await app.page.keyboard.press("ControlOrMeta+Enter");
-  await expect(error).toContainText('relation "ordrs" does not exist');
+  await expect(error).toContainText('Relation "ordrs" does not exist.');
   await expect(error).toContainText("At line 2, column 15");
   await expect(p.locator(".cm-sql-error")).toHaveText("ordrs");
 
-  // What it can't run says what it can; what takes too long says it was stopped.
-  await run(app, p, "SELECT * FROM orders o JOIN customers c ON c.id = o.customer_id");
-  await expect(error).toContainText("this statement isn't one it understands");
+  // A statement that ran too long was stopped, in the helper's words and with what it suggests.
   await run(app, p, "SELECT pg_sleep(60)");
-  await expect(error).toContainText("Stopped: the statement took longer than the console allows.");
+  await expect(error).toContainText("The statement ran longer than 10s and was stopped.");
+  await expect(error).toContainText("Narrow it, or add a LIMIT.");
+  await expect(p.locator(".cm-sql-error")).toHaveCount(0);
+  // What can't run inside a transaction says so as Postgres does.
+  await run(app, p, "VACUUM");
+  await expect(error).toContainText("VACUUM cannot run inside a transaction block.");
+  await run(app, p, "COPY customers TO STDOUT");
+  await expect(error).toContainText("COPY to or from the editor is not something this API can carry.");
+  // Two statements selected together are refused before anything runs.
+  await run(app, p, "SELECT 1; SELECT now()");
+  await app.page.keyboard.press("ControlOrMeta+a");
+  await app.page.keyboard.press("ControlOrMeta+Enter");
+  await expect(error).toContainText("That is 2 statements; the editor runs one at a time.");
+  await expect(error).toContainText("Run them one by one.");
 });
 
 test("a statement that writes is refused while writes are locked, and runs once they are unlocked", async ({ app }) => {
@@ -523,6 +557,8 @@ test("a statement that writes is refused while writes are locked, and runs once 
   await run(app, p, "UPDATE customers SET plan = 'team' WHERE id = 1");
   const error = p.getByTestId("database-error");
   await expect(error).toContainText("Not run: this statement writes, and writes to shop_checkout_fix are locked.");
+  // Postgres itself refused it: its transaction was read-only.
+  await expect(error).toContainText("cannot execute UPDATE in a read-only transaction");
   await error.getByRole("button", { name: "Unlock writes…" }).click();
   await app.page.getByRole("alertdialog").getByRole("button", { name: "Unlock for 15 minutes" }).click();
   await expect(lock(p)).toHaveAttribute("data-writes", "on");
@@ -544,6 +580,11 @@ test("results past what the console keeps are cut off, and it says so", async ({
   await expect(p.getByTestId("database-result")).toHaveText(/^SELECT·1,000 rows·/);
   await expect(p.getByTestId("database-truncated")).toContainText("Only the first 1,000 rows are shown: the statement returned more than the console keeps.");
   await expect(p.getByRole("grid", { name: "Results" })).toHaveAttribute("aria-rowcount", "1001");
+  expect(await rows(p).count()).toBeLessThan(80);
+  // A thousand rows of forty-one columns are the same grid: only what is near the view is drawn.
+  await run(app, p, "SELECT * FROM analytics.page_views");
+  await expect(p.getByRole("grid", { name: "Results" })).toHaveAttribute("aria-colcount", "42");
+  await expect(p.getByTestId("database-truncated")).toContainText("Only the first 1,000 rows");
   expect(await rows(p).count()).toBeLessThan(80);
   // What a statement says on its way is shown too.
   await run(app, p, "DO $$ BEGIN RAISE NOTICE 'two rows; skipped'; END $$");
@@ -624,7 +665,7 @@ test("another engine is shown by what its connection says it can do: no schemas,
   await expect(p.getByRole("button", { name: "Explain" })).toHaveCount(0);
   await expect(p.getByTestId("database-result")).toHaveText("Read-only");
   // The connection that was picked is the one it opens on next time.
-  await expect.poll(() => app.stored("berth.plugin.database.connection:devl/shop/checkout-fix")).toBe("d7a93b10");
+  await expect.poll(() => app.stored("berth.plugin.database.connection:devl/shop/checkout-fix")).toBe("c_7d90a3b1e44f");
 });
 
 test("a worktree with one database shows it without a picker", async ({ app }) => {
@@ -659,7 +700,7 @@ test("where Database is off, the panel says so, and turns it on after a confirm 
   await expect(p).toHaveAttribute("data-state", "running");
   // It runs, and has not seen this worktree's services start.
   await expect(said).toContainText("No database for ci-flake yet");
-  await expect(said).toContainText("One that was already running when Database was turned on needs a restart.");
+  await expect(said).toContainText("Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
 });
 
 test("a worktree with no database yet says which databases show, and why others don't", async ({ app }) => {
@@ -678,11 +719,23 @@ test("a database that isn't answering says so in the helper's words, and can be 
   const p = await open(app, undefined, { db: "refused" });
   const said = notice(p);
   await expect(said).toContainText("Couldn't reach shop_checkout_fix");
-  await expect(said).toContainText("dial tcp 127.0.0.1:5432: connect: connection refused");
-  await expect(said).toContainText("PostgreSQL at 127.0.0.1:5432 isn't answering devl.");
+  await expect(said).toContainText("The database could not be opened: connect: connection refused.");
+  await expect(said).toContainText("Check that the worktree's database is running.");
+  await expect(said).toContainText("PostgreSQL at localhost:5432 isn't answering devl.");
   await expect(said.getByRole("button", { name: "Try again" })).toBeVisible();
   // The connection itself is known: its name and its lock are there.
   await expect(p.getByTestId("database-connection")).toContainText("shop_checkout_fix");
+});
+
+test("a box too old to send the helper its token says to update the box, not that something broke", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "unauthorized" });
+  const said = notice(p);
+  await expect(said).toContainText("devl needs updating for Database");
+  await expect(said).toContainText("devl's berthd is from before it sent one, so every request is turned away. Update the box in Settings → Boxes");
+  await expect(said).not.toContainText("This route needs the helper's token");
+  await said.getByRole("button", { name: "Open Settings → Boxes" }).click();
+  await expect(app.page.getByTestId("settings-boxes")).toBeVisible();
 });
 
 test("a helper from before the database routes says it needs updating, and works once it is", async ({ app }) => {

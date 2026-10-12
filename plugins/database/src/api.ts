@@ -1,12 +1,15 @@
 import type { BerthPluginContext } from "@berth/plugin";
 
-// The berth-database helper's API, through the box (berth.helper.request):
-// every path is relative to the helper's /api/. berthd adds the helper's
-// token itself; the plugin never sees or sends one.
+// The berth-database helper's API, as internal/database/API.md documents it,
+// through the box (berth.helper.request): every path is relative to the
+// helper's /api/. berthd adds the helper's token itself; the plugin never
+// sees or sends one. Only what the plugin reads is typed here.
 
-// A value as the helper sends it: null is SQL NULL, and what JSON has no
-// kind for (a numeric, a big integer, a timestamp, a uuid, bytea, json, an
-// array) is a string, written as the database writes it.
+// A value as the helper sends it: null is SQL NULL, an integer is a number
+// up to 2^53 and its digits as a string past that, and what JSON has no kind
+// for (a numeric, a timestamp, a uuid, bytea, json, an array) is a string,
+// written as the database writes it. A cell that was read can be sent back
+// as it came.
 export type Cell = null | boolean | number | string;
 
 // What a connection's engine can do. The panel is built from this, not from
@@ -30,16 +33,18 @@ export interface Capabilities {
 export const NO_CAPABILITIES: Capabilities = { dialect: "", schemas: true, operators: ["="], kinds: ["table"], writes: false, transactions: false };
 
 export interface Connection {
+  // Stable across restarts: "c_" and twelve hex digits.
   id: string;
   source: string;
-  // The variable or service it came from, as the helper names it.
+  // The variable the service has the database in: "DATABASE_URL".
   label: string;
   engine: string;
   database: string;
   host: string;
   port: number;
   user: string;
-  // Writes are on until then (unix ms); absent while they are locked.
+  // Writes are on until then (unix ms, by the box's clock: see clock.ts);
+  // absent while they are locked.
   writes_until?: number;
   capabilities?: Capabilities;
 }
@@ -92,6 +97,7 @@ export interface Filter {
 }
 
 export interface RowsRequest {
+  // "" for an engine without schemas: it is then left out of the request.
   schema: string;
   table: string;
   limit?: number;
@@ -107,7 +113,10 @@ export interface Rows {
   columns: { name: string; type: string }[];
   rows: Cell[][];
   primary_key: string[];
+  // Of the whole table, whatever the filters.
   rows_estimate: number;
+  // Rows follow these. The next page starts at offset + rows.length: a page
+  // can stop short of its limit, at the helper's size cap.
   more: boolean;
   cut?: Cut;
 }
@@ -115,6 +124,7 @@ export interface Rows {
 export interface QueryResult {
   columns: { name: string; type: string }[];
   rows: Cell[][];
+  // The rows returned; for a statement that returns none, the rows it changed.
   row_count: number;
   command: string;
   duration_ms: number;
@@ -138,8 +148,8 @@ export const MOST = 500;
 export const QUERY_LIMIT = 1000;
 // A cell longer than this arrives cut.
 export const CUT_AT = 4000;
-// How long writes stay on, which the helper decides; said before unlocking.
-export const WRITES_FOR_MS = 15 * 60_000;
+// The most changes one edit takes.
+export const MOST_CHANGES = 1000;
 
 export function database(berth: BerthPluginContext) {
   const on = (conn: string, route: string) => `db/${encodeURIComponent(conn)}/${route}`;
@@ -150,9 +160,9 @@ export function database(berth: BerthPluginContext) {
     // database the helper can reach.
     connections: (box: string, source: string) => berth.helper.request<{ connections: Connection[] }>(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
     schema: (box: string, conn: string) => berth.helper.request<{ schemas: Schema[] }>(box, "GET", on(conn, "schema")).then((r) => r.schemas ?? []),
-    rows: (box: string, conn: string, req: RowsRequest) => post<Rows>(box, on(conn, "rows"), req),
+    rows: (box: string, conn: string, req: RowsRequest) => post<Rows>(box, on(conn, "rows"), { ...req, schema: req.schema || undefined }),
     query: (box: string, conn: string, sql: string, limit = QUERY_LIMIT) => post<QueryResult>(box, on(conn, "query"), { sql, limit }),
-    edit: (box: string, conn: string, schema: string, table: string, changes: Change[]) => post<Edited>(box, on(conn, "edit"), { schema, table, changes }),
+    edit: (box: string, conn: string, schema: string, table: string, changes: Change[]) => post<Edited>(box, on(conn, "edit"), { schema: schema || undefined, table, changes }),
     writes: (box: string, conn: string, turnOn: boolean) => post<{ writes_until?: number }>(box, on(conn, "writes"), { on: turnOn }),
   };
 }
@@ -160,26 +170,42 @@ export function database(berth: BerthPluginContext) {
 export type Database = ReturnType<typeof database>;
 
 // What went wrong with a request, in the helper's words. code is what to
-// branch on ("read_only", "row_conflict", "sql_error", "timeout"), hint what
-// the helper adds (a SQL error's position, or what to try).
+// branch on, never the status: "read_only", "row_conflict", "query_failed",
+// "timeout", "multiple_statements", "no_primary_key", "too_large",
+// "db_unavailable", "not_found", "unauthorized", "bad_request". message is a
+// sentence for the person, hint what to try. For a statement the database
+// refused there may be its sqlstate, the position it stopped at (a character
+// of the statement, counted from 1) and the database's own detail.
 export interface Fault {
   message: string;
   code?: string;
   status?: number;
   hint?: string;
+  position?: number;
+  sqlstate?: string;
+  detail?: string;
 }
 
 export function faultOf(err: unknown): Fault {
-  const e = (err ?? {}) as { message?: unknown; code?: unknown; status?: unknown; detail?: { error?: { hint?: unknown } } };
-  const hint = e.detail?.error && typeof e.detail.error === "object" ? e.detail.error.hint : undefined;
+  const e = (err ?? {}) as { message?: unknown; code?: unknown; status?: unknown; detail?: { error?: unknown } };
+  const inner = (e.detail?.error && typeof e.detail.error === "object" ? e.detail.error : {}) as { hint?: unknown; position?: unknown; sqlstate?: unknown; detail?: unknown };
+  const text = (v: unknown) => (typeof v === "string" && v ? v : undefined);
   return {
     message: typeof e.message === "string" && e.message ? e.message : String(err),
     code: typeof e.code === "string" ? e.code : undefined,
     status: typeof e.status === "number" ? e.status : undefined,
-    hint: typeof hint === "string" && hint ? hint : undefined,
+    hint: text(inner.hint),
+    position: typeof inner.position === "number" && inner.position >= 1 ? inner.position : undefined,
+    sqlstate: text(inner.sqlstate),
+    detail: text(inner.detail),
   };
 }
 
-// A helper from before a route existed answers 404 for it. (A box whose
-// berthd has no helpers answers 404 too, with a code of its own.)
-export const isOldHelper = (f: Fault) => f.status === 404 && f.code !== "box_outdated";
+// A helper from before db/connections existed says it has no such route.
+export const isOldHelper = (f: Fault) => f.code === "not_found";
+// Every route answers "unauthorized" when the box's berthd is from before
+// it sent a helper its token: the helper is fine, the box needs updating.
+export const isOldBox = (f: Fault) => f.code === "unauthorized";
+// The laptop could not reach the box at all (no code: it is not the
+// helper's answer), or the helper is not running there.
+export const lostHelper = (f: Fault) => f.code === "helper_off" || (f.status === 503 && !f.code);

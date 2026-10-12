@@ -13,7 +13,7 @@ var PAGE = 100;
 var MOST = 500;
 var QUERY_LIMIT = 1e3;
 var CUT_AT = 4e3;
-var WRITES_FOR_MS = 15 * 6e4;
+var MOST_CHANGES = 1e3;
 function database(berth) {
   const on = (conn, route) => `db/${encodeURIComponent(conn)}/${route}`;
   const post = (box, path, body) => berth.helper.request(box, "POST", path, body);
@@ -23,23 +23,38 @@ function database(berth) {
     // database the helper can reach.
     connections: (box, source) => berth.helper.request(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
     schema: (box, conn) => berth.helper.request(box, "GET", on(conn, "schema")).then((r) => r.schemas ?? []),
-    rows: (box, conn, req) => post(box, on(conn, "rows"), req),
+    rows: (box, conn, req) => post(box, on(conn, "rows"), { ...req, schema: req.schema || void 0 }),
     query: (box, conn, sql, limit = QUERY_LIMIT) => post(box, on(conn, "query"), { sql, limit }),
-    edit: (box, conn, schema, table, changes2) => post(box, on(conn, "edit"), { schema, table, changes: changes2 }),
+    edit: (box, conn, schema, table, changes2) => post(box, on(conn, "edit"), { schema: schema || void 0, table, changes: changes2 }),
     writes: (box, conn, turnOn) => post(box, on(conn, "writes"), { on: turnOn })
   };
 }
 function faultOf(err) {
   const e = err ?? {};
-  const hint = e.detail?.error && typeof e.detail.error === "object" ? e.detail.error.hint : void 0;
+  const inner = e.detail?.error && typeof e.detail.error === "object" ? e.detail.error : {};
+  const text = (v) => typeof v === "string" && v ? v : void 0;
   return {
     message: typeof e.message === "string" && e.message ? e.message : String(err),
     code: typeof e.code === "string" ? e.code : void 0,
     status: typeof e.status === "number" ? e.status : void 0,
-    hint: typeof hint === "string" && hint ? hint : void 0
+    hint: text(inner.hint),
+    position: typeof inner.position === "number" && inner.position >= 1 ? inner.position : void 0,
+    sqlstate: text(inner.sqlstate),
+    detail: text(inner.detail)
   };
 }
-var isOldHelper = (f) => f.status === 404 && f.code !== "box_outdated";
+var isOldHelper = (f) => f.code === "not_found";
+var isOldBox = (f) => f.code === "unauthorized";
+var lostHelper = (f) => f.code === "helper_off" || f.status === 503 && !f.code;
+
+// src/clock.ts
+var WRITES_FOR_MS = 15 * 6e4;
+function skewOf(writesUntil, arrivedAt) {
+  return writesUntil - (arrivedAt + WRITES_FOR_MS);
+}
+function untilHere(writesUntil, skew, now) {
+  return Math.min(writesUntil - skew, now + WRITES_FOR_MS);
+}
 
 // src/browser.tsx
 import { Badge as Badge2, Button as Button3, Card, CardHeader, CardPanel, Icon as Icon3, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet as Sheet2, SheetDescription as SheetDescription2, SheetFooter as SheetFooter2, SheetHeader as SheetHeader2, SheetPanel as SheetPanel2, SheetPopup as SheetPopup2, SheetTitle as SheetTitle2, Tip as Tip2, cn as cn3 } from "@berth/plugin/ui";
@@ -286,6 +301,7 @@ function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter, canEd
   useEffect(() => {
     setSel(void 0);
     setEditing(false);
+    if (scroller.current) scroller.current.scrollTop = 0;
   }, [shape]);
   const first = Math.max(0, Math.floor(view.top / ROW) - SPARE);
   const last = Math.min(rows.length, Math.ceil((view.top + view.height) / ROW) + SPARE);
@@ -480,7 +496,7 @@ var RowView = memo(function RowView2({ at, number, row, columns, sel, tab, editi
             gone && "text-muted-foreground line-through"
           ),
           children: on && editing ? /* @__PURE__ */ jsx(CellEditor, { initial: unset ? "" : editText(cell), column: c, onCommit: (v) => commit(at, col, v), onCancel: cancel }) : /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
-            /* @__PURE__ */ jsx("span", { className: cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic"), children: unset ? "default" : shown.text }),
+            /* @__PURE__ */ jsx("span", { className: cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic"), children: unset ? c.generated ? "generated" : "default" : shown.text }),
             more && /* @__PURE__ */ jsx(Tip, { label: cut ? "Cut at 4,000 characters: show what was read" : "Show the whole value", children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Show the whole value of ${c.name}`, onClick: (e) => (e.stopPropagation(), view(at, col)), className: "-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: cut ? "Scissors" : "maximize-2", className: "size-3" }) }) }),
             points && /* @__PURE__ */ jsx(Tip, { label: `Open the row in ${c.fk.ref_table}`, children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Open the row in ${c.fk.ref_table} that ${c.name} points at`, onClick: (e) => (e.stopPropagation(), jump(at, col)), className: "-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: "ArrowUpRight", className: "size-3" }) }) })
           ] })
@@ -903,6 +919,8 @@ var plural = (n, one, many = `${one}s`) => `${n.toLocaleString("en-US")} ${n ===
 import { Fragment as Fragment3, jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
 var tableKey = (schema, table) => `${schema}
 ${table}`;
+var changeOf = (message) => Number(/^Change (\d+)\b/.exec(message)?.[1] ?? 0);
+var keyOfChange = (c) => c && c.op !== "insert" ? c.key : void 0;
 function Browser({ ctx, schemas, onReload, toConsole }) {
   const [open, setOpen] = useState4();
   const [staged, setStaged] = useState4({});
@@ -919,7 +937,7 @@ ${open.n}`) : open ? /* @__PURE__ */ jsx4(Notice, { icon: "table-2", title: `${o
 function Tree({ ctx, schemas, open, staged, onOpen, onReload }) {
   const [text, setText] = useState4("");
   const q = text.trim().toLowerCase();
-  const shown = schemas.map((s) => ({ ...s, tables: s.tables.filter((t) => !q || t.name.toLowerCase().includes(q) || ctx.caps.schemas && `${s.name}.${t.name}`.toLowerCase().includes(q)) })).filter((s) => s.tables.length > 0);
+  const shown = schemas.map((s) => ({ ...s, tables: s.tables.filter((t) => !q || t.name.toLowerCase().includes(q) || ctx.caps.schemas && `${s.name}.${t.name}`.toLowerCase().includes(q)) })).filter((s) => s.tables.length > 0 || !q && ctx.caps.schemas);
   const total = schemas.reduce((n, s) => n + s.tables.length, 0);
   return /* @__PURE__ */ jsxs4("nav", { "aria-label": "Tables", "data-testid": "database-tree", className: cn3("min-h-0 w-full shrink-0 flex-col @2xl:w-60 @2xl:border-r", open ? "hidden @2xl:flex" : "flex"), children: [
     /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 items-center gap-1.5 border-b p-2", children: [
@@ -935,6 +953,7 @@ function Tree({ ctx, schemas, open, staged, onOpen, onReload }) {
       "\u201D."
     ] }) : shown.map((s) => /* @__PURE__ */ jsxs4("section", { className: "pb-1", children: [
       ctx.caps.schemas && /* @__PURE__ */ jsx4("h3", { className: "px-3 pt-2 pb-1 font-medium text-muted-foreground text-xs", children: s.name }),
+      s.tables.length === 0 && /* @__PURE__ */ jsx4("p", { className: "px-3 py-1 text-muted-foreground text-xs", children: "No tables." }),
       /* @__PURE__ */ jsx4("ul", { children: s.tables.map((t) => {
         const on = open?.schema === s.name && open.table === t.name;
         const kind = kindOf(t.kind);
@@ -964,6 +983,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   const { api, box, conn, engine, caps, writes } = ctx;
   const [mode, setMode] = useState4("rows");
   const [offset, setOffset] = useState4(0);
+  const [trail, setTrail] = useState4([]);
   const [size, setSize] = useState4(PAGE);
   const [order, setOrder] = useState4([]);
   const [drafts, setDrafts] = useState4(initial ?? []);
@@ -989,7 +1009,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   const columns = useMemo2(
     () => (data?.columns ?? table.columns).map((c) => {
       const known = table.columns.find((k) => k.name === c.name);
-      return { name: c.name, type: c.type, family: engine.family(c.type), key: pk.includes(c.name), nullable: known?.nullable ?? true, fk: table.foreign_keys.find((f) => f.columns.includes(c.name)) };
+      return { name: c.name, type: c.type, family: engine.family(c.type), key: pk.includes(c.name), nullable: known?.nullable ?? true, fk: table.foreign_keys.find((f) => f.columns.includes(c.name)), generated: known?.default?.startsWith("generated always") };
     }),
     [data?.columns, table, engine, pk]
   );
@@ -1015,11 +1035,11 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
   const editing = writes.on && (rules.rows || rules.inserts);
   const canEdit = useCallback3(
     (row, col) => {
-      if (!editing) return false;
+      if (!editing || columns[col]?.generated) return false;
       if (row.state === "new") return rules.inserts;
       return rules.rows && row.state !== "deleted" && !row.cut?.has(col) && !keyColumns.some((k) => row.cut?.has(k));
     },
-    [editing, rules, keyColumns]
+    [editing, rules, keyColumns, columns]
   );
   const onEdit = useCallback3(
     (row, col, value) => {
@@ -1045,13 +1065,25 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     },
     [columns, originals, onJump]
   );
-  const page = (to2) => {
+  const first = () => {
     setPicked(NO_ROWS);
-    setOffset(Math.max(0, to2));
+    setTrail([]);
+    setOffset(0);
   };
-  const narrow = (next) => {
-    setDrafts(next);
-    page(0);
+  const next = () => {
+    if (!data) return;
+    setPicked(NO_ROWS);
+    setTrail([...trail, offset]);
+    setOffset(offset + data.rows.length);
+  };
+  const previous = () => {
+    setPicked(NO_ROWS);
+    setOffset(trail[trail.length - 1] ?? 0);
+    setTrail(trail.slice(0, -1));
+  };
+  const narrow = (next2) => {
+    setDrafts(next2);
+    first();
   };
   const addFilter = (column) => {
     const ops = opsFor(caps.operators, familyOf(column));
@@ -1078,9 +1110,14 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     return asked.filter((_, i) => !found[i]).map((k) => k.id);
   };
   const apply = async () => {
-    setApplying(true);
     setRefused(void 0);
     setGone([]);
+    if (count(staged) > MOST_CHANGES) {
+      setRefused({ message: `One edit takes at most ${MOST_CHANGES.toLocaleString("en-US")} changes, and ${count(staged).toLocaleString("en-US")} are staged.`, hint: "Take some back in Review, apply, and stage the rest again." });
+      setReviewing(false);
+      return;
+    }
+    setApplying(true);
     try {
       const result = await api.edit(box, conn.id, schema, table.name, changes(staged));
       setStaged(NOTHING);
@@ -1091,7 +1128,11 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     } catch (err) {
       const fault = faultOf(err);
       if (fault.code === "read_only") writes.refused();
-      if (fault.code === "row_conflict") setGone(await missing());
+      if (fault.code === "row_conflict") {
+        const found = await missing();
+        const named = keyed(staged).find((k) => JSON.stringify(k.key) === JSON.stringify(keyOfChange(changes(staged)[changeOf(fault.message) - 1])));
+        setGone(found.length ? found : named ? [named.id] : []);
+      }
       setRefused(fault);
       setReviewing(false);
       ctx.onFault(fault);
@@ -1153,7 +1194,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
     ] }),
     mode === "structure" ? /* @__PURE__ */ jsx4(Structure, { table, schema, ctx }) : /* @__PURE__ */ jsxs4(Fragment3, { children: [
       drafts.length > 0 && /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3 py-1.5", "data-testid": "database-filters", children: [
-        drafts.map((d) => /* @__PURE__ */ jsx4(FilterRow, { draft: d, columns: table.columns.map((c) => c.name), ops: opsFor(caps.operators, familyOf(d.column)), opsOf: (column) => opsFor(caps.operators, familyOf(column)), onChange: (next) => narrow(drafts.map((x) => x.id === d.id ? next : x)), onRemove: () => narrow(drafts.filter((x) => x.id !== d.id)) }, d.id)),
+        drafts.map((d) => /* @__PURE__ */ jsx4(FilterRow, { draft: d, columns: table.columns.map((c) => c.name), ops: opsFor(caps.operators, familyOf(d.column)), opsOf: (column) => opsFor(caps.operators, familyOf(column)), onChange: (next2) => narrow(drafts.map((x) => x.id === d.id ? next2 : x)), onRemove: () => narrow(drafts.filter((x) => x.id !== d.id)) }, d.id)),
         drafts.length > 1 && /* @__PURE__ */ jsx4(Button3, { size: "xs", variant: "ghost", className: "text-muted-foreground", onClick: () => narrow([]), children: "Clear all" })
       ] }),
       refused && /* @__PURE__ */ jsx4(
@@ -1195,7 +1236,8 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             /* @__PURE__ */ jsx4("b", { children: "Nothing was applied." }),
             " ",
             refused.message,
-            refused.hint && ` ${refused.hint}`,
+            refused.detail && ` ${refused.detail}`,
+            refused.hint && refused.code !== "query_failed" && ` ${refused.hint}`,
             " Your changes are still staged."
           ] })
         }
@@ -1212,7 +1254,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
           "Couldn't read again: ",
           read.fault.message
         ] }),
-        rows.length === 0 ? /* @__PURE__ */ jsx4(Notice, { icon: filters.length ? "Search" : "table-2", title: filters.length ? "No rows match" : offset > 0 ? "No more rows" : `${name} is empty`, body: filters.length ? "Nothing in the table matches the filters above." : offset > 0 ? "The page before was the last." : rules.inserts && !editing ? "Unlock writes to add a row." : void 0 }) : /* @__PURE__ */ jsx4(Grid, { label: `Rows of ${name}`, columns, rows, offset, order, onSort: (column) => (setOrder(nextOrder(order, column)), page(0)), onFilter: caps.operators.length ? addFilter : void 0, canEdit, onEdit: editing ? onEdit : void 0, onView, onJump: jump, picked, canPick: (r) => r.state === "new" || rules.rows && r.state !== "deleted", onPick: editing ? (ids, on) => setPicked((p) => new Set(on ? [...p, ...ids] : [...p].filter((id) => !ids.includes(id)))) : void 0 })
+        rows.length === 0 ? /* @__PURE__ */ jsx4(Notice, { icon: filters.length ? "Search" : "table-2", title: filters.length ? "No rows match" : offset > 0 ? "No more rows" : `${name} is empty`, body: filters.length ? "Nothing in the table matches the filters above." : offset > 0 ? "The page before was the last." : rules.inserts && !editing ? "Unlock writes to add a row." : void 0 }) : /* @__PURE__ */ jsx4(Grid, { label: `Rows of ${name}`, columns, rows, offset, order, onSort: (column) => (setOrder(nextOrder(order, column)), first()), onFilter: caps.operators.length ? addFilter : void 0, canEdit, onEdit: editing ? onEdit : void 0, onView, onJump: jump, picked, canPick: (r) => r.state === "new" || rules.rows && r.state !== "deleted", onPick: editing ? (ids, on) => setPicked((p) => new Set(on ? [...p, ...ids] : [...p].filter((id) => !ids.includes(id)))) : void 0 })
       ] }),
       n > 0 && /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 flex-wrap items-center gap-2 border-t bg-muted/50 px-3 py-1.5", "data-testid": "database-staged", role: "status", children: [
         /* @__PURE__ */ jsx4(Icon3, { name: "PencilLine", className: "size-3.5 shrink-0 text-muted-foreground" }),
@@ -1243,18 +1285,18 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
               label: "Rows a page",
               className: "mr-2",
               value: String(size),
-              onChange: (v) => (setSize(Number(v)), page(0)),
+              onChange: (v) => (setSize(Number(v)), first()),
               options: [
                 { value: String(PAGE), label: String(PAGE) },
                 { value: String(MOST), label: String(MOST) }
               ]
             }
           ),
-          /* @__PURE__ */ jsxs4(Button3, { size: "xs", variant: "ghost", disabled: offset === 0, onClick: () => page(offset - size), children: [
+          /* @__PURE__ */ jsxs4(Button3, { size: "xs", variant: "ghost", disabled: offset === 0, onClick: previous, children: [
             /* @__PURE__ */ jsx4(Icon3, { name: "ChevronLeft", className: "size-3.5" }),
             "Previous"
           ] }),
-          /* @__PURE__ */ jsxs4(Button3, { size: "xs", variant: "ghost", disabled: !data.more, onClick: () => page(offset + size), children: [
+          /* @__PURE__ */ jsxs4(Button3, { size: "xs", variant: "ghost", disabled: !data.more || data.rows.length === 0, onClick: next, children: [
             "Next",
             /* @__PURE__ */ jsx4(Icon3, { name: "ChevronRight", className: "size-3.5" })
           ] })
@@ -1268,7 +1310,10 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
           "Review changes to ",
           name
         ] }),
-        /* @__PURE__ */ jsx4(SheetDescription2, { className: "text-[13px]", children: caps.transactions ? `${plural(n, "change")}, sent together: all of them apply, or none do.` : `${plural(n, "change")}. ${engine.name} has no transactions, so they apply one after another, and one that fails leaves the ones before it applied.` })
+        /* @__PURE__ */ jsxs4(SheetDescription2, { className: "text-[13px]", children: [
+          caps.transactions ? `${plural(n, "change")}, sent together: all of them apply, or none do.` : `${plural(n, "change")}. ${engine.name} has no transactions, so they apply one after another, and one that fails leaves the ones before it applied.`,
+          " A row is found by its key: if something else changed it since you read it, your values replace theirs without a word. Only a row that is gone stops the edit."
+        ] })
       ] }),
       /* @__PURE__ */ jsxs4(SheetPanel2, { className: "min-h-0 flex-1 space-y-2 overflow-auto", children: [
         lines.map((l) => (
@@ -1492,12 +1537,15 @@ function statementAt(sql, selection) {
   }
   return { text: found.text, from: found.from, to: found.to };
 }
-function errorAt(hint) {
-  if (!hint) return void 0;
-  const m = /\b(?:position|character|char|offset)\b\D{0,3}(\d+)/i.exec(hint) ?? /^\s*(\d+)\s*$/.exec(hint);
-  if (!m) return void 0;
-  const n = Number(m[1]);
-  return n >= 1 ? n - 1 : void 0;
+function markAt(statement, sent, position) {
+  if (position === void 0 || position < 1) return void 0;
+  const lead = sent.length - statement.text.length;
+  const at = statement.from + (position - 1) - lead;
+  return at >= statement.from && at <= statement.to ? at : void 0;
+}
+function lineAndColumn(text, at) {
+  const before = text.slice(0, at).split("\n");
+  return `line ${before.length}, column ${before[before.length - 1].length + 1}`;
 }
 var HISTORY = 50;
 function remember(history, sql, at, max = HISTORY) {
@@ -1564,18 +1612,11 @@ function Console({ ctx, schemas, put }) {
     }
   };
   const mark = useMemo3(() => {
-    if (run?.state !== "failed" || run.fault?.code !== "sql_error") return void 0;
-    const at = errorAt(run.fault.hint);
-    if (at === void 0) return void 0;
-    const lead = run.sent.length - run.statement.text.length;
-    const from = run.statement.from + at - lead;
-    return from >= run.statement.from && from <= run.statement.to ? { from } : void 0;
+    if (run?.state !== "failed") return void 0;
+    const from = markAt(run.statement, run.sent, run.fault?.position);
+    return from === void 0 ? void 0 : { from };
   }, [run]);
-  const where = useMemo3(() => {
-    if (!mark) return void 0;
-    const before = text.slice(0, mark.from).split("\n");
-    return `line ${before.length}, column ${before[before.length - 1].length + 1}`;
-  }, [mark, text]);
+  const where = useMemo3(() => mark ? lineAndColumn(text, mark.from) : void 0, [mark, text]);
   const result = run?.result;
   const columns = useMemo3(() => (result?.columns ?? []).map((c) => ({ name: c.name, type: c.type, family: engine.family(c.type) })), [result, engine]);
   const rows = useMemo3(() => {
@@ -1650,21 +1691,24 @@ function Console({ ctx, schemas, put }) {
       /* @__PURE__ */ jsxs5("span", { className: "min-w-0 flex-1", children: [
         /* @__PURE__ */ jsx5("b", { children: "Not run:" }),
         " ",
-        writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`
+        writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`,
+        run.fault.detail && /* @__PURE__ */ jsx5("span", { className: "mt-0.5 block font-mono text-muted-foreground", children: run.fault.detail })
       ] }),
       writes.can && /* @__PURE__ */ jsx5(Button4, { size: "xs", variant: "outline", onClick: writes.ask, children: "Unlock writes\u2026" })
-    ] }) : run.fault.code === "timeout" ? /* @__PURE__ */ jsxs5("p", { className: "text-destructive-foreground", children: [
-      /* @__PURE__ */ jsx5("b", { children: "Stopped:" }),
-      " the statement took longer than the console allows. ",
-      run.fault.message
-    ] }) : /* @__PURE__ */ jsxs5(Fragment4, { children: [
-      /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap font-mono text-destructive-foreground", children: run.fault.message }),
-      where ? /* @__PURE__ */ jsxs5("p", { className: "text-muted-foreground", children: [
-        "At ",
-        where,
-        ", underlined in the editor."
-      ] }) : run.fault.hint && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap text-muted-foreground", children: run.fault.hint })
-    ] }) }),
+    ] }) : (
+      // The helper's own sentence, the database's detail, where it
+      // stopped, and what the helper suggests.
+      /* @__PURE__ */ jsxs5(Fragment4, { children: [
+        /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap font-mono text-destructive-foreground", children: run.fault.message }),
+        run.fault.detail && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap font-mono text-muted-foreground", children: run.fault.detail }),
+        where && /* @__PURE__ */ jsxs5("p", { className: "text-muted-foreground", children: [
+          "At ",
+          where,
+          ", underlined in the editor."
+        ] }),
+        run.fault.hint && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap text-muted-foreground", children: run.fault.hint })
+      ] })
+    ) }),
     result?.truncated && /* @__PURE__ */ jsxs5(Line, { testId: "database-truncated", children: [
       "Only the first ",
       plural(result.rows.length, "row"),
@@ -1827,6 +1871,7 @@ function DatabasePanel({ berth, box, location, worktree, main }) {
   const running = helper.status?.state === "running";
   return /* @__PURE__ */ jsx7("div", { ref, "data-testid": "database", "data-state": online ? helper.status?.state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: !online ? /* @__PURE__ */ jsx7(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." }) : running ? /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, active: visible }) : /* @__PURE__ */ jsx7(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "database", onAbout: () => berth.openScreen("database") }) });
 }
+var skews = /* @__PURE__ */ new Map();
 function Connections({ berth, box, source, worktree, active }) {
   const api = useMemo4(() => database(berth), [berth]);
   const helper = useHelperState(berth, box, false);
@@ -1835,7 +1880,7 @@ function Connections({ berth, box, source, worktree, active }) {
 ${source}`, { active, every: 1e4 });
   const onFault = useCallback4(
     (fault) => {
-      if (fault.code === "helper_off" || fault.status === 503) refresh();
+      if (lostHelper(fault)) refresh();
     },
     [refresh]
   );
@@ -1845,6 +1890,29 @@ ${source}`, { active, every: 1e4 });
   const pickKey = `connection:${box}/${source}`;
   const [picked, setPicked] = useState7(() => berth.storage.get(pickKey, ""));
   if (!conns.data) {
+    if (conns.fault && isOldBox(conns.fault)) {
+      return /* @__PURE__ */ jsx7(
+        Notice,
+        {
+          icon: "CircleFadingArrowUp",
+          title: `${box} needs updating for Database`,
+          body: /* @__PURE__ */ jsxs7(Fragment5, { children: [
+            /* @__PURE__ */ jsx7("code", { children: HELPER }),
+            " runs on ",
+            box,
+            " and answers only the box's own daemon, which proves itself with a token. ",
+            box,
+            "'s ",
+            /* @__PURE__ */ jsx7("code", { children: "berthd" }),
+            " is from before it sent one, so every request is turned away. Update the box in Settings \u2192 Boxes; nothing needs installing again."
+          ] }),
+          actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
+            /* @__PURE__ */ jsx7(Button6, { size: "sm", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
+            /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: conns.reload, children: "Check again" })
+          ] })
+        }
+      );
+    }
     if (conns.fault && isOldHelper(conns.fault)) {
       const s = helper.status;
       return /* @__PURE__ */ jsx7(
@@ -1902,7 +1970,7 @@ ${source}`, { active, every: 1e4 });
           /* @__PURE__ */ jsx7("code", { children: "POSTGRES_URL" }),
           " pointing at a Postgres on ",
           box,
-          " itself shows here once it has started. One that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
+          " itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
         ] }),
         actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
           /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: conns.reload, children: "Look again" }),
@@ -1938,7 +2006,8 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }) {
   const [put, setPut] = useState7();
   const [answered, setAnswered] = useState7();
   useEffect5(() => setAnswered(void 0), [conn.writes_until]);
-  const until = answered ? answered.until : conn.writes_until;
+  const read = useMemo4(() => conn.writes_until === void 0 ? void 0 : untilHere(conn.writes_until, skews.get(box) ?? 0, Date.now()), [conn.writes_until, box]);
+  const until = answered ? answered.until : read;
   const now = useNow(until !== void 0);
   const on = caps.writes && until !== void 0 && until > now;
   const [asking, setAsking] = useState7(false);
@@ -1951,8 +2020,10 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }) {
   }, [on, until]);
   const unlock = async () => {
     const r = await api.writes(box, conn.id, true);
+    const arrived = Date.now();
+    if (r.writes_until !== void 0) skews.set(box, skewOf(r.writes_until, arrived));
     setRanOut(false);
-    setAnswered({ until: r.writes_until });
+    setAnswered({ until: r.writes_until === void 0 ? void 0 : arrived + WRITES_FOR_MS });
     reread();
   };
   const lock = async () => {
@@ -1980,8 +2051,10 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }) {
   const schema = useRead(() => api.schema(box, conn.id), `${box}
 ${conn.id}`, { active });
   useEffect5(() => {
-    if (schema.fault) onFault(schema.fault);
-  }, [schema.fault, onFault]);
+    if (!schema.fault) return;
+    onFault(schema.fault);
+    if (schema.fault.code === "not_found") reread();
+  }, [schema.fault, onFault, reread]);
   const ctx = { berth, api, box, source, worktree, conn, caps, engine, writes, active, onFault };
   const where = `${conn.host}${conn.port ? `:${conn.port}` : ""}`;
   return /* @__PURE__ */ jsxs7(Fragment5, { children: [
@@ -2026,7 +2099,7 @@ ${conn.id}`, { active });
       " again: ",
       stale.message
     ] }),
-    !schema.data || !schema.fresh ? schema.fault ? (
+    !schema.data || !schema.fresh ? schema.fault && schema.fault.code !== "db_unavailable" ? /* @__PURE__ */ jsx7(Waiting, { fault: schema.fault, onRetry: schema.reload, title: `Couldn't read ${conn.database}'s tables` }) : schema.fault ? (
       // The helper has the connection, and the database isn't answering it.
       /* @__PURE__ */ jsx7(
         Notice,
