@@ -335,6 +335,12 @@ test("turning Leadline off names the services that still point at it", async ({ 
   await expect(box(screen, "devl").getByTestId("leadline-restart")).toHaveText("Restart web in shop/checkout-fix: it was started while Leadline was on, and its telemetry and database connection still go to it.");
   await expect(app.page.getByText("Restart web in shop/checkout-fix: it still points at Leadline.")).toBeVisible();
 
+  // Removing its data afterwards changes nothing for that service: the box
+  // has no more to say of it, and the row still does.
+  await box(screen, "devl").getByRole("button", { name: "Remove data…" }).click();
+  await app.page.getByRole("alertdialog").getByRole("button", { name: "Remove data" }).click();
+  await expect(app.page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(box(screen, "devl").getByTestId("leadline-restart")).toContainText("Restart web in shop/checkout-fix");
 });
 
 test("a box whose berthd is too old says Leadline can't run there", async ({ app }) => {

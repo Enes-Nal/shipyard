@@ -162,7 +162,9 @@ export async function turnOff(berth: BerthPluginContext, box: string, purge = fa
   // A Shipyard from before remove() answered resolves with nothing.
   const was = (await berth.helper.remove(box, { purge })) as HelperStatus | undefined;
   const attached = was?.attached ?? NONE;
-  left.set({ ...left.get(), [box]: attached });
+  // A helper that was already off answers with none: the services it left
+  // before still point at it (removing its data after turning it off).
+  if (attached.length) left.set({ ...left.get(), [box]: attached });
   await readHelper(berth, box);
   return attached;
 }

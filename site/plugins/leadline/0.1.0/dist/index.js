@@ -455,7 +455,7 @@ async function turnOn(berth, box) {
 async function turnOff(berth, box, purge = false) {
   const was = await berth.helper.remove(box, { purge });
   const attached = was?.attached ?? NONE;
-  left.set({ ...left.get(), [box]: attached });
+  if (attached.length) left.set({ ...left.get(), [box]: attached });
   await readHelper(berth, box);
   return attached;
 }
