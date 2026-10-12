@@ -1,7 +1,7 @@
 import type { HelperState, HelperStatus } from "@berth/plugin";
 
 import { ApiError } from "@/lib/api";
-import { helperRelayed } from "@/lib/helper-path";
+import { helperEnvAsked, helperRelayed } from "@/lib/helper-path";
 import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 
 // Mock mode's plugin helpers, behaving like the laptop agent's
@@ -35,6 +35,11 @@ import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 // What Database's helper answers is lib/mock-database.ts, an "acme" shop
 // kept in memory. ?db=old has devl on a berth-database from before its db/
 // routes: it answers 404 for them, as a real one would, until it is updated.
+//
+// A box also looks in a worktree's .env files for a helper when asked
+// (helpers/{plugin}/attach-env, berth.helper.attachEnv). What devl finds for
+// Database is mock-database.ts's to say (?db=env and the others there);
+// ?db=env-old is a devl whose berthd is from before the route.
 //
 // window.__berthMockHelper.restart("database", "devl", 1500) is a running
 // helper that ended and that the box starts again after that long, as berthd
@@ -351,6 +356,22 @@ if (typeof window !== "undefined") {
 // for any other path. {path} is the path on the helper, and its API is
 // under /api/ there.
 export function helperBoxCall(box: string, method: string, path: string, delay: Delay, body?: unknown): Promise<unknown> | undefined {
+  // The box's own look in a worktree's .env files for a helper
+  // (helpers/{plugin}/attach-env), beside the relay.
+  const asked = helperEnvAsked(path);
+  if (asked) {
+    // A berthd from before the route answers a plain 404, which the laptop
+    // agent reads as a box that is too old (?db=env-old).
+    if (method !== "POST" || dbScenario === "env-old") return delay(null).then(() => Promise.reject(new ApiError(`${box} runs an older berthd that doesn't have this yet`, 404, "box_outdated")));
+    const h = helperOf(asked, box);
+    if (h.state !== "running") return delay(null).then(() => Promise.reject(new ApiError(`the ${asked} helper is not running on this box`, 409, "helper_off")));
+    const where = (body ?? {}) as { location?: string; worktree?: string };
+    const location = where.location ?? "";
+    const worktree = where.worktree ?? "";
+    // Only Database's helper is told anything by a look, in this mock.
+    if (asked !== "database") return delay({ plugin: asked, location, worktree: worktree || location, command: ".env", files: [], skipped: [], variables: [], answer: {} });
+    return (databaseMock ??= import("@/lib/mock-database")).then((m) => new Promise((done) => window.setTimeout(done, m.ENV_LOOK_MS)).then(() => delay(m.databaseEnvLook(location, worktree, box !== "devl" || !!h.purged))));
+  }
   const to = helperRelayed(path);
   if (!to) return undefined;
   const { plugin } = to;

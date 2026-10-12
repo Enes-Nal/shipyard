@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { helperRelayed, helperRelayPath } from "./helper-path.ts";
+import { helperEnvAsked, helperEnvPath, helperRelayed, helperRelayPath } from "./helper-path.ts";
 
 // The box's side of this is internal/box/helpersapi.go, and its test with
 // the real berth-leadline (helpers_leadline_test.go) asks for
@@ -21,4 +21,19 @@ test("a relayed path is read back as the plugin and the path the helper sees", (
   assert.equal(helperRelayed("helpers/leadline"), undefined);
   assert.equal(helperRelayed("helpers/leadline/log?limit=100"), undefined);
   assert.equal(helperRelayed("locations/acme/worktrees"), undefined);
+  assert.equal(helperRelayed(helperEnvPath("leadline")), undefined);
+});
+
+// internal/box/helperenv.go: POST /v1/helpers/{plugin}/attach-env is the
+// box's own, beside the relay, and never a path on the helper.
+test("a box is asked to look in a worktree's .env files beside the relay, not through it", () => {
+  assert.equal(helperEnvPath("database"), "helpers/database/attach-env");
+  assert.equal(helperEnvPath("acme traces"), "helpers/acme%20traces/attach-env");
+  assert.equal(helperEnvAsked(helperEnvPath("database")), "database");
+  assert.equal(helperEnvAsked(helperEnvPath("acme traces")), "acme traces");
+  // A helper's own route of that name is the helper's.
+  assert.equal(helperEnvAsked(helperRelayPath("database", "attach-env")), undefined);
+  assert.equal(helperEnvAsked("helpers/database"), undefined);
+  assert.equal(helperEnvAsked("helpers/database/attach-env/more"), undefined);
+  assert.equal(helperEnvAsked("locations/acme/attach-env"), undefined);
 });

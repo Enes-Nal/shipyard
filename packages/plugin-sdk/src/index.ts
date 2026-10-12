@@ -457,6 +457,46 @@ export interface BerthHelper {
   // running there, and with the helper's own code and message when it
   // refuses the request.
   request<T = unknown>(box: string, method: string, path: string, body?: unknown): Promise<T>;
+  // Has the box look in a worktree's own .env files for the variables this
+  // plugin's manifest names (attach_env), and tell the helper what it found,
+  // as it is told before one of the worktree's services starts, with ".env"
+  // where the service's name would be: for a project whose dev servers
+  // Shipyard does not start. Looking again replaces what the last look
+  // found. worktree "" is the location's main checkout.
+  //
+  // It resolves with what was looked at and never a value. Nothing found is
+  // an answer, not an error. It rejects with code "box_outdated" (status
+  // 404) on a box whose berthd is from before this, "helper_off" (409) when
+  // the helper isn't running there, "helper_no_attach" (409) for a helper
+  // whose manifest names no attach path, "helper_unreachable" (502) when the
+  // helper did not answer, and "refused" (403) when a hook on the box said
+  // no. Absent in a Shipyard from before it: check before calling.
+  attachEnv<A = Record<string, unknown>>(box: string, where: { location: string; worktree: string }): Promise<HelperEnvLook<A>>;
+}
+
+// What a box found in a worktree's .env files for a helper (attachEnv).
+export interface HelperEnvLook<A = Record<string, unknown>> {
+  plugin: string;
+  location: string;
+  // The worktree's name on the box, its main checkout's too.
+  worktree: string;
+  // What the helper was told in place of a service's name: ".env".
+  command: string;
+  // The files that were read, in the order they were read; a later one's
+  // value for a variable wins. Of .env, .env.development, .env.local and
+  // .env.development.local in the worktree's own folder, the ones there.
+  files: string[];
+  // The ones that are there and were not read: "outside" (a link that
+  // leads out of the worktree), "not_a_file", "too_large", "not_text" or
+  // "unreadable".
+  skipped: { file: string; reason: string }[];
+  // The variables of those files that the manifest names. sent says the
+  // helper was told its value; when it was not, reason is "secret" (it names
+  // a secret: op://, env://), "unresolved" (it refers to a variable the
+  // files do not set), "empty" or "too_long".
+  variables: { name: string; file: string; sent: boolean; reason?: string }[];
+  // The helper's own answer to being told, without its "env".
+  answer: A;
 }
 
 export interface BerthPluginContext {
