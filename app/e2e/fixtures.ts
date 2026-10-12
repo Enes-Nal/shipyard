@@ -131,7 +131,8 @@ export const test = base.extend<{ app: App }>({
         // A real fleet folds worktrees with nothing going on under
         // "N more worktrees" (smoke:live): unfold them to find this one.
         const more = page.getByText(/^\d+ more worktrees?$/);
-        await expect(row.or(more.first())).toBeVisible();
+        // Both may show at once: the row, and a fold with others under it.
+        await expect(row.or(more).first()).toBeVisible();
         if (!(await row.isVisible())) {
           while ((await more.count()) > 0 && !(await row.isVisible())) await more.first().click();
         }

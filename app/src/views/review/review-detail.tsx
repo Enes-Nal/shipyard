@@ -288,7 +288,10 @@ function Changes({ entry }: { entry: ReviewEntry }) {
   const [selected, setSelected] = useState<string>();
   const current = groups.find((g) => g.id === group) ?? groups[0];
   const file = current?.files.find((f) => f.path === selected) ?? current?.files[0];
-  const run: Run = useCallback((command: string) => (client ? boxApi.exec(client, entry.box, where(entry), command, "60s") : Promise.reject(new Error("Not connected"))), [client, entry]);
+  // It changes only when where it runs does: the diff below loads again
+  // whenever it is a new function.
+  const at = where(entry);
+  const run: Run = useCallback((command: string) => (client ? boxApi.exec(client, entry.box, at, command, "60s") : Promise.reject(new Error("Not connected"))), [client, entry.box, at]);
   const all = useComments((s) => s.byKey[entry.key]) ?? NO_COMMENTS;
   const comments = useMemo<LineComments | undefined>(
     () =>

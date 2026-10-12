@@ -595,15 +595,24 @@ function mockOrchestration(box: string, method: string, path: string, body?: unk
   }
   if (method === "POST" && path === "exec") {
     const r = body as { location: string; command: string };
+    // A box announces every command it ran (exec.finished), which is what
+    // makes the Review inbox look again; so does this one.
+    const after = <T extends { exit_code: number }>(ms: number, res: T) =>
+      new Promise<T>((resolve) =>
+        setTimeout(() => {
+          emit({ type: "exec.finished", box, data: { location: r.location, command: r.command, exit_code: res.exit_code } });
+          resolve(res);
+        }, ms),
+      );
     const reviewed = reviewExec(box, r.location, r.command, emit);
-    if (reviewed) return new Promise((resolve) => setTimeout(() => resolve(reviewed), 400));
+    if (reviewed) return after(400, reviewed);
     const usage = usageExec(box, r.command);
-    if (usage) return new Promise((resolve) => setTimeout(() => resolve(usage), 600));
+    if (usage) return after(600, usage);
     const shell = mockShell(box, r.location, r.command);
-    if (shell) return new Promise((resolve) => setTimeout(() => resolve(shell), 250));
+    if (shell) return after(250, shell);
     const n = (checksRun[`${box}:${r.location}`] = (checksRun[`${box}:${r.location}`] ?? 0) + 1);
     const output = n === 1 ? `$ ${r.command}\n FAIL  src/checkout.test.ts > rejects a double charge\n   Expected: 409\n   Received: 200\n\nTests: 1 failed, 213 passed\n` : `$ ${r.command}\nTests: 214 passed\n`;
-    return new Promise((resolve) => setTimeout(() => resolve({ exit_code: n === 1 ? 1 : 0, output }), 700));
+    return after(700, { exit_code: n === 1 ? 1 : 0, output });
   }
   return undefined;
 }

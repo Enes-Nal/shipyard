@@ -10,10 +10,13 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - The website's header is now coss.com's: "coss.com shipyard", with Docs,
   GitHub and its stars, and "Close the laptop" beside it, and coss.com's
   lines down the sides of the page and across the top of each chapter.
+- **Review no longer keeps a box busy while an item is open.** With an item
+  open, Review read the box's inbox and the item's diff again every couple of
+  seconds for as long as it showed, each read setting off the next. It now
+  reads them once, and again only when something changes.
 - **Make a worktree without waiting for its setup.** `worktree new --no-setup`
   creates it at once, without the setup script or autostart services, and
   `worktree setup LOC/NAME [--wait]` runs them later.
