@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import type { EndpointDetail, QueryDetail, TraceDetail } from "../../../plugins/leadline/src/api.ts";
 import { endpointBrief, endpointProblem, failuresOf, queryBrief, queryProblem } from "../../../plugins/leadline/src/brief.ts";
-import { ago, bytes, count, ms, pct, per, plural, sentence, span, tick } from "../../../plugins/leadline/src/format.ts";
+import { ago, bytes, count, ms, pct, per, plural, sentence, serviceNames, span, tick } from "../../../plugins/leadline/src/format.ts";
 import { merge } from "../../../plugins/leadline/src/pages.ts";
 import { commandOf, namePart, shapeOf, sourceOf, tableOf } from "../../../plugins/leadline/src/source.ts";
 
@@ -227,6 +227,24 @@ test("how a request failed is read off its trace with every value taken out", ()
   // For one query: its own failed calls, and no logs.
   assert.deepEqual(failuresOf(trace, "INSERT INTO orders (customer_id) VALUES (?)").map((f) => f.span), ["INSERT INTO orders (customer_id) VALUES (?)"]);
   assert.deepEqual(failuresOf(trace, "SELECT ?"), []);
+});
+
+// What a box answers when a helper is removed (internal/box/helpersapi.go's
+// "attached"), said to the person: which services to restart.
+test("the services a removed helper leaves behind are named by service and worktree", () => {
+  assert.equal(serviceNames([{ location: "acme", worktree: "fix-orders", service: "web" }]), "web in acme/fix-orders");
+  // The main checkout is its project alone, however the box names it.
+  assert.equal(serviceNames([{ location: "acme", worktree: "acme", service: "web" }]), "web in acme");
+  assert.equal(serviceNames([{ location: "acme", worktree: "", service: "worker" }]), "worker in acme");
+  assert.equal(
+    serviceNames([
+      { location: "acme", worktree: "fix-orders", service: "web" },
+      { location: "acme", worktree: "fix-orders", service: "worker" },
+      { location: "shop", worktree: "shop", service: "api" },
+    ]),
+    "web in acme/fix-orders, worker in acme/fix-orders and api in shop",
+  );
+  assert.equal(serviceNames([]), "");
 });
 
 test("what a box said is shown as a sentence", () => {

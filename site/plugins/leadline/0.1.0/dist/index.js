@@ -73,6 +73,10 @@ function bytes(n) {
   }
   return `${u === 0 || v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, "")} ${units[u]}`;
 }
+function serviceNames(list) {
+  const names = list.map((s) => `${s.service} in ${!s.worktree || s.worktree === s.location ? s.location : `${s.location}/${s.worktree}`}`);
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
 function sentence(text) {
   const t = text.trim();
   if (!t) return t;
@@ -434,17 +438,26 @@ function useHelper(berth, box, active) {
   }, [berth, box, active, busy]);
   return view;
 }
+var left = shared({});
+function useLeft(box) {
+  return useSyncExternalStore(left.subscribe, left.get)[box] ?? NONE;
+}
+var NONE = [];
 async function turnOn(berth, box) {
   try {
     put(box, { status: await berth.helper.install(box) });
+    left.set({ ...left.get(), [box]: NONE });
   } catch (err) {
     put(box, { ...helpers.get()[box], fault: faultOf(err) });
     throw err;
   }
 }
 async function turnOff(berth, box, purge = false) {
-  await berth.helper.remove(box, { purge });
+  const was = await berth.helper.remove(box, { purge });
+  const attached = was?.attached ?? NONE;
+  left.set({ ...left.get(), [box]: attached });
   await readHelper(berth, box);
+  return attached;
 }
 function useVisible() {
   const [el, setEl] = useState(null);
@@ -1860,10 +1873,13 @@ function BoxRow({ berth, box, online, active }) {
   const state = s?.state;
   const running = state === "running";
   const badge = !online ? { label: "Offline", variant: "outline" } : state ? STATE[state] : void 0;
+  const left2 = useLeft(box);
+  const restart = left2.length > 0 && `Restart ${serviceNames(left2)}: ${left2.length === 1 ? "it was" : "they were"} started while Leadline was on, and ${left2.length === 1 ? "its" : "their"} telemetry and database connection still go to it.`;
   const off = async () => {
     setBusy(true);
     try {
-      await turnOff(berth, box);
+      const still = await turnOff(berth, box);
+      if (still.length) berth.notify(`Leadline is off on ${box}`, `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.`);
     } catch (err) {
       berth.notify(`Couldn't turn Leadline off on ${box}`, String(err?.message ?? err));
     } finally {
@@ -1906,7 +1922,14 @@ function BoxRow({ berth, box, online, active }) {
       " ",
       /* @__PURE__ */ jsx7("button", { type: "button", className: "underline underline-offset-2 hover:text-foreground", onClick: () => berth.openSettings("boxes"), children: "Settings \u2192 Boxes" }),
       "."
-    ] }) : cantRun(s, box).why : state === "failed" ? /* @__PURE__ */ jsx7("span", { className: "whitespace-pre-wrap text-destructive-foreground", children: s.error ?? "The box didn't say why." }) : state === "installing" ? "Downloading the program, checking it against its checksum and handing it to the box." : state === "starting" ? "The box has it and is starting it." : state === "off" ? `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it. Restart any service that was started while it was on: its database connection went through Leadline.` : state === "none" ? `This copy of the plugin names no program to install. Install Leadline again from Settings \u2192 Plugins.` : null }),
+    ] }) : cantRun(s, box).why : state === "failed" ? /* @__PURE__ */ jsx7("span", { className: "whitespace-pre-wrap text-destructive-foreground", children: s.error ?? "The box didn't say why." }) : state === "installing" ? "Downloading the program, checking it against its checksum and handing it to the box." : state === "starting" ? "The box has it and is starting it." : state === "off" ? /* @__PURE__ */ jsxs7(Fragment7, { children: [
+      "Nothing is recorded while it is off. Turning it on installs ",
+      HELPER,
+      " on ",
+      box,
+      " and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.",
+      restart && /* @__PURE__ */ jsx7("span", { className: "mt-1 block text-warning-foreground", "data-testid": "leadline-restart", children: restart })
+    ] }) : state === "none" ? `This copy of the plugin names no program to install. Install Leadline again from Settings \u2192 Plugins.` : null }),
     online && running && /* @__PURE__ */ jsx7(Heard, { berth, box, active }),
     /* @__PURE__ */ jsx7(TurnOnDialog, { berth, box: asking ? box : void 0, update: asking === "update", onClose: () => setAsking(void 0) }),
     /* @__PURE__ */ jsx7(AlertDialog2, { open: removing, onOpenChange: setRemoving, children: /* @__PURE__ */ jsxs7(AlertDialogPopup2, { children: [
@@ -1934,9 +1957,9 @@ function BoxRow({ berth, box, online, active }) {
             onClick: async () => {
               setBusy(true);
               try {
-                await turnOff(berth, box, true);
+                const still = await turnOff(berth, box, true);
                 setRemoving(false);
-                berth.notify(`Removed Leadline's data on ${box}`);
+                berth.notify(`Removed Leadline's data on ${box}`, still.length ? `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.` : void 0);
               } catch (err) {
                 berth.notify(`Couldn't remove Leadline's data on ${box}`, String(err?.message ?? err));
               } finally {

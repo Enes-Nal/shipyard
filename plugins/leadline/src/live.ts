@@ -1,4 +1,4 @@
-import type { BerthPluginContext, HelperStatus } from "@berth/plugin";
+import type { BerthPluginContext, HelperService, HelperStatus } from "@berth/plugin";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { merge } from "./pages.ts";
@@ -133,11 +133,22 @@ export function useHelper(berth: BerthPluginContext, box: string, active: boolea
   return view;
 }
 
+// The services a box was left with when the helper was turned off: started
+// while it was on, still running, and still pointed at it.
+const left = shared<Record<string, HelperService[]>>({});
+
+// useLeft is those services on a box, until the helper is turned on again.
+export function useLeft(box: string): HelperService[] {
+  return useSyncExternalStore(left.subscribe, left.get)[box] ?? NONE;
+}
+const NONE: HelperService[] = [];
+
 // turnOn installs the helper on a box, or updates it, and turns it on. The
 // caller has asked the person first.
 export async function turnOn(berth: BerthPluginContext, box: string): Promise<void> {
   try {
     put(box, { status: await berth.helper.install(box) });
+    left.set({ ...left.get(), [box]: NONE });
   } catch (err) {
     put(box, { ...helpers.get()[box], fault: faultOf(err) });
     throw err;
@@ -145,9 +156,15 @@ export async function turnOn(berth: BerthPluginContext, box: string): Promise<vo
 }
 
 // turnOff stops and removes the helper; with purge, what it recorded too.
-export async function turnOff(berth: BerthPluginContext, box: string, purge = false): Promise<void> {
-  await berth.helper.remove(box, { purge });
+// It resolves with the services the box says still point at the helper
+// (useLeft has them too): nothing restarts them, so the caller says which.
+export async function turnOff(berth: BerthPluginContext, box: string, purge = false): Promise<HelperService[]> {
+  // A Shipyard from before remove() answered resolves with nothing.
+  const was = (await berth.helper.remove(box, { purge })) as HelperStatus | undefined;
+  const attached = was?.attached ?? NONE;
+  left.set({ ...left.get(), [box]: attached });
   await readHelper(berth, box);
+  return attached;
 }
 
 // useVisible says whether an element is on screen in a window that is

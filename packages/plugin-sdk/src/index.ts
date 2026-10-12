@@ -423,6 +423,18 @@ export interface HelperStatus {
   // build or how it is run): install() replaces it.
   update?: true;
   error?: string;
+  // In the answer to remove(): the services running on the box that were
+  // started while the helper was on. What the helper gave them (where to send
+  // telemetry, a database URL through it) is still in their environment, so
+  // they need a restart to be as the project wrote them.
+  attached?: HelperService[];
+}
+
+// A worktree's service, as the box names it.
+export interface HelperService {
+  location: string;
+  worktree: string;
+  service: string;
 }
 
 export interface BerthHelper {
@@ -435,8 +447,10 @@ export interface BerthHelper {
   // status() until it settles.
   install(box: string): Promise<HelperStatus>;
   // Stops the helper and removes it from the box. What it recorded stays in
-  // its folder for the next install, unless purge.
-  remove(box: string, opts?: { purge?: boolean }): Promise<void>;
+  // its folder for the next install, unless purge. It resolves with the
+  // state it left, and in `attached` the running services that still point
+  // at the helper: say so, they are not restarted for anyone.
+  remove(box: string, opts?: { purge?: boolean }): Promise<HelperStatus>;
   // The helper's own HTTP API, through the box: request("devl", "GET",
   // "queries?limit=50") asks the helper for /api/queries?limit=50. It
   // rejects with code "helper_off" (status 409) when the helper isn't

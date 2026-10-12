@@ -313,6 +313,8 @@ test("the Leadline screen says where it runs, and turns it on, off and removes w
   await box(screen, "gpu").getByRole("button", { name: "Turn off" }).click();
   await expect(box(screen, "gpu")).toHaveAttribute("data-state", "off");
   await expect(box(screen, "gpu")).toContainText("what it recorded before, if anything, is kept on the box");
+  // Nothing was started there while it was on, so nothing needs a restart.
+  await expect(box(screen, "gpu").getByTestId("leadline-restart")).toHaveCount(0);
 
   await box(screen, "devl").getByRole("button", { name: "Remove data…" }).click();
   const remove = app.page.getByRole("alertdialog");
@@ -321,6 +323,18 @@ test("the Leadline screen says where it runs, and turns it on, off and removes w
   // A box says "off" for a helper it does not have, whatever it had before.
   await expect(box(screen, "devl")).toHaveAttribute("data-state", "off");
   await expect(box(screen, "devl").getByRole("button", { name: "Turn on…" })).toBeVisible();
+});
+
+test("turning Leadline off names the services that still point at it", async ({ app }) => {
+  mockOnly("removes a helper");
+  await app.open();
+  const screen = await openLeadline(app.page);
+  await box(screen, "devl").getByRole("button", { name: "Turn off" }).click();
+  await expect(box(screen, "devl")).toHaveAttribute("data-state", "off");
+  // The box answered with the dev server it started while the helper was on.
+  await expect(box(screen, "devl").getByTestId("leadline-restart")).toHaveText("Restart web in shop/checkout-fix: it was started while Leadline was on, and its telemetry and database connection still go to it.");
+  await expect(app.page.getByText("Restart web in shop/checkout-fix: it still points at Leadline.")).toBeVisible();
+
 });
 
 test("a box whose berthd is too old says Leadline can't run there", async ({ app }) => {

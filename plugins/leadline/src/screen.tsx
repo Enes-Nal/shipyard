@@ -27,8 +27,8 @@ import {
 import { useMemo, useState } from "react";
 
 import { leadline } from "./api";
-import { ago, bytes, count, plural, span } from "./format.ts";
-import { readHelper, turnOff, useHelper, useLive, useVisible } from "./live";
+import { ago, bytes, count, plural, serviceNames, span } from "./format.ts";
+import { readHelper, turnOff, useHelper, useLeft, useLive, useVisible } from "./live";
 import { cantRun, Command, HELPER, TurnOnDialog } from "./ui";
 
 // The Leadline screen: which boxes run the helper, with the switch for
@@ -131,11 +131,15 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
   const state = s?.state;
   const running = state === "running";
   const badge = !online ? { label: "Offline", variant: "outline" } : state ? STATE[state] : undefined;
+  const left = useLeft(box);
+  // The services that still point at a helper that has gone, in a sentence.
+  const restart = left.length > 0 && `Restart ${serviceNames(left)}: ${left.length === 1 ? "it was" : "they were"} started while Leadline was on, and ${left.length === 1 ? "its" : "their"} telemetry and database connection still go to it.`;
 
   const off = async () => {
     setBusy(true);
     try {
-      await turnOff(berth, box);
+      const still = await turnOff(berth, box);
+      if (still.length) berth.notify(`Leadline is off on ${box}`, `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.`);
     } catch (err) {
       berth.notify(`Couldn't turn Leadline off on ${box}`, String((err as Error)?.message ?? err));
     } finally {
@@ -227,7 +231,14 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
         ) : state === "starting" ? (
           "The box has it and is starting it."
         ) : state === "off" ? (
-          `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it. Restart any service that was started while it was on: its database connection went through Leadline.`
+          <>
+            Nothing is recorded while it is off. Turning it on installs {HELPER} on {box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.
+            {restart && (
+              <span className="mt-1 block text-warning-foreground" data-testid="leadline-restart">
+                {restart}
+              </span>
+            )}
+          </>
         ) : state === "none" ? (
           `This copy of the plugin names no program to install. Install Leadline again from Settings → Plugins.`
         ) : null}
@@ -250,9 +261,9 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
               onClick={async () => {
                 setBusy(true);
                 try {
-                  await turnOff(berth, box, true);
+                  const still = await turnOff(berth, box, true);
                   setRemoving(false);
-                  berth.notify(`Removed Leadline's data on ${box}`);
+                  berth.notify(`Removed Leadline's data on ${box}`, still.length ? `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.` : undefined);
                 } catch (err) {
                   berth.notify(`Couldn't remove Leadline's data on ${box}`, String((err as Error)?.message ?? err));
                 } finally {

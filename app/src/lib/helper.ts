@@ -14,9 +14,7 @@ const route = (id: string, box: string, purge = false) => `/v1/plugins/${encodeU
 export const helperApi = {
   status: (c: Client, id: string, box: string) => c.laptop<HelperStatus>("GET", route(id, box)),
   install: (c: Client, id: string, box: string) => c.laptop<HelperStatus>("POST", route(id, box)),
-  remove: async (c: Client, id: string, box: string, purge = false) => {
-    await c.laptop("DELETE", route(id, box, purge));
-  },
+  remove: (c: Client, id: string, box: string, purge = false) => c.laptop<HelperStatus>("DELETE", route(id, box, purge)),
   // The helper's own API (/api/{path} on the helper) through the box's relay.
   request: <T,>(c: Client, id: string, box: string, method: string, path: string, body?: unknown) =>
     c.box<T>(box, method, helperRelayPath(id, path), body).catch((err: unknown) => {

@@ -17,7 +17,7 @@ import { helperRelayed } from "@/lib/helper-path";
 //
 // A box answers "off" for a helper it does not have, whether it never had
 // it or it was turned off, and so do these; "none" is a plugin that names no
-// helper.
+// helper. Turning one off answers with the services still pointed at it.
 //
 // ?helper=unsupported is a fleet whose boxes run a berthd from before
 // helpers, ?helper=nobuild one whose boxes the plugin has no build for,
@@ -110,11 +110,13 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
   }
   if (method === "DELETE") {
     const purge = query.get("purge") === "1";
+    // devl's dev server was started while the helper was on, and runs on.
+    const attached = h.state === "running" && plugin === "leadline" && box === "devl" ? [{ location: "shop", worktree: "checkout-fix", service: "web" }] : undefined;
     if (h.state !== "unsupported") h.state = "off";
     h.version = undefined;
     h.error = undefined;
     if (purge) h.purged = true;
-    return delay(statusOf(plugin, box));
+    return delay({ ...statusOf(plugin, box), ...(attached ? { attached } : {}) });
   }
   return undefined;
 }

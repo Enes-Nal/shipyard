@@ -90,6 +90,13 @@ export function bytes(n: number): string {
   return `${u === 0 || v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, "")} ${units[u]}`;
 }
 
+// serviceNames names worktrees' services in a sentence: "web in
+// acme/fix-orders" (the project alone for its main checkout), "a, b and c".
+export function serviceNames(list: { location: string; worktree: string; service: string }[]): string {
+  const names = list.map((s) => `${s.service} in ${!s.worktree || s.worktree === s.location ? s.location : `${s.location}/${s.worktree}`}`);
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 // sentence makes what a program said read as one: a capital, and a full stop.
 export function sentence(text: string): string {
   const t = text.trim();
