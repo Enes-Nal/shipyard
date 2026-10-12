@@ -38,6 +38,10 @@ plugin on.
   if it was on.
 - **Remove…**, beside a plugin under Installed, deletes one the listing
   installed and forgets that you allowed it.
+- A plugin that runs a program on your boxes, such as Leadline, has that
+  program [stopped and removed there](#a-helper-does-not-outlive-its-plugin)
+  when you turn the plugin off or remove it. Shipyard asks first, and names
+  the boxes.
 - **Replace…** shows instead of Install when `~/.berth/plugins` already has
   a plugin with that id that the listing didn't install: a folder or a link
   you put there, or a listed plugin whose files you changed. Shipyard never
@@ -314,6 +318,7 @@ A helper is declared in the plugin's manifest:
       "ready": "helper.json",
       "attach": "/api/attach",
       "attach_env": ["DATABASE_URL", "POSTGRES_URL", "OTEL_*"],
+      "detach": "/api/detach",
       "assets": {
         "linux-amd64": { "url": "https://downloads.acme.example/acme-helper-0.3.0-linux-amd64", "sha256": "5f70bf18…", "size": 18403328 },
         "linux-arm64": { "url": "https://downloads.acme.example/acme-helper-0.3.0-linux-arm64", "sha256": "9c1185a5…", "size": 17551360 }
@@ -330,6 +335,7 @@ A helper is declared in the plugin's manifest:
 | `args` | The program's arguments, at most 32. `{dir}` in one is the helper's data folder on the box. Nothing else is added to them |
 | `ready` | The name of a JSON file the helper writes in `{dir}` once it listens, with `"api": "http://127.0.0.1:PORT"`. Until it is there the helper is `starting`; one that has not written it in 30 seconds is stopped and started again |
 | `attach`, `attach_env` | Optional: [what the helper adds to a worktree's services](#attach-what-a-helper-adds-to-a-service) |
+| `detach` | Optional: the path berthd tells the helper on when [a worktree is removed](#detach-when-a-worktree-is-removed) |
 | `assets` | The build for each platform a box can be: `linux-amd64`, `linux-arm64`, `darwin-arm64`, `darwin-amd64`. Each has the `https://` address it is downloaded from, its SHA-256 in hex, and its size in bytes (at most 128 MB). A box of a platform with no build shows the helper as unsupported |
 
 What a helper has to do:
@@ -373,8 +379,53 @@ the manifest names now; `POST` again brings it up to date. See
 
 These routes work only for a plugin that is installed and allowed as it is
 now. When a plugin updates, its manifest changes, the permission lapses, and
-its helper is not touched until you have allowed the new manifest. Removing
-a helper is never held back.
+its helper is not installed or updated until you have allowed the new
+manifest. Removing a helper is never held back.
+
+### A helper does not outlive its plugin
+
+A helper runs for a plugin you allowed. When the plugin stops being
+allowed, the laptop agent stops the helper and removes it from every paired
+box that has it:
+
+| What happens to the plugin | Its helper on the boxes | What the helper recorded |
+| --- | --- | --- |
+| You turn it off in Settings → Plugins | Stopped and removed | Kept on the box |
+| You remove it (**Remove…**) | Stopped and removed | Removed |
+| It changes, and the new manifest names another helper, or none | Stopped and removed | Kept |
+| Its folder is deleted, or its permission is taken away by hand | Stopped and removed | Kept |
+| It changes, and the new manifest names the same helper | Left running while Shipyard asks you about the new version | Kept |
+| You turn it on again | Nothing: it is not installed again | As it was |
+
+"Changes" is an update from the listing, or an edit to a plugin of your
+own: either way the plugin is off until you review it, and Shipyard asks at
+once. If the new manifest's `box.helper` is the same in every word and
+every build's checksum, the program on the boxes is the one both versions
+name, so it is held rather than removed. Allowing the new version keeps it
+running. Until you do, the plugin's row in Settings → Plugins says it is
+still running and on which boxes, with **Stop it** to remove it. Any other
+change to `box.helper`, a new `version` of the helper included, removes the
+one that runs: after you allow the update you turn the helper on for each
+box again.
+
+Turning a plugin off, and removing one, ask first and name the boxes the
+program stops on. A box that is offline is done when it next connects: the
+agent keeps what is still to do in
+[`helpers.json`](/reference/files#on-the-laptop), so a restart of the agent
+does not lose it, and lets it go if you forget the box meanwhile. Turning
+the helper on for a box again calls off a removal still waiting for that
+box. A removal waiting for a box is done even if you have turned the plugin
+on again since: a plugin that was turned off has its helper off everywhere,
+until it is turned on for a box.
+
+Two routes of [the agent's API](/reference/app-api#laptop) go with this:
+`GET /v1/plugins/{id}/helpers` says where a plugin's helper is, and
+`POST /v1/plugins/{id}/disable` and `DELETE /v1/marketplace/{id}` answer
+with what became of it on each box.
+
+Every paired box that has the helper is asked, whichever laptop turned it
+on there: if two of your laptops share a box, turning the plugin off on one
+stops the helper for both.
 
 ### Reading it from the plugin
 
@@ -448,10 +499,53 @@ variables to set:
   anything: a service that was pointed at it still is, until you restart
   the service, which then starts as the project wrote it. The answer to
   turning it off lists those services (`attached`), so a panel can say
-  which to restart.
+  which to restart. berthd remembers them after the helper is gone: turned
+  on and off again before such a service restarts, the helper's removal
+  names it again. A service that is started while the helper is off is as
+  the project wrote it, and is not named any more.
 
 Only services are attached: a dev server an agent starts by hand in its
 terminal has the worktree's usual environment.
+
+### Detach: when a worktree is removed
+
+What a helper opened for a worktree (a proxy, a port, what it recorded
+under the worktree's name) should go when the worktree does. With `detach`
+set, berthd tells the helper when a worktree is removed, by `POST` to that
+path:
+
+```json
+{
+  "box": "devbox",
+  "project": "acme",
+  "worktree": "fix-orders",
+  "branch": "fix/orders-n-plus-one",
+  "path": "/home/dev/acme-fix-orders"
+}
+```
+
+It is what [attach](#attach-what-a-helper-adds-to-a-service) said of the
+worktree, without the service and its environment: one call for the
+worktree, whatever services it had. `worktree` is empty for the project's
+own checkout, and `branch` is left out when berthd does not know it.
+
+- **However the worktree went.** From the app, with `berthd worktree rm`,
+  when a review is cleaned up, after an archive script, when a run drops
+  the attempts it did not pick, or with `git worktree remove` behind
+  berthd's back.
+- **A removed location is all of its worktrees**, its own checkout among
+  them: one call for each.
+- **A helper is never in the way.** berthd tells it after the worktree has
+  gone, in the background, and waits two seconds for any answer in the
+  200s. The body of the answer is not read. A helper that is down, slow or
+  answers an error changes nothing: the worktree is removed all the same,
+  and berthd forgets it in its own list of attached services either way.
+- **It is told once.** A helper that was not running when the worktree went
+  is not told later, so what it holds for that worktree stays until the
+  helper itself lets go of it.
+- **Answer for a worktree you never heard of.** berthd tells every running
+  helper with a `detach` path about every removed worktree, attached or
+  not.
 
 ### Publishing a helper's builds
 

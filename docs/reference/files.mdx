@@ -24,6 +24,7 @@ State, in `<state>/client/`:
 | `box-routes.json` | The [routes to each box](/concepts/laptop-agent#routes-to-a-box) besides its paired address (an SSH host, other addresses), and the ones turned off |
 | `ssh/` | The SSH routes' shared connections (ControlMaster sockets) |
 | `queue.json` | The [offline prompt queue](/guides/offline-queue) |
+| `helpers.json` | The plugins that are on with a [helper](/guides/plugins#a-helper-does-not-outlive-its-plugin), and the helpers still to be removed from a box that was offline when its plugin was turned off or removed. Gone when there is nothing to keep |
 | `agent.sock`, `agent.lock`, `agent.log` | The laptop agent's socket, lock and log |
 | `ui-token` | The token for [the app's API](/reference/app-api) (mode 0600) |
 | `linear.json` | Your [Linear](/guides/linear) API key and who it belongs to (mode 0600); removed when you disconnect |
@@ -61,7 +62,7 @@ State, in `<state>/box/`:
 | `helpers/<plugin>/install.json` | A [plugin's helper](/guides/plugins#give-a-plugin-a-helper) as it was installed: its name, version, arguments, size and SHA-256 (0600). berthd starts what this names, and checks the program against it each time |
 | `helpers/<plugin>/bin/<version>/<name>` | The helper's program, for its owner alone (0700). One version is kept |
 | `helpers/<plugin>/data/` | The helper's own data: `{dir}` in its arguments, and where it writes its ready file. It stays when the helper is turned off, and goes when it is removed with its data |
-| `helpers/<plugin>/attached.json` | The services that were last started with what the helper answered, so that turning it off can say which still point at it |
+| `helpers/<plugin>/attached.json` | The services that were last started with what the helper answered, so that turning it off can say which still point at it. It outlives the helper, and a removal with its data: a service leaves it when it is started again without the helper, or is found stopped when the helper is removed, and a worktree when it is removed. With nothing left in it, it goes, and the folder with it if nothing else is there |
 | `helpers/<plugin>/helper.log`, `helper.log.1` | What the helper printed, and when berthd started and stopped it (0600). Past 4 MB it starts over, and the log before that is kept once |
 | `kits/<location>/<kit>/` | Installed kits' files (`$BERTH_KIT_DIR`) |
 | `paused.json` | Paused worktrees |

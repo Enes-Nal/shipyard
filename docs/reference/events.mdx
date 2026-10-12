@@ -138,7 +138,7 @@ events.
 | `share.started`, `share.stopped` | `id`, `port`, `url` |
 | `unit.started`, `unit.stopped`, `unit.restarted` | `name` |
 | `helper.installed` | `plugin`, `name`, `version`: a [plugin's helper](/guides/plugins#give-a-plugin-a-helper) was installed on the box and turned on |
-| `helper.removed` | `plugin`, `purged`, `attached`: one was stopped and removed, with its data when `purged`; `attached` counts the running services that still point at it |
+| `helper.removed` | `plugin`, `purged`, `attached`: one was stopped and removed, with its data when `purged`; `attached` counts the running services that still point at it. Not announced when nothing of the helper was on the box |
 | `phone.changed` | `enabled` |
 | `box.upgraded` | `build` |
 | `pairing.invited` | `for`, `by`, `expires`: a paired laptop (`by`, as `laptop:<name>`) asked for a pairing code for another computer (`berth invite`); never the code |

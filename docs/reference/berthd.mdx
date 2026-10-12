@@ -161,6 +161,23 @@ How berthd runs a helper:
   service it asks each running helper that wants to know, and waits at most
   two seconds for [what it adds to the service's environment](/guides/plugins#attach-what-a-helper-adds-to-a-service).
   A helper that is down, slow or wrong changes nothing.
+- **Told when a worktree goes.** After a worktree is removed (with
+  `berthd worktree rm`, from the app, by a review's clean-up, after an
+  archive script, or by `git worktree remove` itself), berthd tells each
+  running helper whose manifest names a
+  [`detach` path](/guides/plugins#detach-when-a-worktree-is-removed), and
+  does the same for every worktree of a location that is removed. It
+  happens in the background with two seconds to answer, so a helper that is
+  down or slow never holds up or fails a removal, and berthd forgets the
+  worktree in its own list of attached services either way.
+- **Removed with its plugin.** Turning the plugin off on the laptop, or
+  removing it there, has the laptop remove its helper from this box, as
+  `berthd helper rm` does (with `--purge` when the plugin was removed): see
+  [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
+  berthd keeps its list of the services still running with what a helper
+  told them ([`attached.json`](/reference/files#on-a-box)) after the helper
+  is gone, its data too: turned on and off again, the helper's removal
+  names them again, until they are started again without it.
 
 A `before:helper.install` [gate](/reference/events#gates) on the box can
 refuse a helper; `helper.installed` and `helper.removed` are announced.
