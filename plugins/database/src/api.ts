@@ -206,6 +206,8 @@ export const isOldHelper = (f: Fault) => f.code === "not_found";
 // Every route answers "unauthorized" when the box's berthd is from before
 // it sent a helper its token: the helper is fine, the box needs updating.
 export const isOldBox = (f: Fault) => f.code === "unauthorized";
-// The laptop could not reach the box at all (no code: it is not the
-// helper's answer), or the helper is not running there.
-export const lostHelper = (f: Fault) => f.code === "helper_off" || (f.status === 503 && !f.code);
+// The helper is not there to answer: the box says it is not running
+// ("helper_off", while the box starts it again too), or that it runs and did
+// not answer ("helper_unreachable"); or the box could not be asked at all
+// (a 503 with no code: not the helper's answer, whose 503s have one).
+export const lostHelper = (f: Fault) => f.code === "helper_off" || f.code === "helper_unreachable" || (f.status === 503 && !f.code);

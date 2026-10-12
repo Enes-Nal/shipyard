@@ -339,6 +339,41 @@ test("writes lock themselves again after fifteen minutes, and what was staged st
   await expect(p.getByTestId("database-staged").getByRole("button", { name: "Unlock to apply…" })).toBeVisible();
 });
 
+test("the helper starting again keeps what was staged and typed, and comes back with writes locked", async ({ app }) => {
+  mockOnly("unlocks writes");
+  const p = await open(app, "customers");
+  await unlock(app, p);
+  await edit(app.page, cell(p, 0, "name"), "Ines N.");
+  await mode(p, "Console").click();
+  await p.getByRole("textbox", { name: "SQL to run" }).click();
+  await app.page.keyboard.type("SELECT 'typed, not run yet'");
+  await mode(p, "Tables").click();
+  const bar = p.getByTestId("database-staged");
+  await expect(bar).toContainText("1 staged change");
+
+  // The box starts the helper again (it crashed, or berthd was updated),
+  // and Apply lands while it is down: the box answers that it isn't running.
+  await app.page.evaluate(() => (window as unknown as { __berthMockHelper: { restart(plugin: string, box: string, ms: number): void } }).__berthMockHelper.restart("database", "devl", 4000));
+  await bar.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(p).toHaveAttribute("data-state", "starting");
+  await expect(notice(p)).toContainText("Starting berth-database on devl…");
+  await expect(p.getByTestId("database-kept")).toContainText("What you staged and typed in this tab is kept");
+  await expect(bar).toBeHidden();
+
+  // Back: the same table, the change still staged, the statement still in
+  // the editor, and writes locked, as the helper has them after a restart.
+  await expect(p).toHaveAttribute("data-state", "running", { timeout: 15_000 });
+  await expect(p.getByTestId("database-kept")).toHaveCount(0);
+  await expect(lock(p)).toHaveAttribute("data-writes", "off");
+  await expect(p.getByTestId("database-table-bar").getByRole("heading")).toContainText("customers");
+  await expect(bar).toContainText("1 staged change");
+  await expect(cell(p, 0, "name")).toHaveText("Ines N.");
+  await expect(p.getByTestId("database-refused")).toContainText("Nothing was applied.");
+  await expect(bar.getByRole("button", { name: "Unlock to apply…" })).toBeVisible();
+  await mode(p, "Console").click();
+  await expect(p.getByRole("textbox", { name: "SQL to run" })).toContainText("SELECT 'typed, not run yet'");
+});
+
 test("edits are staged and marked, reviewed as old → new, and applied as one", async ({ app }) => {
   mockOnly("edits rows");
   const p = await open(app, "customers");

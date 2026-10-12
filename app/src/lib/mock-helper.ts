@@ -35,6 +35,12 @@ import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 // What Database's helper answers is lib/mock-database.ts, an "acme" shop
 // kept in memory. ?db=old has devl on a berth-database from before its db/
 // routes: it answers 404 for them, as a real one would, until it is updated.
+//
+// window.__berthMockHelper.restart("database", "devl", 1500) is a running
+// helper that ended and that the box starts again after that long, as berthd
+// does (a crash, or berthd's own update): meanwhile the box says it is
+// starting and answers "helper_off" for it, and what it kept only in memory
+// (Database's writes switch) is gone when it is back.
 
 type Delay = <T>(v: T) => Promise<T>;
 
@@ -319,6 +325,27 @@ function answer(all: Fixture[], route: string, q: URLSearchParams, empty: boolea
 }
 
 let databaseMock: Promise<typeof import("@/lib/mock-database")> | undefined;
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __berthMockHelper: unknown }).__berthMockHelper = {
+    restart(plugin: string, box: string, ms = 1500) {
+      const h = helperOf(plugin, box);
+      if (h.state !== "running") return;
+      h.timers.forEach((t) => window.clearTimeout(t));
+      h.timers = [];
+      h.state = "starting";
+      // berthd's own words for it.
+      h.error = "it ended (signal: killed)";
+      if (plugin === "database") void (databaseMock ??= import("@/lib/mock-database")).then((m) => m.databaseRestarted());
+      h.timers.push(
+        window.setTimeout(() => {
+          h.state = "running";
+          h.error = undefined;
+        }, ms),
+      );
+    },
+  };
+}
 
 // helperBoxCall answers a box's helpers/{plugin}/api/{path}, or undefined
 // for any other path. {path} is the path on the helper, and its API is

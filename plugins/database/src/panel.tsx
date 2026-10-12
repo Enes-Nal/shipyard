@@ -18,19 +18,50 @@ import { COPY, FaultText, HELPER, Line, Notice, Waiting } from "./ui";
 // show (the box is offline, the helper is off, installing or failed), and
 // otherwise draws the worktree's connection.
 
+// The states in which a box has no helper at all: it was turned off, or
+// can't be there. Any other state that isn't "running" is a helper on its
+// way back.
+const GONE = new Set(["off", "none", "unsupported"]);
+
 export function DatabasePanel({ berth, box, location, worktree, main }: WorktreePanelProps) {
   const [ref, visible] = useVisible<HTMLDivElement>();
   const online = useBoxes().find((b) => b.name === box)?.state === "online";
   const helper = useHelperState(berth, box, visible && online);
-  const running = helper.status?.state === "running";
+  const state = helper.status?.state;
+  const running = online && state === "running";
+  // What is staged in the grid and typed in the console lives in the
+  // connection's own part of the panel. So once that has been shown it is
+  // kept, out of sight, while the helper is away for a moment: the box
+  // starting it again (it crashed, or the box's berthd or the helper was
+  // updated), or the box out of reach. It comes back as it was, with writes
+  // locked. Only turning the helper off takes it down.
+  const [kept, setKept] = useState(false);
+  useEffect(() => {
+    if (running) setKept(true);
+    else if (online && state && GONE.has(state)) setKept(false);
+  }, [running, online, state]);
   return (
-    <div ref={ref} data-testid="database" data-state={online ? (helper.status?.state ?? "reading") : "offline"} className="@container flex h-full min-h-0 flex-col bg-background text-sm">
+    <div ref={ref} data-testid="database" data-state={online ? (state ?? "reading") : "offline"} className="@container flex h-full min-h-0 flex-col bg-background text-sm">
+      {(running || kept) && (
+        <div className={running ? "contents" : "hidden"}>
+          <Connections berth={berth} box={box} source={sourceOf({ location, worktree, main })} worktree={main ? location : worktree} active={visible && running} />
+        </div>
+      )}
+      {!running && kept && (
+        <Line tone="note" testId="database-kept">
+          {online ? (
+            <>
+              What you staged and typed in this tab is kept, and is here again once <code>{HELPER}</code> is running on {box}. Writes will be locked.
+            </>
+          ) : (
+            <>What you staged and typed in this tab is kept, and is here again once {box} is back.</>
+          )}
+        </Line>
+      )}
       {!online ? (
         <Notice icon="CloudOff" title={`${box} is offline`} body="Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." />
-      ) : running ? (
-        <Connections berth={berth} box={box} source={sourceOf({ location, worktree, main })} worktree={main ? location : worktree} active={visible} />
       ) : (
-        <HelperBox variant="panel" berth={berth} box={box} copy={COPY} testId="database" onAbout={() => berth.openScreen("database")} />
+        !running && <HelperBox variant="panel" berth={berth} box={box} copy={COPY} testId="database" onAbout={() => berth.openScreen("database")} />
       )}
     </div>
   );

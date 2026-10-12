@@ -887,6 +887,13 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
   throw notRun();
 }
 
+// databaseRestarted is the helper started again: the databases it knew are
+// kept (they are in a file of its own), and writes are off for all of them
+// (that is only in its memory).
+export function databaseRestarted() {
+  for (const c of conns ?? []) c.writesUntil = undefined;
+}
+
 // databaseCall answers the helper's /api/db/… routes. empty is a helper
 // that knows no worktree's database: one just installed, or one whose data
 // was removed.

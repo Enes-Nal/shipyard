@@ -45,7 +45,7 @@ function faultOf(err) {
 }
 var isOldHelper = (f) => f.code === "not_found";
 var isOldBox = (f) => f.code === "unauthorized";
-var lostHelper = (f) => f.code === "helper_off" || f.status === 503 && !f.code;
+var lostHelper = (f) => f.code === "helper_off" || f.code === "helper_unreachable" || f.status === 503 && !f.code;
 
 // src/clock.ts
 var WRITES_FOR_MS = 15 * 6e4;
@@ -1864,12 +1864,33 @@ function sourceOf(w) {
 
 // src/panel.tsx
 import { Fragment as Fragment5, jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
+var GONE = /* @__PURE__ */ new Set(["off", "none", "unsupported"]);
 function DatabasePanel({ berth, box, location, worktree, main }) {
   const [ref, visible] = useVisible();
   const online = useBoxes().find((b) => b.name === box)?.state === "online";
   const helper = useHelperState(berth, box, visible && online);
-  const running = helper.status?.state === "running";
-  return /* @__PURE__ */ jsx7("div", { ref, "data-testid": "database", "data-state": online ? helper.status?.state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: !online ? /* @__PURE__ */ jsx7(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." }) : running ? /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, active: visible }) : /* @__PURE__ */ jsx7(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "database", onAbout: () => berth.openScreen("database") }) });
+  const state = helper.status?.state;
+  const running = online && state === "running";
+  const [kept, setKept] = useState7(false);
+  useEffect5(() => {
+    if (running) setKept(true);
+    else if (online && state && GONE.has(state)) setKept(false);
+  }, [running, online, state]);
+  return /* @__PURE__ */ jsxs7("div", { ref, "data-testid": "database", "data-state": online ? state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: [
+    (running || kept) && /* @__PURE__ */ jsx7("div", { className: running ? "contents" : "hidden", children: /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, active: visible && running }) }),
+    !running && kept && /* @__PURE__ */ jsx7(Line, { tone: "note", testId: "database-kept", children: online ? /* @__PURE__ */ jsxs7(Fragment5, { children: [
+      "What you staged and typed in this tab is kept, and is here again once ",
+      /* @__PURE__ */ jsx7("code", { children: HELPER }),
+      " is running on ",
+      box,
+      ". Writes will be locked."
+    ] }) : /* @__PURE__ */ jsxs7(Fragment5, { children: [
+      "What you staged and typed in this tab is kept, and is here again once ",
+      box,
+      " is back."
+    ] }) }),
+    !online ? /* @__PURE__ */ jsx7(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." }) : !running && /* @__PURE__ */ jsx7(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "database", onAbout: () => berth.openScreen("database") })
+  ] });
 }
 var skews = /* @__PURE__ */ new Map();
 function Connections({ berth, box, source, worktree, active }) {

@@ -444,6 +444,8 @@ test("which update is needed is told by the code: the helper's, or the box's", (
   assert.deepEqual([isOldHelper(down), isOldBox(down), lostHelper(down)], [false, false, false]);
   assert.equal(lostHelper(off), true);
   assert.equal(lostHelper(offline), true);
+  // The box's own words for a helper that runs and does not answer.
+  assert.equal(lostHelper(faultOf(Object.assign(new Error("the database helper did not answer"), { status: 502, code: "helper_unreachable" }))), true);
 });
 
 // ---- The lock's clock ----
