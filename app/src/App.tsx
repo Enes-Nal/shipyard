@@ -37,6 +37,7 @@ import { useShortcuts } from "@/hooks/use-shortcuts";
 import { useWindowTitle } from "@/hooks/use-window-title";
 import { useApplyTheme } from "@/hooks/use-theme";
 import { startOutdatedWatch } from "@/lib/outdated";
+import { startSkillsNoticeWatch } from "@/lib/skills-notice";
 import { startRunsWatch } from "@/lib/runs";
 import { watchStillness } from "@/lib/still";
 import { useStore } from "@/lib/store";
@@ -92,6 +93,9 @@ export default function App() {
   useEffect(() => (connectedToAgent ? startRunsWatch() : undefined), [connectedToAgent]);
   // Which boxes run an older berthd (lib/outdated.ts).
   useEffect(() => (connectedToAgent ? startOutdatedWatch() : undefined), [connectedToAgent]);
+  // Which boxes' Shipyard skills aren't installed or are out of date, for
+  // the sidebar's notice (lib/skills-notice.ts).
+  useEffect(() => (connectedToAgent ? startSkillsNoticeWatch() : undefined), [connectedToAgent]);
   useKitDeepLinks();
   // Team setup: berth://team?org= links, and setups running on boxes.
   useTeamDeepLinks();

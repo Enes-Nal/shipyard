@@ -142,6 +142,36 @@ missing; the app shows the same in Settings → Agents and in a project's
 settings. Removing only deletes a folder whose `SKILL.md` is Shipyard's skill of
 that name.
 
+#### The sidebar's reminder
+
+When a box is online, has Claude Code or Codex, and its user's skills are
+missing or out of date (as they are after a box upgrade, until installed
+again), the app says so at the foot of the sidebar: "devl: Shipyard's skills
+aren't installed for Claude Code", or "gpu: 3 skills are out of date". One
+box shows and the others fold under "2 more boxes"; with the sidebar folded
+it is one button that opens the same notices.
+
+- **Install now** (or **Update now**) installs all of Shipyard's skills for
+  the box's user, for the agents the box has, as `berthd skills install`
+  does. If a `before:skills.install` gate refuses, or the box goes offline
+  on the way, the notice says why, with **Retry** and **Settings**, which
+  opens Settings → Agents on that box.
+- **Snooze** puts that box's notice away until tomorrow morning, for a week
+  or for a month. A snooze is for the state it was made in: one made while
+  skills were out of date says nothing of a box that later has none. Once
+  its time has passed, the box reminds again, as after the next upgrade.
+- **Don't remind me for devl** holds until you turn **Remind me about
+  devl's skills** back on in Settings → Agents. A snooze shows there too,
+  and ends with **Remind me now**.
+
+Skills inside a project never raise it; those stay in the project's
+settings. The app asks a box when it connects, after an upgrade, and when
+skills are installed or removed there, never on a timer, and the notice
+makes no toast, sound or system notification. What you chose is kept by the
+laptop agent on this computer (`~/.berth/app/skills-notice.json`), so it is
+the same in every window; another computer paired with the same box asks
+for itself.
+
 The API is `GET /v1/skills[?location=L]`, and `POST /v1/skills/install` and
 `POST /v1/skills/uninstall` with `{skills, agent, target, location, commit}`.
 Changes announce `skills.installed` and `skills.removed`, and

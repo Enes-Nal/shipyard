@@ -17,6 +17,7 @@ import { Projects, useSidebarPrefs } from "@/components/sidebar/projects";
 import { RailAgents } from "@/components/sidebar/rail";
 import { SidebarResizeHandle } from "@/components/sidebar/resize-handle";
 import { RowLayer } from "@/components/sidebar/row-layer";
+import { RailSkillsNotices, SkillsNotices } from "@/components/sidebar/skills-notice";
 import { Tip } from "@/components/tip";
 import { Kbd } from "@/components/ui/kbd";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
@@ -141,6 +142,8 @@ export function AppSidebar() {
           <Projects prefs={prefs} update={update} />
         </RowLayer>
 
+        {/* A box whose Shipyard skills aren't installed or are out of date. */}
+        <SkillsNotices />
         <WhatsNewNudge />
         <div className="flex h-9 shrink-0 items-center gap-1 border-sidebar-border border-t px-2">
           <Tip label="⇧-click for Developer settings" side="top" align="start">
@@ -230,6 +233,7 @@ function Rail() {
         <RailAgents />
       </div>
       <div className="flex flex-col items-center gap-1 pt-1 pb-2">
+        <RailSkillsNotices />
         {item("Settings", <SettingsIcon />, view.kind === "settings", () => setView({ kind: "settings" }))}
         {item("Show the sidebar (⌘\\)", <PanelLeftOpenIcon />, false, () => usePrefs.setState({ sidebarCollapsed: false }))}
       </div>

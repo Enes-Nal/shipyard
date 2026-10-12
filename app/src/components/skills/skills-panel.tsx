@@ -11,6 +11,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { errorMessage } from "@/lib/format";
 import { plainError } from "@/lib/errors";
 import { type SkillAgent, type SkillRow, type SkillsChange, type SkillsReport, type SkillState, skillSummary, skillsApi } from "@/lib/skills";
+import { useSkillsNotice } from "@/lib/skills-notice";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ErrorText } from "@/components/error-note";
@@ -45,6 +46,14 @@ export function SkillsPanel({ box, location, className, hideTitle }: { box: stri
   useEffect(() => {
     void load();
   }, [load]);
+
+  // The box's user skills as the sidebar's notice last heard them
+  // (lib/skills-notice.ts): installed from there, or from the CLI, while
+  // this panel is open, they show here too.
+  const heard = useSkillsNotice((s) => (location ? undefined : s.reports[box]));
+  useEffect(() => {
+    if (heard) setReport(heard);
+  }, [heard]);
 
   const change = async (key: string, install: boolean, req: Omit<SkillsChange, "target" | "location" | "commit">) => {
     if (!client) return;
