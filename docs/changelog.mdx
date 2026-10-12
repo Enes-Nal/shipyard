@@ -11,6 +11,13 @@ again.
 
 ## Unreleased
 
+- **Typing `/` in a chat lists your skills.** A bare `/` used to stop after
+  the agent's first 60 commands, which hid every skill and plugin command
+  (and the agent's last few) until you typed part of a name. It now lists
+  everything: your own commands and skills first, then the agent's, then
+  plugins'. And if the list couldn't be read when the chat opened, Shipyard
+  asks the box again instead of leaving the menu closed.
+
 - **An agent's browser opens beside it.** When an agent opens its browser
   in the worktree you're looking at, its live view now opens to the right
   of the agent, so you see the chat and the page side by side without
