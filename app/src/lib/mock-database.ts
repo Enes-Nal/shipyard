@@ -37,6 +37,20 @@ import { ApiError } from "@/lib/api";
 // it answers not_found until it is updated), and ?db=unauthorized a devl
 // whose berthd is from before it sent a helper its token (every route
 // answers unauthorized).
+//
+// The box also looks in a worktree's .env files when the panel asks
+// (databaseEnvLook: helpers/database/attach-env on a real box). Without a
+// scenario the files are not there: the worktrees above have their database
+// from a service, and the others have none. The ?db=env scenarios are a
+// project whose services Shipyard does not start, so the helper knows no
+// database until a look: ?db=env has shop / checkout-fix's DATABASE_URL in
+// its .env.local, ?db=env-none has the files and no such variable in them,
+// ?db=env-refused has a DATABASE_URL that points at another host and a
+// POSTGRES_URL that names a secret, ?db=env-slow is ?db=env on a box that
+// takes a moment to look, and ?db=env-old is a devl whose berthd cannot
+// look at all. window.__berthMockDatabase.dotenv("env") changes what the
+// files hold while the page is open, as an editor would, and .looks() is
+// how many times a box was asked to look.
 
 type Cell = null | boolean | number | string;
 
@@ -891,23 +905,158 @@ function query(conn: MockConn, body: { sql?: string; limit?: number }) {
 // kept (they are in a file of its own), and writes are off for all of them
 // (that is only in its memory).
 export function databaseRestarted() {
-  for (const c of conns ?? []) c.writesUntil = undefined;
+  for (const c of [...(conns ?? []), ...byHand.values()]) c.writesUntil = undefined;
+}
+
+// ---- A worktree's .env files ----
+
+// What the worktrees' .env files hold: nothing (they are not there), or one
+// of the ?db=env scenarios.
+let dotenv: string | null = scenario?.startsWith("env") ? scenario : null;
+// The worktrees whose database the helper has from a look.
+const fromEnv = new Set<string>();
+let looks = 0;
+
+// How much longer than any other answer a look takes (?db=env-slow).
+export const ENV_LOOK_MS = scenario === "env-slow" ? 1500 : 0;
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __berthMockDatabase: unknown }).__berthMockDatabase = {
+    dotenv(kind: string | null) {
+      dotenv = kind;
+    },
+    looks: () => looks,
+  };
+}
+
+// The databases that were connected by hand, by box and worktree: what the
+// person pasted the address of, and the helper took.
+const byHand = new Map<string, MockConn>();
+const handKey = (box: string, source: string) => `${box}\n${source}`;
+
+// known is the databases a box's helper has been told of. In the ?db=env
+// scenarios no service said anything: it has what a look found. What was
+// connected by hand is there whatever else is.
+function known(empty: boolean, box: string): MockConn[] {
+  const told = empty || scenario === "none" ? [] : dotenv ? all().filter((c) => fromEnv.has(c.source) && c.engine === "postgres") : all();
+  const hand = [...byHand].filter(([key]) => key.startsWith(`${box}\n`)).map(([, c]) => c);
+  return [...told, ...hand];
+}
+
+// databasePurged is a box's helper with its data removed: what it kept of
+// the databases connected by hand is gone.
+export function databasePurged(box: string) {
+  for (const key of [...byHand.keys()]) if (key.startsWith(`${box}\n`)) byHand.delete(key);
+}
+
+// A connection's id as the helper makes one: "c_" and twelve hex digits,
+// the same for the same database of the same worktree.
+function idOf(parts: string[]): string {
+  let a = 0x811c9dc5;
+  let b = 0x01000193;
+  for (const ch of parts.join("\n")) {
+    a = Math.imul(a ^ ch.charCodeAt(0), 0x01000193) >>> 0;
+    b = Math.imul(b + ch.charCodeAt(0), 0x85ebca6b) >>> 0;
+  }
+  return `c_${a.toString(16).padStart(8, "0")}${b.toString(16).padStart(8, "0").slice(0, 4)}`;
+}
+
+// The database an address names, when it is one the helper opens: a
+// Postgres on the box itself. Undefined for anything else, as the helper
+// passes it over.
+function local(address: string): { host: string; port: number; database: string; user: string } | undefined {
+  const m = /^(?:jdbc:)?postgres(?:ql)?(?:\+[a-z0-9]+)?:(\/\/.*)$/i.exec(address.trim());
+  if (!m) return undefined;
+  let url: URL;
+  try {
+    url = new URL(`http:${m[1]}`);
+  } catch {
+    return undefined;
+  }
+  const socket = url.searchParams.get("host") ?? "";
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  const here = host === "localhost" || host.endsWith(".localhost") || /^127\./.test(host) || host === "::1" || host === "0.0.0.0" || socket.startsWith("/");
+  if (!here) return undefined;
+  const user = decodeURIComponent(url.username);
+  return { host: socket.startsWith("/") ? socket : host, port: socket.startsWith("/") ? 0 : Number(url.port) || 5432, database: decodeURIComponent(url.pathname.slice(1)) || user, user };
+}
+
+// databaseConnect is the box telling the helper of a database the person
+// gave the address of (helpers/database/attach-env with "env"), under
+// ".manual": what was given before goes, and what is given now is taken if
+// it is a Postgres on the box itself. With nothing given it is only taken
+// back. The answer has the variable's name and the connection's id, never
+// the address.
+export function databaseConnect(box: string, location: string, worktree: string, env: Record<string, unknown>) {
+  const main = !worktree || worktree === location;
+  const source = main ? location : `${location}/${worktree}`;
+  // As berthd refuses them, before the helper hears of anything.
+  for (const [name, value] of Object.entries(env)) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new ApiError("env has a name that is not a variable's", 400, "bad_request");
+    if (name !== "DATABASE_URL" && name !== "POSTGRES_URL") throw new ApiError(`${name} is not a variable the database helper is told: its plugin's manifest does not name it`, 400, "bad_request");
+    if (typeof value !== "string" || !value) throw new ApiError(`${name} must be text of 1 to 32768 bytes`, 400, "bad_request");
+    if (/^(op|env):\/\//.test(value)) throw new ApiError(`${name} names a secret; give the value itself`, 400, "bad_request");
+  }
+  byHand.delete(handKey(box, source));
+  const names = Object.keys(env).sort();
+  const connections: string[] = [];
+  for (const name of names) {
+    const at = local(String(env[name]));
+    if (!at) continue;
+    const id = idOf([source, at.host, String(at.port), at.database, at.user]);
+    byHand.set(handKey(box, source), { id, source, label: name, engine: "postgres", database: at.database, host: at.host, port: at.port, user: at.user, capabilities: POSTGRES, tables: shopTables() });
+    connections.push(id);
+    break;
+  }
+  return { plugin: "database", location, worktree: worktree || location, command: ".manual", files: [], skipped: [], variables: names.map((name) => ({ name, file: "", sent: true })), answer: { source, connections } };
+}
+
+// databaseEnvLook is the box looking in a worktree's .env files and telling
+// the helper what it found, as internal/box/helperenv.go answers: the files
+// it read, the variables' names, and the helper's own answer. Never a value.
+export function databaseEnvLook(location: string, worktree: string, empty: boolean) {
+  const main = !worktree || worktree === location;
+  const source = main ? location : `${location}/${worktree}`;
+  const base = { plugin: "database", location, worktree: worktree || location, command: ".env", files: [] as string[], skipped: [] as { file: string; reason: string }[], variables: [] as { name: string; file: string; sent: boolean; reason?: string }[], answer: { source, connections: [] as string[] } };
+  const has = empty ? undefined : all().find((c) => c.source === source && c.engine === "postgres");
+  looks++;
+  // Told again with what the files hold now: what the last look found goes.
+  fromEnv.delete(source);
+  if (!has || !dotenv) return base;
+  const files = [".env", ".env.local"];
+  if (dotenv === "env" || dotenv === "env-slow") {
+    fromEnv.add(source);
+    return { ...base, files, variables: [{ name: "DATABASE_URL", file: ".env.local", sent: true }], answer: { source, connections: [has.id] } };
+  }
+  if (dotenv === "env-refused") {
+    return {
+      ...base,
+      files,
+      skipped: [{ file: ".env.development", reason: "outside" }],
+      variables: [
+        // Sent, and not taken: it points at another host.
+        { name: "DATABASE_URL", file: ".env.local", sent: true },
+        { name: "POSTGRES_URL", file: ".env", sent: false, reason: "secret" },
+      ],
+    };
+  }
+  return { ...base, files };
 }
 
 // databaseCall answers the helper's /api/db/… routes. empty is a helper
-// that knows no worktree's database: one just installed, or one whose data
-// was removed.
-export function databaseCall(method: string, route: string, q: URLSearchParams, body: unknown, empty: boolean): unknown {
+// that knows no worktree's database but the ones connected by hand on that
+// box: one just installed, or one whose data was removed.
+export function databaseCall(method: string, route: string, q: URLSearchParams, body: unknown, empty: boolean, box = "devl"): unknown {
   // The box's berthd is from before it sent a helper its token: the helper
   // turns every request away.
   if (scenario === "unauthorized") throw refusal(401, "unauthorized", "This route needs the helper's token.", { hint: "The box daemon sends it with what it relays: ask through the box, not the helper." });
   if (method === "GET" && route === "db/connections") {
     const source = q.get("source") ?? "";
-    const mine = empty || scenario === "none" ? [] : all().filter((c) => !source || c.source === source);
+    const mine = known(empty, box).filter((c) => !source || c.source === source);
     return { connections: mine.map((c) => ({ id: c.id, source: c.source, label: c.label, engine: c.engine, database: c.database, host: c.host, port: c.port, user: c.user, ...(writing(c) ? { writes_until: c.writesUntil } : {}), capabilities: c.capabilities })) };
   }
   const m = /^db\/([^/]+)\/(schema|rows|query|edit|writes)$/.exec(route);
-  const conn = m && !empty && scenario !== "none" ? all().find((c) => c.id === decodeURIComponent(m[1])) : undefined;
+  const conn = m ? known(empty, box).find((c) => c.id === decodeURIComponent(m[1])) : undefined;
   if (!m) throw refusal(404, "not_found", "There is no such route.", { hint: "internal/database/API.md lists them." });
   if (!conn) throw refusal(404, "not_found", "There is no such connection.", { hint: "GET /api/db/connections lists them; one goes when its worktree is removed." });
   const what = m[2];

@@ -156,7 +156,7 @@ boxes and what each one has.
 | --- | --- |
 | **Off** | Nothing is installed or running. **Turn on…** asks first, then downloads `berth-database` for the box's platform, checks it against the checksum in the plugin, and has the box run it. |
 | **Installing…**, **Starting…** | On its way. |
-| **Running** | It is there, and learns each worktree's database as the worktree's services start. |
+| **Running** | It is there, and learns each worktree's database as the worktree's services start, or from the worktree's `.env` when you open its tab. |
 | **Failed** | The program is on the box and won't start; the row says why. **Try again** repeats it. |
 | **Can't run it** | Either the box's `berthd` is from before plugins could install a program (update the box in **Settings → Boxes**), or there is no build of the program for the box's platform. |
 | **Offline** | The box can't be reached. |
@@ -177,30 +177,118 @@ aren't touched by either.
 
 ## Which databases appear
 
-A worktree's tab shows a database once all of this is true:
+With Database on for a box, a worktree's tab shows the Postgres its
+`DATABASE_URL` or `POSTGRES_URL` points at, when that Postgres is **on the
+box itself**: `localhost`, `127.0.0.1` or a Unix socket. That is the
+worktree's own development database. Database learns of it from a service,
+from the worktree's `.env`, or [from you](#connecting-a-database-yourself).
 
-1. **Database is on for the box**, and the worktree's app was started
-   after that, as one of its [services](/guides/project-config). A service
-   that was already running needs a restart to be noticed. A server you
-   start by hand in a terminal isn't seen.
-2. **The service has a `DATABASE_URL` or a `POSTGRES_URL`** in its
-   environment.
-3. **It points at a Postgres on the box itself**: `localhost`, `127.0.0.1`
-   or a Unix socket. That is the worktree's own development database.
+### From a service Shipyard starts
 
-A worktree's services share what they have: the same database in `web` and
-`worker` is listed once. It stays listed across restarts of the box and of
-the program, and goes when the worktree is removed.
+When Shipyard starts one of the worktree's
+[services](/guides/project-config), the box tells `berth-database` which
+`DATABASE_URL` or `POSTGRES_URL` the service has. A service that was
+already running when Database was turned on needs a restart to be noticed.
+
+### From the worktree's .env files
+
+Many projects never give Shipyard a database address at all: it is in the
+worktree's `.env`, which the dev server loads itself, and you may start
+that server by hand. So when you open a worktree's Database tab and no
+service has said which database it has, the box looks in the worktree's own
+dotenv files:
+
+| | |
+| --- | --- |
+| **Which files** | `.env`, `.env.development`, `.env.local` and `.env.development.local`, in the worktree's own folder, read in that order. A later file's value for a variable replaces an earlier one's, as a development server's loader has it. No other file is read, in a subfolder or anywhere else. |
+| **Which variables** | `DATABASE_URL` and `POSTGRES_URL`. Everything else in the files is passed over. |
+| **Who reads them** | `berthd`, on the box, when you open the tab. It hands those two variables to `berth-database`, which keeps the address [as it does for a service's](#what-it-keeps-and-where). The app is told which files were read and the variables' names, never a value. |
+| **When** | Once each time the tab is opened, if the worktree has no database yet. The refresh button above the tables, and **Look again**, look in the files again, so a changed `.env` is picked up. |
+
+The tab says so while it looks. A database found this way has the file's
+name beside it in the tab's bar (`.env.local`): point at it for the
+variable it came from.
+
+The files are read as dotenv writes them, not as a shell would run them:
+
+- `NAME=value`, with or without `export`, and `#` comments.
+- Single quotes, double quotes (with `\n`, `\t`, `\"`, `\\` and `\$`) and
+  backticks. A quoted value may run over several lines.
+- `${NAME}`, `${NAME:-fallback}` and `$NAME` are filled in from the other
+  variables **of the same files**, as in
+  `DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost/${DB_NAME}"`.
+  They are never filled in from the box's own environment, and nothing is
+  ever run: `$(…)` is only text. A `${NAME}` that none of the files sets
+  leaves the variable unused, and the tab says so.
+- A file larger than 256 KB is not read. Neither is a `.env` that is a
+  link to a file outside the worktree: Shipyard does not follow it out. One
+  that links to a file inside the worktree is read.
+
+Until a worktree has a database, its tab says what it looked at, such as
+"Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them",
+or which variable it found and why that isn't a database it shows.
+
+A box whose `berthd` is from before it could do this still shows the
+databases of services, as before. Update the box in **Settings → Boxes**.
+
+### Connecting a database yourself
+
+When neither a service nor the worktree's `.env` says which database a
+worktree has (the address is in a file with another name, in your shell,
+or in a secrets manager), you can say it yourself. **Connect a
+database…** is in the tab of a worktree that has no database yet, and in
+the menu of databases when a worktree has several.
+
+- **Paste the address**, such as
+  `postgres://user:password@localhost:5432/name`. The field hides it like
+  a password; the eye beside it shows what you pasted.
+- **It has to be a Postgres on the box itself**, like every other
+  database here: `localhost`, `127.0.0.1` or a Unix socket.
+  `berth-database` takes no other, and the dialog says so and keeps
+  nothing when you give it one.
+- **The address is kept on the box**, with the others, in a file only you
+  can read there, until the worktree is removed, you forget the
+  connection, or you remove Database's data on that box. It is not kept on
+  your computer and is not shown again: the connection shows as its
+  database, host, port and user, like any other.
+- **It opens read-only**, under [the same lock](#the-lock), and everything
+  else works as it does for any database.
+
+A database you connected this way says **added by hand** beside its name,
+with **Forget…**, which asks first and then has the box forget the
+address. The database itself isn't touched. A database that came from a
+service or from `.env` has no **Forget**: it would be back at the next
+start, or the next time the tab opened. It says where it came from
+instead.
+
+A worktree has one database added by hand. To connect another, forget the
+first.
+
+<Callout title="Not a database on another machine">
+  You can't point the editor at a staging or production database this
+  way, or at any database that isn't on the box. Connecting a database on
+  another machine is left out for now: the editor is for a worktree's own
+  development database, and pasting an address doesn't change that rule.
+</Callout>
+
+### What they have in common
+
+A worktree's services, its `.env` and what you connect by hand share what
+they have: the same database in `web`, in `worker` and in `.env` is listed
+once. It stays listed across restarts of the box and of the program, and
+goes when the worktree is removed. Once a service of the worktree has
+given its database, the tab's refresh no longer looks in the files: what
+Shipyard starts the service with wins over a `.env` beside it.
 
 These never appear:
 
 - **A database on another host.** A shared staging database or a hosted
-  one is not opened from here, even when a service's variable names it.
+  one is not opened from here, even when a variable names it or you paste
+  its address.
 - **A secret reference.** When the variable holds a reference to a secret
-  and not the address itself, there is no address to read.
+  (`op://…`, `env://…`) and not the address itself, there is no address
+  to read.
 - **Another engine.** Only Postgres, for now.
-
-Until a worktree has one, its tab says so, and says this.
 
 ## What it keeps, and where
 
@@ -208,14 +296,19 @@ Until a worktree has one, its tab says so, and says this.
 password that is part of it, in one file in a folder the box gives it,
 readable only by you on that box. It needs the address to connect, and
 keeps it so the tab isn't empty after every restart until each dev server
-is started again. A worktree's entry goes when the worktree is removed, and
+is started again. An address read from a worktree's `.env` is kept the
+same way, and so is one you pasted; the `.env` itself is only read, never
+written. A worktree's entry goes when the worktree is removed, and
 **Remove data** deletes the file. It holds nothing else: no rows, no
 results.
 
 - The address never leaves the box. The app asks the helper through the
-  box's own API, and never sees a password.
+  box's own API, and never sees a password. The one exception is an address
+  you paste: it goes from the dialog to the box once, over Shipyard's own
+  connection, and the app keeps nothing of it but the id of the connection
+  it became.
 - It doesn't change a service's environment. It only notes what the
-  service was started with.
+  service was started with, or what the worktree's `.env` says.
 - It connects to nothing but the databases on the same box it was told
   about.
 - What you run in the console is remembered on your computer, as the

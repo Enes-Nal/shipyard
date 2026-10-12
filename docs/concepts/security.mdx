@@ -374,6 +374,27 @@ What Shipyard holds it to:
   database URL and the OpenTelemetry variables. Variables that name a secret
   are never shown to it or replaced, a helper that is slow or failing
   changes nothing, and berthd logs none of it.
+- **berthd reads a worktree's dotenv files for it, and only those.** A
+  variable in that list that Shipyard's own environment for the service
+  does not have is taken from the worktree's `.env`, `.env.development`,
+  `.env.local` and `.env.development.local`: when a service starts, and
+  when a plugin's tab asks the box to look
+  (`POST helpers/{plugin}/attach-env`). berthd reads those four names in
+  the worktree's own folder and no other path, does not follow a link that
+  leads out of the worktree, reads at most 256 KB of each, and runs
+  nothing in them: a `${NAME}` is filled in from the same files (and the
+  service's own environment), never from berthd's. It keeps only the
+  variables the manifest lists, never one that names a secret, and never
+  reads a file when no helper is running to be told, or when the project
+  already sets every variable the helper lists. No value goes into a
+  log, an event or an API answer; the app is told file and variable names.
+  What a helper answers for such a variable goes into the service's
+  environment, as for any other: the worktree's files are never written.
+  A look is a paired laptop's to ask, not something an agent on the box
+  can trigger through berthd's socket, and a `before:helper.attach`
+  [gate](#gates) can refuse it. A helper is a program running as you, which
+  could read those files itself: this is what berthd does on its behalf,
+  not a wall around the files.
 - **Only a paired laptop installs one.** berthd takes a helper from a laptop
   you paired, which is where the plugin was allowed. An agent or a script on
   the box, which reaches berthd through its socket, can list helpers and
@@ -401,10 +422,33 @@ only records:
   So the way in is the one the app uses: your paired laptop, to berthd, to
   the helper.
 - **Only a database on the box itself.** It opens what berthd says a
-  worktree's service has (`DATABASE_URL`, `POSTGRES_URL`), and only when
-  that is a loopback address or a unix socket; it checks the address again
-  when it connects. A remote or shared database is passed over, and there is
-  no way to hand it a URL from the app.
+  worktree has (`DATABASE_URL`, `POSTGRES_URL`), and only when that is a
+  loopback address or a unix socket; it checks the address again when it
+  connects. A remote or shared database is passed over, whoever names it:
+  a service, a `.env`, or an address pasted in the app.
+- **berthd reads the worktree's dotenv files on request.** A worktree's
+  address comes from the environment of a service Shipyard starts, or from
+  the worktree's own `.env` files, which berthd reads on the box when you
+  open the worktree's Database tab (and again when you ask it to look
+  again). The app names a location and a worktree the box already knows,
+  never a path; berthd reads `.env`, `.env.development`, `.env.local` and
+  `.env.development.local` in that worktree's folder, hands the helper
+  those two variables and nothing else of the files, and answers the app
+  with the files' and variables' names. See
+  [what berthd reads for a helper](#a-plugins-helper).
+- **An address you paste is kept like the others.** When nothing says
+  which database a worktree has, **Connect a database…** takes its
+  address. It travels once, in the body of a request from the app to
+  berthd over Shipyard's own connection, and from berthd to the helper on
+  loopback. berthd does not log it, announce it, answer with it or keep
+  it; a `before:helper.attach` gate is told which helper and which
+  worktree, not the address. The helper keeps it in `connections.json`
+  beside the ones it was told of, under the same file mode, and it goes
+  the same ways: with the worktree, when you forget the connection, or
+  with the helper's data. The app keeps the id of the connection it
+  became, never the address, and does not show it again. The local-only
+  rule is the helper's and is unchanged: a pasted address that is not on
+  the box is passed over, and nothing is kept.
 - **Nothing is written unless you turn writes on**, for one database, for
   15 minutes. Until then every statement runs in a transaction the database
   itself holds read-only; the switch is in the helper's memory, checked
@@ -412,9 +456,9 @@ only records:
   stopped after 10 seconds, and answers are capped in rows and bytes.
 - **It keeps the database's URL, with its password, on the box**:
   `helpers/database/data/connections.json`, mode `0600` in a folder that is
-  `0700`. berthd tells a helper which database a worktree has once, when
-  the service starts, so without the file the editor would be empty after
-  every berthd restart until each dev server was started again. It holds
+  `0700`. berthd tells a helper which database a worktree has when a
+  service starts or when its tab is opened, so without the file the editor
+  would be empty after every berthd restart until then. It holds
   what your project's own configuration already holds on that disk, for the
   same user. A worktree's entry is removed when the worktree is detached
   from the helper, and the file goes when the helper is removed with its

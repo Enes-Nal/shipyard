@@ -27,6 +27,15 @@ import (
 // variables its manifest names (attach_env), which the person allowed with
 // the plugin; a variable that names a secret is neither sent nor replaced,
 // and Shipyard's own BERTH_ variables are never changed.
+//
+// A project may keep such a variable in the worktree's dotenv files and not
+// in anything Shipyard assembles: its dev server loads .env itself. A helper
+// is shown that value too, as the service's own (dotenv.go says which files
+// and how they are read), when the environment Shipyard assembled does not
+// have the variable: the project's own setting always wins. What a helper
+// answers for it goes into the service's environment like any other, so the
+// process starts with it, and a loader that leaves alone a variable that is
+// already set (dotenv, Next.js, Prisma) keeps it.
 
 // HelperAttach is what a helper is told of a service about to start.
 type HelperAttach struct {
@@ -42,6 +51,12 @@ type HelperAttach struct {
 	// manifest names, and no others.
 	Env map[string]string `json:"env"`
 }
+
+// helperEnvCommand is the Command a helper is told when what it is shown is
+// not a service's environment but the worktree's dotenv files, read because
+// someone asked (helperenv.go). No service has this name: a service's
+// starts with a letter or a digit.
+const helperEnvCommand = ".env"
 
 const (
 	// maxAttachAnswer bounds a helper's answer, and maxAttachValue one
@@ -75,18 +90,22 @@ func (h *Helpers) Attach(ctx context.Context, about HelperAttach, svc HelperServ
 	// database URL must see the database's, not another helper's proxy in
 	// front of it.
 	own := maps.Clone(env)
+	// The worktree's dotenv files: read once, and only when a helper is
+	// running to be shown them.
+	dotenv := dotenvForService(about.Path, own, refs)
 	for _, p := range procs {
 		asked[p.rec.Plugin] = true
-		h.noteAttached(p.rec.Plugin, svc, h.attachOne(ctx, p, about, own, env, refs))
+		h.noteAttached(p.rec.Plugin, svc, h.attachOne(ctx, p, about, own, env, refs, dotenv))
 	}
 	// A helper that is off had no say: a service it changed the last time
 	// is as the project wrote it now (helperdetach.go).
 	h.startedPlain(svc, asked)
 }
 
-// attachOne asks one helper, showing it the service's own values (own), and
-// puts what it answers into env. It reports whether it changed env.
-func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAttach, own, env, refs map[string]string) (changed bool) {
+// attachOne asks one helper, showing it the service's own values (own, and
+// what the worktree's dotenv files add to them), and puts what it answers
+// into env. It reports whether it changed env.
+func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAttach, own, env, refs map[string]string, dotenv func(context.Context) map[string]string) (changed bool) {
 	timeout := orDuration(h.attachTimeout, 2*time.Second)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -103,6 +122,17 @@ func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAtta
 			about.Env[k] = v
 		}
 	}
+	// What the worktree's dotenv files have and the assembled environment
+	// does not. It is the same for every helper: the files' own values,
+	// never what a helper before this one answered.
+	fromFile := map[string]string{}
+	if p.rec.wantsMore(own, refs) {
+		for k, v := range dotenv(ctx) {
+			if p.rec.matchesEnv(k) {
+				about.Env[k], fromFile[k] = v, v
+			}
+		}
+	}
 	answer, err := askHelper(ctx, api, p.rec.Attach, about)
 	if err != nil {
 		// Never the request or the answer: they hold the environment.
@@ -116,6 +146,11 @@ func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAtta
 		if _, secret := refs[k]; secret || len(v) > maxAttachValue || strings.ContainsRune(v, 0) {
 			continue
 		}
+		// As the worktree's own file has it: the dev server reads it there,
+		// and there is nothing to set.
+		if was, ok := fromFile[k]; ok && was == v {
+			continue
+		}
 		if had, ok := env[k]; !ok || had != v {
 			changed = true
 		}
@@ -127,6 +162,23 @@ func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAtta
 // askHelper POSTs about to a helper's attach path and returns the "env" of
 // its answer. Its errors name no address and repeat nothing that was sent.
 func askHelper(ctx context.Context, api *url.URL, path string, about HelperAttach) (map[string]string, error) {
+	raw, err := askHelperRaw(ctx, api, path, about)
+	if err != nil {
+		return nil, err
+	}
+	var answer struct {
+		Env map[string]string `json:"env"`
+	}
+	if json.Unmarshal(raw, &answer) != nil {
+		return nil, errHelperAnswer
+	}
+	return answer.Env, nil
+}
+
+var errHelperAnswer = errors.New("its answer is not the JSON berthd expects")
+
+// askHelperRaw is askHelper with the whole answer, as the helper wrote it.
+func askHelperRaw(ctx context.Context, api *url.URL, path string, about HelperAttach) ([]byte, error) {
 	body, err := json.Marshal(about)
 	if err != nil {
 		return nil, err
@@ -158,13 +210,10 @@ func askHelper(ctx context.Context, api *url.URL, path string, about HelperAttac
 		}
 		return nil, errors.New("its answer could not be read")
 	}
-	var answer struct {
-		Env map[string]string `json:"env"`
+	if len(raw) > maxAttachAnswer {
+		return nil, errHelperAnswer
 	}
-	if len(raw) > maxAttachAnswer || json.Unmarshal(raw, &answer) != nil {
-		return nil, errors.New("its answer is not the JSON berthd expects")
-	}
-	return answer.Env, nil
+	return raw, nil
 }
 
 // helperClient reaches helpers, on loopback: never through a proxy the

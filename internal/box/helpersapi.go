@@ -21,6 +21,7 @@ import (
 //	PUT    /v1/helpers/{plugin}            install it and turn it on (the laptop agent's upload)
 //	DELETE /v1/helpers/{plugin}[?purge=1]  stop and remove it; its data stays unless purge
 //	GET    /v1/helpers/{plugin}/log        the end of what it printed, as text
+//	POST   /v1/helpers/{plugin}/attach-env tell it what a worktree's .env files have (helperenv.go)
 //	ANY    /v1/helpers/{plugin}/api/…      its own API, relayed
 
 func (b *Box) mountHelpers(s *wire.Server, route func(string, func(http.ResponseWriter, *http.Request) error)) {
@@ -29,6 +30,7 @@ func (b *Box) mountHelpers(s *wire.Server, route func(string, func(http.Response
 	route("PUT /v1/helpers/{plugin}", b.putHelper)
 	route("DELETE /v1/helpers/{plugin}", b.deleteHelper)
 	route("GET /v1/helpers/{plugin}/log", b.helperLog)
+	route("POST /v1/helpers/{plugin}/attach-env", b.helperAttachEnv)
 	// Not through route: a helper's answers are its own (an event stream
 	// among them), and go back as they are.
 	s.Handle("/v1/helpers/{plugin}/api/{path...}", http.HandlerFunc(b.helperAPI))

@@ -113,7 +113,18 @@ read the project's own configuration and open the database itself.
 ## Which databases
 
 The helper opens what the box daemon tells it a worktree has, and nothing
-else: there is no route that takes a URL from the UI.
+else: no route of the helper's own takes a URL from the UI. The box daemon
+tells it in three cases, always by
+[`POST /api/attach`](#post-apiattach), and tells them apart by `command`:
+
+| `command` | what the variables are |
+| --- | --- |
+| a service's name (`web`) | The service's environment, before the box daemon starts it. |
+| `.env` | What the worktree's own `.env` files say, read by the box daemon because the worktree's tab was opened. |
+| `manual` | An address a person gave for the worktree in the app (**Connect a database…**), which the box daemon passes on in its own route and keeps nowhere. With no variables, that address is taken back. |
+
+The rules below are the same for all three: a pasted address that is not a
+database on this machine is passed over like any other.
 
 Before the box daemon starts a worktree's service it calls
 [`POST /api/attach`](#post-apiattach) with the variables of the service's
@@ -330,11 +341,13 @@ POST /api/attach
 | --- | --- | --- |
 | `project` | required | The repository, as Shipyard names it. |
 | `worktree` | `""` | The worktree's name; empty for the project's main checkout. |
-| `command` | `""` | The service's name in the project's config. |
+| `command` | `""` | The service's name in the project's config. `.env` when the variables are not a service's but what the box daemon read in the worktree's own `.env` files, because the worktree's tab was opened: no service has that name, so what the files say is kept apart from what a service was started with. `manual` when they are an address a person gave in the app. |
 | `env` | `{}` | The variables of the service's environment that the plugin's manifest names. |
 | `box`, `branch`, `path` | none | Taken and not used. |
 
-What the box daemon asks before it starts a worktree's service. The helper
+What the box daemon asks before it starts a worktree's service, and when
+the worktree's Database tab is opened and it has looked in the worktree's
+`.env` files (`command` is then `.env`). The helper
 reads each value ([Which databases](#which-databases)) and notes the ones
 that are a database on this machine as connections of the worktree.
 

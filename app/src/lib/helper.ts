@@ -1,7 +1,7 @@
-import type { BerthHelper, HelperStatus } from "@berth/plugin";
+import type { BerthHelper, HelperEnvLook, HelperStatus } from "@berth/plugin";
 
 import { ApiError, type Client } from "@/lib/api";
-import { helperRelayPath } from "@/lib/helper-path";
+import { helperEnvPath, helperRelayPath } from "@/lib/helper-path";
 
 // A plugin's helper: a program it carries (berth-plugin.json's "box.helper")
 // that the laptop agent installs on a box and the box daemon runs. The agent
@@ -20,6 +20,15 @@ export const helperApi = {
     c.box<T>(box, method, helperRelayPath(id, path), body).catch((err: unknown) => {
       throw helperError(err);
     }),
+  // The box looks in a worktree's .env files and tells the helper what it
+  // found there (internal/box/helperenv.go). It is the box's own route, not
+  // the helper's, so its errors are the box's.
+  //
+  // With env the box reads no file and tells the helper those variables,
+  // which the person gave. They are a secret: in this request's body and
+  // nowhere else.
+  attachEnv: <A,>(c: Client, id: string, box: string, where: { location: string; worktree: string; env?: Record<string, string> }) =>
+    c.box<HelperEnvLook<A>>(box, "POST", helperEnvPath(id), { location: where.location, worktree: where.worktree, ...(where.env ? { env: where.env } : {}) }),
 };
 
 // helperError gives a helper's own refusal the shape every other error has.
@@ -46,5 +55,6 @@ export function makeHelperApi(client: Client, id: string): BerthHelper {
     install: (box) => helperApi.install(client, id, box),
     remove: (box, opts) => helperApi.remove(client, id, box, opts?.purge),
     request: (box, method, path, body) => helperApi.request(client, id, box, method, path, body),
+    attachEnv: (box, where) => helperApi.attachEnv(client, id, box, where),
   };
 }

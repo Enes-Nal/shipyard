@@ -4,6 +4,7 @@ import { test } from "node:test";
 
 import { type Cell, faultOf, isOldBox, isOldHelper, lostHelper } from "../../../plugins/database/src/api.ts";
 import { skewOf, untilHere, WRITES_FOR_MS } from "../../../plugins/database/src/clock.ts";
+import { addressProblem, BY_HAND, BY_HAND_VARIABLE, cannotLook, connected, FILES, fromFile, list, type Look, lookAgain, originOf, said } from "../../../plugins/database/src/dotenv.ts";
 import { editText, isLong, parseInput, pretty, quote, sameCell, show } from "../../../plugins/database/src/engines/families.ts";
 import { engineOf, tableName } from "../../../plugins/database/src/engines/index.ts";
 import { type Draft, filtersOf, jumpFilters, nextOrder, opsFor } from "../../../plugins/database/src/filters.ts";
@@ -480,4 +481,140 @@ test("the history holds statements, newest first, each once, and never past its 
   assert.equal(remember(h, "SELECT 3", 400, 2).length, 2);
   assert.equal(oneLine("SELECT *\n  FROM orders\n  WHERE id = 1"), "SELECT * FROM orders WHERE id = 1");
   assert.equal(oneLine("x".repeat(200), 10), `${"x".repeat(10)}…`);
+});
+
+// ---- A database found in the worktree's .env files ----
+
+// A look as internal/box/helperenv.go answers it: names, never a value.
+const looked = (over: Partial<Look> = {}): Look => ({ plugin: "database", location: "acme", worktree: "fix-orders", command: ".env", files: [], skipped: [], variables: [], answer: { source: "acme/fix-orders", connections: [] }, ...over });
+
+test("a look that found a database is remembered by the connections it gave and the file each variable was in", () => {
+  const found = looked({
+    files: [".env", ".env.local"],
+    variables: [
+      { name: "DATABASE_URL", file: ".env.local", sent: true },
+      { name: "POSTGRES_URL", file: ".env", sent: false, reason: "secret" },
+    ],
+    answer: { source: "acme/fix-orders", connections: ["c_1c28ba20e1b6"] },
+  });
+  const origin = originOf(found);
+  assert.deepEqual(origin, { ids: ["c_1c28ba20e1b6"], files: { DATABASE_URL: ".env.local" } });
+  assert.equal(fromFile(origin, { id: "c_1c28ba20e1b6", label: "DATABASE_URL" }), ".env.local");
+  // A connection the look did not give is a service's, whatever its variable.
+  assert.equal(fromFile(origin, { id: "c_a02c77e9b513", label: "DATABASE_URL" }), undefined);
+  // One it gave under a variable it did not name is still the files'.
+  assert.equal(fromFile(origin, { id: "c_1c28ba20e1b6", label: "PG_URL" }), ".env");
+  assert.equal(fromFile(null, { id: "c_1c28ba20e1b6", label: "DATABASE_URL" }), undefined);
+  assert.equal(fromFile(undefined, { id: "c_1c28ba20e1b6", label: "DATABASE_URL" }), undefined);
+  // Nothing found is nothing to remember, whatever was sent; and a helper
+  // that answers something else than a list of ids gave none.
+  assert.equal(originOf(looked({ variables: [{ name: "DATABASE_URL", file: ".env", sent: true }] })), undefined);
+  assert.equal(originOf(looked({ answer: {} })), undefined);
+  assert.equal(originOf(looked({ answer: { connections: [7, null] as unknown as string[] } })), undefined);
+});
+
+test("reading the tables again looks in the .env files again only when the worktree has no database, or one the files gave", () => {
+  const origin = { ids: ["c_1c28ba20e1b6"], files: { DATABASE_URL: ".env" } };
+  assert.equal(lookAgain(null, []), true);
+  assert.equal(lookAgain(origin, []), true);
+  assert.equal(lookAgain(origin, [{ id: "c_1c28ba20e1b6" }]), true);
+  assert.equal(lookAgain(origin, [{ id: "c_a02c77e9b513" }, { id: "c_1c28ba20e1b6" }]), true);
+  // A database only a service gave is the service's: the files are not asked.
+  assert.equal(lookAgain(null, [{ id: "c_a02c77e9b513" }]), false);
+  assert.equal(lookAgain(origin, [{ id: "c_a02c77e9b513" }]), false);
+  // One connected by hand says nothing of the files: they are still asked,
+  // unless a service has said.
+  assert.equal(lookAgain(null, [{ id: "c_5f0e11aa90c2" }], ["c_5f0e11aa90c2"]), true);
+  assert.equal(lookAgain(null, [{ id: "c_5f0e11aa90c2" }, { id: "c_a02c77e9b513" }], ["c_5f0e11aa90c2"]), false);
+  assert.equal(lookAgain(origin, [{ id: "c_5f0e11aa90c2" }, { id: "c_1c28ba20e1b6" }], ["c_5f0e11aa90c2"]), true);
+});
+
+// ---- A database connected by hand ----
+
+test("what is typed as an address is only sent when it could be a Postgres address, and is never repeated", () => {
+  assert.equal(addressProblem(""), "Paste the database's address.");
+  assert.equal(addressProblem("   \n"), "Paste the database's address.");
+  for (const ok of [
+    "postgres://app:hunter2@localhost:5432/acme",
+    "  postgresql://app:hunter2@127.0.0.1/acme?sslmode=disable  ",
+    "postgresql+psycopg://app@localhost/acme",
+    "jdbc:postgresql://localhost:5432/acme",
+    "POSTGRES://app@localhost/acme",
+    "postgres:///acme?host=/var/run/postgresql",
+    // Whether it is on the box is the helper's to say, not this.
+    "postgres://app:hunter2@db.acme.example:5432/acme",
+  ]) {
+    assert.equal(addressProblem(ok), undefined, ok);
+  }
+  for (const wrong of ["localhost:5432/acme", "mysql://app:hunter2@localhost/acme", "DATABASE_URL=postgres://app:hunter2@localhost/acme", "https://acme.example/db", "psql -h localhost acme"]) {
+    const said = addressProblem(wrong);
+    assert.ok(said, wrong);
+    assert.ok(!said.includes("hunter2") && !said.includes("acme.example"), said);
+  }
+  assert.match(addressProblem("postgres://app:hunter2@localhost/acme\npostgres://app@localhost/other") ?? "", /no spaces or line breaks/);
+  assert.match(addressProblem("mysql://app@localhost/acme") ?? "", /isn't a Postgres address/);
+});
+
+test("the box's answer to an address says which connection it became, that the helper passed it over, or that the box is too old", () => {
+  const told = (over: Partial<Look>): Look => looked({ command: ".manual", variables: [{ name: BY_HAND_VARIABLE, file: "", sent: true }], ...over });
+  assert.deepEqual(connected(told({ answer: { source: "acme/fix-orders", connections: ["c_5f0e11aa90c2"] } })), { id: "c_5f0e11aa90c2" });
+  // Sent, and no connection: not a Postgres on the box.
+  assert.deepEqual(connected(told({ answer: { source: "acme/fix-orders", connections: [] } })), { refused: true });
+  assert.deepEqual(connected(told({ answer: {} })), { refused: true });
+  // A berthd that knows the route and not "env" looked in the files instead.
+  assert.deepEqual(connected(looked({ answer: { source: "acme/fix-orders", connections: ["c_1c28ba20e1b6"] } })), { old: true });
+  assert.equal(BY_HAND, ".manual");
+  assert.equal(BY_HAND_VARIABLE, "DATABASE_URL");
+});
+
+test("a look that found no database says what it looked at, and why each variable it found is not shown", () => {
+  assert.deepEqual(said(looked(), "devl"), ["Looked for .env, .env.development, .env.local and .env.development.local in this worktree on devl: there is none."]);
+  assert.deepEqual(said(looked({ files: [".env"] }), "devl"), ["Looked in .env: no DATABASE_URL or POSTGRES_URL in it."]);
+  assert.deepEqual(said(looked({ files: [".env", ".env.local"] }), "devl"), ["Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them."]);
+  assert.deepEqual(said(looked({ files: [".env", ".env.development", ".env.local"] }), "devl"), ["Looked in .env, .env.development and .env.local: no DATABASE_URL or POSTGRES_URL in them."]);
+  // A variable that was sent and is not a connection was refused by the
+  // helper: it is not a Postgres on the box.
+  assert.deepEqual(
+    said(
+      looked({
+        files: [".env", ".env.local"],
+        skipped: [{ file: ".env.development", reason: "outside" }],
+        variables: [
+          { name: "DATABASE_URL", file: ".env.local", sent: true },
+          { name: "POSTGRES_URL", file: ".env", sent: false, reason: "secret" },
+        ],
+      }),
+      "devl",
+    ),
+    [
+      "DATABASE_URL in .env.local doesn't point at a Postgres on devl itself, so it isn't opened.",
+      "POSTGRES_URL in .env is a reference to a secret, not an address, so it isn't read.",
+      ".env.development is a link to a file outside the worktree, which isn't followed.",
+    ],
+  );
+  const why = (reason: string) => said(looked({ files: [".env"], variables: [{ name: "DATABASE_URL", file: ".env", sent: false, reason }] }), "devl");
+  assert.deepEqual(why("unresolved"), ["DATABASE_URL in .env refers to a variable that these files don't set."]);
+  assert.deepEqual(why("empty"), ["DATABASE_URL in .env is empty."]);
+  assert.deepEqual(why("too_long"), ["DATABASE_URL in .env is too long to be an address."]);
+  // A file that is there and was not read is said, alone or beside others.
+  const skipped = (reason: string) => said(looked({ skipped: [{ file: ".env", reason }] }), "devl");
+  assert.deepEqual(skipped("too_large"), [".env is larger than 256 KB, so it wasn't read."]);
+  assert.deepEqual(skipped("not_a_file"), [".env isn't a plain file."]);
+  assert.deepEqual(skipped("not_text"), [".env isn't text."]);
+  assert.deepEqual(skipped("unreadable"), [".env couldn't be read."]);
+  assert.deepEqual(skipped("a reason from a newer box"), [".env couldn't be read."]);
+  assert.equal(list([]), "");
+  assert.equal(list(FILES), ".env, .env.development, .env.local and .env.development.local");
+});
+
+test("a box or a helper that cannot look is not something that went wrong", () => {
+  // The laptop agent's words for a box whose berthd has no such route.
+  assert.equal(cannotLook({ message: "devl runs an older berthd that doesn't have this yet", code: "box_outdated", status: 404 }), true);
+  assert.equal(cannotLook({ message: "not found", status: 404 }), true);
+  assert.equal(cannotLook({ message: "the acme helper is not one berthd tells of a worktree", code: "helper_no_attach", status: 409 }), true);
+  // These are: the helper is off, did not answer, or a hook on the box said no.
+  assert.equal(cannotLook({ message: "the database helper is not running on this box", code: "helper_off", status: 409 }), false);
+  assert.equal(cannotLook({ message: "the database helper was not told: it did not answer in time", code: "helper_unreachable", status: 502 }), false);
+  assert.equal(cannotLook({ message: 'a box "before:helper.attach" hook stopped helper.attach', code: "refused", status: 403 }), false);
+  assert.equal(cannotLook({ message: "devl is offline", status: 503 }), false);
 });

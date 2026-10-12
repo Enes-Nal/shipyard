@@ -16,7 +16,7 @@ export const COPY: HelperCopy = {
   program: HELPER,
   icon: "table-2",
   does: (box) =>
-    `It notes the development database of each worktree whose services Shipyard starts on that box (a DATABASE_URL or POSTGRES_URL that points at a database on the box itself), keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
+    `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Shipyard starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
   about: (box) => (
     <>
       It shows a worktree's own development database: its tables and rows, and a console for SQL, read-only until you unlock it. Turning it on installs and runs <code>{HELPER}</code> on {box}; the database's address stays there.
@@ -25,7 +25,7 @@ export const COPY: HelperCopy = {
   off: (box) => `No worktree's database is shown while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; the addresses it kept before, if any, stay on the box until you remove them.`,
   remove: {
     title: (box) => `Remove what Database kept on ${box}?`,
-    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and start a worktree's services to see its database here again.",
+    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and open a worktree's Database tab, or start its services, to see its database here again; one you connected by pasting its address needs connecting again.",
     done: (box) => `Removed Database's data on ${box}`,
   },
 };

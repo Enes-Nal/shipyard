@@ -14,6 +14,21 @@ export function helperRelayPath(plugin: string, path: string): string {
   return `helpers/${encodeURIComponent(plugin)}/api/api/${path.replace(/^\/+/, "")}`;
 }
 
+// Where a box is asked to look in a worktree's .env files for a plugin's
+// helper: berthd's own route beside the relay, not a path on the helper.
+const ENV = /^helpers\/([^/]+)\/attach-env$/;
+
+export function helperEnvPath(plugin: string): string {
+  return `helpers/${encodeURIComponent(plugin)}/attach-env`;
+}
+
+// helperEnvAsked is the plugin of a box path that is that route, for mock
+// mode; undefined for any other box path.
+export function helperEnvAsked(boxPath: string): string | undefined {
+  const m = ENV.exec(boxPath);
+  return m ? decodeURIComponent(m[1]) : undefined;
+}
+
 // helperRelayed is the other way round, for mock mode: the plugin and the
 // path on the helper ("/api/queries"), with its query, of a box path that is
 // a helper's relay; undefined for any other box path.

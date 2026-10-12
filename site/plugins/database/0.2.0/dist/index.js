@@ -1,11 +1,75 @@
 // src/index.tsx
 import { definePlugin } from "@berth/plugin";
-import { Empty as Empty3, EmptyDescription as EmptyDescription3, EmptyHeader as EmptyHeader3, EmptyTitle as EmptyTitle3, Icon as Icon8 } from "@berth/plugin/ui";
+import { Empty as Empty3, EmptyDescription as EmptyDescription3, EmptyHeader as EmptyHeader3, EmptyTitle as EmptyTitle3, Icon as Icon9 } from "@berth/plugin/ui";
 
 // src/panel.tsx
 import { useBoxes } from "@berth/plugin";
-import { Badge as Badge4, Button as Button6, HelperBox, Icon as Icon6, Menu as Menu3, MenuItem as MenuItem3, MenuPopup as MenuPopup3, MenuTrigger as MenuTrigger3, PickOne as PickOne2, Tip as Tip5, useHelperState } from "@berth/plugin/ui";
-import { useCallback as useCallback4, useEffect as useEffect5, useMemo as useMemo4, useRef as useRef5, useState as useState7 } from "react";
+import { Badge as Badge4, Button as Button7, HelperBox, Icon as Icon7, Menu as Menu3, MenuItem as MenuItem3, MenuPopup as MenuPopup3, MenuSeparator as MenuSeparator2, MenuTrigger as MenuTrigger3, PickOne as PickOne2, Tip as Tip6, useHelperState } from "@berth/plugin/ui";
+import { useCallback as useCallback4, useEffect as useEffect5, useMemo as useMemo4, useRef as useRef5, useState as useState8 } from "react";
+
+// src/dotenv.ts
+var FILES = [".env", ".env.development", ".env.local", ".env.development.local"];
+var cannotLook = (f) => f.code === "box_outdated" || f.code === "helper_no_attach" || f.status === 404 || f.status === 405;
+function originOf(look) {
+  const ids = (look.answer?.connections ?? []).filter((id) => typeof id === "string");
+  if (ids.length === 0) return void 0;
+  const files = {};
+  for (const v of look.variables ?? []) if (v.sent) files[v.name] = v.file;
+  return { ids, files };
+}
+function fromFile(origin, conn) {
+  if (!origin?.ids?.includes(conn.id)) return void 0;
+  return origin.files?.[conn.label] ?? FILES[0];
+}
+function lookAgain(origin, conns, byHand = []) {
+  return conns.every((c) => byHand.includes(c.id)) || conns.some((c) => !!origin?.ids?.includes(c.id));
+}
+var BY_HAND_VARIABLE = "DATABASE_URL";
+var BY_HAND = ".manual";
+var EXAMPLE = "postgres://user:password@localhost:5432/database";
+function addressProblem(text) {
+  const address = text.trim();
+  if (!address) return "Paste the database's address.";
+  if (/\s/.test(address)) return "An address has no spaces or line breaks in it. Paste the one address alone.";
+  if (!/^(jdbc:)?postgres(ql)?(\+[a-z0-9]+)?:\/\//i.test(address)) return `That isn't a Postgres address. One looks like ${EXAMPLE}.`;
+  return void 0;
+}
+function connected(look) {
+  if (look.command !== BY_HAND) return { old: true };
+  const id = (look.answer?.connections ?? []).find((x) => typeof x === "string");
+  return id ? { id } : { refused: true };
+}
+function list(names) {
+  if (names.length < 2) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+var SKIPPED = {
+  outside: "is a link to a file outside the worktree, which isn't followed",
+  not_a_file: "isn't a plain file",
+  too_large: "is larger than 256 KB, so it wasn't read",
+  not_text: "isn't text",
+  unreadable: "couldn't be read"
+};
+function said(look, box) {
+  const out = [];
+  const files = look.files ?? [];
+  const skipped = look.skipped ?? [];
+  const variables = look.variables ?? [];
+  if (files.length === 0 && skipped.length === 0) {
+    out.push(`Looked for ${list(FILES)} in this worktree on ${box}: there is none.`);
+  } else if (files.length > 0 && variables.length === 0) {
+    out.push(`Looked in ${list(files)}: no DATABASE_URL or POSTGRES_URL in ${files.length === 1 ? "it" : "them"}.`);
+  }
+  for (const v of variables) {
+    if (v.sent) out.push(`${v.name} in ${v.file} doesn't point at a Postgres on ${box} itself, so it isn't opened.`);
+    else if (v.reason === "secret") out.push(`${v.name} in ${v.file} is a reference to a secret, not an address, so it isn't read.`);
+    else if (v.reason === "unresolved") out.push(`${v.name} in ${v.file} refers to a variable that these files don't set.`);
+    else if (v.reason === "empty") out.push(`${v.name} in ${v.file} is empty.`);
+    else out.push(`${v.name} in ${v.file} is too long to be an address.`);
+  }
+  for (const s of skipped) out.push(`${s.file} ${SKIPPED[s.reason] ?? SKIPPED.unreadable}.`);
+  return out;
+}
 
 // src/api.ts
 var NO_CAPABILITIES = { dialect: "", schemas: true, operators: ["="], kinds: ["table"], writes: false, transactions: false };
@@ -22,6 +86,18 @@ function database(berth) {
     // have not been started since the helper was turned on, or use no
     // database the helper can reach.
     connections: (box, source) => berth.helper.request(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
+    // Whether this Shipyard can have a box look in a worktree's .env files.
+    canLook: typeof berth.helper.attachEnv === "function",
+    // The box looks in the worktree's .env files and tells the helper of
+    // the database it finds there (dotenv.ts). worktree "" is the main
+    // checkout. This is the box's own route, not one of the helper's.
+    look: (box, location, worktree) => berth.helper.attachEnv(box, { location, worktree }),
+    // Tells the helper of a database the person gave the address of, in
+    // place of the one they gave before (dotenv.ts: "by hand"). The address
+    // goes to the box in the request and is not kept here.
+    connect: (box, location, worktree, address) => berth.helper.attachEnv(box, { location, worktree, env: { [BY_HAND_VARIABLE]: address } }),
+    // Takes back the database that was given by hand.
+    forget: (box, location, worktree) => berth.helper.attachEnv(box, { location, worktree, env: {} }),
     schema: (box, conn) => berth.helper.request(box, "GET", on(conn, "schema")).then((r) => r.schemas ?? []),
     rows: (box, conn, req) => post(box, on(conn, "rows"), { ...req, schema: req.schema || void 0 }),
     query: (box, conn, sql, limit = QUERY_LIMIT) => post(box, on(conn, "query"), { sql, limit }),
@@ -843,7 +919,7 @@ var COPY = {
   name: "Database",
   program: HELPER,
   icon: "table-2",
-  does: (box) => `It notes the development database of each worktree whose services Shipyard starts on that box (a DATABASE_URL or POSTGRES_URL that points at a database on the box itself), keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
+  does: (box) => `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Shipyard starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
   about: (box) => /* @__PURE__ */ jsxs3(Fragment2, { children: [
     "It shows a worktree's own development database: its tables and rows, and a console for SQL, read-only until you unlock it. Turning it on installs and runs ",
     /* @__PURE__ */ jsx3("code", { children: HELPER }),
@@ -854,7 +930,7 @@ var COPY = {
   off: (box) => `No worktree's database is shown while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; the addresses it kept before, if any, stay on the box until you remove them.`,
   remove: {
     title: (box) => `Remove what Database kept on ${box}?`,
-    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and start a worktree's services to see its database here again.",
+    body: () => "deletes what it kept there: the address and password of each worktree's development database. The databases themselves aren't touched. Turn Database on again and open a worktree's Database tab, or start its services, to see its database here again; one you connected by pasting its address needs connecting again.",
     done: (box) => `Removed Database's data on ${box}`
   }
 };
@@ -1462,9 +1538,194 @@ function Nothing({ children }) {
   return /* @__PURE__ */ jsx4("p", { className: "rounded-lg border border-dashed px-3 py-3 text-muted-foreground text-xs", children });
 }
 
+// src/connect.tsx
+import { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle, Button as Button4, Icon as Icon4, Input as Input2, Tip as Tip3 } from "@berth/plugin/ui";
+import { useId, useState as useState5 } from "react";
+import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
+function ConnectDialog({ open, api, at, name, onConnected, onClose }) {
+  const [address, setAddress] = useState5("");
+  const [shown, setShown] = useState5(false);
+  const [busy, setBusy] = useState5(false);
+  const [problem, setProblem] = useState5();
+  const field = useId();
+  const { box } = at;
+  const close = () => {
+    setAddress("");
+    setShown(false);
+    setProblem(void 0);
+    onClose();
+  };
+  const go = async () => {
+    const wrong = addressProblem(address);
+    if (wrong) {
+      setProblem(wrong);
+      return;
+    }
+    setBusy(true);
+    setProblem(void 0);
+    try {
+      const made = connected(await api.connect(box, at.location, at.worktree, address.trim()));
+      if ("id" in made) {
+        onConnected(made.id);
+        close();
+      } else if ("old" in made) {
+        setProblem(`${box}'s berthd is from before it could take an address. Update the box in Settings \u2192 Boxes, then connect the database again.`);
+      } else {
+        setProblem(`${HELPER} on ${box} didn't take this address. It opens a Postgres on ${box} itself and nothing else: one at localhost, 127.0.0.1 or a Unix socket. Nothing was kept.`);
+      }
+    } catch (err) {
+      const fault = faultOf(err);
+      setProblem(cannotLook(fault) ? `${box}'s berthd is from before it could take an address. Update the box in Settings \u2192 Boxes, then connect the database again.` : fault.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return /* @__PURE__ */ jsx5(
+    AlertDialog,
+    {
+      open,
+      onOpenChange: (o) => {
+        if (!o) close();
+      },
+      children: /* @__PURE__ */ jsxs5(AlertDialogPopup, { className: "sm:max-w-lg", "data-testid": "database-connect", children: [
+        /* @__PURE__ */ jsxs5(AlertDialogHeader, { children: [
+          /* @__PURE__ */ jsxs5(AlertDialogTitle, { children: [
+            "Connect a database to ",
+            name,
+            " on ",
+            box
+          ] }),
+          /* @__PURE__ */ jsxs5(AlertDialogDescription, { children: [
+            "Paste the address of ",
+            name,
+            "'s development database. It has to be a Postgres on ",
+            box,
+            " itself (",
+            /* @__PURE__ */ jsx5("code", { children: "localhost" }),
+            ", ",
+            /* @__PURE__ */ jsx5("code", { children: "127.0.0.1" }),
+            " or a Unix socket): ",
+            /* @__PURE__ */ jsx5("code", { children: HELPER }),
+            " opens no other, and a database on another machine is not taken."
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs5(
+          "form",
+          {
+            className: "mx-6 space-y-2 pb-4",
+            autoComplete: "off",
+            onSubmit: (e) => {
+              e.preventDefault();
+              void go();
+            },
+            children: [
+              /* @__PURE__ */ jsx5("label", { htmlFor: field, className: "block font-medium text-sm", children: "Address" }),
+              /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1.5", children: [
+                /* @__PURE__ */ jsx5(
+                  Input2,
+                  {
+                    id: field,
+                    type: shown ? "text" : "password",
+                    value: address,
+                    onChange: (e) => {
+                      setAddress(e.target.value);
+                      setProblem(void 0);
+                    },
+                    placeholder: EXAMPLE,
+                    autoComplete: "off",
+                    autoCorrect: "off",
+                    autoCapitalize: "off",
+                    spellCheck: false,
+                    "data-1p-ignore": true,
+                    "data-lpignore": "true",
+                    "aria-invalid": problem ? true : void 0,
+                    "aria-describedby": `${field}-kept`,
+                    className: "min-w-0 flex-1 font-mono",
+                    autoFocus: true
+                  }
+                ),
+                /* @__PURE__ */ jsx5(Tip3, { label: shown ? "Hide the address" : "Show the address", children: /* @__PURE__ */ jsx5(Button4, { type: "button", size: "icon-sm", variant: "ghost", "aria-label": shown ? "Hide the address" : "Show the address", "aria-pressed": shown, onClick: () => setShown((s) => !s), children: /* @__PURE__ */ jsx5(Icon4, { name: shown ? "EyeOff" : "Eye", className: "size-3.5" }) }) })
+              ] }),
+              problem && /* @__PURE__ */ jsx5("p", { role: "alert", className: "whitespace-pre-wrap rounded-md bg-destructive/8 p-2 text-destructive-foreground text-xs", "data-testid": "database-connect-problem", children: problem }),
+              /* @__PURE__ */ jsxs5("p", { id: `${field}-kept`, className: "text-pretty text-muted-foreground text-xs", children: [
+                "The address is kept on ",
+                box,
+                ", in a file only you can read there, until ",
+                name,
+                " is removed, you forget the connection, or Database's data on ",
+                box,
+                " is removed. It isn't kept on this computer, and isn't shown again: the connection shows as its database, host, port and user. It opens read-only, like any other."
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsxs5(AlertDialogFooter, { children: [
+          /* @__PURE__ */ jsx5(AlertDialogClose, { render: /* @__PURE__ */ jsx5(Button4, { variant: "ghost" }), children: "Cancel" }),
+          /* @__PURE__ */ jsx5(Button4, { loading: busy, onClick: () => void go(), children: "Connect" })
+        ] })
+      ] })
+    }
+  );
+}
+function ForgetDialog({ open, api, at, name, conn, onForgotten, onClose }) {
+  const [busy, setBusy] = useState5(false);
+  const [problem, setProblem] = useState5();
+  const { box } = at;
+  const go = async () => {
+    setBusy(true);
+    setProblem(void 0);
+    try {
+      await api.forget(box, at.location, at.worktree);
+      onForgotten();
+      onClose();
+    } catch (err) {
+      setProblem(faultOf(err).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return /* @__PURE__ */ jsx5(
+    AlertDialog,
+    {
+      open,
+      onOpenChange: (o) => {
+        if (!o) {
+          setProblem(void 0);
+          onClose();
+        }
+      },
+      children: /* @__PURE__ */ jsxs5(AlertDialogPopup, { className: "sm:max-w-lg", children: [
+        /* @__PURE__ */ jsxs5(AlertDialogHeader, { children: [
+          /* @__PURE__ */ jsxs5(AlertDialogTitle, { children: [
+            "Forget ",
+            conn.database,
+            " for ",
+            name,
+            "?"
+          ] }),
+          /* @__PURE__ */ jsxs5(AlertDialogDescription, { children: [
+            /* @__PURE__ */ jsx5("code", { children: HELPER }),
+            " on ",
+            box,
+            " forgets the address you gave it for ",
+            /* @__PURE__ */ jsx5("code", { children: conn.database }),
+            conn.host && ` (${conn.host}${conn.port ? `:${conn.port}` : ""})`,
+            ", and the connection goes from this tab with anything you had staged for it. The database itself isn't touched. To see it here again, connect it again with its address."
+          ] })
+        ] }),
+        problem && /* @__PURE__ */ jsx5("p", { className: "mx-6 whitespace-pre-wrap rounded-md bg-destructive/8 p-2 text-destructive-foreground text-xs", children: problem }),
+        /* @__PURE__ */ jsxs5(AlertDialogFooter, { children: [
+          /* @__PURE__ */ jsx5(AlertDialogClose, { render: /* @__PURE__ */ jsx5(Button4, { variant: "ghost" }), children: "Cancel" }),
+          /* @__PURE__ */ jsx5(Button4, { variant: "destructive", loading: busy, onClick: () => void go(), children: "Forget this connection" })
+        ] })
+      ] })
+    }
+  );
+}
+
 // src/console.tsx
-import { Button as Button4, Icon as Icon4, Kbd, Menu as Menu2, MenuItem as MenuItem2, MenuPopup as MenuPopup2, MenuSeparator, MenuTrigger as MenuTrigger2, Spinner, SqlEditor, Tip as Tip3 } from "@berth/plugin/ui";
-import { useEffect as useEffect4, useMemo as useMemo3, useRef as useRef4, useState as useState5 } from "react";
+import { Button as Button5, Icon as Icon5, Kbd, Menu as Menu2, MenuItem as MenuItem2, MenuPopup as MenuPopup2, MenuSeparator, MenuTrigger as MenuTrigger2, Spinner, SqlEditor, Tip as Tip4 } from "@berth/plugin/ui";
+import { useEffect as useEffect4, useMemo as useMemo3, useRef as useRef4, useState as useState6 } from "react";
 
 // src/statements.ts
 function split(sql) {
@@ -1559,7 +1820,7 @@ var oneLine = (sql, max = 90) => {
 };
 
 // src/console.tsx
-import { Fragment as Fragment4, jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
+import { Fragment as Fragment4, jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
 var ago = (at, now) => {
   const s = Math.max(0, now - at) / 1e3;
   if (s < 60) return "just now";
@@ -1570,11 +1831,11 @@ var ago = (at, now) => {
 function Console({ ctx, schemas, put }) {
   const { api, berth, box, conn, engine, caps, writes } = ctx;
   const historyKey = `history:${box}/${ctx.source}`;
-  const [history, setHistory] = useState5(() => berth.storage.get(historyKey, []));
-  const [text, setText] = useState5("");
+  const [history, setHistory] = useState6(() => berth.storage.get(historyKey, []));
+  const [text, setText] = useState6("");
   const selection = useRef4({ from: 0, to: 0 });
-  const [run, setRun] = useState5();
-  const [viewed, setViewed] = useState5();
+  const [run, setRun] = useState6();
+  const [viewed, setViewed] = useState6();
   const asked = useRef4(0);
   useEffect4(() => {
     if (!put) return;
@@ -1626,8 +1887,8 @@ function Console({ ctx, schemas, put }) {
   }, [result]);
   const now = Date.now();
   const running = run?.state === "running";
-  return /* @__PURE__ */ jsxs5("div", { className: "flex min-h-0 flex-1 flex-col", "data-testid": "database-console", children: [
-    /* @__PURE__ */ jsx5(
+  return /* @__PURE__ */ jsxs6("div", { className: "flex min-h-0 flex-1 flex-col", "data-testid": "database-console", children: [
+    /* @__PURE__ */ jsx6(
       SqlEditor,
       {
         className: "h-44 shrink-0 border-b",
@@ -1643,32 +1904,32 @@ function Console({ ctx, schemas, put }) {
         placeholder: `A statement to run against ${conn.database}`
       }
     ),
-    /* @__PURE__ */ jsxs5("div", { className: "flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5", children: [
-      /* @__PURE__ */ jsx5(Tip3, { label: "Run the statement under the cursor, or what is selected", children: /* @__PURE__ */ jsxs5(Button4, { size: "xs", disabled: !text.trim() || running, onClick: () => void go(selection.current), children: [
-        /* @__PURE__ */ jsx5(Icon4, { name: "Play", className: "size-3.5" }),
+    /* @__PURE__ */ jsxs6("div", { className: "flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5", children: [
+      /* @__PURE__ */ jsx6(Tip4, { label: "Run the statement under the cursor, or what is selected", children: /* @__PURE__ */ jsxs6(Button5, { size: "xs", disabled: !text.trim() || running, onClick: () => void go(selection.current), children: [
+        /* @__PURE__ */ jsx6(Icon5, { name: "Play", className: "size-3.5" }),
         "Run",
-        /* @__PURE__ */ jsx5(Kbd, { className: "ml-0.5 border-primary-foreground/30 bg-transparent text-primary-foreground", children: "\u2318\u21B5" })
+        /* @__PURE__ */ jsx6(Kbd, { className: "ml-0.5 border-primary-foreground/30 bg-transparent text-primary-foreground", children: "\u2318\u21B5" })
       ] }) }),
-      engine.explain && /* @__PURE__ */ jsx5(Tip3, { label: "Show the statement's plan, without running it", children: /* @__PURE__ */ jsx5(Button4, { size: "xs", variant: "outline", disabled: !text.trim() || running, onClick: () => void go(selection.current, engine.explain), children: "Explain" }) }),
-      /* @__PURE__ */ jsxs5(Menu2, { children: [
-        /* @__PURE__ */ jsxs5(MenuTrigger2, { render: /* @__PURE__ */ jsx5(Button4, { size: "xs", variant: "ghost", disabled: history.length === 0 }), children: [
-          /* @__PURE__ */ jsx5(Icon4, { name: "History", className: "size-3.5" }),
+      engine.explain && /* @__PURE__ */ jsx6(Tip4, { label: "Show the statement's plan, without running it", children: /* @__PURE__ */ jsx6(Button5, { size: "xs", variant: "outline", disabled: !text.trim() || running, onClick: () => void go(selection.current, engine.explain), children: "Explain" }) }),
+      /* @__PURE__ */ jsxs6(Menu2, { children: [
+        /* @__PURE__ */ jsxs6(MenuTrigger2, { render: /* @__PURE__ */ jsx6(Button5, { size: "xs", variant: "ghost", disabled: history.length === 0 }), children: [
+          /* @__PURE__ */ jsx6(Icon5, { name: "History", className: "size-3.5" }),
           "History"
         ] }),
-        /* @__PURE__ */ jsxs5(MenuPopup2, { align: "start", className: "max-h-96 w-[30rem] max-w-[90vw]", "data-testid": "database-history", children: [
-          history.slice(0, 25).map((h) => /* @__PURE__ */ jsxs5(MenuItem2, { onClick: () => setText(h.sql), children: [
-            /* @__PURE__ */ jsx5("span", { className: "min-w-0 flex-1 truncate font-mono text-xs", children: oneLine(h.sql) }),
-            /* @__PURE__ */ jsx5("span", { className: "ml-3 shrink-0 text-muted-foreground text-xs", children: ago(h.at, now) })
+        /* @__PURE__ */ jsxs6(MenuPopup2, { align: "start", className: "max-h-96 w-[30rem] max-w-[90vw]", "data-testid": "database-history", children: [
+          history.slice(0, 25).map((h) => /* @__PURE__ */ jsxs6(MenuItem2, { onClick: () => setText(h.sql), children: [
+            /* @__PURE__ */ jsx6("span", { className: "min-w-0 flex-1 truncate font-mono text-xs", children: oneLine(h.sql) }),
+            /* @__PURE__ */ jsx6("span", { className: "ml-3 shrink-0 text-muted-foreground text-xs", children: ago(h.at, now) })
           ] }, h.sql)),
-          /* @__PURE__ */ jsx5(MenuSeparator, {}),
-          /* @__PURE__ */ jsx5(
+          /* @__PURE__ */ jsx6(MenuSeparator, {}),
+          /* @__PURE__ */ jsx6(
             MenuItem2,
             {
               onClick: () => {
                 setHistory([]);
                 berth.storage.set(historyKey, []);
               },
-              children: /* @__PURE__ */ jsxs5("span", { className: "text-muted-foreground", children: [
+              children: /* @__PURE__ */ jsxs6("span", { className: "text-muted-foreground", children: [
                 "Forget what was run in ",
                 ctx.worktree
               ] })
@@ -1676,58 +1937,58 @@ function Console({ ctx, schemas, put }) {
           )
         ] })
       ] }),
-      /* @__PURE__ */ jsx5("span", { className: "ml-auto flex items-center gap-2 text-muted-foreground text-xs tabular-nums", "data-testid": "database-result", role: "status", children: running ? /* @__PURE__ */ jsxs5(Fragment4, { children: [
-        /* @__PURE__ */ jsx5(Spinner, { className: "size-3" }),
+      /* @__PURE__ */ jsx6("span", { className: "ml-auto flex items-center gap-2 text-muted-foreground text-xs tabular-nums", "data-testid": "database-result", role: "status", children: running ? /* @__PURE__ */ jsxs6(Fragment4, { children: [
+        /* @__PURE__ */ jsx6(Spinner, { className: "size-3" }),
         " Running\u2026"
-      ] }) : result ? /* @__PURE__ */ jsxs5(Fragment4, { children: [
-        /* @__PURE__ */ jsx5("span", { className: "font-medium font-mono text-foreground", children: result.command }),
-        /* @__PURE__ */ jsx5("span", { children: "\xB7" }),
-        /* @__PURE__ */ jsx5("span", { children: result.columns.length ? plural(result.row_count, "row") : `${plural(result.row_count, "row")} changed` }),
-        /* @__PURE__ */ jsx5("span", { children: "\xB7" }),
-        /* @__PURE__ */ jsx5("span", { children: ms(result.duration_ms) })
+      ] }) : result ? /* @__PURE__ */ jsxs6(Fragment4, { children: [
+        /* @__PURE__ */ jsx6("span", { className: "font-medium font-mono text-foreground", children: result.command }),
+        /* @__PURE__ */ jsx6("span", { children: "\xB7" }),
+        /* @__PURE__ */ jsx6("span", { children: result.columns.length ? plural(result.row_count, "row") : `${plural(result.row_count, "row")} changed` }),
+        /* @__PURE__ */ jsx6("span", { children: "\xB7" }),
+        /* @__PURE__ */ jsx6("span", { children: ms(result.duration_ms) })
       ] }) : !writes.can ? "Read-only" : !writes.on ? "Reads only, until writes are unlocked" : "Writes are on" })
     ] }),
-    run?.state === "failed" && run.fault && /* @__PURE__ */ jsx5("div", { role: "alert", "data-testid": "database-error", className: "max-h-40 shrink-0 space-y-1 overflow-auto border-b bg-destructive/8 px-3 py-2 text-xs", children: run.fault.code === "read_only" ? /* @__PURE__ */ jsxs5("div", { className: "flex flex-wrap items-center gap-x-3 gap-y-1 text-destructive-foreground", children: [
-      /* @__PURE__ */ jsxs5("span", { className: "min-w-0 flex-1", children: [
-        /* @__PURE__ */ jsx5("b", { children: "Not run:" }),
+    run?.state === "failed" && run.fault && /* @__PURE__ */ jsx6("div", { role: "alert", "data-testid": "database-error", className: "max-h-40 shrink-0 space-y-1 overflow-auto border-b bg-destructive/8 px-3 py-2 text-xs", children: run.fault.code === "read_only" ? /* @__PURE__ */ jsxs6("div", { className: "flex flex-wrap items-center gap-x-3 gap-y-1 text-destructive-foreground", children: [
+      /* @__PURE__ */ jsxs6("span", { className: "min-w-0 flex-1", children: [
+        /* @__PURE__ */ jsx6("b", { children: "Not run:" }),
         " ",
         writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`,
-        run.fault.detail && /* @__PURE__ */ jsx5("span", { className: "mt-0.5 block font-mono text-muted-foreground", children: run.fault.detail })
+        run.fault.detail && /* @__PURE__ */ jsx6("span", { className: "mt-0.5 block font-mono text-muted-foreground", children: run.fault.detail })
       ] }),
-      writes.can && /* @__PURE__ */ jsx5(Button4, { size: "xs", variant: "outline", onClick: writes.ask, children: "Unlock writes\u2026" })
+      writes.can && /* @__PURE__ */ jsx6(Button5, { size: "xs", variant: "outline", onClick: writes.ask, children: "Unlock writes\u2026" })
     ] }) : (
       // The helper's own sentence, the database's detail, where it
       // stopped, and what the helper suggests.
-      /* @__PURE__ */ jsxs5(Fragment4, { children: [
-        /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap font-mono text-destructive-foreground", children: run.fault.message }),
-        run.fault.detail && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap font-mono text-muted-foreground", children: run.fault.detail }),
-        where && /* @__PURE__ */ jsxs5("p", { className: "text-muted-foreground", children: [
+      /* @__PURE__ */ jsxs6(Fragment4, { children: [
+        /* @__PURE__ */ jsx6("p", { className: "whitespace-pre-wrap font-mono text-destructive-foreground", children: run.fault.message }),
+        run.fault.detail && /* @__PURE__ */ jsx6("p", { className: "whitespace-pre-wrap font-mono text-muted-foreground", children: run.fault.detail }),
+        where && /* @__PURE__ */ jsxs6("p", { className: "text-muted-foreground", children: [
           "At ",
           where,
           ", underlined in the editor."
         ] }),
-        run.fault.hint && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap text-muted-foreground", children: run.fault.hint })
+        run.fault.hint && /* @__PURE__ */ jsx6("p", { className: "whitespace-pre-wrap text-muted-foreground", children: run.fault.hint })
       ] })
     ) }),
-    result?.truncated && /* @__PURE__ */ jsxs5(Line, { testId: "database-truncated", children: [
+    result?.truncated && /* @__PURE__ */ jsxs6(Line, { testId: "database-truncated", children: [
       "Only the first ",
       plural(result.rows.length, "row"),
       " are shown: the statement returned more than the console keeps. Narrow it with WHERE or LIMIT to see the others."
     ] }),
-    result && result.notices.length > 0 && /* @__PURE__ */ jsx5(Line, { tone: "note", testId: "database-notices", children: result.notices.map((notice, i) => /* @__PURE__ */ jsx5("span", { className: "block font-mono", children: notice }, i)) }),
-    !run || run.state === "failed" && !result ? run ? /* @__PURE__ */ jsx5("div", { className: "flex-1" }) : /* @__PURE__ */ jsx5(
+    result && result.notices.length > 0 && /* @__PURE__ */ jsx6(Line, { tone: "note", testId: "database-notices", children: result.notices.map((notice, i) => /* @__PURE__ */ jsx6("span", { className: "block font-mono", children: notice }, i)) }),
+    !run || run.state === "failed" && !result ? run ? /* @__PURE__ */ jsx6("div", { className: "flex-1" }) : /* @__PURE__ */ jsx6(
       Notice,
       {
         icon: "SquareTerminal",
         title: "Nothing run yet",
-        body: /* @__PURE__ */ jsxs5(Fragment4, { children: [
+        body: /* @__PURE__ */ jsxs6(Fragment4, { children: [
           "Write a statement above and press ",
-          /* @__PURE__ */ jsx5(Kbd, { children: "\u2318\u21B5" }),
+          /* @__PURE__ */ jsx6(Kbd, { children: "\u2318\u21B5" }),
           ". With several in the editor, the one the cursor is in runs; select text to run just that. ",
           writes.can ? `${conn.database} is read-only until you unlock writes.` : `${conn.database} is read-only.`
         ] })
       }
-    ) : !result ? /* @__PURE__ */ jsx5("div", { className: "flex-1", "aria-busy": "true" }) : result.columns.length === 0 ? /* @__PURE__ */ jsx5(Notice, { icon: "Check", title: `${result.command}: ${plural(result.row_count, "row")} changed`, body: "The statement returned no rows to show." }) : rows.length === 0 ? /* @__PURE__ */ jsx5(Notice, { icon: "table-2", title: "No rows", body: `${result.command} returned ${plural(result.columns.length, "column")} and no rows.` }) : /* @__PURE__ */ jsx5(
+    ) : !result ? /* @__PURE__ */ jsx6("div", { className: "flex-1", "aria-busy": "true" }) : result.columns.length === 0 ? /* @__PURE__ */ jsx6(Notice, { icon: "Check", title: `${result.command}: ${plural(result.row_count, "row")} changed`, body: "The statement returned no rows to show." }) : rows.length === 0 ? /* @__PURE__ */ jsx6(Notice, { icon: "table-2", title: "No rows", body: `${result.command} returned ${plural(result.columns.length, "column")} and no rows.` }) : /* @__PURE__ */ jsx6(
       Grid,
       {
         label: "Results",
@@ -1736,40 +1997,40 @@ function Console({ ctx, schemas, put }) {
         onView: (row, col) => setViewed({ column: columns[col].name, type: columns[col].type, family: columns[col].family, row: `Result row ${(row.ref ?? 0) + 1}`, cell: row.cells[col] ?? null, cut: row.cut?.has(col) })
       }
     ),
-    /* @__PURE__ */ jsx5(ValueSheet, { viewed, onClose: () => setViewed(void 0) })
+    /* @__PURE__ */ jsx6(ValueSheet, { viewed, onClose: () => setViewed(void 0) })
   ] });
 }
 
 // src/lock.tsx
-import { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle, Badge as Badge3, Button as Button5, Icon as Icon5, Tip as Tip4 } from "@berth/plugin/ui";
-import { useState as useState6 } from "react";
-import { jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
+import { AlertDialog as AlertDialog2, AlertDialogClose as AlertDialogClose2, AlertDialogDescription as AlertDialogDescription2, AlertDialogFooter as AlertDialogFooter2, AlertDialogHeader as AlertDialogHeader2, AlertDialogPopup as AlertDialogPopup2, AlertDialogTitle as AlertDialogTitle2, Badge as Badge3, Button as Button6, Icon as Icon6, Tip as Tip5 } from "@berth/plugin/ui";
+import { useState as useState7 } from "react";
+import { jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
 var MINUTES = Math.round(WRITES_FOR_MS / 6e4);
 function Lock({ writes, now, busy, onLock }) {
   if (!writes.can) {
-    return /* @__PURE__ */ jsx6(Tip4, { label: "This database takes no writes through Shipyard: its tables can be read and queried, not changed.", children: /* @__PURE__ */ jsxs6(Badge3, { variant: "outline", size: "sm", className: "shrink-0 gap-1 font-normal", "data-testid": "database-lock", "data-writes": "never", children: [
-      /* @__PURE__ */ jsx6(Icon5, { name: "Lock", className: "size-3" }),
+    return /* @__PURE__ */ jsx7(Tip5, { label: "This database takes no writes through Shipyard: its tables can be read and queried, not changed.", children: /* @__PURE__ */ jsxs7(Badge3, { variant: "outline", size: "sm", className: "shrink-0 gap-1 font-normal", "data-testid": "database-lock", "data-writes": "never", children: [
+      /* @__PURE__ */ jsx7(Icon6, { name: "Lock", className: "size-3" }),
       "Read-only"
     ] }) });
   }
   if (!writes.on) {
-    return /* @__PURE__ */ jsxs6(Button5, { size: "sm", variant: "outline", className: "shrink-0", onClick: writes.ask, "data-testid": "database-lock", "data-writes": "off", children: [
-      /* @__PURE__ */ jsx6(Icon5, { name: "Lock", className: "size-3.5" }),
+    return /* @__PURE__ */ jsxs7(Button6, { size: "sm", variant: "outline", className: "shrink-0", onClick: writes.ask, "data-testid": "database-lock", "data-writes": "off", children: [
+      /* @__PURE__ */ jsx7(Icon6, { name: "Lock", className: "size-3.5" }),
       "Unlock writes\u2026"
     ] });
   }
-  return /* @__PURE__ */ jsxs6("span", { className: "flex shrink-0 items-center gap-1.5", "data-testid": "database-lock", "data-writes": "on", children: [
-    /* @__PURE__ */ jsx6(Tip4, { label: "Edits and statements can change this database until the time runs out", children: /* @__PURE__ */ jsxs6(Badge3, { variant: "outline", size: "sm", className: "gap-1 border-destructive/40 text-destructive-foreground tabular-nums", role: "timer", "aria-label": `Writes are on for ${left((writes.until ?? now) - now)} more`, children: [
-      /* @__PURE__ */ jsx6(Icon5, { name: "LockOpen", className: "size-3" }),
+  return /* @__PURE__ */ jsxs7("span", { className: "flex shrink-0 items-center gap-1.5", "data-testid": "database-lock", "data-writes": "on", children: [
+    /* @__PURE__ */ jsx7(Tip5, { label: "Edits and statements can change this database until the time runs out", children: /* @__PURE__ */ jsxs7(Badge3, { variant: "outline", size: "sm", className: "gap-1 border-destructive/40 text-destructive-foreground tabular-nums", role: "timer", "aria-label": `Writes are on for ${left((writes.until ?? now) - now)} more`, children: [
+      /* @__PURE__ */ jsx7(Icon6, { name: "LockOpen", className: "size-3" }),
       "Writes on \xB7 ",
       left((writes.until ?? now) - now)
     ] }) }),
-    /* @__PURE__ */ jsx6(Button5, { size: "sm", variant: "outline", loading: busy, onClick: onLock, children: "Lock" })
+    /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", loading: busy, onClick: onLock, children: "Lock" })
   ] });
 }
 function UnlockDialog({ open, conn, engine, box, worktree, onUnlock, onClose }) {
-  const [busy, setBusy] = useState6(false);
-  const [fault, setFault] = useState6();
+  const [busy, setBusy] = useState7(false);
+  const [fault, setFault] = useState7();
   const go = async () => {
     setBusy(true);
     setFault(void 0);
@@ -1782,8 +2043,8 @@ function UnlockDialog({ open, conn, engine, box, worktree, onUnlock, onClose }) 
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ jsx6(
-    AlertDialog,
+  return /* @__PURE__ */ jsx7(
+    AlertDialog2,
     {
       open,
       onOpenChange: (o) => {
@@ -1792,20 +2053,20 @@ function UnlockDialog({ open, conn, engine, box, worktree, onUnlock, onClose }) 
           onClose();
         }
       },
-      children: /* @__PURE__ */ jsxs6(AlertDialogPopup, { className: "sm:max-w-lg", children: [
-        /* @__PURE__ */ jsxs6(AlertDialogHeader, { children: [
-          /* @__PURE__ */ jsxs6(AlertDialogTitle, { children: [
+      children: /* @__PURE__ */ jsxs7(AlertDialogPopup2, { className: "sm:max-w-lg", children: [
+        /* @__PURE__ */ jsxs7(AlertDialogHeader2, { children: [
+          /* @__PURE__ */ jsxs7(AlertDialogTitle2, { children: [
             "Unlock writes to ",
             conn.database,
             " on ",
             box,
             "?"
           ] }),
-          /* @__PURE__ */ jsxs6(AlertDialogDescription, { children: [
+          /* @__PURE__ */ jsxs7(AlertDialogDescription2, { children: [
             "For ",
             MINUTES,
             " minutes, the changes you apply in the grid and the statements you run in the console can change ",
-            /* @__PURE__ */ jsx6("code", { children: conn.database }),
+            /* @__PURE__ */ jsx7("code", { children: conn.database }),
             ": the ",
             engine.name,
             " database ",
@@ -1816,16 +2077,16 @@ function UnlockDialog({ open, conn, engine, box, worktree, onUnlock, onClose }) 
             ". That includes deleting rows and dropping tables. It locks again by itself after ",
             MINUTES,
             " minutes, or when ",
-            /* @__PURE__ */ jsx6("code", { children: HELPER }),
+            /* @__PURE__ */ jsx7("code", { children: HELPER }),
             " restarts; ",
-            /* @__PURE__ */ jsx6("b", { children: "Lock" }),
+            /* @__PURE__ */ jsx7("b", { children: "Lock" }),
             " does it at once."
           ] })
         ] }),
-        fault && /* @__PURE__ */ jsx6("p", { className: "mx-6 whitespace-pre-wrap rounded-md bg-destructive/8 p-2 text-destructive-foreground text-xs", children: fault.message }),
-        /* @__PURE__ */ jsxs6(AlertDialogFooter, { children: [
-          /* @__PURE__ */ jsx6(AlertDialogClose, { render: /* @__PURE__ */ jsx6(Button5, { variant: "ghost" }), children: "Cancel" }),
-          /* @__PURE__ */ jsxs6(Button5, { loading: busy, onClick: () => void go(), children: [
+        fault && /* @__PURE__ */ jsx7("p", { className: "mx-6 whitespace-pre-wrap rounded-md bg-destructive/8 p-2 text-destructive-foreground text-xs", children: fault.message }),
+        /* @__PURE__ */ jsxs7(AlertDialogFooter2, { children: [
+          /* @__PURE__ */ jsx7(AlertDialogClose2, { render: /* @__PURE__ */ jsx7(Button6, { variant: "ghost" }), children: "Cancel" }),
+          /* @__PURE__ */ jsxs7(Button6, { loading: busy, onClick: () => void go(), children: [
             "Unlock for ",
             MINUTES,
             " minutes"
@@ -1863,7 +2124,7 @@ function sourceOf(w) {
 }
 
 // src/panel.tsx
-import { Fragment as Fragment5, jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
+import { Fragment as Fragment5, jsx as jsx8, jsxs as jsxs8 } from "react/jsx-runtime";
 var GONE = /* @__PURE__ */ new Set(["off", "none", "unsupported"]);
 function DatabasePanel({ berth, box, location, worktree, main }) {
   const [ref, visible] = useVisible();
@@ -1871,86 +2132,153 @@ function DatabasePanel({ berth, box, location, worktree, main }) {
   const helper = useHelperState(berth, box, visible && online);
   const state = helper.status?.state;
   const running = online && state === "running";
-  const [kept, setKept] = useState7(false);
+  const [kept, setKept] = useState8(false);
   useEffect5(() => {
     if (running) setKept(true);
     else if (online && state && GONE.has(state)) setKept(false);
   }, [running, online, state]);
-  return /* @__PURE__ */ jsxs7("div", { ref, "data-testid": "database", "data-state": online ? state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: [
-    (running || kept) && /* @__PURE__ */ jsx7("div", { className: running ? "contents" : "hidden", children: /* @__PURE__ */ jsx7(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, active: visible && running }) }),
-    !running && kept && /* @__PURE__ */ jsx7(Line, { tone: "note", testId: "database-kept", children: online ? /* @__PURE__ */ jsxs7(Fragment5, { children: [
+  return /* @__PURE__ */ jsxs8("div", { ref, "data-testid": "database", "data-state": online ? state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: [
+    (running || kept) && /* @__PURE__ */ jsx8("div", { className: running ? "contents" : "hidden", children: /* @__PURE__ */ jsx8(Connections, { berth, box, source: sourceOf({ location, worktree, main }), worktree: main ? location : worktree, at: { location, worktree: main ? "" : worktree }, active: visible && running }) }),
+    !running && kept && /* @__PURE__ */ jsx8(Line, { tone: "note", testId: "database-kept", children: online ? /* @__PURE__ */ jsxs8(Fragment5, { children: [
       "What you staged and typed in this tab is kept, and is here again once ",
-      /* @__PURE__ */ jsx7("code", { children: HELPER }),
+      /* @__PURE__ */ jsx8("code", { children: HELPER }),
       " is running on ",
       box,
       ". Writes will be locked."
-    ] }) : /* @__PURE__ */ jsxs7(Fragment5, { children: [
+    ] }) : /* @__PURE__ */ jsxs8(Fragment5, { children: [
       "What you staged and typed in this tab is kept, and is here again once ",
       box,
       " is back."
     ] }) }),
-    !online ? /* @__PURE__ */ jsx7(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." }) : !running && /* @__PURE__ */ jsx7(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "database", onAbout: () => berth.openScreen("database") })
+    !online ? /* @__PURE__ */ jsx8(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Database's helper runs on the box, beside the database it reads, so there is nothing to show until the box is back." }) : !running && /* @__PURE__ */ jsx8(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "database", onAbout: () => berth.openScreen("database") })
   ] });
 }
 var skews = /* @__PURE__ */ new Map();
-function Connections({ berth, box, source, worktree, active }) {
+function Connections({ berth, box, source, worktree, at, active }) {
   const api = useMemo4(() => database(berth), [berth]);
   const helper = useHelperState(berth, box, false);
   const refresh = helper.refresh;
-  const conns = useRead(() => api.connections(box, source), `${box}
-${source}`, { active, every: 1e4 });
   const onFault = useCallback4(
     (fault) => {
       if (lostHelper(fault)) refresh();
     },
     [refresh]
   );
+  const key = `${box}
+${source}`;
+  const originKey = `env:${box}/${source}`;
+  const [origin, setOrigin] = useState8(() => berth.storage.get(originKey, null));
+  const [looking, setLooking] = useState8(false);
+  const [looked, setLooked] = useState8();
+  const lookedFor = useRef5(void 0);
+  const again = useRef5(false);
+  const known = useRef5(origin);
+  known.current = origin;
+  const handKey = `hand:${box}/${source}`;
+  const [byHand, setByHand] = useState8(() => berth.storage.get(handKey, []));
+  const hand = useRef5(byHand);
+  hand.current = byHand;
+  const [connecting, setConnecting] = useState8(false);
+  const read = async () => {
+    const asked = again.current;
+    again.current = false;
+    const list2 = await api.connections(box, source);
+    const first = lookedFor.current !== key;
+    if (!(first && list2.length === 0) && !(asked && lookAgain(known.current, list2, hand.current))) return list2;
+    lookedFor.current = key;
+    let result = { kind: "old" };
+    if (api.canLook) {
+      setLooking(true);
+      try {
+        const look = await api.look(box, at.location, at.worktree);
+        result = { kind: "looked", look };
+        const found = originOf(look) ?? null;
+        berth.storage.set(originKey, found);
+        setOrigin(found);
+      } catch (err) {
+        const fault = faultOf(err);
+        onFault(fault);
+        result = cannotLook(fault) ? { kind: "old" } : { kind: "failed", message: fault.message };
+      } finally {
+        setLooking(false);
+      }
+    }
+    setLooked({ key, result });
+    return result.kind === "looked" ? api.connections(box, source) : list2;
+  };
+  const conns = useRead(read, key, { active, every: 1e4 });
+  const reload = conns.reload;
+  const relook = useCallback4(() => {
+    again.current = true;
+    reload();
+  }, [reload]);
   useEffect5(() => {
     if (conns.fault) onFault(conns.fault);
   }, [conns.fault, onFault]);
   const pickKey = `connection:${box}/${source}`;
-  const [picked, setPicked] = useState7(() => berth.storage.get(pickKey, ""));
+  const [picked, setPicked] = useState8(() => berth.storage.get(pickKey, ""));
+  const pick = (id) => {
+    setPicked(id);
+    berth.storage.set(pickKey, id);
+  };
+  const where = { box, location: at.location, worktree: at.worktree };
+  const connect = /* @__PURE__ */ jsx8(
+    ConnectDialog,
+    {
+      open: connecting,
+      api,
+      at: where,
+      name: worktree,
+      onConnected: (id) => {
+        berth.storage.set(handKey, [id]);
+        setByHand([id]);
+        pick(id);
+        reload();
+      },
+      onClose: () => setConnecting(false)
+    }
+  );
   if (!conns.data) {
     if (conns.fault && isOldBox(conns.fault)) {
-      return /* @__PURE__ */ jsx7(
+      return /* @__PURE__ */ jsx8(
         Notice,
         {
           icon: "CircleFadingArrowUp",
           title: `${box} needs updating for Database`,
-          body: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-            /* @__PURE__ */ jsx7("code", { children: HELPER }),
+          body: /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8("code", { children: HELPER }),
             " runs on ",
             box,
             " and answers only the box's own daemon, which proves itself with a token. ",
             box,
             "'s ",
-            /* @__PURE__ */ jsx7("code", { children: "berthd" }),
+            /* @__PURE__ */ jsx8("code", { children: "berthd" }),
             " is from before it sent one, so every request is turned away. Update the box in Settings \u2192 Boxes; nothing needs installing again."
           ] }),
-          actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-            /* @__PURE__ */ jsx7(Button6, { size: "sm", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
-            /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: conns.reload, children: "Check again" })
+          actions: /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "ghost", onClick: conns.reload, children: "Check again" })
           ] })
         }
       );
     }
     if (conns.fault && isOldHelper(conns.fault)) {
       const s = helper.status;
-      return /* @__PURE__ */ jsx7(
+      return /* @__PURE__ */ jsx8(
         Notice,
         {
           icon: "CircleFadingArrowUp",
           title: `Database on ${box} needs updating`,
-          body: s?.update ? /* @__PURE__ */ jsxs7(Fragment5, { children: [
+          body: s?.update ? /* @__PURE__ */ jsxs8(Fragment5, { children: [
             box,
             " runs ",
-            /* @__PURE__ */ jsx7("code", { children: HELPER }),
+            /* @__PURE__ */ jsx8("code", { children: HELPER }),
             " ",
             s.version,
             ", from before it could do this. This plugin carries ",
             s.latest,
             ": open Database, and choose ",
-            /* @__PURE__ */ jsxs7("b", { children: [
+            /* @__PURE__ */ jsxs8("b", { children: [
               "Update to ",
               s.latest,
               "\u2026"
@@ -1958,82 +2286,144 @@ ${source}`, { active, every: 1e4 });
             " on ",
             box,
             "'s row."
-          ] }) : /* @__PURE__ */ jsxs7(Fragment5, { children: [
+          ] }) : /* @__PURE__ */ jsxs8(Fragment5, { children: [
             box,
             " runs a ",
-            /* @__PURE__ */ jsx7("code", { children: HELPER }),
+            /* @__PURE__ */ jsx8("code", { children: HELPER }),
             " from before it could do this, and this copy of the plugin carries nothing newer. Update the plugin in Settings \u2192 Plugins, then choose ",
-            /* @__PURE__ */ jsx7("b", { children: "Update" }),
+            /* @__PURE__ */ jsx8("b", { children: "Update" }),
             " on ",
             box,
             "'s row in Database."
           ] }),
-          actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-            /* @__PURE__ */ jsx7(Button6, { size: "sm", onClick: () => berth.openScreen("database"), children: "Open Database" }),
-            !s?.update && /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: () => berth.openSettings("plugins"), children: "Open Settings \u2192 Plugins" }),
-            /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: () => (refresh(), conns.reload()), children: "Check again" })
+          actions: /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", onClick: () => berth.openScreen("database"), children: "Open Database" }),
+            !s?.update && /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "outline", onClick: () => berth.openSettings("plugins"), children: "Open Settings \u2192 Plugins" }),
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "ghost", onClick: () => (refresh(), conns.reload()), children: "Check again" })
           ] })
         }
       );
     }
-    return /* @__PURE__ */ jsx7(Waiting, { fault: conns.fault, onRetry: conns.reload, title: `Couldn't ask ${box} for ${worktree}'s database` });
+    if (looking && !conns.fault) {
+      return /* @__PURE__ */ jsxs8(Fragment5, { children: [
+        /* @__PURE__ */ jsxs8(Line, { tone: "note", testId: "database-looking", children: [
+          "Looking in ",
+          worktree,
+          "'s ",
+          /* @__PURE__ */ jsx8("code", { children: ".env" }),
+          " files on ",
+          box,
+          " for its database\u2026"
+        ] }),
+        /* @__PURE__ */ jsx8(Waiting, {})
+      ] });
+    }
+    return /* @__PURE__ */ jsx8(Waiting, { fault: conns.fault, onRetry: conns.reload, title: `Couldn't ask ${box} for ${worktree}'s database` });
   }
   if (conns.data.length === 0) {
-    return /* @__PURE__ */ jsx7(
-      Notice,
-      {
-        icon: "table-2",
-        title: `No database for ${worktree} yet`,
-        body: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-          "A service of this worktree that Shipyard starts with a ",
-          /* @__PURE__ */ jsx7("code", { children: "DATABASE_URL" }),
-          " or ",
-          /* @__PURE__ */ jsx7("code", { children: "POSTGRES_URL" }),
-          " pointing at a Postgres on ",
-          box,
-          " itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
-        ] }),
-        actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-          /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: conns.reload, children: "Look again" }),
-          /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: () => berth.openScreen("database"), children: "Which databases show" })
-        ] })
-      }
-    );
+    const result = looked?.key === key ? looked.result : void 0;
+    return /* @__PURE__ */ jsxs8(Fragment5, { children: [
+      connect,
+      /* @__PURE__ */ jsx8(
+        Notice,
+        {
+          icon: "table-2",
+          title: `No database for ${worktree} yet`,
+          body: result?.kind === "looked" || result?.kind === "failed" ? /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8("span", { className: "block text-foreground", "data-testid": "database-looked", children: result.kind === "looked" ? said(result.look, box).join(" ") : `Couldn't look in ${worktree}'s .env files on ${box}: ${result.message}` }),
+            /* @__PURE__ */ jsxs8("span", { className: "mt-2 block", children: [
+              "Database shows the Postgres a worktree's ",
+              /* @__PURE__ */ jsx8("code", { children: "DATABASE_URL" }),
+              " or ",
+              /* @__PURE__ */ jsx8("code", { children: "POSTGRES_URL" }),
+              " points at when it is on ",
+              box,
+              " itself. It reads that from the worktree's ",
+              /* @__PURE__ */ jsx8("code", { children: ".env" }),
+              " files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database ",
+              worktree,
+              " has, connect it yourself with its address."
+            ] })
+          ] }) : /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            "A service of this worktree that Shipyard starts with a ",
+            /* @__PURE__ */ jsx8("code", { children: "DATABASE_URL" }),
+            " or ",
+            /* @__PURE__ */ jsx8("code", { children: "POSTGRES_URL" }),
+            " pointing at a Postgres on ",
+            box,
+            " itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown."
+          ] }),
+          actions: /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "outline", loading: looking, onClick: relook, children: "Look again" }),
+            api.canLook && result?.kind !== "old" && /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "outline", onClick: () => setConnecting(true), children: "Connect a database\u2026" }),
+            /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "ghost", onClick: () => berth.openScreen("database"), children: "Which databases show" })
+          ] })
+        }
+      )
+    ] });
   }
   const conn = conns.data.find((c) => c.id === picked) ?? conns.data[0];
-  return /* @__PURE__ */ jsx7(
-    Connected,
-    {
-      scope: { berth, box, source, worktree, active },
-      api,
-      conn,
-      all: conns.data,
-      stale: conns.fault,
-      onPick: (id) => {
-        setPicked(id);
-        berth.storage.set(pickKey, id);
+  return /* @__PURE__ */ jsxs8(Fragment5, { children: [
+    connect,
+    /* @__PURE__ */ jsx8(
+      Connected,
+      {
+        scope: { berth, box, source, worktree, active },
+        api,
+        at: where,
+        conn,
+        all: conns.data,
+        origin,
+        byHand,
+        relook,
+        onConnect: api.canLook && conns.data.length > 1 && !conns.data.some((c) => byHand.includes(c.id)) ? () => setConnecting(true) : void 0,
+        onForgotten: () => {
+          berth.storage.set(handKey, []);
+          setByHand([]);
+          relook();
+        },
+        stale: conns.fault,
+        onPick: pick,
+        onFault,
+        reread: conns.reload
       },
-      onFault,
-      reread: conns.reload
-    },
-    conn.id
-  );
+      conn.id
+    )
+  ] });
 }
-function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }) {
+function Connected({
+  scope,
+  api,
+  at,
+  conn,
+  all,
+  origin,
+  byHand,
+  relook,
+  onConnect,
+  onForgotten,
+  stale,
+  onPick,
+  onFault,
+  reread
+}) {
   const { berth, box, source, worktree, active } = scope;
+  const file = fromFile(origin, conn);
+  const mine = byHand.includes(conn.id);
+  const [forgetting, setForgetting] = useState8(false);
   const engine = useMemo4(() => engineOf(conn.engine), [conn.engine]);
   const caps = conn.capabilities ?? NO_CAPABILITIES;
-  const [mode, setMode] = useState7("browse");
-  const [put, setPut] = useState7();
-  const [answered, setAnswered] = useState7();
+  const [mode, setMode] = useState8("browse");
+  const [put, setPut] = useState8();
+  const [answered, setAnswered] = useState8();
   useEffect5(() => setAnswered(void 0), [conn.writes_until]);
   const read = useMemo4(() => conn.writes_until === void 0 ? void 0 : untilHere(conn.writes_until, skews.get(box) ?? 0, Date.now()), [conn.writes_until, box]);
   const until = answered ? answered.until : read;
   const now = useNow(until !== void 0);
   const on = caps.writes && until !== void 0 && until > now;
-  const [asking, setAsking] = useState7(false);
-  const [locking, setLocking] = useState7(false);
-  const [ranOut, setRanOut] = useState7(false);
+  const [asking, setAsking] = useState8(false);
+  const [locking, setLocking] = useState8(false);
+  const [ranOut, setRanOut] = useState8(false);
   const was = useRef5(on);
   useEffect5(() => {
     if (was.current && !on && until !== void 0 && until <= Date.now()) setRanOut(true);
@@ -2078,28 +2468,46 @@ ${conn.id}`, { active });
   }, [schema.fault, onFault, reread]);
   const ctx = { berth, api, box, source, worktree, conn, caps, engine, writes, active, onFault };
   const where = `${conn.host}${conn.port ? `:${conn.port}` : ""}`;
-  return /* @__PURE__ */ jsxs7(Fragment5, { children: [
-    /* @__PURE__ */ jsxs7("div", { className: "flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5", "data-testid": "database-bar", "data-engine": conn.engine, children: [
-      all.length > 1 ? /* @__PURE__ */ jsxs7(Menu3, { children: [
-        /* @__PURE__ */ jsxs7(MenuTrigger3, { render: /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", className: "max-w-64", "aria-label": `Database: ${conn.database}, ${engine.name}. Pick another`, "data-testid": "database-connection" }), children: [
-          /* @__PURE__ */ jsx7(Icon6, { name: engine.icon, className: "size-3.5" }),
-          /* @__PURE__ */ jsx7("span", { className: "truncate", children: conn.database }),
-          /* @__PURE__ */ jsx7(Icon6, { name: "ChevronsUpDown", className: "size-3 text-muted-foreground" })
+  return /* @__PURE__ */ jsxs8(Fragment5, { children: [
+    /* @__PURE__ */ jsxs8("div", { className: "flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5", "data-testid": "database-bar", "data-engine": conn.engine, children: [
+      all.length > 1 ? /* @__PURE__ */ jsxs8(Menu3, { children: [
+        /* @__PURE__ */ jsxs8(MenuTrigger3, { render: /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "outline", className: "max-w-64", "aria-label": `Database: ${conn.database}, ${engine.name}. Pick another`, "data-testid": "database-connection" }), children: [
+          /* @__PURE__ */ jsx8(Icon7, { name: engine.icon, className: "size-3.5" }),
+          /* @__PURE__ */ jsx8("span", { className: "truncate", children: conn.database }),
+          /* @__PURE__ */ jsx8(Icon7, { name: "ChevronsUpDown", className: "size-3 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx7(MenuPopup3, { align: "start", className: "min-w-64", children: all.map((c) => /* @__PURE__ */ jsxs7(MenuItem3, { onClick: () => onPick(c.id), children: [
-          /* @__PURE__ */ jsx7(Icon6, { name: engineOf(c.engine).icon, className: "size-3.5 text-muted-foreground" }),
-          /* @__PURE__ */ jsx7("span", { className: "min-w-0 flex-1 truncate", children: c.database }),
-          /* @__PURE__ */ jsxs7("span", { className: "ml-3 shrink-0 text-muted-foreground text-xs", children: [
-            engineOf(c.engine).name,
-            c.label && ` \xB7 ${c.label}`
+        /* @__PURE__ */ jsxs8(MenuPopup3, { align: "start", className: "min-w-64", children: [
+          all.map((c) => /* @__PURE__ */ jsxs8(MenuItem3, { onClick: () => onPick(c.id), children: [
+            /* @__PURE__ */ jsx8(Icon7, { name: engineOf(c.engine).icon, className: "size-3.5 text-muted-foreground" }),
+            /* @__PURE__ */ jsx8("span", { className: "min-w-0 flex-1 truncate", children: c.database }),
+            /* @__PURE__ */ jsxs8("span", { className: "ml-3 shrink-0 text-muted-foreground text-xs", children: [
+              engineOf(c.engine).name,
+              byHand.includes(c.id) ? " \xB7 added by hand" : c.label && ` \xB7 ${c.label}`,
+              !byHand.includes(c.id) && fromFile(origin, c) && ` in ${fromFile(origin, c)}`
+            ] })
+          ] }, c.id)),
+          onConnect && /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8(MenuSeparator2, {}),
+            /* @__PURE__ */ jsxs8(MenuItem3, { onClick: onConnect, children: [
+              /* @__PURE__ */ jsx8(Icon7, { name: "Plus", className: "size-3.5 text-muted-foreground" }),
+              "Connect a database\u2026"
+            ] })
           ] })
-        ] }, c.id)) })
-      ] }) : /* @__PURE__ */ jsxs7("span", { className: "flex min-w-0 items-center gap-1.5 font-medium", "data-testid": "database-connection", children: [
-        /* @__PURE__ */ jsx7(Icon6, { name: engine.icon, className: "size-3.5 shrink-0 text-muted-foreground" }),
-        /* @__PURE__ */ jsx7("span", { className: "truncate", children: conn.database })
+        ] })
+      ] }) : /* @__PURE__ */ jsxs8("span", { className: "flex min-w-0 items-center gap-1.5 font-medium", "data-testid": "database-connection", children: [
+        /* @__PURE__ */ jsx8(Icon7, { name: engine.icon, className: "size-3.5 shrink-0 text-muted-foreground" }),
+        /* @__PURE__ */ jsx8("span", { className: "truncate", children: conn.database })
       ] }),
-      /* @__PURE__ */ jsx7(Tip5, { label: `${engine.name}${where ? ` at ${where}` : ""}${conn.user ? `, as ${conn.user}` : ""}${conn.label ? `, from ${conn.label}` : ""}`, children: /* @__PURE__ */ jsx7(Badge4, { variant: "outline", size: "sm", className: "hidden shrink-0 font-normal @lg:inline-flex", children: engine.name }) }),
-      /* @__PURE__ */ jsx7(
+      /* @__PURE__ */ jsx8(Tip6, { label: `${engine.name}${where ? ` at ${where}` : ""}${conn.user ? `, as ${conn.user}` : ""}${mine ? ", added by hand" : conn.label ? `, from ${conn.label}` : ""}`, children: /* @__PURE__ */ jsx8(Badge4, { variant: "outline", size: "sm", className: "hidden shrink-0 font-normal @lg:inline-flex", children: engine.name }) }),
+      mine && // Where Database learned of it: someone pasted its address. Only
+      // such a connection can be forgotten: the others would come back.
+      /* @__PURE__ */ jsxs8(Fragment5, { children: [
+        /* @__PURE__ */ jsx8(Tip6, { label: `You connected this one by hand. Its address is kept on ${box} until you forget it, ${worktree} is removed, or Database's data on ${box} is removed.`, children: /* @__PURE__ */ jsx8(Badge4, { variant: "outline", size: "sm", className: "shrink-0 font-normal text-muted-foreground", "data-testid": "database-by-hand", children: "added by hand" }) }),
+        /* @__PURE__ */ jsx8(Button7, { size: "xs", variant: "ghost", className: "shrink-0", "aria-label": "Forget this connection\u2026", onClick: () => setForgetting(true), children: "Forget\u2026" })
+      ] }),
+      file && !mine && // Where Database learned of it: not a service Shipyard started.
+      /* @__PURE__ */ jsx8(Tip6, { label: `${conn.label}, read from ${worktree}'s ${file} on ${box}. Reading the tables again looks in the file again.`, children: /* @__PURE__ */ jsx8(Badge4, { variant: "outline", size: "sm", className: "shrink-0 font-mono font-normal text-muted-foreground", "data-testid": "database-from-env", "aria-label": `From ${conn.label} in ${worktree}'s ${file}`, children: file }) }),
+      /* @__PURE__ */ jsx8(
         PickOne2,
         {
           label: "Browse the tables, or run SQL",
@@ -2111,25 +2519,25 @@ ${conn.id}`, { active });
           ]
         }
       ),
-      /* @__PURE__ */ jsx7("span", { className: "ml-auto", children: /* @__PURE__ */ jsx7(Lock, { writes, now, busy: locking, onLock: () => void lock() }) })
+      /* @__PURE__ */ jsx8("span", { className: "ml-auto", children: /* @__PURE__ */ jsx8(Lock, { writes, now, busy: locking, onLock: () => void lock() }) })
     ] }),
-    ranOut && !on && /* @__PURE__ */ jsx7(Line, { tone: "note", testId: "database-ran-out", actions: /* @__PURE__ */ jsx7(Button6, { size: "xs", variant: "ghost", onClick: () => setRanOut(false), children: "Dismiss" }), children: "Writes locked themselves again: the fifteen minutes ran out. What you staged is still staged." }),
-    stale && /* @__PURE__ */ jsxs7(Line, { tone: "bad", children: [
+    ranOut && !on && /* @__PURE__ */ jsx8(Line, { tone: "note", testId: "database-ran-out", actions: /* @__PURE__ */ jsx8(Button7, { size: "xs", variant: "ghost", onClick: () => setRanOut(false), children: "Dismiss" }), children: "Writes locked themselves again: the fifteen minutes ran out. What you staged is still staged." }),
+    stale && /* @__PURE__ */ jsxs8(Line, { tone: "bad", children: [
       "Couldn't ask ",
       box,
       " again: ",
       stale.message
     ] }),
-    !schema.data || !schema.fresh ? schema.fault && schema.fault.code !== "db_unavailable" ? /* @__PURE__ */ jsx7(Waiting, { fault: schema.fault, onRetry: schema.reload, title: `Couldn't read ${conn.database}'s tables` }) : schema.fault ? (
+    !schema.data || !schema.fresh ? schema.fault && schema.fault.code !== "db_unavailable" ? /* @__PURE__ */ jsx8(Waiting, { fault: schema.fault, onRetry: schema.reload, title: `Couldn't read ${conn.database}'s tables` }) : schema.fault ? (
       // The helper has the connection, and the database isn't answering it.
-      /* @__PURE__ */ jsx7(
+      /* @__PURE__ */ jsx8(
         Notice,
         {
           icon: "Unplug",
           title: `Couldn't reach ${conn.database}`,
-          body: /* @__PURE__ */ jsxs7(Fragment5, { children: [
-            /* @__PURE__ */ jsx7(FaultText, { fault: schema.fault }),
-            /* @__PURE__ */ jsxs7("span", { className: "mt-2 block", children: [
+          body: /* @__PURE__ */ jsxs8(Fragment5, { children: [
+            /* @__PURE__ */ jsx8(FaultText, { fault: schema.fault }),
+            /* @__PURE__ */ jsxs8("span", { className: "mt-2 block", children: [
               engine.name,
               where && ` at ${where}`,
               " isn't answering ",
@@ -2137,99 +2545,127 @@ ${conn.id}`, { active });
               ". If its server or container stopped, start it and try again; if the worktree's services moved to another database, restart them and it shows here."
             ] })
           ] }),
-          actions: /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: schema.reload, children: "Try again" })
+          actions: /* @__PURE__ */ jsx8(Button7, { size: "sm", variant: "outline", onClick: schema.reload, children: "Try again" })
         }
       )
-    ) : /* @__PURE__ */ jsx7(Waiting, {}) : /* @__PURE__ */ jsxs7(Fragment5, { children: [
-      /* @__PURE__ */ jsx7("div", { className: mode === "browse" ? "flex min-h-0 flex-1 flex-col" : "hidden", children: /* @__PURE__ */ jsx7(
+    ) : /* @__PURE__ */ jsx8(Waiting, {}) : /* @__PURE__ */ jsxs8(Fragment5, { children: [
+      /* @__PURE__ */ jsx8("div", { className: mode === "browse" ? "flex min-h-0 flex-1 flex-col" : "hidden", children: /* @__PURE__ */ jsx8(
         Browser,
         {
           ctx,
           schemas: schema.data,
-          onReload: schema.reload,
+          onReload: () => {
+            relook();
+            schema.reload();
+          },
           toConsole: (sql) => {
             setPut((p) => ({ sql, n: (p?.n ?? 0) + 1 }));
             setMode("console");
           }
         }
       ) }),
-      /* @__PURE__ */ jsx7("div", { className: mode === "console" ? "flex min-h-0 flex-1 flex-col" : "hidden", children: /* @__PURE__ */ jsx7(Console, { ctx, schemas: schema.data, put }) })
+      /* @__PURE__ */ jsx8("div", { className: mode === "console" ? "flex min-h-0 flex-1 flex-col" : "hidden", children: /* @__PURE__ */ jsx8(Console, { ctx, schemas: schema.data, put }) })
     ] }),
-    /* @__PURE__ */ jsx7(UnlockDialog, { open: asking, conn, engine, box, worktree, onUnlock: unlock, onClose: () => setAsking(false) })
+    /* @__PURE__ */ jsx8(UnlockDialog, { open: asking, conn, engine, box, worktree, onUnlock: unlock, onClose: () => setAsking(false) }),
+    /* @__PURE__ */ jsx8(ForgetDialog, { open: forgetting, api, at, name: worktree, conn, onForgotten, onClose: () => setForgetting(false) })
   ] });
 }
 
 // src/screen.tsx
 import { useBoxes as useBoxes2 } from "@berth/plugin";
-import { Button as Button7, Empty as Empty2, EmptyDescription as EmptyDescription2, EmptyHeader as EmptyHeader2, EmptyTitle as EmptyTitle2, Frame, FrameDescription, FrameHeader, FramePanel, FrameTitle, HelperBox as HelperBox2, Icon as Icon7, ViewHeader } from "@berth/plugin/ui";
-import { jsx as jsx8, jsxs as jsxs8 } from "react/jsx-runtime";
+import { Button as Button8, Empty as Empty2, EmptyDescription as EmptyDescription2, EmptyHeader as EmptyHeader2, EmptyTitle as EmptyTitle2, Frame, FrameDescription, FrameHeader, FramePanel, FrameTitle, HelperBox as HelperBox2, Icon as Icon8, ViewHeader } from "@berth/plugin/ui";
+import { jsx as jsx9, jsxs as jsxs9 } from "react/jsx-runtime";
 function DatabaseScreen({ berth }) {
   const boxes = useBoxes2();
   const [ref, visible] = useVisible();
-  return /* @__PURE__ */ jsxs8("div", { ref, className: "space-y-5", "data-testid": "database-screen", children: [
-    /* @__PURE__ */ jsx8(
+  return /* @__PURE__ */ jsxs9("div", { ref, className: "space-y-5", "data-testid": "database-screen", children: [
+    /* @__PURE__ */ jsx9(
       ViewHeader,
       {
         title: "Database",
         description: "A worktree's own development database: its tables, its rows and a SQL console, read-only until you unlock it.",
-        actions: /* @__PURE__ */ jsxs8(Button7, { size: "sm", variant: "outline", onClick: () => berth.openUrl(GUIDE), children: [
+        actions: /* @__PURE__ */ jsxs9(Button8, { size: "sm", variant: "outline", onClick: () => berth.openUrl(GUIDE), children: [
           "Guide ",
-          /* @__PURE__ */ jsx8(Icon7, { name: "ArrowUpRight", className: "size-3.5" })
+          /* @__PURE__ */ jsx9(Icon8, { name: "ArrowUpRight", className: "size-3.5" })
         ] })
       }
     ),
-    /* @__PURE__ */ jsxs8(Frame, { variant: "card", children: [
-      /* @__PURE__ */ jsxs8(FrameHeader, { children: [
-        /* @__PURE__ */ jsx8(FrameTitle, { children: "Boxes" }),
-        /* @__PURE__ */ jsxs8(FrameDescription, { children: [
+    /* @__PURE__ */ jsxs9(Frame, { variant: "card", children: [
+      /* @__PURE__ */ jsxs9(FrameHeader, { children: [
+        /* @__PURE__ */ jsx9(FrameTitle, { children: "Boxes" }),
+        /* @__PURE__ */ jsxs9(FrameDescription, { children: [
           "Database runs as a program on a box, ",
-          /* @__PURE__ */ jsx8("code", { children: HELPER }),
+          /* @__PURE__ */ jsx9("code", { children: HELPER }),
           ", beside the databases it reads. It is off until you turn it on for a box, and it keeps each database's address on that box."
         ] })
       ] }),
-      /* @__PURE__ */ jsx8(FramePanel, { className: "p-0", children: boxes.length === 0 ? /* @__PURE__ */ jsx8(Empty2, { className: "py-10", children: /* @__PURE__ */ jsxs8(EmptyHeader2, { children: [
-        /* @__PURE__ */ jsx8(Icon7, { name: "Server", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
-        /* @__PURE__ */ jsx8(EmptyTitle2, { children: "No boxes yet" }),
-        /* @__PURE__ */ jsx8(EmptyDescription2, { children: "Add a box, and Database can be turned on for it here." })
-      ] }) }) : /* @__PURE__ */ jsx8("ul", { className: "divide-y", children: boxes.map((b) => /* @__PURE__ */ jsx8(HelperBox2, { berth, box: b.name, online: b.state === "online", active: visible, copy: COPY, testId: "database" }, b.name)) }) })
+      /* @__PURE__ */ jsx9(FramePanel, { className: "p-0", children: boxes.length === 0 ? /* @__PURE__ */ jsx9(Empty2, { className: "py-10", children: /* @__PURE__ */ jsxs9(EmptyHeader2, { children: [
+        /* @__PURE__ */ jsx9(Icon8, { name: "Server", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
+        /* @__PURE__ */ jsx9(EmptyTitle2, { children: "No boxes yet" }),
+        /* @__PURE__ */ jsx9(EmptyDescription2, { children: "Add a box, and Database can be turned on for it here." })
+      ] }) }) : /* @__PURE__ */ jsx9("ul", { className: "divide-y", children: boxes.map((b) => /* @__PURE__ */ jsx9(HelperBox2, { berth, box: b.name, online: b.state === "online", active: visible, copy: COPY, testId: "database" }, b.name)) }) })
     ] }),
-    /* @__PURE__ */ jsxs8(Frame, { variant: "card", children: [
-      /* @__PURE__ */ jsxs8(FrameHeader, { children: [
-        /* @__PURE__ */ jsx8(FrameTitle, { children: "Which databases show" }),
-        /* @__PURE__ */ jsx8(FrameDescription, { children: "A worktree's Database tab shows the database its own services use, once Shipyard has started one of them." })
+    /* @__PURE__ */ jsxs9(Frame, { variant: "card", children: [
+      /* @__PURE__ */ jsxs9(FrameHeader, { children: [
+        /* @__PURE__ */ jsx9(FrameTitle, { children: "Which databases show" }),
+        /* @__PURE__ */ jsx9(FrameDescription, { children: "A worktree's Database tab shows the worktree's own development database. It learns of it from a service, from the worktree's files, or from you." })
       ] }),
-      /* @__PURE__ */ jsx8(FramePanel, { children: /* @__PURE__ */ jsxs8("ol", { className: "space-y-3 text-sm", children: [
-        /* @__PURE__ */ jsxs8(Step, { n: 1, title: "Start the app as a service of its worktree", children: [
+      /* @__PURE__ */ jsx9(FramePanel, { children: /* @__PURE__ */ jsxs9("ol", { className: "space-y-3 text-sm", children: [
+        /* @__PURE__ */ jsxs9(Step, { n: 1, title: "From a service Shipyard starts in the worktree", children: [
           "With Database on for a box, Shipyard tells it about each service it starts there: the ones under ",
-          /* @__PURE__ */ jsx8("code", { children: "services" }),
+          /* @__PURE__ */ jsx9("code", { children: "services" }),
           " in the repository's ",
-          /* @__PURE__ */ jsx8("code", { children: ".berth/config.json" }),
-          ". A service that was already running needs a restart to be noticed. A server you start by hand in a terminal isn't."
+          /* @__PURE__ */ jsx9("code", { children: ".berth/config.json" }),
+          ". A service that was already running needs a restart to be noticed."
         ] }),
-        /* @__PURE__ */ jsxs8(Step, { n: 2, title: "Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box", children: [
-          "On the box itself: ",
-          /* @__PURE__ */ jsx8("code", { children: "localhost" }),
+        /* @__PURE__ */ jsxs9(Step, { n: 2, title: "Or from the worktree's .env files", children: [
+          "When you open a worktree's Database tab and no service has said, the box reads ",
+          /* @__PURE__ */ jsx9("code", { children: ".env" }),
           ", ",
-          /* @__PURE__ */ jsx8("code", { children: "127.0.0.1" }),
-          " or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in the service's environment is changed."
+          /* @__PURE__ */ jsx9("code", { children: ".env.development" }),
+          ", ",
+          /* @__PURE__ */ jsx9("code", { children: ".env.local" }),
+          " and ",
+          /* @__PURE__ */ jsx9("code", { children: ".env.development.local" }),
+          " in the worktree's own folder, a later file winning, and takes the ",
+          /* @__PURE__ */ jsx9("code", { children: "DATABASE_URL" }),
+          " or ",
+          /* @__PURE__ */ jsx9("code", { children: "POSTGRES_URL" }),
+          " it finds. So a server you start by hand in a terminal works too. Reading the tables again looks in the files again."
         ] }),
-        /* @__PURE__ */ jsx8(Step, { n: 3, title: "What doesn't show", children: "A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself. Other engines than Postgres don't show yet." })
+        /* @__PURE__ */ jsxs9(Step, { n: 3, title: "Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box", children: [
+          "On the box itself: ",
+          /* @__PURE__ */ jsx9("code", { children: "localhost" }),
+          ", ",
+          /* @__PURE__ */ jsx9("code", { children: "127.0.0.1" }),
+          " or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in a service's environment is changed, and no file is written."
+        ] }),
+        /* @__PURE__ */ jsxs9(Step, { n: 4, title: "Or connect it yourself", children: [
+          "When neither says which database a worktree has, its tab offers ",
+          /* @__PURE__ */ jsx9("b", { children: "Connect a database\u2026" }),
+          ": paste the address, and it is kept on the box with the others until you forget it. The same rule holds: a Postgres on the box itself."
+        ] }),
+        /* @__PURE__ */ jsxs9(Step, { n: 5, title: "What doesn't show", children: [
+          "A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself, or a ",
+          /* @__PURE__ */ jsx9("code", { children: ".env" }),
+          " that is a link to a file outside the worktree. Other engines than Postgres don't show yet."
+        ] })
       ] }) })
     ] })
   ] });
 }
 function Step({ n, title, children }) {
-  return /* @__PURE__ */ jsxs8("li", { className: "flex gap-3", children: [
-    /* @__PURE__ */ jsx8("span", { className: "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs tabular-nums", children: n }),
-    /* @__PURE__ */ jsxs8("div", { className: "min-w-0", children: [
-      /* @__PURE__ */ jsx8("div", { className: "font-medium", children: title }),
-      /* @__PURE__ */ jsx8("p", { className: "mt-0.5 text-pretty text-muted-foreground [&_code]:text-foreground", children })
+  return /* @__PURE__ */ jsxs9("li", { className: "flex gap-3", children: [
+    /* @__PURE__ */ jsx9("span", { className: "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs tabular-nums", children: n }),
+    /* @__PURE__ */ jsxs9("div", { className: "min-w-0", children: [
+      /* @__PURE__ */ jsx9("div", { className: "font-medium", children: title }),
+      /* @__PURE__ */ jsx9("p", { className: "mt-0.5 text-pretty text-muted-foreground [&_code]:text-foreground", children })
     ] })
   ] });
 }
 
 // src/index.tsx
-import { jsx as jsx9, jsxs as jsxs9 } from "react/jsx-runtime";
+import { jsx as jsx10, jsxs as jsxs10 } from "react/jsx-runtime";
 var index_default = definePlugin((berth) => {
   if (!berth.helper) {
     berth.addScreen({ id: "database", title: "Database", Component: TooOld });
@@ -2243,10 +2679,10 @@ var index_default = definePlugin((berth) => {
   berth.addCommand({ id: "panel", title: "Show this worktree's database", group: "Database", run: () => berth.openPanel("database") });
 });
 function TooOld(_) {
-  return /* @__PURE__ */ jsx9(Empty3, { className: "py-16", children: /* @__PURE__ */ jsxs9(EmptyHeader3, { children: [
-    /* @__PURE__ */ jsx9(Icon8, { name: "table-2", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
-    /* @__PURE__ */ jsx9(EmptyTitle3, { children: "Database needs a newer Shipyard" }),
-    /* @__PURE__ */ jsx9(EmptyDescription3, { children: "This version can't install a plugin's program on a box. Update Shipyard, then reload plugins in Settings \u2192 Plugins." })
+  return /* @__PURE__ */ jsx10(Empty3, { className: "py-16", children: /* @__PURE__ */ jsxs10(EmptyHeader3, { children: [
+    /* @__PURE__ */ jsx10(Icon9, { name: "table-2", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
+    /* @__PURE__ */ jsx10(EmptyTitle3, { children: "Database needs a newer Shipyard" }),
+    /* @__PURE__ */ jsx10(EmptyDescription3, { children: "This version can't install a plugin's program on a box. Update Shipyard, then reload plugins in Settings \u2192 Plugins." })
   ] }) });
 }
 export {

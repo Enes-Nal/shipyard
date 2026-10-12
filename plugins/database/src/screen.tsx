@@ -50,18 +50,24 @@ export function DatabaseScreen({ berth }: ScreenProps) {
       <Frame variant="card">
         <FrameHeader>
           <FrameTitle>Which databases show</FrameTitle>
-          <FrameDescription>A worktree's Database tab shows the database its own services use, once Shipyard has started one of them.</FrameDescription>
+          <FrameDescription>A worktree's Database tab shows the worktree's own development database. It learns of it from a service, from the worktree's files, or from you.</FrameDescription>
         </FrameHeader>
         <FramePanel>
           <ol className="space-y-3 text-sm">
-            <Step n={1} title="Start the app as a service of its worktree">
-              With Database on for a box, Shipyard tells it about each service it starts there: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to be noticed. A server you start by hand in a terminal isn't.
+            <Step n={1} title="From a service Shipyard starts in the worktree">
+              With Database on for a box, Shipyard tells it about each service it starts there: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to be noticed.
             </Step>
-            <Step n={2} title="Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box">
-              On the box itself: <code>localhost</code>, <code>127.0.0.1</code> or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in the service's environment is changed.
+            <Step n={2} title="Or from the worktree's .env files">
+              When you open a worktree's Database tab and no service has said, the box reads <code>.env</code>, <code>.env.development</code>, <code>.env.local</code> and <code>.env.development.local</code> in the worktree's own folder, a later file winning, and takes the <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> it finds. So a server you start by hand in a terminal works too. Reading the tables again looks in the files again.
             </Step>
-            <Step n={3} title="What doesn't show">
-              A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself. Other engines than Postgres don't show yet.
+            <Step n={3} title="Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box">
+              On the box itself: <code>localhost</code>, <code>127.0.0.1</code> or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in a service's environment is changed, and no file is written.
+            </Step>
+            <Step n={4} title="Or connect it yourself">
+              When neither says which database a worktree has, its tab offers <b>Connect a database…</b>: paste the address, and it is kept on the box with the others until you forget it. The same rule holds: a Postgres on the box itself.
+            </Step>
+            <Step n={5} title="What doesn't show">
+              A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself, or a <code>.env</code> that is a link to a file outside the worktree. Other engines than Postgres don't show yet.
             </Step>
           </ol>
         </FramePanel>

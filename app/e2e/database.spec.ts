@@ -670,7 +670,8 @@ test("another engine is shown by what its connection says it can do: no schemas,
   const p = await open(app);
   await expect(p.getByTestId("database-bar")).toHaveAttribute("data-engine", "postgres");
   await p.getByTestId("database-connection").click();
-  await expect(app.page.getByRole("menuitem")).toHaveText([/shop_checkout_fix.*PostgreSQL · DATABASE_URL/, /events.*driftdb · EVENTS_URL/]);
+  // The worktree's databases, and a way to connect another by its address.
+  await expect(app.page.getByRole("menuitem")).toHaveText([/shop_checkout_fix.*PostgreSQL · DATABASE_URL/, /events.*driftdb · EVENTS_URL/, "Connect a database…"]);
   await app.page.getByRole("menuitem", { name: /events/ }).click();
   await expect(p.getByTestId("database-bar")).toHaveAttribute("data-engine", "driftdb");
 
@@ -737,20 +738,262 @@ test("where Database is off, the panel says so, and turns it on after a confirm 
   await app.page.getByRole("alertdialog").getByRole("button", { name: "Install and turn on" }).click();
   await expect(said).toContainText(/(Installing|Starting) berth-database on gpu/);
   await expect(p).toHaveAttribute("data-state", "running");
-  // It runs, and has not seen this worktree's services start.
+  // It runs, has not seen this worktree's services start, and the worktree
+  // has no .env for it to have found a database in.
   await expect(said).toContainText("No database for ci-flake yet");
-  await expect(said).toContainText("Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked for .env, .env.development, .env.local and .env.development.local in this worktree on gpu: there is none.");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart.");
 });
 
-test("a worktree with no database yet says which databases show, and why others don't", async ({ app }) => {
+test("a worktree with no database yet says where it looked, which databases show, and why others don't", async ({ app }) => {
   mockOnly();
   const p = await open(app, undefined, { db: "none" });
   const said = notice(p);
   await expect(said).toContainText("No database for checkout-fix yet");
-  await expect(said).toContainText("DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked for .env, .env.development, .env.local and .env.development.local in this worktree on devl: there is none.");
+  await expect(said).toContainText("Database shows the Postgres a worktree's DATABASE_URL or POSTGRES_URL points at when it is on devl itself. It reads that from the worktree's .env files when this tab opens.");
   await expect(said).toContainText("A database on another host, or one whose address is a secret reference, is not shown.");
   await said.getByRole("button", { name: "Which databases show" }).click();
-  await expect(app.page.getByTestId("database-screen")).toContainText("Which databases show");
+  const screen = app.page.getByTestId("database-screen");
+  await expect(screen).toContainText("Which databases show");
+  await expect(screen).toContainText("Or from the worktree's .env files");
+  await expect(screen).toContainText("the box reads .env, .env.development, .env.local and .env.development.local in the worktree's own folder, a later file winning");
+});
+
+// The ?db=env scenarios are a project whose dev servers Shipyard does not
+// start: the helper has been told of no database, and the worktree's
+// DATABASE_URL is in its .env files, which the box reads when the tab opens.
+const looks = (app: App) => app.page.evaluate(() => (window as unknown as { __berthMockDatabase: { looks(): number } }).__berthMockDatabase.looks());
+const dotenv = (app: App, kind: string) => app.page.evaluate((k) => (window as unknown as { __berthMockDatabase: { dotenv(kind: string): void } }).__berthMockDatabase.dotenv(k), kind);
+const ORIGIN = "berth.plugin.database.env:devl/shop/checkout-fix";
+
+test("a worktree whose database is only in its .env is found when the tab opens, and says where it came from", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-slow" });
+  // While the box looks, the panel says so.
+  await expect(p.getByTestId("database-looking")).toHaveText("Looking in checkout-fix's .env files on devl for its database…");
+  // Then the database, as any other.
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_checkout_fix");
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByTestId("database-looking")).toHaveCount(0);
+  await expect(lock(p)).toHaveAttribute("data-writes", "off");
+  // Where Database learned of it: the variable, and the file it was in.
+  const from = p.getByTestId("database-from-env");
+  await expect(from).toHaveText(".env.local");
+  await expect(from).toHaveAccessibleName("From DATABASE_URL in checkout-fix's .env.local");
+  await from.hover();
+  await expect(app.page.getByText("DATABASE_URL, read from checkout-fix's .env.local on devl. Reading the tables again looks in the file again.")).toBeVisible();
+  // It looked once, and remembers what the look gave: ids and file names, never an address.
+  await expect.poll(() => looks(app)).toBe(1);
+  await expect.poll(() => app.stored(ORIGIN)).toEqual({ ids: ["c_1c28ba20e1b6"], files: { DATABASE_URL: ".env.local" } });
+  // A table opens and reads as one of a database a service gave.
+  await openTable(p, "customers");
+  await expect(range(p)).toHaveText("Rows 1–100 of about 240");
+});
+
+test("a database a service gave says nothing of .env, and reading its tables again does not look there", async ({ app }) => {
+  mockOnly();
+  const p = await open(app);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByTestId("database-from-env")).toHaveCount(0);
+  await p.getByRole("button", { name: "Read the tables again" }).click();
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  expect(await looks(app)).toBe(0);
+  expect(await app.stored(ORIGIN)).toBeNull();
+});
+
+test("a .env with no database address says which files were read, and looking again picks up a change to them", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-none" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  await expect(said.getByTestId("database-looked")).toHaveText("Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them.");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started");
+  await expect.poll(() => looks(app)).toBe(1);
+
+  // The file gets a DATABASE_URL: Look again reads it.
+  await dotenv(app, "env");
+  await said.getByRole("button", { name: "Look again" }).click();
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_checkout_fix");
+  await expect(p.getByTestId("database-from-env")).toHaveText(".env.local");
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect.poll(() => looks(app)).toBe(2);
+
+  // And loses it again: reading the tables again looks in the files again,
+  // because that is where this database came from.
+  await dotenv(app, "env-none");
+  await p.getByRole("button", { name: "Read the tables again" }).click();
+  await expect(notice(p).getByTestId("database-looked")).toHaveText("Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them.");
+  await expect(p.getByTestId("database-connection")).toHaveCount(0);
+  await expect.poll(() => app.stored(ORIGIN)).toBeNull();
+});
+
+test("a .env whose database address can't be shown says which variable and why", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-refused" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  const looked = said.getByTestId("database-looked");
+  // Another host, a secret's name, and a file that links out of the worktree.
+  await expect(looked).toContainText("DATABASE_URL in .env.local doesn't point at a Postgres on devl itself, so it isn't opened.");
+  await expect(looked).toContainText("POSTGRES_URL in .env is a reference to a secret, not an address, so it isn't read.");
+  await expect(looked).toContainText(".env.development is a link to a file outside the worktree, which isn't followed.");
+  await expect(looked).not.toContainText("Looked in");
+  await expect(said.getByRole("button", { name: "Look again" })).toBeEnabled();
+});
+
+test("a box too old to look in .env says what it always said, and nothing went wrong", async ({ app }) => {
+  mockOnly();
+  const p = await open(app, undefined, { db: "env-old" });
+  const said = notice(p);
+  await expect(said).toContainText("No database for checkout-fix yet");
+  await expect(said).toContainText("A service of this worktree that Shipyard starts with a DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
+  await expect(said.getByTestId("database-looked")).toHaveCount(0);
+  await expect(said).not.toContainText("older berthd");
+  await expect(said).not.toContainText("Couldn't");
+  await expect(p).toHaveAttribute("data-state", "running");
+  // Look again asks again, and is as quiet.
+  await said.getByRole("button", { name: "Look again" }).click();
+  await expect(said).toContainText("Database learns of a database when a service starts");
+  await expect(said.getByTestId("database-looked")).toHaveCount(0);
+  // A box that can't look can't be given an address either.
+  await expect(said.getByRole("button", { name: "Connect a database…" })).toHaveCount(0);
+});
+
+// A database connected by hand: its address is pasted once, goes to the box,
+// and is nowhere in the app after that.
+const HAND = "berth.plugin.database.hand:devl/shop/checkout-fix";
+const SECRET = "hunter2-by-hand";
+
+// Everything the page holds that someone could read back: what it shows,
+// what its fields hold, and what it saved.
+const pageHolds = (app: App, text: string) =>
+  app.page.evaluate((t) => {
+    const fields = [...document.querySelectorAll("input, textarea")].map((el) => (el as HTMLInputElement).value);
+    const saved = Object.keys(localStorage).map((k) => localStorage.getItem(k) ?? "");
+    return [document.body.innerText, document.body.innerHTML, ...fields, ...saved].some((s) => s.includes(t));
+  }, text);
+
+test("with no database found, one is connected by pasting its address, which is masked and never shown again", async ({ app }) => {
+  mockOnly("connects a database");
+  const p = await open(app, undefined, { db: "none" });
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  await expect(dialog).toContainText("Connect a database to checkout-fix on devl");
+  await expect(dialog).toContainText("It has to be a Postgres on devl itself (localhost, 127.0.0.1 or a Unix socket): berth-database opens no other, and a database on another machine is not taken.");
+  await expect(dialog).toContainText("The address is kept on devl, in a file only you can read there, until checkout-fix is removed, you forget the connection, or Database's data on devl is removed. It isn't kept on this computer, and isn't shown again");
+  // Masked like a password, with a way to see what was pasted.
+  const address = dialog.getByLabel("Address", { exact: true });
+  await expect(address).toBeFocused();
+  await expect(address).toHaveAttribute("type", "password");
+  await expect(address).toHaveAttribute("autocomplete", "off");
+  await dialog.getByRole("button", { name: "Show the address" }).click();
+  await expect(address).toHaveAttribute("type", "text");
+  await dialog.getByRole("button", { name: "Hide the address" }).click();
+  await expect(address).toHaveAttribute("type", "password");
+
+  // Nothing, and something that is no address, are not sent anywhere.
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  const problem = dialog.getByTestId("database-connect-problem");
+  await expect(problem).toHaveText("Paste the database's address.");
+  await address.fill(`mysql://acme:${SECRET}@localhost:3306/shop_scratch`);
+  await address.press("Enter");
+  await expect(problem).toContainText("That isn't a Postgres address. One looks like postgres://user:password@localhost:5432/database.");
+  await expect(problem).not.toContainText(SECRET);
+
+  await address.fill(`postgres://acme:${SECRET}@localhost:5433/shop_scratch`);
+  await address.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  // It shows as its database, like any other, and says how it got here.
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_scratch");
+  await expect(p.getByTestId("database-by-hand")).toHaveText("added by hand");
+  await expect(p.getByTestId("database-from-env")).toHaveCount(0);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await p.getByTestId("database-by-hand").hover();
+  await expect(app.page.getByText("You connected this one by hand. Its address is kept on devl until you forget it, checkout-fix is removed, or Database's data on devl is removed.")).toBeVisible();
+  // The address is nowhere in the page, and what was saved is the connection's id.
+  expect(await pageHolds(app, SECRET)).toBe(false);
+  expect(await pageHolds(app, "postgres://")).toBe(false);
+  const ids = (await app.stored(HAND)) as string[];
+  expect(ids).toHaveLength(1);
+  expect(ids[0]).toMatch(/^c_[0-9a-f]{12}$/);
+
+  // The lock is the same lock.
+  await expect(lock(p)).toHaveAttribute("data-writes", "off");
+  await unlock(app, p);
+  await openTable(p, "customers");
+  await expect(range(p)).toHaveText("Rows 1–100 of about 240");
+});
+
+test("a database on another machine is not taken, in the helper's rule, and nothing is kept", async ({ app }) => {
+  mockOnly("connects a database");
+  const p = await open(app, undefined, { db: "none" });
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  const address = dialog.getByLabel("Address", { exact: true });
+  await address.fill(`postgres://acme:${SECRET}@db.acme.example:5432/shop_staging`);
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  const problem = dialog.getByTestId("database-connect-problem");
+  await expect(problem).toHaveText("berth-database on devl didn't take this address. It opens a Postgres on devl itself and nothing else: one at localhost, 127.0.0.1 or a Unix socket. Nothing was kept.");
+  // The dialog stays, with what was pasted, for it to be put right.
+  await expect(address).toHaveValue(`postgres://acme:${SECRET}@db.acme.example:5432/shop_staging`);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(notice(p)).toContainText("No database for checkout-fix yet");
+  expect(await pageHolds(app, SECRET)).toBe(false);
+  expect((await app.stored(HAND)) ?? []).toEqual([]);
+  // Opened again, the field is empty: what was typed went with the dialog.
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  await expect(app.page.getByRole("alertdialog").getByLabel("Address", { exact: true })).toHaveValue("");
+});
+
+test("a database connected by hand is forgotten after a confirm, and one a service gave does not offer it", async ({ app }) => {
+  mockOnly("connects and forgets a database");
+  // shop / checkout-fix has two databases its services gave: the picker offers a third.
+  const p = await open(app);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByRole("button", { name: "Forget this connection…" })).toHaveCount(0);
+  await p.getByTestId("database-connection").click();
+  await app.page.getByRole("menuitem", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  await dialog.getByLabel("Address", { exact: true }).fill(`postgres://acme:${SECRET}@127.0.0.1:5433/shop_scratch`);
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  // The one just connected is the one in front, among the three.
+  await expect(p.getByTestId("database-connection")).toContainText("shop_scratch");
+  await expect(p.getByTestId("database-by-hand")).toBeVisible();
+  await p.getByTestId("database-connection").click();
+  await expect(app.page.getByRole("menuitem")).toHaveCount(3);
+  await expect(app.page.getByRole("menuitem", { name: /shop_scratch/ })).toContainText("added by hand");
+  // One by hand for a worktree: no second is offered while it is there.
+  await expect(app.page.getByRole("menuitem", { name: "Connect a database…" })).toHaveCount(0);
+  // A database a service gave says where it came from, and can't be forgotten: it would come back.
+  await app.page.getByRole("menuitem", { name: /shop_checkout_fix/ }).click();
+  await expect(p.getByTestId("database-connection")).toContainText("shop_checkout_fix");
+  await expect(p.getByTestId("database-by-hand")).toHaveCount(0);
+  await expect(p.getByRole("button", { name: "Forget this connection…" })).toHaveCount(0);
+
+  await p.getByTestId("database-connection").click();
+  await app.page.getByRole("menuitem", { name: /shop_scratch/ }).click();
+  await p.getByRole("button", { name: "Forget this connection…" }).click();
+  const confirm = app.page.getByRole("alertdialog");
+  await expect(confirm).toContainText("Forget shop_scratch for checkout-fix?");
+  await expect(confirm).toContainText("berth-database on devl forgets the address you gave it for shop_scratch (127.0.0.1:5433)");
+  await expect(confirm).toContainText("The database itself isn't touched.");
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(p.getByTestId("database-by-hand")).toBeVisible();
+
+  await p.getByRole("button", { name: "Forget this connection…" }).click();
+  await app.page.getByRole("alertdialog").getByRole("button", { name: "Forget this connection" }).click();
+  await expect(app.page.getByRole("alertdialog")).toHaveCount(0);
+  // Back to the two a service gave, and another can be connected again.
+  await expect(p.getByTestId("database-by-hand")).toHaveCount(0);
+  await expect(p.getByTestId("database-connection")).toContainText("shop_checkout_fix");
+  await p.getByTestId("database-connection").click();
+  await expect(app.page.getByRole("menuitem")).toHaveCount(3);
+  await expect(app.page.getByRole("menuitem", { name: "Connect a database…" })).toBeVisible();
+  expect(await app.stored(HAND)).toEqual([]);
+  expect(await pageHolds(app, SECRET)).toBe(false);
 });
 
 test("a database that isn't answering says so in the helper's words, and can be tried again", async ({ app }) => {
