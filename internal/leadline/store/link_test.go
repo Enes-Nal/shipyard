@@ -23,7 +23,7 @@ func ms(n float64) int64 { return int64(n * 1e6) }
 
 func openStore(t *testing.T) *store.Store {
 	t.Helper()
-	st, err := store.Open(filepath.Join(t.TempDir(), "leadline.db"))
+	st, err := store.Open(filepath.Join(t.TempDir(), "leadline.db"), store.Options{ReadWait: time.Minute})
 	if err != nil {
 		t.Fatal(err)
 	}

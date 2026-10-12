@@ -53,7 +53,7 @@ func TestTheFileIsPrivateAndKeepsWhatItWasGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(dir, "leadline.db")
-	st, err := store.Open(path)
+	st, err := store.Open(path, store.Options{ReadWait: time.Minute})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -661,7 +661,7 @@ func TestPruneDropsOldRowsAndGivesTheSpaceBack(t *testing.T) {
 // newest are the ones kept.
 func TestTheSizeCapDropsTheOldestEarly(t *testing.T) {
 	ctx := context.Background()
-	st, err := store.Open(filepath.Join(t.TempDir(), "leadline.db"))
+	st, err := store.Open(filepath.Join(t.TempDir(), "leadline.db"), store.Options{ReadWait: time.Minute})
 	if err != nil {
 		t.Fatal(err)
 	}
