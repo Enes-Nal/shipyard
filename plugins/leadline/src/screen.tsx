@@ -28,8 +28,8 @@ import { useMemo, useState } from "react";
 
 import { leadline } from "./api";
 import { ago, bytes, count, plural, span } from "./format.ts";
-import { readHelper, turnOff, turnOn, useHelper, useLive, useVisible } from "./live";
-import { Command, HELPER, TurnOnDialog } from "./ui";
+import { readHelper, turnOff, useHelper, useLive, useVisible } from "./live";
+import { cantRun, Command, HELPER, TurnOnDialog } from "./ui";
 
 // The Leadline screen: which boxes run the helper, with the switch for
 // each, what each one has heard from, and what an app needs before it shows
@@ -115,7 +115,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 const STATE: Record<string, { label: string; variant: string }> = {
   running: { label: "Running", variant: "success" },
   off: { label: "Off", variant: "outline" },
-  none: { label: "Off", variant: "outline" },
+  none: { label: "Can't run it", variant: "warning" },
   installing: { label: "Installing…", variant: "info" },
   starting: { label: "Starting…", variant: "info" },
   failed: { label: "Failed", variant: "error" },
@@ -172,7 +172,7 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
               Update to {s.latest}…
             </Button>
           )}
-          {online && (state === "off" || state === "none") && (
+          {online && state === "off" && (
             <Button size="xs" onClick={() => setAsking("on")}>
               Turn on…
             </Button>
@@ -209,13 +209,17 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
             </span>
           ) : null
         ) : state === "unsupported" ? (
-          <>
-            {s.error ?? `Its berthd is from before plugins could install a program on a box, or ${HELPER} has no build for ${s.platform || "its platform"}.`} Update the box in{" "}
-            <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => berth.openSettings("boxes")}>
-              Settings → Boxes
-            </button>
-            .
-          </>
+          cantRun(s, box).update ? (
+            <>
+              {cantRun(s, box).why} Update the box in{" "}
+              <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => berth.openSettings("boxes")}>
+                Settings → Boxes
+              </button>
+              .
+            </>
+          ) : (
+            cantRun(s, box).why
+          )
         ) : state === "failed" ? (
           <span className="whitespace-pre-wrap text-destructive-foreground">{s.error ?? "The box didn't say why."}</span>
         ) : state === "installing" ? (
@@ -223,9 +227,9 @@ function BoxRow({ berth, box, online, active }: { berth: BerthPluginContext; box
         ) : state === "starting" ? (
           "The box has it and is starting it."
         ) : state === "off" ? (
-          "Nothing is recorded while it is off. What it recorded before is kept on the box. Restart any service that was started while it was on: its database connection went through Leadline."
+          `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it. Restart any service that was started while it was on: its database connection went through Leadline.`
         ) : state === "none" ? (
-          `Turning it on installs ${HELPER} on ${box} and keeps it running there.`
+          `This copy of the plugin names no program to install. Install Leadline again from Settings → Plugins.`
         ) : null}
       </div>
       {online && running && <Heard berth={berth} box={box} active={active} />}

@@ -73,6 +73,12 @@ function bytes(n) {
   }
   return `${u === 0 || v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, "")} ${units[u]}`;
 }
+function sentence(text) {
+  const t = text.trim();
+  if (!t) return t;
+  const first = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?…]$/.test(first) ? first : `${first}.`;
+}
 
 // src/source.ts
 var enc = new TextEncoder();
@@ -802,6 +808,10 @@ function leadline(berth) {
 // src/ui.tsx
 import { Fragment as Fragment2, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 var HELPER = "berth-leadline";
+function cantRun(s, box) {
+  if (s.platform) return { why: `${HELPER} has no build for ${s.platform} yet, so it can't be installed on ${box}.`, update: false };
+  return { why: sentence(s.error ?? `${box}'s berthd is from before plugins could install a program on a box`), update: true };
+}
 function PanelShell({ berth, box, location, worktree, main, path: path2, panel, children }) {
   const [ref, visible] = useVisible();
   const online = useBoxes().find((b) => b.name === box)?.state === "online";
@@ -846,22 +856,21 @@ function HelperNotice({ berth, box }) {
   const s = view.status;
   if (!s) return /* @__PURE__ */ jsx2(Notice, { icon: "TriangleAlert", title: `Couldn't ask ${box} about Leadline`, body: view.fault?.message, actions: /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "outline", onClick: () => void readHelper(berth, box), children: "Try again" }) });
   switch (s.state) {
-    case "unsupported":
+    case "unsupported": {
+      const { why, update } = cantRun(s, box);
       return /* @__PURE__ */ jsx2(
         Notice,
         {
           icon: "ServerOff",
           title: `${box} can't run Leadline yet`,
-          body: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-            s.error ?? `Its berthd is from before plugins could install a program on a box, or ${HELPER} has no build for ${s.platform || "its platform"}.`,
-            " Update the box in Settings \u2192 Boxes, then turn Leadline on."
-          ] }),
+          body: update ? `${why} Update the box in Settings \u2192 Boxes, then turn Leadline on.` : why,
           actions: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-            /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "outline", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
+            update && /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "outline", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
             about
           ] })
         }
       );
+    }
     case "installing":
     case "starting":
       return /* @__PURE__ */ jsx2(
@@ -1836,7 +1845,7 @@ function Step({ n, title, children }) {
 var STATE = {
   running: { label: "Running", variant: "success" },
   off: { label: "Off", variant: "outline" },
-  none: { label: "Off", variant: "outline" },
+  none: { label: "Can't run it", variant: "warning" },
   installing: { label: "Installing\u2026", variant: "info" },
   starting: { label: "Starting\u2026", variant: "info" },
   failed: { label: "Failed", variant: "error" },
@@ -1881,7 +1890,7 @@ function BoxRow({ berth, box, online, active }) {
           s.latest,
           "\u2026"
         ] }),
-        online && (state === "off" || state === "none") && /* @__PURE__ */ jsx7(Button4, { size: "xs", onClick: () => setAsking("on"), children: "Turn on\u2026" }),
+        online && state === "off" && /* @__PURE__ */ jsx7(Button4, { size: "xs", onClick: () => setAsking("on"), children: "Turn on\u2026" }),
         online && state === "failed" && /* @__PURE__ */ jsx7(Button4, { size: "xs", onClick: () => setAsking("on"), children: "Try again\u2026" }),
         online && (running || state === "failed") && /* @__PURE__ */ jsx7(Button4, { size: "xs", variant: "outline", loading: busy, onClick: () => void off(), children: "Turn off" }),
         online && (running || state === "off" || state === "failed") && /* @__PURE__ */ jsx7(Button4, { size: "xs", variant: "ghost", className: "text-muted-foreground", onClick: () => setRemoving(true), children: "Remove data\u2026" })
@@ -1891,13 +1900,13 @@ function BoxRow({ berth, box, online, active }) {
       view.fault.message,
       " ",
       /* @__PURE__ */ jsx7("button", { type: "button", className: "underline underline-offset-2 hover:text-foreground", onClick: () => void readHelper(berth, box), children: "Try again" })
-    ] }) : null : state === "unsupported" ? /* @__PURE__ */ jsxs7(Fragment7, { children: [
-      s.error ?? `Its berthd is from before plugins could install a program on a box, or ${HELPER} has no build for ${s.platform || "its platform"}.`,
+    ] }) : null : state === "unsupported" ? cantRun(s, box).update ? /* @__PURE__ */ jsxs7(Fragment7, { children: [
+      cantRun(s, box).why,
       " Update the box in",
       " ",
       /* @__PURE__ */ jsx7("button", { type: "button", className: "underline underline-offset-2 hover:text-foreground", onClick: () => berth.openSettings("boxes"), children: "Settings \u2192 Boxes" }),
       "."
-    ] }) : state === "failed" ? /* @__PURE__ */ jsx7("span", { className: "whitespace-pre-wrap text-destructive-foreground", children: s.error ?? "The box didn't say why." }) : state === "installing" ? "Downloading the program, checking it against its checksum and handing it to the box." : state === "starting" ? "The box has it and is starting it." : state === "off" ? "Nothing is recorded while it is off. What it recorded before is kept on the box. Restart any service that was started while it was on: its database connection went through Leadline." : state === "none" ? `Turning it on installs ${HELPER} on ${box} and keeps it running there.` : null }),
+    ] }) : cantRun(s, box).why : state === "failed" ? /* @__PURE__ */ jsx7("span", { className: "whitespace-pre-wrap text-destructive-foreground", children: s.error ?? "The box didn't say why." }) : state === "installing" ? "Downloading the program, checking it against its checksum and handing it to the box." : state === "starting" ? "The box has it and is starting it." : state === "off" ? `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it. Restart any service that was started while it was on: its database connection went through Leadline.` : state === "none" ? `This copy of the plugin names no program to install. Install Leadline again from Settings \u2192 Plugins.` : null }),
     online && running && /* @__PURE__ */ jsx7(Heard, { berth, box, active }),
     /* @__PURE__ */ jsx7(TurnOnDialog, { berth, box: asking ? box : void 0, update: asking === "update", onClose: () => setAsking(void 0) }),
     /* @__PURE__ */ jsx7(AlertDialog2, { open: removing, onOpenChange: setRemoving, children: /* @__PURE__ */ jsxs7(AlertDialogPopup2, { children: [

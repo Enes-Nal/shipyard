@@ -396,12 +396,13 @@ export interface BerthLinear {
 // gives it a folder for its data and passes requests through to its HTTP
 // API; a plugin only ever reaches its own.
 export type HelperState =
-  // Not installed on this box.
+  // The plugin, as it is installed, names no helper: there is nothing to install.
   | "none"
   // This box can't run it: its berthd is older than helpers, or the plugin
   // has no build for its platform.
   | "unsupported"
-  // Installed, and turned off.
+  // Not on this box: it was never installed there, or was turned off. A box
+  // doesn't say which, and what the helper recorded before may still be there.
   | "off"
   | "installing"
   | "starting"
@@ -418,7 +419,8 @@ export interface HelperStatus {
   // The version on the box, and the one the installed plugin carries.
   version?: string;
   latest?: string;
-  // The box runs an older version than the plugin carries: install() updates it.
+  // The box runs another helper than the plugin carries (its version, its
+  // build or how it is run): install() replaces it.
   update?: true;
   error?: string;
 }

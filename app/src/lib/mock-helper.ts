@@ -15,14 +15,22 @@ import { helperRelayed } from "@/lib/helper-path";
 // under its own name; every other worktree has sent nothing yet. Times are
 // moved so the newest is a few seconds old whenever it is read.
 //
+// A box answers "off" for a helper it does not have, whether it never had
+// it or it was turned off, and so do these; "none" is a plugin that names no
+// helper.
+//
 // ?helper=unsupported is a fleet whose boxes run a berthd from before
-// helpers, ?helper=failed fails every install, and ?helper=update has devl
-// on an older build than the plugin carries.
+// helpers, ?helper=nobuild one whose boxes the plugin has no build for,
+// ?helper=failed a helper that installs and then will not start,
+// ?helper=mismatch a download that is not what the manifest's checksum
+// says (the agent refuses the install: nothing changes on the box), and
+// ?helper=update has devl on an older build than the plugin carries.
 
 type Delay = <T>(v: T) => Promise<T>;
 
 const scenario = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("helper");
 const LATEST = "0.1.0";
+const PLATFORM = "linux-amd64";
 
 interface Helper {
   state: HelperState;
@@ -39,9 +47,10 @@ function helperOf(plugin: string, box: string): Helper {
   const key = `${plugin}\n${box}`;
   let h = helpers.get(key);
   if (!h) {
-    const on = plugin === "leadline" && box === "devl";
-    const off = plugin === "leadline" && box === "gpu";
-    h = { state: scenario === "unsupported" ? "unsupported" : on ? "running" : off ? "off" : "none", version: on ? (scenario === "update" ? "0.0.9" : LATEST) : undefined, timers: [] };
+    const mine = plugin === "leadline";
+    const on = mine && box === "devl";
+    const cant = scenario === "unsupported" || scenario === "nobuild";
+    h = { state: cant ? "unsupported" : on ? "running" : mine ? "off" : "none", version: on && !cant ? (scenario === "update" ? "0.0.9" : LATEST) : undefined, timers: [] };
     helpers.set(key, h);
   }
   return h;
@@ -50,7 +59,11 @@ function helperOf(plugin: string, box: string): Helper {
 function statusOf(plugin: string, box: string): HelperStatus {
   const h = helperOf(plugin, box);
   const update = h.state === "running" && h.version !== LATEST;
-  return { plugin, box, state: h.state, platform: "linux-amd64", version: h.version, latest: LATEST, ...(update ? { update: true as const } : {}), error: h.error };
+  // As the agent says each: a berthd from before helpers never told it the
+  // box's platform; one the plugin has no build for did.
+  if (scenario === "unsupported") return { plugin, box, state: h.state, platform: "", latest: LATEST, error: "this box runs an older berthd, which cannot run helpers; update it" };
+  if (scenario === "nobuild") return { plugin, box, state: h.state, platform: PLATFORM, latest: LATEST, error: `berth-leadline has no build for ${PLATFORM}` };
+  return { plugin, box, state: h.state, platform: PLATFORM, version: h.version, latest: LATEST, ...(update ? { update: true as const } : {}), error: h.error };
 }
 
 // helperLaptopCall answers the laptop agent's helper routes, or undefined
@@ -64,7 +77,13 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
   if (!online(box)) return delay(null).then(() => Promise.reject(new ApiError(`${box} is offline`, 503)));
   const h = helperOf(plugin, box);
   if (method === "GET") return delay(statusOf(plugin, box));
-  if (h.state === "unsupported") return delay(null).then(() => Promise.reject(new ApiError(`${box} runs a berthd from before helpers; update it first`, 409, "helper_unsupported")));
+  if (h.state === "unsupported" && method === "POST") {
+    const why = scenario === "nobuild" ? `berth-leadline has no build for ${PLATFORM}, which ${box} runs` : `${box} cannot run ${plugin}'s helper: this box runs an older berthd, which cannot run helpers; update it`;
+    return delay(null).then(() => Promise.reject(new ApiError(why, 409, "helper_unsupported")));
+  }
+  if (method === "POST" && scenario === "mismatch") {
+    return delay(null).then(() => Promise.reject(new ApiError("the helper at https://downloads.acme.example/berth-leadline-linux-amd64 does not match the checksum in the plugin's manifest; nothing was installed", 502, "helper_mismatch")));
+  }
   h.timers.forEach((t) => window.clearTimeout(t));
   h.timers = [];
   if (method === "POST") {
@@ -72,9 +91,11 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
     h.error = undefined;
     const then = (ms: number, next: () => void) => h.timers.push(window.setTimeout(next, ms));
     if (scenario === "failed") {
+      // The box has the program, and it will not stay up: berthd's words.
       then(900, () => {
         h.state = "failed";
-        h.error = "berth-leadline for linux-amd64 does not match its checksum; nothing was installed";
+        h.version = LATEST;
+        h.error = "it ended (exit status 1) before it was ready; berthd tries again in 4s";
       });
     } else {
       then(900, () => {
@@ -89,7 +110,8 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
   }
   if (method === "DELETE") {
     const purge = query.get("purge") === "1";
-    h.state = purge ? "none" : "off";
+    if (h.state !== "unsupported") h.state = "off";
+    h.version = undefined;
     h.error = undefined;
     if (purge) h.purged = true;
     return delay(statusOf(plugin, box));

@@ -89,3 +89,11 @@ export function bytes(n: number): string {
   }
   return `${u === 0 || v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, "")} ${units[u]}`;
 }
+
+// sentence makes what a program said read as one: a capital, and a full stop.
+export function sentence(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  const first = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?…]$/.test(first) ? first : `${first}.`;
+}

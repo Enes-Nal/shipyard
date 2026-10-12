@@ -312,13 +312,14 @@ test("the Leadline screen says where it runs, and turns it on, off and removes w
   await expect(box(screen, "gpu").getByTestId("leadline-heard")).toContainText("No worktree has sent anything yet");
   await box(screen, "gpu").getByRole("button", { name: "Turn off" }).click();
   await expect(box(screen, "gpu")).toHaveAttribute("data-state", "off");
-  await expect(box(screen, "gpu")).toContainText("What it recorded before is kept on the box");
+  await expect(box(screen, "gpu")).toContainText("what it recorded before, if anything, is kept on the box");
 
   await box(screen, "devl").getByRole("button", { name: "Remove data…" }).click();
   const remove = app.page.getByRole("alertdialog");
   await expect(remove).toContainText("deletes everything it recorded there");
   await remove.getByRole("button", { name: "Remove data" }).click();
-  await expect(box(screen, "devl")).toHaveAttribute("data-state", "none");
+  // A box says "off" for a helper it does not have, whatever it had before.
+  await expect(box(screen, "devl")).toHaveAttribute("data-state", "off");
   await expect(box(screen, "devl").getByRole("button", { name: "Turn on…" })).toBeVisible();
 });
 
@@ -329,11 +330,25 @@ test("a box whose berthd is too old says Leadline can't run there", async ({ app
   const p = await openPanel(app, "Logs");
   await expect(p).toHaveAttribute("data-state", "unsupported");
   await expect(p.getByTestId("leadline-notice")).toContainText("devl can't run Leadline yet");
+  await expect(p.getByTestId("leadline-notice")).toContainText("This box runs an older berthd, which cannot run helpers; update it. Update the box in Settings → Boxes");
   await expect(p.getByRole("button", { name: "Open Settings → Boxes" })).toBeVisible();
   await expect(p.getByRole("button", { name: "Turn on…" })).toHaveCount(0);
 });
 
-test("an install that fails says why, and can be tried again", async ({ app }) => {
+test("a box the plugin has no build for says so, and doesn't send you to update the box", async ({ app }) => {
+  mockOnly();
+  await app.open({ params: { helper: "nobuild" } });
+  await app.openWorktree("devl/checkout-fix");
+  const p = await openPanel(app, "Logs");
+  await expect(p).toHaveAttribute("data-state", "unsupported");
+  await expect(p.getByTestId("leadline-notice")).toContainText("berth-leadline has no build for linux-amd64 yet, so it can't be installed on devl.");
+  await expect(p.getByRole("button", { name: "Open Settings → Boxes" })).toHaveCount(0);
+  const screen = await openLeadline(app.page);
+  await expect(box(screen, "devl")).toContainText("berth-leadline has no build for linux-amd64 yet");
+  await expect(box(screen, "devl")).not.toContainText("Update the box");
+});
+
+test("a helper that won't start says why, and can be tried again", async ({ app }) => {
   mockOnly("installs a helper");
   await app.open({ params: { helper: "failed" } });
   await app.openWorktree("gpu/ci-flake");
@@ -341,8 +356,23 @@ test("an install that fails says why, and can be tried again", async ({ app }) =
   await p.getByRole("button", { name: "Turn on…" }).click();
   await app.page.getByRole("alertdialog").getByRole("button", { name: "Install and turn on" }).click();
   await expect(p).toHaveAttribute("data-state", "failed");
-  await expect(p.getByTestId("leadline-notice")).toContainText("does not match its checksum");
+  await expect(p.getByTestId("leadline-notice")).toContainText("it ended (exit status 1) before it was ready");
   await expect(p.getByRole("button", { name: "Try again" })).toBeVisible();
+});
+
+test("an install the agent refuses says why in the confirm, and leaves the box as it was", async ({ app }) => {
+  mockOnly("installs a helper");
+  await app.open({ params: { helper: "mismatch" } });
+  await app.openWorktree("gpu/ci-flake");
+  const p = await openPanel(app, "Endpoints");
+  await p.getByRole("button", { name: "Turn on…" }).click();
+  const confirm = app.page.getByRole("alertdialog");
+  await confirm.getByRole("button", { name: "Install and turn on" }).click();
+  // The agent's own sentence: the download was checked and thrown away.
+  await expect(confirm).toContainText("does not match the checksum in the plugin's manifest; nothing was installed");
+  await expect(p).toHaveAttribute("data-state", "off");
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(p.getByTestId("leadline-notice")).toContainText("Leadline is off on gpu");
 });
 
 test("an older helper than the plugin carries offers an update, after a confirm", async ({ app }) => {

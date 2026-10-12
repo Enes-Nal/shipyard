@@ -1,4 +1,4 @@
-import { useBoxes, worktreeLocation, type BerthPluginContext, type WorktreePanelProps } from "@berth/plugin";
+import { useBoxes, worktreeLocation, type BerthPluginContext, type HelperStatus, type WorktreePanelProps } from "@berth/plugin";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -24,12 +24,21 @@ import {
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 
 import { leadline, type Leadline, type Scope, type Source } from "./api";
-import { ago, span } from "./format.ts";
+import { ago, sentence, span } from "./format.ts";
 import { type Fault, readHelper, turnOn, useHelper, useLive, useVisible, useWindow, type Window, WINDOWS } from "./live";
 import { commandOf, sourceOf } from "./source.ts";
 
 // The program this plugin installs on a box, as its manifest names it.
 export const HELPER = "berth-leadline";
+
+// Why a box can't run the helper, and whether updating the box would help.
+// The laptop answers "unsupported" for two things: the box's berthd can't
+// run helpers at all (it never said its platform), or it can and the plugin
+// has no build for that platform, which no update of the box changes.
+export function cantRun(s: HelperStatus, box: string): { why: string; update: boolean } {
+  if (s.platform) return { why: `${HELPER} has no build for ${s.platform} yet, so it can't be installed on ${box}.`, update: false };
+  return { why: sentence(s.error ?? `${box}'s berthd is from before plugins could install a program on a box`), update: true };
+}
 
 // What a panel's body is given once the helper is running on its box.
 export interface PanelContext {
@@ -117,26 +126,26 @@ export function HelperNotice({ berth, box }: { berth: BerthPluginContext; box: s
   const s = view.status;
   if (!s) return <Notice icon="TriangleAlert" title={`Couldn't ask ${box} about Leadline`} body={view.fault?.message} actions={<Button size="sm" variant="outline" onClick={() => void readHelper(berth, box)}>Try again</Button>} />;
   switch (s.state) {
-    case "unsupported":
+    case "unsupported": {
+      const { why, update } = cantRun(s, box);
       return (
         <Notice
           icon="ServerOff"
           title={`${box} can't run Leadline yet`}
-          body={
-            <>
-              {s.error ?? `Its berthd is from before plugins could install a program on a box, or ${HELPER} has no build for ${s.platform || "its platform"}.`} Update the box in Settings → Boxes, then turn Leadline on.
-            </>
-          }
+          body={update ? `${why} Update the box in Settings → Boxes, then turn Leadline on.` : why}
           actions={
             <>
-              <Button size="sm" variant="outline" onClick={() => berth.openSettings("boxes")}>
-                Open Settings → Boxes
-              </Button>
+              {update && (
+                <Button size="sm" variant="outline" onClick={() => berth.openSettings("boxes")}>
+                  Open Settings → Boxes
+                </Button>
+              )}
               {about}
             </>
           }
         />
       );
+    }
     case "installing":
     case "starting":
       return (

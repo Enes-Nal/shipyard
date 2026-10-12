@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import type { EndpointDetail, QueryDetail, TraceDetail } from "../../../plugins/leadline/src/api.ts";
 import { endpointBrief, endpointProblem, failuresOf, queryBrief, queryProblem } from "../../../plugins/leadline/src/brief.ts";
-import { ago, bytes, count, ms, pct, per, plural, span, tick } from "../../../plugins/leadline/src/format.ts";
+import { ago, bytes, count, ms, pct, per, plural, sentence, span, tick } from "../../../plugins/leadline/src/format.ts";
 import { merge } from "../../../plugins/leadline/src/pages.ts";
 import { commandOf, namePart, shapeOf, sourceOf, tableOf } from "../../../plugins/leadline/src/source.ts";
 
@@ -227,4 +227,10 @@ test("how a request failed is read off its trace with every value taken out", ()
   // For one query: its own failed calls, and no logs.
   assert.deepEqual(failuresOf(trace, "INSERT INTO orders (customer_id) VALUES (?)").map((f) => f.span), ["INSERT INTO orders (customer_id) VALUES (?)"]);
   assert.deepEqual(failuresOf(trace, "SELECT ?"), []);
+});
+
+test("what a box said is shown as a sentence", () => {
+  assert.equal(sentence("this box runs an older berthd, which cannot run helpers; update it"), "This box runs an older berthd, which cannot run helpers; update it.");
+  assert.equal(sentence("  Already one.  "), "Already one.");
+  assert.equal(sentence(""), "");
 });

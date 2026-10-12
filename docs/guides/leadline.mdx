@@ -54,8 +54,8 @@ boxes and what each one has.
 | **Off** | Nothing is installed or running. **Turn on…** asks first, then downloads `berth-leadline` for the box's platform, checks it against the checksum in the plugin, and has the box run it. |
 | **Installing…**, **Starting…** | On its way. This takes a moment the first time. |
 | **Running** | It is recording. The row says how much it holds and which worktrees have sent something. |
-| **Failed** | The install or the start went wrong; the row says why. **Try again** repeats it. |
-| **Can't run it** | The box's `berthd` is from before plugins could install a program, or there is no build of the program for the box's platform. Update the box in **Settings → Boxes**. |
+| **Failed** | The program is on the box and won't start; the row says why, in the box's words. **Try again** repeats it. A download that fails, or doesn't match the plugin's checksum, installs nothing: the confirm says why and the box stays **Off**. |
+| **Can't run it** | Either the box's `berthd` is from before plugins could install a program (update the box in **Settings → Boxes**), or there is no build of the program for the box's platform, which the row says and which updating the box doesn't change. |
 | **Offline** | The box can't be reached, so its helper can't either. |
 
 A worktree's tab on a box where Leadline is off says so, with the same
