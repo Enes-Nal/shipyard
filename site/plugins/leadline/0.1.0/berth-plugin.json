@@ -25,6 +25,7 @@
         "POSTGRES_URL",
         "OTEL_*"
       ],
+      "detach": "/api/detach",
       "assets": {
         "linux-amd64": {
           "url": "https://github.com/cosscom/shipyard/releases/download/leadline-helper-v0.1.0/berth-leadline-linux-amd64",
