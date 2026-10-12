@@ -10,6 +10,7 @@ import { handleQueueEvent } from "@/lib/queue";
 import { scheduleRuns } from "@/lib/runs";
 import { handleTeamEvent } from "@/lib/team";
 import { handleSessionOpen } from "@/lib/session-open";
+import { handleSkillsEvent } from "@/lib/skills-notice";
 import { archiveFailed, worktreeGone } from "@/lib/remove-worktree";
 import { markRemoving, markScript, removalOf, useRemovals } from "@/lib/removing";
 import { type BoxPart, scheduleRefresh, useStore } from "@/lib/store";
@@ -62,6 +63,9 @@ export function handleEvent(e: BerthEvent) {
   if (e.type.startsWith("queue.")) handleQueueEvent(e);
   // A team setup's runner on a box, or a newer commit of one (lib/team).
   if (e.type.startsWith("team.") || e.type === "box.connected") handleTeamEvent(e);
+  // A box's skills installed or removed, or the reminder's snooze changed
+  // in another window (lib/skills-notice).
+  if (e.type.startsWith("skills.") || e.type === "app.changed") handleSkillsEvent(e);
   notifyFor(e);
 }
 

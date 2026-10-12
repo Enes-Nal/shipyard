@@ -33,7 +33,8 @@ export type View =
   // run, when set, opens Review's Compare of an attempts run.
   | { kind: "review"; run?: { box: string; id: string } }
   | { kind: "worktrees" }
-  | { kind: "settings"; section?: string }
+  // box, when set, is the box a section opens on (Agents: its skills).
+  | { kind: "settings"; section?: string; box?: string }
   | { kind: "plugin"; screen: string }
   // Team setup (lib/team): an org's <org>/.berth, read from GitHub, to set a
   // box up with. No org asks for one; from says how the page was reached.

@@ -354,6 +354,57 @@ export const scenes: Scene[] = [
     },
   },
   {
+    // The sidebar's notice that boxes' skills aren't installed or are out
+    // of date (components/sidebar/skills-notice.tsx), unfolded, with an
+    // install a hook on the box refused.
+    id: "skills-notice",
+    async run(app, theme) {
+      const { page } = app;
+      await app.open({ theme });
+      await page.evaluate(() => (window as unknown as { __berthMockSkills: { refuse(box: string): void } }).__berthMockSkills.refuse("devl"));
+      await page.getByTestId("skills-notices-more").click();
+      await page.locator('[data-testid=skills-notice][data-box="devl"]').getByRole("button", { name: "Install now" }).click();
+      await expect(page.getByTestId("skills-notice-error")).toBeVisible();
+      await expect(page.locator('[data-testid=skills-notice][data-box="gpu"]')).toBeVisible();
+    },
+  },
+  {
+    // Its Snooze menu.
+    id: "skills-notice-snooze",
+    extra: true,
+    async run(app, theme) {
+      const { page } = app;
+      await app.open({ theme });
+      await page.getByRole("button", { name: "Snooze the reminder for devl" }).click();
+      await expect(page.getByRole("menuitem", { name: "Don't remind me for devl" })).toBeVisible();
+    },
+  },
+  {
+    // The same notices from the folded sidebar's one button.
+    id: "skills-notice-rail",
+    extra: true,
+    async run(app, theme) {
+      const { page } = app;
+      await app.open({ theme });
+      await page.getByRole("button", { name: "Hide the sidebar" }).click();
+      await page.getByTestId("skills-notices-rail").click();
+      await expect(page.getByTestId("skills-notice")).toHaveCount(2);
+    },
+  },
+  {
+    // Settings → Agents with a box's reminder snoozed.
+    id: "settings-agents-snoozed",
+    extra: true,
+    async run(app, theme) {
+      const { page } = app;
+      await app.open({ theme });
+      await page.getByRole("button", { name: "Snooze the reminder for devl" }).click();
+      await page.getByRole("menuitem", { name: "Until tomorrow" }).click();
+      const body = await app.openSettings("agents");
+      await expect(body.getByRole("button", { name: "Remind me now" })).toBeVisible();
+    },
+  },
+  {
     id: "artifact-card",
     async run(app, theme) {
       await chat(app, theme, "devl/search-perf");
