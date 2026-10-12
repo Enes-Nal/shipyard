@@ -10,6 +10,22 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Leadline: what your code did in development, as tabs on a worktree.** A
+  new plugin in **Settings → Plugins → Browse** adds **Queries**,
+  **Traces**, **Logs** and **Endpoints** to a worktree: every database
+  query grouped by shape with its N+1s flagged, each request as a
+  waterfall with its SQL and logs, and per-route latency and queries per
+  request. **Send to the agent** writes a slow query, an N+1 or a failing
+  endpoint up for the worktree's agent, and shows you the text before it
+  goes. It is off until you turn it on for a box, which installs a small
+  program there (`berth-leadline`) after asking; what it records stays on
+  that box, for 72 hours. Queries to a Postgres on the box are recorded
+  with no changes to your app; traces and logs need an OpenTelemetry SDK
+  in it. A plugin that carries a program like this says so, by the
+  program's name, before you allow it and in its row in Settings →
+  Plugins. See [Leadline](/guides/leadline); plugin authors get
+  `berth.helper` and a `Chart` component in the
+  [plugin SDK](/reference/plugin-sdk#helper).
 - **Plugins can be installed from the app.** Settings → Plugins has a new
   **Browse** list of plugins that aren't built in, starting with Hello
   ports. Install puts one under Installed, off: it runs only once you allow

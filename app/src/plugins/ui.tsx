@@ -35,6 +35,7 @@ import { WidgetEmpty, WidgetRow, WidgetSkeleton } from "@/views/home/widgets/par
 import { PluginPage, ViewHeader } from "@/views/view-header";
 
 const NamedIcon = lazy(() => import("@/plugins/dynamic-icon"));
+const ChartView = lazy(() => import("@/components/art/views/chart-view"));
 
 // Icon draws any lucide icon by name, for plugins and their sidebar items.
 // Like lucide's DynamicIcon it draws nothing until the icon has loaded.
@@ -43,6 +44,20 @@ export function Icon({ name, className }: { name: string; className?: string }) 
     <Suspense fallback={null}>
       <NamedIcon name={name} className={className} />
     </Suspense>
+  );
+}
+
+// Chart draws a berth.chart (lib/art/chart-spec.ts) with the app's own chart
+// components, in the theme's colours: what an agent's chart artifact is
+// drawn with. Its box sets the size; the chart fills it.
+export function Chart({ spec, className }: { spec: object; className?: string }) {
+  const body = JSON.stringify({ $schema: "berth.chart/v1", ...spec });
+  return (
+    <div className={cn("flex h-64 min-w-0 flex-col", className)}>
+      <Suspense fallback={<Skeleton className="h-full w-full" />}>
+        <ChartView body={body} size="full" />
+      </Suspense>
+    </div>
   );
 }
 
@@ -128,6 +143,7 @@ export const pluginUi = {
   AgentPicker,
   AgentIcon,
   Icon,
+  Chart,
   ViewHeader,
   PluginPage,
   cn,

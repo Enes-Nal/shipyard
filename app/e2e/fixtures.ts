@@ -18,7 +18,9 @@ import { type BrowserContext, expect, type Locator, type Page, test as base } fr
 // attachment-chip, panel with data-panel, browser-pane with data-mode,
 // chat-background, settings-nav-<id>, settings-<id>, theme-option with
 // data-theme-id, plugin-row and market-plugin with data-plugin,
-// market-error, zoom-hud), and the attributes the app already keys on
+// market-error, zoom-hud, leadline with data-leadline and data-state, and
+// its leadline-row, -detail, -notice, -box), and the attributes the app
+// already keys on
 // (data-tab, data-ws, data-group, data-tab-strip, data-pane-area).
 
 export const live = process.env.BERTH_E2E_LIVE === "1";

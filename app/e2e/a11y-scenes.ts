@@ -567,5 +567,100 @@ export const scenes: Scene[] = [
       await expect(app.page.getByRole("dialog")).toBeVisible();
     },
   },
+  // Leadline's panels (plugins/leadline) on the mock helper's fixtures
+  // (src/lib/mock-helper.ts): a list with a row's detail open beside it.
+  {
+    id: "leadline-queries",
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/checkout-fix", "Queries");
+      await p.getByTestId("leadline-row").filter({ hasText: "FROM order_items" }).click();
+      await expect(p.getByTestId("leadline-detail").getByTestId("leadline-traces").first()).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-traces",
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/checkout-fix", "Traces");
+      await p.getByTestId("leadline-row").filter({ hasText: "POST /api/checkout" }).first().click();
+      await p.getByTestId("leadline-span").filter({ hasText: "INSERT INTO orders" }).click();
+      await expect(p.getByTestId("leadline-span-info")).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-logs",
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/checkout-fix", "Logs");
+      await p.getByTestId("leadline-row").filter({ hasText: "webhook failed" }).first().click();
+      await expect(p.getByTestId("leadline-log-info")).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-endpoints",
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/checkout-fix", "Endpoints");
+      await p.getByTestId("leadline-row").filter({ hasText: "webhooks" }).click();
+      await expect(p.getByTestId("leadline-detail").getByTestId("leadline-traces").first()).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-screen",
+    async run(app, theme) {
+      await app.open({ theme });
+      // Its sidebar item starts under More: the palette's command is there
+      // once the plugin has loaded.
+      const input = app.page.getByRole("combobox", { name: "Search sessions, worktrees and commands" });
+      const command = app.page.getByRole("option", { name: /^Show Leadline/ });
+      await expect(async () => {
+        if (!(await input.isVisible())) await app.page.keyboard.press("Meta+k");
+        await input.fill("Show Leadline");
+        if (!(await command.isVisible())) await app.page.keyboard.press("Escape");
+        await expect(command).toBeVisible({ timeout: 500 });
+      }).toPass();
+      await command.click();
+      await expect(app.page.getByTestId("leadline-heard").first()).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-off",
+    extra: true,
+    async run(app, theme) {
+      const p = await leadline(app, theme, "gpu/ci-flake", "Queries");
+      await p.getByRole("button", { name: "Turn on…" }).click();
+      await expect(app.page.getByRole("alertdialog")).toBeVisible();
+    },
+  },
+  {
+    id: "leadline-nothing-yet",
+    extra: true,
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/qa-deck", "Traces");
+      await expect(p.getByTestId("leadline-notice")).toContainText("Nothing from qa-deck yet");
+    },
+  },
+  {
+    id: "leadline-send",
+    extra: true,
+    async run(app, theme) {
+      const p = await leadline(app, theme, "devl/checkout-fix", "Endpoints");
+      await p.getByRole("button", { name: "Send this failing endpoint to the agent" }).click();
+      await expect(app.page.getByTestId("leadline-send").getByRole("textbox")).toBeVisible();
+    },
+  },
 ];
+
+// leadline opens one of Leadline's panels in a worktree, once the plugin
+// has loaded and the "+" menu lists it.
+async function leadline(app: App, theme: string, wt: string, title: string) {
+  await app.open({ theme });
+  await app.openWorktree(wt);
+  const option = app.page.getByRole("option", { name: new RegExp(`^${title}`) });
+  await expect(async () => {
+    if (!(await option.isVisible())) await app.page.getByRole("button", { name: "New tab" }).click();
+    await expect(option).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await option.click();
+  const p = app.page.locator(`[data-testid=leadline][data-leadline=${title.toLowerCase()}]:visible`);
+  await expect(p.getByTestId("leadline-row").or(p.getByTestId("leadline-notice")).first()).toBeVisible();
+  return p;
+}
 

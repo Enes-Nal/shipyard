@@ -58,6 +58,11 @@ State, in `<state>/box/`:
 | `ports.json` | Each worktree's block of ports |
 | `logs/` | Setup and archive logs |
 | `units/` | Unit and service logs |
+| `helpers/<plugin>/install.json` | A [plugin's helper](/guides/plugins#give-a-plugin-a-helper) as it was installed: its name, version, arguments, size and SHA-256 (0600). berthd starts what this names, and checks the program against it each time |
+| `helpers/<plugin>/bin/<version>/<name>` | The helper's program, for its owner alone (0700). One version is kept |
+| `helpers/<plugin>/data/` | The helper's own data: `{dir}` in its arguments, and where it writes its ready file. It stays when the helper is turned off, and goes when it is removed with its data |
+| `helpers/<plugin>/attached.json` | The services that were last started with what the helper answered, so that turning it off can say which still point at it |
+| `helpers/<plugin>/helper.log`, `helper.log.1` | What the helper printed, and when berthd started and stopped it (0600). Past 4 MB it starts over, and the log before that is kept once |
 | `kits/<location>/<kit>/` | Installed kits' files (`$BERTH_KIT_DIR`) |
 | `paused.json` | Paused worktrees |
 | `agent-states.json` | What each agent last reported, by working directory |
@@ -107,6 +112,21 @@ agents, `exec`, repository hooks, flow steps, services):
 | `PORT` | `$BERTH_PORT`, for servers that read `PORT`, unless the box or `env` sets it |
 | `AGENT_BROWSER_IDLE_TIMEOUT_MS` | Terminals and agents: `300000`, so an [agent-browser](/guides/agent-browser#agent-browser) left idle closes after 5 minutes, unless the box, `env` or berthd's environment sets it |
 | `ORCA_ROOT_PATH`, `ORCA_WORKTREE_PATH`, `ORCA_WORKSPACE_NAME` | Setup and archive scripts, for scripts written for Orca |
+| what a helper answers | Services only: before berthd starts one, each running [plugin's helper](/guides/plugins#attach-what-a-helper-adds-to-a-service) that asks to be told may set the variables its manifest names (`OTEL_*`, a `DATABASE_URL` through its proxy). Never a `BERTH_` variable, and never one that names a secret |
+
+### What a helper gets
+
+A [plugin's helper](/guides/plugins#give-a-plugin-a-helper) runs with a small
+environment of its own, not berthd's: what berthd itself was told (a token,
+a 1Password session) is not passed on.
+
+| Variable | Meaning |
+| --- | --- |
+| `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `LANG`, `LC_ALL`, `LC_CTYPE`, `TMPDIR`, `TZ` | berthd's own, where it has them |
+| `BERTH_HELPER` | The plugin's id |
+| `BERTH_HELPER_DIR` | The helper's data directory: `{dir}` in its arguments, and where it starts |
+| `BERTH_HELPER_HOME` | The box's `helpers/` folder. With `BERTH_HELPER` it marks the process as a helper of this berthd's, which is how one left running by a berthd that was killed is found and ended |
+| `BERTH_BOX` | The box's name |
 
 ### What a hook gets
 

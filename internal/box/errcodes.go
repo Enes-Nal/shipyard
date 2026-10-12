@@ -28,6 +28,11 @@ import (
 //	                 there (412); the answer carries the file as it is now
 //	moved            a pull request's head is not the commit confirmed
 //	dirty            a worktree has uncommitted changes, so it was left
+//	helper_off       a plugin's helper is not running, so nothing answers (409)
+//	helper_invalid   a helper's spec or its plugin's id is not one the box takes
+//	helper_mismatch  an uploaded helper is not the size and SHA-256 named
+//	helper_missing   the box does not hold the helper it was asked to start (409)
+//	helper_unreachable  a running helper did not answer (502)
 //	bad_request      the request itself was wrong
 //	internal         anything else
 const (

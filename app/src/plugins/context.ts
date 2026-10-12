@@ -2,6 +2,7 @@ import type { BerthApi, BerthPluginContext } from "@berth/plugin";
 import { createContext } from "react";
 
 import { boxApi, type Client } from "@/lib/api";
+import { makeHelperApi } from "@/lib/helper";
 import { makeLinearApi } from "@/lib/linear";
 import { notify } from "@/lib/notify";
 import * as orchestrate from "@/lib/orchestrate";
@@ -96,6 +97,7 @@ export function makeContext(id: string, client: Client): BerthPluginContext {
     storage: pluginStorage(id),
     prompts: makePromptsApi(),
     linear: makeLinearApi(client),
+    helper: makeHelperApi(client, id),
     orchestrate: {
       send: orchestrate.send,
       wait: orchestrate.wait,

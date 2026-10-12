@@ -36,7 +36,9 @@ import { cn } from "@/lib/utils";
 // The size a thumbnail is drawn at before it is scaled down.
 const THUMB_W = 560;
 
-export default function ChartView({ body, size, height }: ViewProps) {
+// It reads only the spec and the size it is drawn at, so a plugin's chart
+// (plugins/ui.tsx's Chart) is drawn by the same code as an artifact's.
+export default function ChartView({ body, size, height }: Pick<ViewProps, "body" | "size" | "height">) {
   const spec = useMemo(() => parseChart(body), [body]);
   const [box, width] = useWidth();
   useDocumentChartVars();

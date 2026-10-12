@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin, searchForWorkspaceRoot } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "node:child_process";
@@ -177,6 +177,9 @@ export default defineConfig(({ mode }) => ({
     port: 1420,
     strictPort: true,
     host: host || false,
+    // Mock mode reads Leadline's files from the listing in site/plugins/
+    // (src/lib/mock-marketplace.ts), which is outside this folder.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), path.resolve(import.meta.dirname, "../site/plugins")] },
     hmr: host
       ? {
           protocol: "ws",

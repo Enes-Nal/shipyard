@@ -390,6 +390,75 @@ export interface BerthLinear {
   comment(id: string, body: string): Promise<void>;
 }
 
+// A plugin's helper: a program of its own that Shipyard installs and runs on
+// a box the person turns it on for (berth-plugin.json's "box.helper" names
+// it, with its builds and their checksums). The box daemon keeps it running,
+// gives it a folder for its data and passes requests through to its HTTP
+// API; a plugin only ever reaches its own.
+export type HelperState =
+  // The plugin, as it is installed, names no helper: there is nothing to install.
+  | "none"
+  // This box can't run it: its berthd is older than helpers, or the plugin
+  // has no build for its platform.
+  | "unsupported"
+  // Not on this box: it was never installed there, or was turned off. A box
+  // doesn't say which, and what the helper recorded before may still be there.
+  | "off"
+  | "installing"
+  | "starting"
+  | "running"
+  // It was installed or started and that went wrong; error says how.
+  | "failed";
+
+export interface HelperStatus {
+  plugin: string;
+  box: string;
+  state: HelperState;
+  // The box's platform, as the manifest's assets name it: "linux-amd64".
+  platform: string;
+  // The version on the box, and the one the installed plugin carries.
+  version?: string;
+  latest?: string;
+  // The box runs another helper than the plugin carries (its version, its
+  // build or how it is run): install() replaces it.
+  update?: true;
+  error?: string;
+  // In the answer to remove(): the services running on the box that were
+  // started while the helper was on. What the helper gave them (where to send
+  // telemetry, a database URL through it) is still in their environment, so
+  // they need a restart to be as the project wrote them.
+  attached?: HelperService[];
+}
+
+// A worktree's service, as the box names it.
+export interface HelperService {
+  location: string;
+  worktree: string;
+  service: string;
+}
+
+export interface BerthHelper {
+  // What the box has of this plugin's helper. A box that can't run one is
+  // an answer ("unsupported"), not an error; a box that is offline rejects.
+  status(box: string): Promise<HelperStatus>;
+  // Installs the helper on the box, or updates it, and turns it on. Ask the
+  // person first: it puts a program on their machine. It resolves with the
+  // state it reached, which can still be "installing" or "starting": read
+  // status() until it settles.
+  install(box: string): Promise<HelperStatus>;
+  // Stops the helper and removes it from the box. What it recorded stays in
+  // its folder for the next install, unless purge. It resolves with the
+  // state it left, and in `attached` the running services that still point
+  // at the helper: say so, they are not restarted for anyone.
+  remove(box: string, opts?: { purge?: boolean }): Promise<HelperStatus>;
+  // The helper's own HTTP API, through the box: request("devl", "GET",
+  // "queries?limit=50") asks the helper for /api/queries?limit=50. It
+  // rejects with code "helper_off" (status 409) when the helper isn't
+  // running there, and with the helper's own code and message when it
+  // refuses the request.
+  request<T = unknown>(box: string, method: string, path: string, body?: unknown): Promise<T>;
+}
+
 export interface BerthPluginContext {
   // The plugin's id: the name of its folder under ~/.berth/plugins (or the
   // built-in's folder), not a field in berth-plugin.json.
@@ -398,6 +467,10 @@ export interface BerthPluginContext {
   readonly orchestrate: BerthOrchestrate;
   readonly prompts: BerthPrompts;
   readonly linear: BerthLinear;
+  // This plugin's helper on a box (see BerthHelper). Every call is for the
+  // plugin's own id; one without "box.helper" in its manifest has none to
+  // install.
+  readonly helper: BerthHelper;
   addSidebarItem(item: SidebarItem): Dispose;
   addScreen(screen: Screen): Dispose;
   addWorktreePanel(panel: WorktreePanel): Dispose;
