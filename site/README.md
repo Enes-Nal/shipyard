@@ -13,7 +13,9 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   by transform only (still for reduced motion, paused when hidden).
 - The header is coss.com's bar, as on coss.com/ui: `coss.com` in Cal Sans
   with the product in grey, then Docs, GitHub (with the repository's stars,
-  from the GitHub API) and "Close the laptop" as ghost buttons.
+  from the GitHub API) and "Close the laptop" as ghost buttons. Its lines
+  too: a rail down each side of the page at the header's width, a hairline
+  across the top of a chapter, and a small square where they cross.
 - "Close the laptop" in the header puts the page to night by hand
   (`data-theme` on `<html>`): the harbour redraws at night.
 - At night (dark mode, or the laptop closed) the harbour comes alive:

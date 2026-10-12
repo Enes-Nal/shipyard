@@ -95,11 +95,15 @@
   box-sizing: border-box;
 }
 html {
+  /* The rails' squares sit just outside the page's width on a narrow window. */
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: 64px;
 }
 body {
+  /* The rails run the page's height. */
+  position: relative;
   margin: 0;
   background: var(--bg);
   color: var(--fg);
@@ -202,7 +206,7 @@ code {
   top: 0;
   z-index: 5;
   height: var(--header-h);
-  /* Over the harbour, not above it: the hero still starts at the top. */
+  /* The page scrolls under it; main's top padding keeps the hero below it. */
   margin-bottom: calc(var(--header-h) * -1);
   background: color-mix(in srgb, var(--bg) 80%, transparent);
   backdrop-filter: blur(8px);
@@ -295,7 +299,92 @@ code {
   }
 }
 
+/* The lines, as on coss.com: a rail down each side of the page just outside
+   the header's width, a hairline across the top of a chapter, and a small
+   square where a hairline crosses a rail. On a window narrower than the
+   header's width the rails fall just outside it. */
+.rails,
+.head-marks,
+.rule {
+  pointer-events: none;
+  max-width: 1416px;
+  margin: 0 auto;
+}
+.rails {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+}
+.rails::before,
+.rails::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--border) 64%, transparent);
+}
+.rails::before {
+  left: -12px;
+}
+.rails::after {
+  right: -12px;
+}
+.head-marks {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 7;
+  height: 64px;
+  --mark-top: 59.5px;
+}
+.rule {
+  position: relative;
+  z-index: 7;
+  height: 0;
+  --mark-top: -3.5px;
+}
+.marks::before,
+.marks::after {
+  content: "";
+  position: absolute;
+  top: var(--mark-top);
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--bg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+.marks::before {
+  left: -15.5px;
+}
+.marks::after {
+  right: -15.5px;
+}
+/* Narrower than the header's width plus the rails, they'd sit at the window's
+   edge or past it. */
+@media (max-width: 1441px) {
+  .rails,
+  .marks::before,
+  .marks::after {
+    display: none;
+  }
+}
+.chapter.ruled {
+  position: relative;
+}
+.chapter.ruled::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: color-mix(in srgb, var(--border) 64%, transparent);
+}
+
 /* Hero: the harbour band, then the pitch at its foot, where it dissolves. */
+main {
+  padding-top: 64px;
+}
 .hero {
   position: relative;
   /* The whole page: the harbour and what's under it fill the window. */
