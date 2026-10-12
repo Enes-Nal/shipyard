@@ -9,6 +9,33 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+Both need each box's new `berthd`, and the first the Database plugin's
+update (**Settings → Plugins**).
+
+- **Database finds a worktree's database in its `.env`.** Until now the
+  Database tab only showed a database once Shipyard had started one of the
+  worktree's services with its address, so a project that keeps
+  `DATABASE_URL` in `.env` and starts its own dev server saw "No database
+  yet" for every worktree. Now, when you open the tab and no service has
+  said, the box reads the worktree's `.env`, `.env.development`,
+  `.env.local` and `.env.development.local` and takes the `DATABASE_URL`
+  or `POSTGRES_URL` it finds, if it points at a Postgres on the box
+  itself. The tab says where a database came from, the refresh button
+  looks in the files again, and when there is none it says which files it
+  read and why a variable it found isn't shown. See
+  [which databases appear](/guides/database#which-databases-appear).
+- **Leadline records queries for projects that keep `DATABASE_URL` in
+  `.env`.** When Shipyard starts a worktree's service and its own
+  environment for it has no `DATABASE_URL` or `POSTGRES_URL`, it now takes
+  the one in the worktree's `.env` files and starts the service with
+  Leadline's proxy in front of it, so **Queries** fills in without moving
+  the address into Shipyard's config. A variable Shipyard's environment
+  already has still wins, and the files are never changed. An app that
+  overrides its environment from `.env` connects round Leadline. See
+  [which databases Leadline sees](/guides/leadline#which-databases-leadline-sees).
+
 ## v0.3.14
 
 Database, Leadline and `worktree new --no-setup` need each box's new

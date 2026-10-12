@@ -520,6 +520,24 @@ A helper that only needs to know about the service answers `{"env": {}}`:
   has the service's variables that match and no others, and a variable in
   the answer that does not match is ignored. It is in the manifest, so it is
   part of what the person allowed.
+- **It matches the worktree's `.env` too.** Many projects keep
+  `DATABASE_URL` in the worktree's dotenv files and nowhere Shipyard
+  assembles an environment from: the dev server loads `.env` itself. So a
+  variable in `attach_env` that the service's own environment does not
+  have is taken from the worktree's `.env`, `.env.development`,
+  `.env.local` and `.env.development.local` (in that order, a later file
+  winning), and sent as the service's own value. A variable the project
+  set for the service always wins: the files are not consulted for it.
+  When the helper answers another value for such a variable, berthd puts
+  it in the service's environment, so the process starts with it. A dev
+  server that loads `.env` itself (Next.js, dotenv, Prisma) leaves a
+  variable that is already set alone, so the helper's value is the one the
+  app uses, and the file is never written. An app that loads `.env` with
+  *override* on replaces it with the file's again, and goes round the
+  helper. A helper that answers nothing for the variable, or answers the
+  file's own value back, changes nothing. The files are only read when a
+  helper with `attach` is running; [how they are read](#attachenv-a-look-in-the-worktrees-env-on-request)
+  is below.
 - **Secrets stay out of it.** A variable that names a
   [secret](/guides/secrets) (`op://…`, `env://…`) is not sent, since its
   value is only read when the service starts, and is not replaced. Neither
@@ -551,7 +569,60 @@ A helper that only needs to know about the service answers `{"env": {}}`:
   the project wrote it, and is not named any more.
 
 Only services are attached: a dev server an agent starts by hand in its
-terminal has the worktree's usual environment.
+terminal has the worktree's usual environment. A helper that only needs to
+*know* about a worktree, not to change how its server starts, can be told
+without a service: see below.
+
+### attachEnv: a look in the worktree's .env on request
+
+A project whose dev servers Shipyard does not start never reaches
+`attach`. For those, a plugin's panel can have the box look in the
+worktree's dotenv files and tell the helper what it finds:
+
+```ts
+const look = await berth.helper.attachEnv(box, { location, worktree });
+// { files: [".env", ".env.local"],
+//   variables: [{ name: "DATABASE_URL", file: ".env.local", sent: true }],
+//   skipped: [], answer: { connections: ["c_1c28ba20e1b6"] }, … }
+```
+
+berthd reads the files, keeps the variables `attach_env` names, and `POST`s
+the same body to the helper's `attach` path with the same token and the
+same two seconds, with **`".env"` as `command`**. A service's name never
+starts with a dot, so a helper that files what it is told by `command` (as
+`berth-database` does) keeps a look apart from a service: looking again
+replaces what the last look found, and what a real service said stays.
+
+- **Nothing is started, so nothing is set.** The `env` of the helper's
+  answer is dropped. The rest of its answer comes back to the plugin as
+  `answer`, so a helper can say what it took (`berth-database`'s
+  `connections`). The worktree is not noted as a service that points at the
+  helper; when the worktree is removed the helper is told by
+  [detach](#detach-when-a-worktree-is-removed) as for any other.
+- **Names, never values.** The answer has the files that were read, the
+  ones that were there and were not read (`skipped`, with why), and each
+  matching variable with the file it was in and whether the helper was
+  told it. A variable that was not sent says why: `secret` (it names a
+  secret), `unresolved`, `empty` or `too_long`.
+- **Only four files, in the worktree's own folder**: `.env`,
+  `.env.development`, `.env.local`, `.env.development.local`, a later one
+  winning. A file that is a link out of the worktree is not followed
+  (`outside`), and one over 256 KB is not read (`too_large`). The plugin
+  names a location and a worktree the box knows, never a path.
+- **dotenv's syntax, not a shell's.** Comments, `export`, single and double
+  quotes (with escapes in double quotes), backticks, values over several
+  lines. `${NAME}`, `${NAME:-fallback}` and `$NAME` are filled in from the
+  other variables of the same files (at a service's start, from the
+  service's own environment first); never from berthd's environment, and
+  nothing is run. A `${NAME}` nothing sets leaves the variable `unresolved`
+  and unsent, and a bare `$NAME` nothing sets stays as it is written.
+- **Ask when the person asks.** Opening your panel is asking; a timer is
+  not. An older box answers `box_outdated` (a 404), and an older Shipyard
+  has no `berth.helper.attachEnv` at all: check for both, and fall back to
+  what you showed before.
+- **Only from a paired laptop**, like installing the helper: what runs on
+  the box cannot have a helper told through berthd's socket, and a
+  `before:helper.attach` [gate](/reference/events#gates) can refuse a look.
 
 ### Detach: when a worktree is removed
 

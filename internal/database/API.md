@@ -330,11 +330,13 @@ POST /api/attach
 | --- | --- | --- |
 | `project` | required | The repository, as Shipyard names it. |
 | `worktree` | `""` | The worktree's name; empty for the project's main checkout. |
-| `command` | `""` | The service's name in the project's config. |
+| `command` | `""` | The service's name in the project's config. `.env` when the variables are not a service's but what the box daemon read in the worktree's own `.env` files, because the worktree's tab was opened: no service has that name, so what the files say is kept apart from what a service was started with. |
 | `env` | `{}` | The variables of the service's environment that the plugin's manifest names. |
 | `box`, `branch`, `path` | none | Taken and not used. |
 
-What the box daemon asks before it starts a worktree's service. The helper
+What the box daemon asks before it starts a worktree's service, and when
+the worktree's Database tab is opened and it has looked in the worktree's
+`.env` files (`command` is then `.env`). The helper
 reads each value ([Which databases](#which-databases)) and notes the ones
 that are a database on this machine as connections of the worktree.
 
