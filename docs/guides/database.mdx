@@ -1,0 +1,254 @@
+---
+title: Database
+description: "A worktree's own development database, as a tab on the worktree: browse its tables, edit rows and run SQL, read-only until you unlock it. Postgres for now."
+---
+
+Database is a plugin that opens the database a worktree's app uses in
+development: its tables and their rows, each table's structure, and a
+console for SQL. A small program on the box, `berth-database`, sits beside
+the database and does the reading; a tab on the worktree shows it. It is
+read-only until you unlock writes, and it only ever reaches the worktree's
+own local database.
+
+It isn't built in. Install it from **Settings → Plugins → Browse**, then
+turn it on under **Installed**. Because it carries a program for your
+boxes, the dialog that asks before it runs says so, by the program's name.
+It works on its own: [Leadline](/guides/leadline) doesn't have to be
+installed.
+
+## What it shows
+
+Open **Database** from a worktree's **+** menu, or from ⌘K ("Show this
+worktree's database"). It is about the worktree in front, and only that
+worktree.
+
+### Tables
+
+The left side lists the database's tables by schema, each with about how
+many rows it has, and a box to filter them by name. Views and materialized
+views are listed with the tables and say what they are.
+
+A table opens as a grid:
+
+- **A page at a time.** A hundred rows, or five hundred, with **Previous**
+  and **Next**. The count is the database's own estimate. A page of very
+  wide rows can hold fewer than you asked for; **Next** carries on from
+  where it stopped.
+- **Sort** by clicking a column's heading: once for ascending, again for
+  descending, a third time for the table's own order.
+- **Filter** from a heading's filter button, or **Filter** in the toolbar.
+  A filter is a column, a comparison (`=`, `≠`, `<`, `≤`, `>`, `≥`, `like`,
+  `like, any case`, `is NULL`, `is not NULL`) and a value; several filters
+  narrow together. A column is only offered the comparisons that mean
+  something for its type.
+- **NULL is not empty.** A NULL shows as *NULL* and an empty string as
+  *empty*, never as a blank cell, so the two can't be confused.
+- **Long values** open beside the grid, in a sheet. A value longer than
+  4,000 characters is read cut at that length, and the sheet says so.
+- **Foreign keys.** A cell that points at a row in another table has an
+  arrow that opens that table on that row.
+- **Structure** shows the table's columns with their types and defaults,
+  its primary key, its indexes and its foreign keys.
+
+### Editing
+
+Nothing can be edited until [writes are unlocked](#the-lock). After that:
+
+- Double-click a cell (or press Enter on it) to type a new value. **Set
+  NULL** is its own button: an empty box means the empty string in a text
+  column, and is not accepted in any other.
+- **Add row** adds a row at the top. A cell you leave alone takes the
+  column's default. A column the database always generates (an identity, a
+  computed column) can't be typed in.
+- Tick rows in the margin and **Delete** them.
+
+Nothing is written as you go. Each change is **staged**: marked in the
+grid, counted in a bar under it. **Review** lists every staged change as
+old → new, and lets you take any one back. **Apply** sends them all as one
+edit, in one transaction: all of them apply, or none do. One edit takes up
+to 1,000 changes.
+
+If a row you changed is no longer there when you apply (something else
+deleted it, or changed its key), nothing is applied. The panel says which
+rows are gone, keeps everything staged, and offers to reload the rows or
+drop the changes to the missing ones. A value the table refuses (a
+duplicate key, a foreign key with nothing to point at, text in a number
+column) stops the edit the same way, in the database's own words.
+
+<Callout title="An edit doesn't notice someone else's change">
+  A row is found by its primary key, and nothing else is checked. If your
+  app, an agent or a migration changed a row after you read it and the row
+  is still there, your values replace theirs without a warning. Only a row
+  that is gone stops an edit. Reload the rows first when that matters.
+</Callout>
+
+Two kinds of table can't be edited this way, and say why above the grid:
+
+| A table that is | Can be |
+| --- | --- |
+| A view or a materialized view | Read. Its rows come from a query. |
+| A table with no primary key | Read, and added to. Without a key a row can't be told from another like it, so it can't be edited or deleted here. |
+
+### Console
+
+**Console** is an editor for SQL, with highlighting and completion of the
+database's tables and columns. **Run** (⌘↵) runs one statement: the one the
+cursor is in, or the text you selected. The result is shown in the same
+grid, with the command, the number of rows and how long it took.
+
+- At most 1,000 rows are kept. When a statement returned more, a line says
+  the result was cut off.
+- An error is shown under the editor in the database's own words, with its
+  detail and what it suggests, and the place it points at is underlined in
+  the editor.
+- A statement that runs for more than 10 seconds is stopped, and the
+  console says so.
+- **Explain** shows the statement's plan without running it.
+- **History** lists what was run in this worktree, newest first. It keeps
+  the statements only, on your computer, never what they returned.
+- A table's **Query** button writes a `SELECT` for it in the console.
+
+The console is under the same lock as the grid. A statement that writes is
+refused until writes are unlocked. Unlocked, it runs whatever you type,
+including `DROP TABLE`.
+
+A few things can't be run from it at all, and say why when you try:
+
+- **Statements that can't run inside a transaction**: `VACUUM`,
+  `CREATE DATABASE`, `CREATE INDEX CONCURRENTLY`. Every statement here runs
+  in a transaction of its own.
+- **`COPY … FROM STDIN` and `COPY … TO STDOUT`.** There is nowhere for the
+  data to go.
+- **Anything that needs the statement before it.** Each statement has a
+  session to itself: a `SET`, a temporary table or a `BEGIN` is gone by the
+  next one.
+
+## The lock
+
+Every database opens **read-only**. The lock is at the top right of the
+tab.
+
+- **Unlock writes…** asks once, naming the database and the box, and says
+  how long it lasts.
+- Writes then stay on for **15 minutes**. The time left counts down beside
+  the lock.
+- **Lock** turns writes off at once.
+- When the time runs out, writes lock themselves again. So do they when
+  `berth-database` restarts. Changes you had staged stay staged; applying
+  them asks you to unlock again.
+
+The lock is the helper's, not the tab's. While it is locked, every
+statement runs in a transaction Postgres itself holds read-only, so a write
+is refused by the database, whoever sends it and however it is written. The
+countdown is from the moment you unlocked, whatever the box's clock reads.
+
+It is a guard against accidents in a development database, not a sandbox:
+see [the database editor](/concepts/security#the-database-editor) for what
+it does and doesn't keep out.
+
+## Turning it on for a box
+
+Database is off on every box until you turn it on there. Open **Database**
+(under **More** in the sidebar, or "Show Database" in ⌘K): it lists your
+boxes and what each one has.
+
+| A box says | What it means |
+| --- | --- |
+| **Off** | Nothing is installed or running. **Turn on…** asks first, then downloads `berth-database` for the box's platform, checks it against the checksum in the plugin, and has the box run it. |
+| **Installing…**, **Starting…** | On its way. |
+| **Running** | It is there, and learns each worktree's database as the worktree's services start. |
+| **Failed** | The program is on the box and won't start; the row says why. **Try again** repeats it. |
+| **Can't run it** | Either the box's `berthd` is from before plugins could install a program (update the box in **Settings → Boxes**), or there is no build of the program for the box's platform. |
+| **Offline** | The box can't be reached. |
+
+A worktree's tab on a box where Database is off says so, with the same
+**Turn on…**.
+
+If a tab says **the box needs updating for Database**, the program is
+running and the box's `berthd` is too old to be let in: `berth-database`
+answers only the box's own daemon, which proves itself with a token, and an
+older `berthd` doesn't send one. Update the box in **Settings → Boxes**;
+nothing needs installing again.
+
+**Update** appears when the plugin carries a newer program than the box
+runs. **Turn off** stops and removes the program. **Remove data** also
+deletes what it kept on that box; it can't be undone. Your databases
+aren't touched by either.
+
+## Which databases appear
+
+A worktree's tab shows a database once all of this is true:
+
+1. **Database is on for the box**, and the worktree's app was started
+   after that, as one of its [services](/guides/project-config). A service
+   that was already running needs a restart to be noticed. A server you
+   start by hand in a terminal isn't seen.
+2. **The service has a `DATABASE_URL` or a `POSTGRES_URL`** in its
+   environment.
+3. **It points at a Postgres on the box itself**: `localhost`, `127.0.0.1`
+   or a Unix socket. That is the worktree's own development database.
+
+A worktree's services share what they have: the same database in `web` and
+`worker` is listed once. It stays listed across restarts of the box and of
+the program, and goes when the worktree is removed.
+
+These never appear:
+
+- **A database on another host.** A shared staging database or a hosted
+  one is not opened from here, even when a service's variable names it.
+- **A secret reference.** When the variable holds a reference to a secret
+  and not the address itself, there is no address to read.
+- **Another engine.** Only Postgres, for now.
+
+Until a worktree has one, its tab says so, and says this.
+
+## What it keeps, and where
+
+`berth-database` keeps each worktree's database address, with the
+password that is part of it, in one file in a folder the box gives it,
+readable only by you on that box. It needs the address to connect, and
+keeps it so the tab isn't empty after every restart until each dev server
+is started again. A worktree's entry goes when the worktree is removed, and
+**Remove data** deletes the file. It holds nothing else: no rows, no
+results.
+
+- The address never leaves the box. The app asks the helper through the
+  box's own API, and never sees a password.
+- It doesn't change a service's environment. It only notes what the
+  service was started with.
+- It connects to nothing but the databases on the same box it was told
+  about.
+- What you run in the console is remembered on your computer, as the
+  statements alone.
+- On the box, the program's log notes each edit and each statement run
+  while writes are on by its shape: the table and its columns, or the
+  statement with every value replaced by `?`. Never a value.
+
+It also has nothing to do with what Leadline records. Leadline's
+**Queries** tab lists the statements your *app* sent; what you browse,
+edit and run here is not recorded as your app's queries.
+
+## Limits
+
+- **Postgres only, for now.** The tab is built from what each connection
+  says its engine can do, so another engine can be added; none has been
+  yet.
+- **Local development databases only.** See
+  [which databases appear](#which-databases-appear).
+- **One statement at a time** in the console, and at most 1,000 rows of a
+  result.
+- **A statement is stopped after 10 seconds.**
+- **Nothing carries over between statements**, and what can't run in a
+  transaction can't run here. See [Console](#console).
+- **An edit checks only that each row is still there**, not that it is
+  unchanged. See [Editing](#editing).
+- **A cell longer than 4,000 characters is read cut.** It can be read that
+  far and not edited in the grid; use the console for the whole value.
+- **No schema changes in the grid.** Creating, altering and dropping
+  tables is the console's, once writes are unlocked.
+- **No export or import of files.**
+- **No comparison with `main`'s database.**
+- **Not live.** Rows are read when you open a table, change the page or
+  press the refresh button, not as they change.
+- **Where it runs.** The program is built for Linux and macOS, on amd64
+  and arm64.

@@ -1,10 +1,11 @@
-import type { BerthPluginContext, HelperService, HelperStatus } from "@berth/plugin";
+import type { BerthPluginContext } from "@berth/plugin";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { merge } from "./pages.ts";
 
-// What every panel shares: the time window, the helper's state on a box,
-// and reading again while a panel is on screen.
+// What every panel shares: the time window, and reading again while a panel
+// is on screen. (The helper's state on a box is the app's to keep:
+// @berth/plugin/ui's useHelperState.)
 //
 // The helper's event stream (/api/events) is server-sent events, which a
 // request through the box can't carry, so a panel asks again on a timer
@@ -80,93 +81,6 @@ export function faultOf(err: unknown): Fault {
     status: typeof e.status === "number" ? e.status : undefined,
     hint: typeof hint === "string" ? hint : undefined,
   };
-}
-
-// The helper on a box, as far as it is known: its status, or why it could
-// not be read. old is a laptop agent from before helpers.
-export interface HelperView {
-  status?: HelperStatus;
-  fault?: Fault;
-  old?: boolean;
-}
-
-const helpers = shared<Record<string, HelperView>>({});
-const reading = new Map<string, Promise<void>>();
-
-function put(box: string, view: HelperView) {
-  helpers.set({ ...helpers.get(), [box]: view });
-}
-
-// readHelper asks the box what it has of the helper, once at a time.
-export function readHelper(berth: BerthPluginContext, box: string): Promise<void> {
-  let p = reading.get(box);
-  if (!p) {
-    p = berth.helper
-      .status(box)
-      .then(
-        (status) => put(box, { status }),
-        (err) => {
-          const fault = faultOf(err);
-          // The route itself is missing: the agent on this computer is older.
-          put(box, { fault, old: fault.status === 404 && !fault.code });
-        },
-      )
-      .finally(() => reading.delete(box));
-    reading.set(box, p);
-  }
-  return p;
-}
-
-const settling = (v?: HelperView) => v?.status?.state === "installing" || v?.status?.state === "starting";
-
-// useHelper is the helper's state on a box, read again while active: every
-// second while it installs or starts, otherwise every fifteen.
-export function useHelper(berth: BerthPluginContext, box: string, active: boolean): HelperView | undefined {
-  const view = useSyncExternalStore(helpers.subscribe, helpers.get)[box];
-  const busy = settling(view);
-  useEffect(() => {
-    if (!active) return;
-    void readHelper(berth, box);
-    const t = setInterval(() => void readHelper(berth, box), busy ? 1000 : 15_000);
-    return () => clearInterval(t);
-  }, [berth, box, active, busy]);
-  return view;
-}
-
-// The services a box was left with when the helper was turned off: started
-// while it was on, still running, and still pointed at it.
-const left = shared<Record<string, HelperService[]>>({});
-
-// useLeft is those services on a box, until the helper is turned on again.
-export function useLeft(box: string): HelperService[] {
-  return useSyncExternalStore(left.subscribe, left.get)[box] ?? NONE;
-}
-const NONE: HelperService[] = [];
-
-// turnOn installs the helper on a box, or updates it, and turns it on. The
-// caller has asked the person first.
-export async function turnOn(berth: BerthPluginContext, box: string): Promise<void> {
-  try {
-    put(box, { status: await berth.helper.install(box) });
-    left.set({ ...left.get(), [box]: NONE });
-  } catch (err) {
-    put(box, { ...helpers.get()[box], fault: faultOf(err) });
-    throw err;
-  }
-}
-
-// turnOff stops and removes the helper; with purge, what it recorded too.
-// It resolves with the services the box says still point at the helper
-// (useLeft has them too): nothing restarts them, so the caller says which.
-export async function turnOff(berth: BerthPluginContext, box: string, purge = false): Promise<HelperService[]> {
-  // A Shipyard from before remove() answered resolves with nothing.
-  const was = (await berth.helper.remove(box, { purge })) as HelperStatus | undefined;
-  const attached = was?.attached ?? NONE;
-  // A helper that was already off answers with none: the services it left
-  // before still point at it (removing its data after turning it off).
-  if (attached.length) left.set({ ...left.get(), [box]: attached });
-  await readHelper(berth, box);
-  return attached;
 }
 
 // useVisible says whether an element is on screen in a window that is

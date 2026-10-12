@@ -708,7 +708,172 @@ export const scenes: Scene[] = [
       await expect(app.page.getByTestId("leadline-send").getByRole("textbox")).toBeVisible();
     },
   },
+  // The Database panel (plugins/database) on the mock helper's acme shop
+  // (src/lib/mock-database.ts): a table's grid, an edit in review, the
+  // unlock confirm, the console with a result, and the states.
+  {
+    id: "database-browser",
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByTestId("database-table").filter({ hasText: "orders" }).last().click();
+      await p.getByRole("button", { name: "Filter by status" }).click();
+      // A cell picked: what it offers (the row its key points at) can be reached.
+      await p.locator("[data-testid=database-row]:visible").first().locator('[data-col="customer_id"]').click();
+      await expect(p.locator("[data-testid=database-row]:visible [aria-selected=true]")).toHaveCount(1);
+    },
+  },
+  {
+    id: "database-review",
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByTestId("database-table").filter({ hasText: "customers" }).click();
+      await p.getByRole("button", { name: "Unlock writes…" }).click();
+      await app.page.getByRole("alertdialog").getByRole("button", { name: "Unlock for 15 minutes" }).click();
+      const plan = p.locator("[data-testid=database-row]:visible").first().locator('[data-col="plan"]');
+      await plan.dblclick();
+      await plan.getByRole("textbox").fill("business");
+      await plan.getByRole("textbox").press("Enter");
+      await p.getByRole("button", { name: "Add row" }).click();
+      await p.getByRole("checkbox", { name: "Pick row 4", exact: true }).check();
+      await p.getByRole("button", { name: "Delete 1 row" }).click();
+      await p.getByTestId("database-staged").getByRole("button", { name: "Review…" }).click();
+      await expect(app.page.getByTestId("database-review").getByTestId("database-change")).toHaveCount(3);
+      // The sheet slides in.
+      await app.page.waitForTimeout(400);
+    },
+  },
+  {
+    id: "database-staged",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByTestId("database-table").filter({ hasText: "customers" }).click();
+      await p.getByRole("button", { name: "Unlock writes…" }).click();
+      await app.page.getByRole("alertdialog").getByRole("button", { name: "Unlock for 15 minutes" }).click();
+      await p.getByRole("button", { name: "Add row" }).click();
+      const notes = p.locator("[data-testid=database-row]:visible").nth(3).locator('[data-col="notes"]');
+      await notes.dblclick();
+      await expect(notes.getByRole("button", { name: "Set NULL" })).toBeVisible();
+    },
+  },
+  {
+    id: "database-unlock",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByRole("button", { name: "Unlock writes…" }).click();
+      await expect(app.page.getByRole("alertdialog")).toBeVisible();
+    },
+  },
+  {
+    id: "database-structure",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByTestId("database-table").filter({ hasText: "order_items" }).click();
+      await p.getByRole("group", { name: "What to show of the table" }).getByRole("button", { name: "Structure" }).click();
+      await expect(p.getByTestId("database-structure")).toBeVisible();
+    },
+  },
+  {
+    id: "database-console",
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByRole("group", { name: "Browse the tables, or run SQL" }).getByRole("button", { name: "Console" }).click();
+      await p.getByRole("textbox", { name: "SQL to run" }).click();
+      await app.page.keyboard.type("SELECT id, name, notes FROM customers LIMIT 20");
+      await app.page.keyboard.press("ControlOrMeta+Enter");
+      await expect(p.locator("[data-testid=database-row]:visible").first()).toBeVisible();
+    },
+  },
+  {
+    id: "database-console-error",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByRole("group", { name: "Browse the tables, or run SQL" }).getByRole("button", { name: "Console" }).click();
+      await p.getByRole("textbox", { name: "SQL to run" }).click();
+      await app.page.keyboard.type("SELECT id, emial FROM customers");
+      await app.page.keyboard.press("ControlOrMeta+Enter");
+      await expect(p.getByTestId("database-error")).toBeVisible();
+    },
+  },
+  {
+    id: "database-other-engine",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix");
+      await p.getByTestId("database-connection").click();
+      await app.page.getByRole("menuitem", { name: /events/ }).click();
+      await p.getByTestId("database-table").filter({ hasText: "deliveries" }).click();
+      await expect(p.getByTestId("database-browse-only")).toBeVisible();
+    },
+  },
+  {
+    id: "database-screen",
+    async run(app, theme) {
+      await app.open({ theme });
+      const input = app.page.getByRole("combobox", { name: "Search sessions, worktrees and commands" });
+      const command = app.page.getByRole("option", { name: /^Show Database/ });
+      await expect(async () => {
+        if (!(await input.isVisible())) await app.page.keyboard.press("Meta+k");
+        await input.fill("Show Database");
+        if (!(await command.isVisible())) await app.page.keyboard.press("Escape");
+        await expect(command).toBeVisible({ timeout: 500 });
+      }).toPass();
+      await command.click();
+      await expect(app.page.locator('[data-testid=database-box][data-box="devl"]')).toHaveAttribute("data-state", "running");
+    },
+  },
+  {
+    id: "database-off",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "gpu/ci-flake");
+      await expect(p.getByTestId("database-notice")).toContainText("Database is off on gpu");
+    },
+  },
+  {
+    id: "database-none",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "none" });
+      await expect(p.getByTestId("database-notice")).toContainText("No database for checkout-fix yet");
+    },
+  },
+  {
+    id: "database-old-box",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "unauthorized" });
+      await expect(p.getByTestId("database-notice")).toContainText("devl needs updating for Database");
+    },
+  },
+  {
+    id: "database-refused",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "refused" });
+      await expect(p.getByTestId("database-notice")).toContainText("Couldn't reach shop_checkout_fix");
+    },
+  },
 ];
+
+// database opens the Database panel in a worktree, once the plugin has
+// loaded and the "+" menu lists it.
+async function database(app: App, theme: string, wt: string, params?: Record<string, string>) {
+  await app.open({ theme, params });
+  await app.openWorktree(wt);
+  const option = app.page.getByRole("option", { name: /^Database/ });
+  await expect(async () => {
+    if (!(await option.isVisible())) await app.page.getByRole("button", { name: "New tab" }).click();
+    await expect(option).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await option.click();
+  const p = app.page.locator("[data-testid=database]:visible");
+  await expect(p.getByTestId("database-tree").or(p.getByTestId("database-notice")).first()).toBeVisible();
+  return p;
+}
 
 // leadline opens one of Leadline's panels in a worktree, once the plugin
 // has loaded and the "+" menu lists it.

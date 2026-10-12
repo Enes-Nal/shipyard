@@ -6,8 +6,10 @@ import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 
 // Mock mode's plugin helpers, behaving like the laptop agent's
 // /v1/plugins/{id}/helper and a box's helpers/{plugin}/api/ closely enough
-// to build on. Leadline's helper runs on devl and is off on gpu; turning one
-// on takes a moment (installing, starting, running), as a download does.
+// to build on. Two plugins carry one: Leadline (berth-leadline) and
+// Database (berth-database). Each has a state of its own on each box: both
+// run on devl and are off on gpu, and turning one on takes a moment
+// (installing, starting, running), as a download does.
 //
 // What a running helper answers is src/lib/fixtures/leadline.json: the real
 // berth-leadline's answers to made-up "acme" telemetry for one worktree,
@@ -27,13 +29,37 @@ import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 // says (the agent refuses the install: nothing changes on the box),
 // ?helper=update has devl on an older build than the plugin carries, and
 // ?helper=held has the plugin changed since it was allowed, so it is off
-// for review while its helper, which did not change, is left running.
+// for review while its helper, which did not change, is left running. They
+// are about every helper alike, except held, which is Leadline's.
+//
+// What Database's helper answers is lib/mock-database.ts, an "acme" shop
+// kept in memory. ?db=old has devl on a berth-database from before its db/
+// routes: it answers 404 for them, as a real one would, until it is updated.
+//
+// window.__berthMockHelper.restart("database", "devl", 1500) is a running
+// helper that ended and that the box starts again after that long, as berthd
+// does (a crash, or berthd's own update): meanwhile the box says it is
+// starting and answers "helper_off" for it, and what it kept only in memory
+// (Database's writes switch) is gone when it is back.
 
 type Delay = <T>(v: T) => Promise<T>;
 
-const scenario = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("helper");
-const LATEST = "0.1.1";
+const params = typeof window === "undefined" ? undefined : new URLSearchParams(window.location.search);
+const scenario = params?.get("helper") ?? null;
+const dbScenario = params?.get("db") ?? null;
+// A build from before the one a plugin carries.
+const OLDER = "0.0.9";
 const PLATFORM = "linux-amd64";
+
+// The plugins that carry a helper: the program each one's manifest names,
+// the version of it the plugin carries, and the boxes it runs on from the
+// start.
+const HELPERS: Record<string, { program: string; latest: string; on: string[] }> = {
+  leadline: { program: "berth-leadline", latest: "0.1.1", on: ["devl"] },
+  database: { program: "berth-database", latest: "0.1.0", on: ["devl"] },
+};
+const programOf = (plugin: string) => HELPERS[plugin]?.program ?? `${plugin}'s helper`;
+const latestOf = (plugin: string) => HELPERS[plugin]?.latest ?? "0.1.0";
 
 interface Helper {
   state: HelperState;
@@ -50,10 +76,11 @@ function helperOf(plugin: string, box: string): Helper {
   const key = `${plugin}\n${box}`;
   let h = helpers.get(key);
   if (!h) {
-    const mine = plugin === "leadline";
-    const on = mine && box === "devl";
+    const mine = HELPERS[plugin];
+    const on = !!mine?.on.includes(box);
     const cant = scenario === "unsupported" || scenario === "nobuild";
-    h = { state: cant ? "unsupported" : on ? "running" : mine ? "off" : "none", version: on && !cant ? (scenario === "update" ? "0.0.9" : LATEST) : undefined, timers: [] };
+    const older = scenario === "update" || (plugin === "database" && dbScenario === "old");
+    h = { state: cant ? "unsupported" : on ? "running" : mine ? "off" : "none", version: on && !cant ? (older ? OLDER : latestOf(plugin)) : undefined, timers: [] };
     helpers.set(key, h);
   }
   return h;
@@ -61,12 +88,12 @@ function helperOf(plugin: string, box: string): Helper {
 
 function statusOf(plugin: string, box: string): HelperStatus {
   const h = helperOf(plugin, box);
-  const update = h.state === "running" && h.version !== LATEST;
+  const update = h.state === "running" && h.version !== latestOf(plugin);
   // As the agent says each: a berthd from before helpers never told it the
   // box's platform; one the plugin has no build for did.
-  if (scenario === "unsupported") return { plugin, box, state: h.state, platform: "", latest: LATEST, error: "this box runs an older berthd, which cannot run helpers; update it" };
-  if (scenario === "nobuild") return { plugin, box, state: h.state, platform: PLATFORM, latest: LATEST, error: `berth-leadline has no build for ${PLATFORM}` };
-  return { plugin, box, state: h.state, platform: PLATFORM, version: h.version, latest: LATEST, ...(update ? { update: true as const } : {}), error: h.error };
+  if (scenario === "unsupported") return { plugin, box, state: h.state, platform: "", latest: latestOf(plugin), error: "this box runs an older berthd, which cannot run helpers; update it" };
+  if (scenario === "nobuild") return { plugin, box, state: h.state, platform: PLATFORM, latest: latestOf(plugin), error: `${programOf(plugin)} has no build for ${PLATFORM}` };
+  return { plugin, box, state: h.state, platform: PLATFORM, version: h.version, latest: latestOf(plugin), ...(update ? { update: true as const } : {}), error: h.error };
 }
 
 // helperLaptopCall answers the laptop agent's helper routes, or undefined
@@ -81,11 +108,11 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
   const h = helperOf(plugin, box);
   if (method === "GET") return delay(statusOf(plugin, box));
   if (h.state === "unsupported" && method === "POST") {
-    const why = scenario === "nobuild" ? `berth-leadline has no build for ${PLATFORM}, which ${box} runs` : `${box} cannot run ${plugin}'s helper: this box runs an older berthd, which cannot run helpers; update it`;
+    const why = scenario === "nobuild" ? `${programOf(plugin)} has no build for ${PLATFORM}, which ${box} runs` : `${box} cannot run ${plugin}'s helper: this box runs an older berthd, which cannot run helpers; update it`;
     return delay(null).then(() => Promise.reject(new ApiError(why, 409, "helper_unsupported")));
   }
   if (method === "POST" && scenario === "mismatch") {
-    return delay(null).then(() => Promise.reject(new ApiError("the helper at https://downloads.acme.example/berth-leadline-linux-amd64 does not match the checksum in the plugin's manifest; nothing was installed", 502, "helper_mismatch")));
+    return delay(null).then(() => Promise.reject(new ApiError(`the helper at https://downloads.acme.example/${programOf(plugin)}-linux-amd64 does not match the checksum in the plugin's manifest; nothing was installed`, 502, "helper_mismatch")));
   }
   h.timers.forEach((t) => window.clearTimeout(t));
   h.timers = [];
@@ -97,13 +124,13 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
       // The box has the program, and it will not stay up: berthd's words.
       then(900, () => {
         h.state = "failed";
-        h.version = LATEST;
+        h.version = latestOf(plugin);
         h.error = "it ended (exit status 1) before it was ready; berthd tries again in 4s";
       });
     } else {
       then(900, () => {
         h.state = "starting";
-        h.version = LATEST;
+        h.version = latestOf(plugin);
       });
       then(1500, () => {
         h.state = "running";
@@ -113,7 +140,9 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
   }
   if (method === "DELETE") {
     const purge = query.get("purge") === "1";
-    // devl's dev server was started while the helper was on, and runs on.
+    // devl's dev server was started while Leadline's helper was on, with
+    // its telemetry and database pointed at it, and runs on. Database's
+    // helper changes nothing in a service's environment, so it leaves none.
     const attached = h.state === "running" && plugin === "leadline" && box === "devl" ? [{ location: "shop", worktree: "checkout-fix", service: "web" }] : undefined;
     if (h.state !== "unsupported") h.state = "off";
     h.version = undefined;
@@ -169,7 +198,7 @@ export function pluginHelpersCall(method: string, path: string, boxes: MockBox[]
   const has = carries(id, boxes);
   return delay({
     plugin: id,
-    ...(has && id === "leadline" ? { name: "berth-leadline" } : {}),
+    ...(has && HELPERS[id] ? { name: HELPERS[id].program } : {}),
     ...(has && p && !p.enabled && p.changed ? { held: true } : {}),
     boxes: has ? boxes.map((b) => (b.online ? { box: b.name, state: helperOf(id, b.name).state, version: helperOf(id, b.name).version } : { box: b.name, state: "offline" })) : [],
   });
@@ -295,10 +324,33 @@ function answer(all: Fixture[], route: string, q: URLSearchParams, empty: boolea
   }
 }
 
+let databaseMock: Promise<typeof import("@/lib/mock-database")> | undefined;
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __berthMockHelper: unknown }).__berthMockHelper = {
+    restart(plugin: string, box: string, ms = 1500) {
+      const h = helperOf(plugin, box);
+      if (h.state !== "running") return;
+      h.timers.forEach((t) => window.clearTimeout(t));
+      h.timers = [];
+      h.state = "starting";
+      // berthd's own words for it.
+      h.error = "it ended (signal: killed)";
+      if (plugin === "database") void (databaseMock ??= import("@/lib/mock-database")).then((m) => m.databaseRestarted());
+      h.timers.push(
+        window.setTimeout(() => {
+          h.state = "running";
+          h.error = undefined;
+        }, ms),
+      );
+    },
+  };
+}
+
 // helperBoxCall answers a box's helpers/{plugin}/api/{path}, or undefined
 // for any other path. {path} is the path on the helper, and its API is
 // under /api/ there.
-export function helperBoxCall(box: string, method: string, path: string, delay: Delay): Promise<unknown> | undefined {
+export function helperBoxCall(box: string, method: string, path: string, delay: Delay, body?: unknown): Promise<unknown> | undefined {
   const to = helperRelayed(path);
   if (!to) return undefined;
   const { plugin } = to;
@@ -309,9 +361,22 @@ export function helperBoxCall(box: string, method: string, path: string, delay: 
   // the route: so it reads to the app, as it does with real ones.
   if (!to.path.startsWith("/api/")) return delay(null).then(() => Promise.reject(new ApiError(`${box} runs an older berthd that doesn't have this yet`, 404, "box_outdated")));
   const route = to.path.slice("/api/".length).replace(/\/+$/, "");
-  if (method !== "GET" || plugin !== "leadline") return delay(null).then(() => Promise.reject(refusal(404, "not_found", `No such route: ${method} /api/${route}.`)));
-  // Only devl's has heard from anything, until what it recorded is removed.
+  const noRoute = () => delay(null).then(() => Promise.reject(refusal(404, "not_found", `No such route: ${method} /api/${route}.`)));
+  // Only devl's has heard from anything, until what it kept is removed.
   const empty = box !== "devl" || !!h.purged;
+  if (plugin === "database") {
+    // A berth-database from before db/ has no such routes.
+    // In berth-database's own words.
+    if (!route.startsWith("db/") || h.version !== latestOf(plugin)) return delay(null).then(() => Promise.reject(refusal(404, "not_found", "There is no such route.")));
+    return (databaseMock ??= import("@/lib/mock-database")).then((m) => {
+      try {
+        return delay(m.databaseCall(method, route, new URLSearchParams(to.query), body, empty));
+      } catch (err) {
+        return delay(null).then(() => Promise.reject(err));
+      }
+    });
+  }
+  if (method !== "GET" || plugin !== "leadline") return noRoute();
   return load().then((all) => {
     const by = Date.now() - all[0].captured_ms;
     // Asked for in moved time; the fixture is filtered in its own.

@@ -14,11 +14,11 @@ import { hashPluginFiles } from "@/plugins/consent-core";
 // ?market=offline fails every read of the listing, ?market=flaky only the
 // first, and ?market=mismatch fails every install on its checksum.
 //
-// Leadline is listed too, and it is the real thing: the files the listing
-// ships (site/plugins/leadline/, built by scripts/build-marketplace.mjs),
-// installed and allowed from the start, so mock mode and the live demo show
-// its panels on the mock helper's fixtures (mock-helper.ts). A new account
-// (?fresh=1) starts without it.
+// Leadline and Database are listed too, and they are the real thing: the
+// files the listing ships (site/plugins/leadline/ and site/plugins/database/,
+// built by scripts/build-marketplace.mjs), installed and allowed from the
+// start, so mock mode and the live demo show their panels on the mock
+// helpers (mock-helper.ts). A new account (?fresh=1) starts without them.
 
 // MockPlugin is a plugin in the mock's ~/.berth/plugins, as GET /v1/plugins
 // lists it.
@@ -115,41 +115,45 @@ const deploys = listing[2];
 installedFiles.set(deploys.id, filesOf(deploys, "1.1.0"));
 export const seededPlugins: MockPlugin[] = [installedAs(deploys, "1.1.0")];
 
-// Leadline as the listing ships it, read when the mock first lists plugins:
-// its manifest and its bundle, as text, in chunks of their own.
-const shipped = import.meta.glob<string>("../../../site/plugins/leadline/*/{berth-plugin.json,dist/index.js}", { query: "?raw", import: "default" });
+// The plugins this repository lists, as the listing ships them, read when
+// the mock first lists plugins: each one's manifest and its bundle, as text,
+// in chunks of their own.
+const SHIPPED = ["leadline", "database"];
+const shipped = import.meta.glob<string>("../../../site/plugins/{leadline,database}/*/{berth-plugin.json,dist/index.js}", { query: "?raw", import: "default" });
 
 let ready: Promise<void> | undefined;
 
-// marketplaceReady resolves once Leadline's files are read and, unless this
-// is a new account, it is installed and allowed in installed (the mock's
-// ~/.berth/plugins): allowed for exactly the bytes the mock serves, as the
-// consent dialog would have recorded.
+// marketplaceReady resolves once those plugins' files are read and, unless
+// this is a new account, each is installed and allowed in installed (the
+// mock's ~/.berth/plugins): allowed for exactly the bytes the mock serves,
+// as the consent dialog would have recorded.
 export function marketplaceReady(installed: MockPlugin[], fresh: boolean): Promise<void> {
   ready ??= (async () => {
-    const files: Record<string, Uint8Array> = {};
-    let version = "";
-    for (const [path, read] of Object.entries(shipped)) {
-      const at = /\/leadline\/([^/]+)\/(.+)$/.exec(path);
-      if (!at) continue;
-      version = at[1];
-      files[at[2]] = enc.encode(await read());
+    for (const id of SHIPPED) {
+      const files: Record<string, Uint8Array> = {};
+      let version = "";
+      for (const [path, read] of Object.entries(shipped)) {
+        const at = /\/plugins\/([^/]+)\/([^/]+)\/(.+)$/.exec(path);
+        if (!at || at[1] !== id) continue;
+        version = at[2];
+        files[at[3]] = enc.encode(await read());
+      }
+      const manifest = files["berth-plugin.json"];
+      if (!manifest || !files[MAIN]) continue;
+      const m = JSON.parse(new TextDecoder().decode(manifest)) as { name: string; description: string; author: string; homepage?: string };
+      const l: Listed = { id, name: m.name, description: m.description, version, author: m.author, homepage: m.homepage, command: "", files };
+      listing.push(l);
+      if (fresh || installed.some((p) => p.id === l.id)) continue;
+      installedFiles.set(l.id, files);
+      // ?helper=held: Leadline changed since it was allowed (an older bundle
+      // was), so it is off until it is reviewed again (mock-helper.ts).
+      if (id === "leadline" && new URLSearchParams(window.location.search).get("helper") === "held") {
+        installed.push({ ...installedAs(l, version), allowed: await hashPluginFiles(manifest, enc.encode("// the bundle before this one\n")), changed: true });
+        continue;
+      }
+      installed.push({ ...installedAs(l, version), enabled: true, allowed: await hashPluginFiles(manifest, files[MAIN]) });
     }
-    const manifest = files["berth-plugin.json"];
-    if (!manifest || !files[MAIN]) return;
-    const m = JSON.parse(new TextDecoder().decode(manifest)) as { name: string; description: string; author: string; homepage?: string };
-    const l: Listed = { id: "leadline", name: m.name, description: m.description, version, author: m.author, homepage: m.homepage, command: "", files };
-    listing.push(l);
-    if (fresh || installed.some((p) => p.id === l.id)) return;
-    installedFiles.set(l.id, files);
-    // ?helper=held: it changed since it was allowed (an older bundle was),
-    // so it is off until it is reviewed again (mock-helper.ts).
-    if (new URLSearchParams(window.location.search).get("helper") === "held") {
-      installed.push({ ...installedAs(l, version), allowed: await hashPluginFiles(manifest, enc.encode("// the bundle before this one\n")), changed: true });
-      return;
-    }
-    installed.push({ ...installedAs(l, version), enabled: true, allowed: await hashPluginFiles(manifest, files[MAIN]) });
-  })().catch((err) => console.warn("mock: could not read Leadline's files", err));
+  })().catch((err) => console.warn("mock: could not read the listed plugins' files", err));
   return ready;
 }
 
@@ -193,7 +197,7 @@ export function marketplaceCall(method: string, path: string, body: unknown, ins
   if (method === "GET" && /^\/v1\/marketplace(\?fresh=1)?$/.test(path)) {
     reads++;
     if (scenario === "offline" || (scenario === "flaky" && reads === 1)) return refuse(delay, `could not reach ${REGISTRY}: dial tcp: lookup berthd.app: no such host`, 502, "registry_unreachable");
-    // Leadline joins the listing once its files are read (marketplaceReady).
+    // Leadline and Database join the listing once their files are read (marketplaceReady).
     return (ready ?? Promise.resolve()).then(() => delay<Marketplace>({ registry: REGISTRY, host: "berthd.app", fetched: new Date().toISOString(), plugins: listing.map((l) => view(l, installed)) }));
   }
   const install = /^\/v1\/marketplace\/([^/]+)\/install$/.exec(path);

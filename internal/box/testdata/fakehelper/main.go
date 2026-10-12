@@ -14,11 +14,13 @@
 //	attach-delay    how long to wait before answering it, as a Go duration
 //	detach-status   the status to answer POST /api/detach with (default 200)
 //	detach-delay    how long to wait before answering it, as a Go duration
+//	token           a token to put in helper.json, as a helper that asks for one does
 //
 // It writes helper.json ({"api": "http://127.0.0.1:PORT"}) once it listens,
 // adds a line to starts each time it starts, keeps the last attach request
-// as attach-request, and adds each detach request it answered as a line of
-// detach-requests.
+// as attach-request and the Authorization it came with as
+// attach-authorization, and adds each detach request it answered as a line
+// of detach-requests.
 package main
 
 import (
@@ -82,7 +84,8 @@ func main() {
 			"method": r.Method, "path": r.URL.EscapedPath(), "query": r.URL.RawQuery,
 			"host": r.Host, "origin": r.Header.Get("Origin"), "berth_origin": r.Header.Get("X-Berth-Origin"),
 			"forwarded_for": r.Header.Get("X-Forwarded-For"), "content_type": r.Header.Get("Content-Type"),
-			"body": string(body),
+			"authorization": strings.Join(r.Header.Values("Authorization"), " | "),
+			"body":          string(body),
 		})
 	})
 	mux.HandleFunc("GET /api/stream", func(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +97,7 @@ func main() {
 	mux.HandleFunc("POST /api/attach", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		os.WriteFile(in("attach-request"), body, 0o600)
+		os.WriteFile(in("attach-authorization"), []byte(strings.Join(r.Header.Values("Authorization"), " | ")), 0o600)
 		if d, err := time.ParseDuration(read("attach-delay")); err == nil {
 			time.Sleep(d)
 		}
@@ -124,7 +128,11 @@ func main() {
 		io.WriteString(w, `{"found":true}`)
 	})
 
-	state, _ := json.Marshal(map[string]any{"api": "http://" + ln.Addr().String(), "pid": os.Getpid()})
+	ready := map[string]any{"api": "http://" + ln.Addr().String(), "pid": os.Getpid()}
+	if token, err := os.ReadFile(in("token")); err == nil {
+		ready["token"] = string(token)
+	}
+	state, _ := json.Marshal(ready)
 	if err := os.WriteFile(in("helper.json.tmp"), state, 0o600); err != nil {
 		fmt.Fprintln(os.Stderr, "fakehelper:", err)
 		os.Exit(1)

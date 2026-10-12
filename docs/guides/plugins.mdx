@@ -301,7 +301,8 @@ done where the code under development runs: recording a dev server's
 queries, watching its files, keeping data that should outlive the app. For
 that a plugin can bring a **helper**, a program Shipyard installs on a box
 and keeps running there, with an HTTP API the plugin's panel reads through
-Shipyard. Leadline's `berth-leadline` is one.
+Shipyard. Leadline's `berth-leadline` is one, and so is `berth-database`,
+the database editor's.
 
 A helper is declared in the plugin's manifest:
 
@@ -333,7 +334,7 @@ A helper is declared in the plugin's manifest:
 | `name` | The program's file name: lowercase letters, digits, dots and dashes, at most 64 characters |
 | `version` | The helper's own version, apart from the plugin's. It names the folder the program is kept in |
 | `args` | The program's arguments, at most 32. `{dir}` in one is the helper's data folder on the box. Nothing else is added to them |
-| `ready` | The name of a JSON file the helper writes in `{dir}` once it listens, with `"api": "http://127.0.0.1:PORT"`. Until it is there the helper is `starting`; one that has not written it in 30 seconds is stopped and started again |
+| `ready` | The name of a JSON file the helper writes in `{dir}` once it listens, with `"api": "http://127.0.0.1:PORT"` and, if it wants one, [`"token"`](#the-token-a-helper-only-berthd-can-ask). Until it is there the helper is `starting`; one that has not written it in 30 seconds is stopped and started again |
 | `attach`, `attach_env` | Optional: [what the helper adds to a worktree's services](#attach-what-a-helper-adds-to-a-service) |
 | `detach` | Optional: the path berthd tells the helper on when [a worktree is removed](#detach-when-a-worktree-is-removed) |
 | `assets` | The build for each platform a box can be: `linux-amd64`, `linux-arm64`, `darwin-arm64`, `darwin-amd64`. Each has the `https://` address it is downloaded from, its SHA-256 in hex, and its size in bytes (at most 128 MB). A box of a platform with no build shows the helper as unsupported |
@@ -346,6 +347,8 @@ What a helper has to do:
 - **Answer to this machine only.** Requests reach it from berthd with its
   own loopback address as the `Host` and no `Origin`. Refuse other hosts,
   which stops a web page from reaching it by DNS rebinding.
+- **Ask for a token when what it serves is not for everyone on the box.**
+  See [below](#the-token-a-helper-only-berthd-can-ask).
 - **Keep everything in `{dir}`.** It is the helper's own folder, kept when
   the helper is turned off and updated, and removed only when someone
   removes the helper with its data.
@@ -356,6 +359,40 @@ What a helper has to do:
 
 It is one static program for each platform: berthd runs the file it was
 sent, and installs nothing beside it.
+
+### The token: a helper only berthd can ask
+
+Listening on loopback keeps other machines out. It does not keep out the
+other users of the box, who can reach any loopback port, or a web page open
+on it, which can at least send requests there. A helper that only reads back
+what it recorded may accept that. One that can do more must not:
+`berth-database` runs SQL.
+
+So a helper can make a random token when it starts and write it in its ready
+file, which only the box's user can read (write the file with mode `0600`):
+
+```json title="helper.json"
+{ "api": "http://127.0.0.1:41873", "token": "3f1c…9ab2" }
+```
+
+From then on berthd sends `Authorization: Bearer <token>` with every request
+it makes of that helper: everything it relays from the app, and its own
+[attach](#attach-what-a-helper-adds-to-a-service) calls. The helper refuses
+a request without it (`401`). The plugin's panel does nothing for this and
+never sees the token: it asks through Shipyard as
+[below](#reading-it-from-the-plugin), and berthd adds the header on the box.
+
+- The token is letters, digits and `-._~+/=`, at most 512 characters; a
+  helper whose token could not go in a header is not run.
+- Make a new one at every start. berthd reads the file each time the helper
+  starts.
+- berthd takes whatever `Authorization` the app sent off a relayed request,
+  for every helper, so a panel cannot send a helper anything in berthd's
+  name.
+- **What it keeps out:** other users of the box and web pages, neither of
+  which can read the file. **What it does not:** a program running as the
+  box's user, an agent in a worktree included. That can read the ready
+  file, and can ask berthd, which adds the token for it.
 
 ### Turning it on
 
@@ -475,6 +512,9 @@ variables to set:
 { "env": { "DATABASE_URL": "postgres://app:…@127.0.0.1:25432/acme", "OTEL_EXPORTER_OTLP_ENDPOINT": "http://127.0.0.1:41873" } }
 ```
 
+A helper that only needs to know about the service answers `{"env": {}}`:
+`berth-database` notes which database the worktree has, and changes nothing.
+
 - **`attach_env` is both what the helper is told and what it may set.** Each
   entry is a variable's name, or a prefix ending in `*`. The request's `env`
   has the service's variables that match and no others, and a variable in
@@ -484,6 +524,12 @@ variables to set:
   [secret](/guides/secrets) (`op://…`, `env://…`) is not sent, since its
   value is only read when the service starts, and is not replaced. Neither
   is any `BERTH_` variable.
+- **Every helper is told the project's own values.** With several helpers
+  on, each one's request has the variables as the project set them, not as
+  a helper asked before it answered. A database editor is shown the
+  database's URL, not the URL of another helper's recording proxy in front
+  of it. What the service gets is every answer together; where two helpers
+  set the same variable, the later one (by plugin id) wins.
 - **A helper is never in the way.** berthd waits two seconds. A helper that
   is not running, answers late, answers an error or answers something else
   changes nothing: the service starts exactly as it would have.
@@ -561,14 +607,19 @@ platform no box runs.
 
 For a helper built in this repository the listing build fills `assets` in
 itself, from the files that were released, and drops whatever the plugin's
-manifest says of them. `scripts/release-leadline-helper.sh` does it for
-`berth-leadline`: it builds the four platforms (`make leadline`), lists them
-in `site/plugins/` at
-`https://github.com/cosscom/shipyard/releases/download/leadline-helper-v<version>/berth-leadline-<os>-<arch>`,
-and uploads those very files to that release. Building the listing without
-the builds keeps the checksums it already has for that version, and refuses
-other builds under a version that is listed. A version with no release yet
-is listed with no builds, and installs nowhere.
+manifest says of them. `scripts/helpers.json` is the table of those helpers
+(`berth-leadline`, `berth-database`): the plugin that names each, its
+command, its `make` target and what its releases are called.
+`scripts/release-helper.sh NAME` releases one: it builds the four platforms
+(`make leadline`, `make database`), lists them in `site/plugins/` at
+`https://github.com/cosscom/shipyard/releases/download/<release>-v<version>/<name>-<os>-<arch>`
+(`leadline-helper-v0.1.0/berth-leadline-linux-amd64`), and uploads those very
+files to that release. The other helpers keep the builds they are listed
+with. Building the listing without the builds keeps the checksums it already
+has for that version, and refuses other builds under a version that is
+listed. A version with no release yet is listed with no builds, and installs
+nowhere. A new helper in this repository is a command under `cmd/`, a row in
+the table and a target in the `Makefile`.
 
 ### What a helper's checksum proves
 

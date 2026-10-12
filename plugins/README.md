@@ -3,8 +3,8 @@
 Each folder here is a Shipyard plugin. The ones whose `berth-plugin.json` says
 `"builtin": true` ship inside the app; `hello-ports` is the smallest example
 of the SDK and is not built in. The ones that say `"marketplace": true`
-(`hello-ports` and [`leadline`](leadline), which also carries a program for
-boxes) are in the listing people browse and install from in Settings →
+(`hello-ports`, and [`leadline`](leadline) and [`database`](database), which
+each also carry a program for boxes) are in the listing people browse and install from in Settings →
 Plugins: see "How the listing ships" below.
 
 | Plugin | Adds | Why it's built in |

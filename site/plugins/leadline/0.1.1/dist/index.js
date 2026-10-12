@@ -4,7 +4,7 @@ import { Empty as Empty3, EmptyDescription as EmptyDescription3, EmptyHeader as 
 
 // src/endpoints.tsx
 import { Chart as Chart2, cn as cn3 } from "@berth/plugin/ui";
-import { useMemo as useMemo4, useState as useState5 } from "react";
+import { useMemo as useMemo4, useState as useState4 } from "react";
 
 // src/format.ts
 function ms(n) {
@@ -72,16 +72,6 @@ function bytes(n) {
     u++;
   }
   return `${u === 0 || v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, "")} ${units[u]}`;
-}
-function serviceNames(list) {
-  const names = list.map((s) => `${s.service} in ${!s.worktree || s.worktree === s.location ? s.location : `${s.location}/${s.worktree}`}`);
-  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
-function sentence(text) {
-  const t = text.trim();
-  if (!t) return t;
-  const first = t.charAt(0).toUpperCase() + t.slice(1);
-  return /[.!?…]$/.test(first) ? first : `${first}.`;
 }
 
 // src/source.ts
@@ -407,58 +397,6 @@ function faultOf(err) {
     hint: typeof hint === "string" ? hint : void 0
   };
 }
-var helpers = shared({});
-var reading = /* @__PURE__ */ new Map();
-function put(box, view) {
-  helpers.set({ ...helpers.get(), [box]: view });
-}
-function readHelper(berth, box) {
-  let p = reading.get(box);
-  if (!p) {
-    p = berth.helper.status(box).then(
-      (status) => put(box, { status }),
-      (err) => {
-        const fault = faultOf(err);
-        put(box, { fault, old: fault.status === 404 && !fault.code });
-      }
-    ).finally(() => reading.delete(box));
-    reading.set(box, p);
-  }
-  return p;
-}
-var settling = (v) => v?.status?.state === "installing" || v?.status?.state === "starting";
-function useHelper(berth, box, active) {
-  const view = useSyncExternalStore(helpers.subscribe, helpers.get)[box];
-  const busy = settling(view);
-  useEffect(() => {
-    if (!active) return;
-    void readHelper(berth, box);
-    const t = setInterval(() => void readHelper(berth, box), busy ? 1e3 : 15e3);
-    return () => clearInterval(t);
-  }, [berth, box, active, busy]);
-  return view;
-}
-var left = shared({});
-function useLeft(box) {
-  return useSyncExternalStore(left.subscribe, left.get)[box] ?? NONE;
-}
-var NONE = [];
-async function turnOn(berth, box) {
-  try {
-    put(box, { status: await berth.helper.install(box) });
-    left.set({ ...left.get(), [box]: NONE });
-  } catch (err) {
-    put(box, { ...helpers.get()[box], fault: faultOf(err) });
-    throw err;
-  }
-}
-async function turnOff(berth, box, purge = false) {
-  const was = await berth.helper.remove(box, { purge });
-  const attached = was?.attached ?? NONE;
-  if (attached.length) left.set({ ...left.get(), [box]: attached });
-  await readHelper(berth, box);
-  return attached;
-}
 function useVisible() {
   const [el, setEl] = useState(null);
   const [inView, setInView] = useState(false);
@@ -568,7 +506,7 @@ function useJump(panel, box, source, open) {
 
 // src/queries.tsx
 import { Badge as Badge2, Chart, FilterChip, Tip as Tip3, cn as cn2 } from "@berth/plugin/ui";
-import { useMemo as useMemo3, useState as useState4 } from "react";
+import { useMemo as useMemo3, useState as useState3 } from "react";
 
 // src/send.tsx
 import { sessionName, useSessions, useStorage } from "@berth/plugin";
@@ -766,29 +704,8 @@ function SendForm({ ctx, ask, onClose }) {
 
 // src/ui.tsx
 import { useBoxes, worktreeLocation } from "@berth/plugin";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-  Badge,
-  Button as Button2,
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-  Icon as Icon2,
-  Input,
-  PickOne as PickOne2,
-  Skeleton as Skeleton2,
-  Spinner,
-  Tip as Tip2,
-  cn
-} from "@berth/plugin/ui";
-import { useCallback as useCallback2, useMemo as useMemo2, useState as useState3 } from "react";
+import { Badge, Button as Button2, Empty, EmptyDescription, EmptyHeader, EmptyTitle, HelperBox, Icon as Icon2, Input, PickOne as PickOne2, Skeleton as Skeleton2, Tip as Tip2, cn, useHelperState } from "@berth/plugin/ui";
+import { useCallback as useCallback2, useMemo as useMemo2 } from "react";
 
 // src/api.ts
 function path(route, params = {}) {
@@ -821,23 +738,40 @@ function leadline(berth) {
 // src/ui.tsx
 import { Fragment as Fragment2, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 var HELPER = "berth-leadline";
-function cantRun(s, box) {
-  if (s.platform) return { why: `${HELPER} has no build for ${s.platform} yet, so it can't be installed on ${box}.`, update: false };
-  return { why: sentence(s.error ?? `${box}'s berthd is from before plugins could install a program on a box`), update: true };
-}
+var COPY = {
+  name: "Leadline",
+  program: HELPER,
+  icon: "Anchor",
+  does: (box) => `It records what the dev servers Shipyard starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves ${box}.`,
+  about: (box) => /* @__PURE__ */ jsxs2(Fragment2, { children: [
+    "It shows what your code did in development: every database query, each request's trace, and the logs. Turning it on installs and runs ",
+    /* @__PURE__ */ jsx2("code", { children: HELPER }),
+    " on ",
+    box,
+    "; what it records stays there."
+  ] }),
+  off: (box) => `Nothing is recorded while it is off. Turning it on installs ${HELPER} on ${box} and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.`,
+  remove: {
+    title: (box) => `Remove what Leadline recorded on ${box}?`,
+    body: () => "deletes everything it recorded there: every worktree's queries, traces and logs. It can't be undone. Turn Leadline on again to start afresh.",
+    done: (box) => `Removed Leadline's data on ${box}`
+  },
+  left: (services, n) => `Restart ${services}: ${n === 1 ? "it was" : "they were"} started while Leadline was on, and ${n === 1 ? "its" : "their"} telemetry and database connection still go to it.`
+};
 function PanelShell({ berth, box, location, worktree, main, path: path2, panel, children }) {
   const [ref, visible] = useVisible();
   const online = useBoxes().find((b) => b.name === box)?.state === "online";
-  const view = useHelper(berth, box, visible && online);
+  const helper = useHelperState(berth, box, visible && online);
   const [window2] = useWindow(berth);
   const source = sourceOf({ location, worktree, main });
   const api = useMemo2(() => leadline(berth), [berth]);
-  const running = view?.status?.state === "running";
+  const running = helper.status?.state === "running";
+  const refresh = helper.refresh;
   const onFault = useCallback2(
     (fault) => {
-      if (fault.code === "helper_off" || fault.status === 503) void readHelper(berth, box);
+      if (fault.code === "helper_off" || fault.status === 503) refresh();
     },
-    [berth, box]
+    [refresh]
   );
   const ctx = {
     berth,
@@ -852,137 +786,7 @@ function PanelShell({ berth, box, location, worktree, main, path: path2, panel, 
     active: visible && online && running,
     onFault
   };
-  return /* @__PURE__ */ jsx2("div", { ref, "data-testid": "leadline", "data-leadline": panel, "data-state": online ? view?.status?.state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: !online ? /* @__PURE__ */ jsx2(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Leadline's helper runs on the box and keeps what it records there, so there is nothing to read until the box is back." }) : running ? children(ctx) : /* @__PURE__ */ jsx2(HelperNotice, { berth, box }) });
-}
-function HelperNotice({ berth, box }) {
-  const view = useHelper(berth, box, false);
-  const [asking, setAsking] = useState3(false);
-  const about = /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "ghost", onClick: () => berth.openScreen("leadline"), children: "About Leadline" });
-  if (!view) {
-    return /* @__PURE__ */ jsxs2("div", { className: "space-y-3 p-5", "aria-busy": "true", children: [
-      /* @__PURE__ */ jsx2(Skeleton2, { className: "h-7 w-full" }),
-      /* @__PURE__ */ jsx2(Skeleton2, { className: "h-7 w-full" }),
-      /* @__PURE__ */ jsx2(Skeleton2, { className: "h-7 w-2/3" })
-    ] });
-  }
-  if (view.old) return /* @__PURE__ */ jsx2(Notice, { icon: "CircleAlert", title: "Shipyard on this computer is older than Leadline needs", body: "Its agent can't install a plugin's program on a box yet. Update Shipyard, then reload plugins in Settings \u2192 Plugins." });
-  const s = view.status;
-  if (!s) return /* @__PURE__ */ jsx2(Notice, { icon: "TriangleAlert", title: `Couldn't ask ${box} about Leadline`, body: view.fault?.message, actions: /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "outline", onClick: () => void readHelper(berth, box), children: "Try again" }) });
-  switch (s.state) {
-    case "unsupported": {
-      const { why, update } = cantRun(s, box);
-      return /* @__PURE__ */ jsx2(
-        Notice,
-        {
-          icon: "ServerOff",
-          title: `${box} can't run Leadline yet`,
-          body: update ? `${why} Update the box in Settings \u2192 Boxes, then turn Leadline on.` : why,
-          actions: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-            update && /* @__PURE__ */ jsx2(Button2, { size: "sm", variant: "outline", onClick: () => berth.openSettings("boxes"), children: "Open Settings \u2192 Boxes" }),
-            about
-          ] })
-        }
-      );
-    }
-    case "installing":
-    case "starting":
-      return /* @__PURE__ */ jsx2(
-        Notice,
-        {
-          icon: /* @__PURE__ */ jsx2(Spinner, { className: "mx-auto mb-2 size-5 text-muted-foreground" }),
-          title: s.state === "installing" ? `Installing ${HELPER} on ${box}\u2026` : `Starting ${HELPER} on ${box}\u2026`,
-          body: "This takes a moment the first time: the program is downloaded, checked against its checksum and handed to the box."
-        }
-      );
-    case "failed":
-      return /* @__PURE__ */ jsx2(
-        Notice,
-        {
-          icon: "TriangleAlert",
-          title: `${HELPER} couldn't start on ${box}`,
-          body: /* @__PURE__ */ jsx2("span", { className: "whitespace-pre-wrap font-mono text-xs", children: s.error ?? "The box didn't say why." }),
-          actions: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-            /* @__PURE__ */ jsx2(Button2, { size: "sm", onClick: () => void turnOn(berth, box).catch((err) => berth.notify(`Couldn't turn Leadline on on ${box}`, String(err?.message ?? err))), children: "Try again" }),
-            about
-          ] })
-        }
-      );
-    default:
-      return /* @__PURE__ */ jsxs2(Fragment2, { children: [
-        /* @__PURE__ */ jsx2(
-          Notice,
-          {
-            icon: "Anchor",
-            title: `Leadline is off on ${box}`,
-            body: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-              "It shows what your code did in development: every database query, each request's trace, and the logs. Turning it on installs and runs ",
-              /* @__PURE__ */ jsx2("code", { children: HELPER }),
-              " on ",
-              box,
-              "; what it records stays there."
-            ] }),
-            actions: /* @__PURE__ */ jsxs2(Fragment2, { children: [
-              /* @__PURE__ */ jsx2(Button2, { size: "sm", onClick: () => setAsking(true), children: "Turn on\u2026" }),
-              about
-            ] })
-          }
-        ),
-        /* @__PURE__ */ jsx2(TurnOnDialog, { berth, box: asking ? box : void 0, onClose: () => setAsking(false) })
-      ] });
-  }
-}
-function TurnOnDialog({ berth, box, update, onClose }) {
-  const [busy, setBusy] = useState3(false);
-  const [error, setError] = useState3();
-  const [last, setLast] = useState3(box);
-  if (box && box !== last) setLast(box);
-  const name = box ?? last ?? "";
-  const go = async () => {
-    if (!box) return;
-    setBusy(true);
-    setError(void 0);
-    try {
-      await turnOn(berth, box);
-      onClose();
-    } catch (err) {
-      setError(String(err?.message ?? err));
-    } finally {
-      setBusy(false);
-    }
-  };
-  return /* @__PURE__ */ jsx2(
-    AlertDialog,
-    {
-      open: !!box,
-      onOpenChange: (open) => {
-        if (!open) {
-          setError(void 0);
-          onClose();
-        }
-      },
-      children: /* @__PURE__ */ jsxs2(AlertDialogPopup, { className: "sm:max-w-lg", children: [
-        /* @__PURE__ */ jsxs2(AlertDialogHeader, { children: [
-          /* @__PURE__ */ jsx2(AlertDialogTitle, { children: update ? `Update Leadline on ${name}?` : `Turn on Leadline on ${name}?` }),
-          /* @__PURE__ */ jsxs2(AlertDialogDescription, { children: [
-            "This ",
-            update ? "replaces" : "installs",
-            " ",
-            /* @__PURE__ */ jsx2("code", { children: HELPER }),
-            ", a program this plugin carries, on ",
-            name,
-            " and keeps it running there. It records what the dev servers Shipyard starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves ",
-            name,
-            "."
-          ] })
-        ] }),
-        error && /* @__PURE__ */ jsx2("p", { className: "mx-6 whitespace-pre-wrap rounded-md bg-destructive/8 p-2 font-mono text-destructive-foreground text-xs", children: error }),
-        /* @__PURE__ */ jsxs2(AlertDialogFooter, { children: [
-          /* @__PURE__ */ jsx2(AlertDialogClose, { render: /* @__PURE__ */ jsx2(Button2, { variant: "ghost" }), children: "Cancel" }),
-          /* @__PURE__ */ jsx2(Button2, { loading: busy, onClick: () => void go(), children: update ? "Update" : "Install and turn on" })
-        ] })
-      ] })
-    }
-  );
+  return /* @__PURE__ */ jsx2("div", { ref, "data-testid": "leadline", "data-leadline": panel, "data-state": online ? helper.status?.state ?? "reading" : "offline", className: "@container flex h-full min-h-0 flex-col bg-background text-sm", children: !online ? /* @__PURE__ */ jsx2(Notice, { icon: "CloudOff", title: `${box} is offline`, body: "Leadline's helper runs on the box and keeps what it records there, so there is nothing to read until the box is back." }) : running ? children(ctx) : /* @__PURE__ */ jsx2(HelperBox, { variant: "panel", berth, box, copy: COPY, testId: "leadline", onAbout: () => berth.openScreen("leadline") }) });
 }
 function Notice({ icon, title, body, actions }) {
   return /* @__PURE__ */ jsx2("div", { className: "flex h-full min-h-60 flex-1 items-center justify-center p-6", "data-testid": "leadline-notice", children: /* @__PURE__ */ jsxs2(Empty, { children: [
@@ -1143,12 +947,12 @@ function QueriesPanel(props) {
   return /* @__PURE__ */ jsx3(PanelShell, { ...props, panel: "queries", children: (ctx) => /* @__PURE__ */ jsx3(Queries, { ctx }) });
 }
 function Queries({ ctx }) {
-  const [search, setSearch] = useState4("");
+  const [search, setSearch] = useState3("");
   const q = useDebounced(search);
-  const [control, setControl] = useState4(false);
-  const [limit, setLimit] = useState4(PAGE);
-  const [sort, setSort] = useState4({ key: "total", dir: "desc" });
-  const [open, setOpen] = useState4();
+  const [control, setControl] = useState3(false);
+  const [limit, setLimit] = useState3(PAGE);
+  const [sort, setSort] = useState3({ key: "total", dir: "desc" });
+  const [open, setOpen] = useState3();
   useJump("queries", ctx.box, ctx.source, setOpen);
   const live = useLive(() => ctx.api.queries(ctx.scope(), { q, control, limit }), [ctx.box, ctx.source, ctx.window.value, q, control, limit].join("\n"), { every: ctx.window.every, active: ctx.active, onFault: ctx.onFault });
   const rows = useMemo3(() => {
@@ -1325,11 +1129,11 @@ function EndpointsPanel(props) {
   return /* @__PURE__ */ jsx4(PanelShell, { ...props, panel: "endpoints", children: (ctx) => /* @__PURE__ */ jsx4(Endpoints, { ctx }) });
 }
 function Endpoints({ ctx }) {
-  const [search, setSearch] = useState5("");
+  const [search, setSearch] = useState4("");
   const q = useDebounced(search);
-  const [limit, setLimit] = useState5(PAGE2);
-  const [sort, setSort] = useState5({ key: "time", dir: "desc" });
-  const [open, setOpen] = useState5();
+  const [limit, setLimit] = useState4(PAGE2);
+  const [sort, setSort] = useState4({ key: "time", dir: "desc" });
+  const [open, setOpen] = useState4();
   useJump("endpoints", ctx.box, ctx.source, setOpen);
   const live = useLive(() => ctx.api.endpoints(ctx.scope(), { q, sort: sort.key, dir: sort.dir, limit }), [ctx.box, ctx.source, ctx.window.value, q, sort.key, sort.dir, limit].join("\n"), { every: ctx.window.every, active: ctx.active, onFault: ctx.onFault });
   const rows = live.data?.rows ?? [];
@@ -1489,21 +1293,21 @@ ${x.fingerprint}`)) })
 
 // src/logs.tsx
 import { PickOne as PickOne3, cn as cn5 } from "@berth/plugin/ui";
-import { useState as useState7 } from "react";
+import { useState as useState6 } from "react";
 
 // src/traces.tsx
 import { Badge as Badge3, Button as Button3, FilterChip as FilterChip2, Icon as Icon3, Tip as Tip4, cn as cn4 } from "@berth/plugin/ui";
-import { useMemo as useMemo5, useState as useState6 } from "react";
+import { useMemo as useMemo5, useState as useState5 } from "react";
 import { Fragment as Fragment5, jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
 var PAGE3 = 100;
 function TracesPanel(props) {
   return /* @__PURE__ */ jsx5(PanelShell, { ...props, panel: "traces", children: (ctx) => /* @__PURE__ */ jsx5(Traces, { ctx }) });
 }
 function Traces({ ctx }) {
-  const [search, setSearch] = useState6("");
+  const [search, setSearch] = useState5("");
   const q = useDebounced(search);
-  const [errors, setErrors] = useState6(false);
-  const [open, setOpen] = useState6();
+  const [errors, setErrors] = useState5(false);
+  const [open, setOpen] = useState5();
   useJump("traces", ctx.box, ctx.source, setOpen);
   const list = usePaged((before) => ctx.api.traces(ctx.scope(), { q, errors, limit: PAGE3, before }), [ctx.box, ctx.source, ctx.window.value, q, errors].join("\n"), {
     size: PAGE3,
@@ -1573,7 +1377,7 @@ function waterfall(d) {
 function TraceView({ ctx, id, onClose }) {
   const live = useLive(() => ctx.api.trace(ctx.box, id), `${ctx.box}
 ${id}`, { every: ctx.window.every, active: ctx.active, onFault: ctx.onFault });
-  const [picked, setPicked] = useState6();
+  const [picked, setPicked] = useState5();
   const d = live.data;
   const rows = useMemo5(() => d ? waterfall(d) : [], [d]);
   if (!d) {
@@ -1702,10 +1506,10 @@ function LogsPanel(props) {
 var idOf = (l) => l.cursor ?? `${l.ts_ms}
 ${l.body}`;
 function Logs({ ctx }) {
-  const [search, setSearch] = useState7("");
+  const [search, setSearch] = useState6("");
   const q = useDebounced(search);
-  const [min, setMin] = useState7("0");
-  const [open, setOpen] = useState7();
+  const [min, setMin] = useState6("0");
+  const [open, setOpen] = useState6();
   const list = usePaged((before) => ctx.api.logs(ctx.scope(), { q, min_severity: Number(min) || void 0, limit: PAGE4, before }), [ctx.box, ctx.source, ctx.window.value, q, min].join("\n"), {
     size: PAGE4,
     every: ctx.window.every,
@@ -1759,33 +1563,9 @@ function Logs({ ctx }) {
 
 // src/screen.tsx
 import { useBoxes as useBoxes2 } from "@berth/plugin";
-import {
-  AlertDialog as AlertDialog2,
-  AlertDialogClose as AlertDialogClose2,
-  AlertDialogDescription as AlertDialogDescription2,
-  AlertDialogFooter as AlertDialogFooter2,
-  AlertDialogHeader as AlertDialogHeader2,
-  AlertDialogPopup as AlertDialogPopup2,
-  AlertDialogTitle as AlertDialogTitle2,
-  Badge as Badge4,
-  Button as Button4,
-  Empty as Empty2,
-  EmptyDescription as EmptyDescription2,
-  EmptyHeader as EmptyHeader2,
-  EmptyTitle as EmptyTitle2,
-  Frame,
-  FrameDescription,
-  FrameHeader,
-  FramePanel,
-  FrameTitle,
-  Icon as Icon4,
-  Skeleton as Skeleton3,
-  Spinner as Spinner2,
-  ViewHeader,
-  cn as cn6
-} from "@berth/plugin/ui";
-import { useMemo as useMemo6, useState as useState8 } from "react";
-import { Fragment as Fragment7, jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
+import { Button as Button4, Empty as Empty2, EmptyDescription as EmptyDescription2, EmptyHeader as EmptyHeader2, EmptyTitle as EmptyTitle2, Frame, FrameDescription, FrameHeader, FramePanel, FrameTitle, HelperBox as HelperBox2, Icon as Icon4, Skeleton as Skeleton3, ViewHeader, cn as cn6, useHelperState as useHelperState2 } from "@berth/plugin/ui";
+import { useMemo as useMemo6 } from "react";
+import { jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
 var GUIDE = "https://docs.berthd.app/guides/leadline";
 function LeadlineScreen({ berth }) {
   const boxes = useBoxes2();
@@ -1815,7 +1595,7 @@ function LeadlineScreen({ berth }) {
         /* @__PURE__ */ jsx7(Icon4, { name: "Server", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
         /* @__PURE__ */ jsx7(EmptyTitle2, { children: "No boxes yet" }),
         /* @__PURE__ */ jsx7(EmptyDescription2, { children: "Add a box, and Leadline can be turned on for it here." })
-      ] }) }) : /* @__PURE__ */ jsx7("ul", { className: "divide-y", children: boxes.map((b) => /* @__PURE__ */ jsx7(BoxRow, { berth, box: b.name, online: b.state === "online", active: visible }, b.name)) }) })
+      ] }) }) : /* @__PURE__ */ jsx7("ul", { className: "divide-y", children: boxes.map((b) => /* @__PURE__ */ jsx7(HelperBox2, { berth, box: b.name, online: b.state === "online", active: visible, copy: COPY, testId: "leadline", children: /* @__PURE__ */ jsx7(Heard, { berth, box: b.name, active: visible }) }, b.name)) }) })
     ] }),
     /* @__PURE__ */ jsxs7(Frame, { variant: "card", children: [
       /* @__PURE__ */ jsxs7(FrameHeader, { children: [
@@ -1855,128 +1635,11 @@ function Step({ n, title, children }) {
     ] })
   ] });
 }
-var STATE = {
-  running: { label: "Running", variant: "success" },
-  off: { label: "Off", variant: "outline" },
-  none: { label: "Can't run it", variant: "warning" },
-  installing: { label: "Installing\u2026", variant: "info" },
-  starting: { label: "Starting\u2026", variant: "info" },
-  failed: { label: "Failed", variant: "error" },
-  unsupported: { label: "Can't run it", variant: "warning" }
-};
-function BoxRow({ berth, box, online, active }) {
-  const view = useHelper(berth, box, active && online);
-  const [asking, setAsking] = useState8();
-  const [removing, setRemoving] = useState8(false);
-  const [busy, setBusy] = useState8(false);
-  const s = view?.status;
-  const state = s?.state;
-  const running = state === "running";
-  const badge = !online ? { label: "Offline", variant: "outline" } : state ? STATE[state] : void 0;
-  const left2 = useLeft(box);
-  const restart = left2.length > 0 && `Restart ${serviceNames(left2)}: ${left2.length === 1 ? "it was" : "they were"} started while Leadline was on, and ${left2.length === 1 ? "its" : "their"} telemetry and database connection still go to it.`;
-  const off = async () => {
-    setBusy(true);
-    try {
-      const still = await turnOff(berth, box);
-      if (still.length) berth.notify(`Leadline is off on ${box}`, `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.`);
-    } catch (err) {
-      berth.notify(`Couldn't turn Leadline off on ${box}`, String(err?.message ?? err));
-    } finally {
-      setBusy(false);
-    }
-  };
-  return /* @__PURE__ */ jsxs7("li", { className: "px-4 py-3", "data-testid": "leadline-box", "data-box": box, "data-state": online ? state ?? "reading" : "offline", children: [
-    /* @__PURE__ */ jsxs7("div", { className: "flex flex-wrap items-center gap-x-3 gap-y-2", children: [
-      /* @__PURE__ */ jsx7(Icon4, { name: "Server", className: "size-4 shrink-0 text-muted-foreground" }),
-      /* @__PURE__ */ jsx7("span", { className: "font-medium text-sm", children: box }),
-      badge ? /* @__PURE__ */ jsxs7(Badge4, { variant: badge.variant, size: "sm", className: "gap-1", children: [
-        (state === "installing" || state === "starting") && /* @__PURE__ */ jsx7(Spinner2, { className: "size-3" }),
-        badge.label
-      ] }) : view?.old || view?.fault ? /* @__PURE__ */ jsx7(Badge4, { variant: "warning", size: "sm", children: "Unknown" }) : /* @__PURE__ */ jsx7(Skeleton3, { className: "h-4 w-14" }),
-      s?.version && state !== "none" && /* @__PURE__ */ jsxs7("span", { className: "font-mono text-muted-foreground text-xs", children: [
-        HELPER,
-        " ",
-        s.version,
-        s.platform && ` \xB7 ${s.platform}`
-      ] }),
-      /* @__PURE__ */ jsxs7("span", { className: "ml-auto flex items-center gap-2", children: [
-        online && running && s?.update && /* @__PURE__ */ jsxs7(Button4, { size: "xs", variant: "outline", onClick: () => setAsking("update"), children: [
-          "Update to ",
-          s.latest,
-          "\u2026"
-        ] }),
-        online && state === "off" && /* @__PURE__ */ jsx7(Button4, { size: "xs", onClick: () => setAsking("on"), children: "Turn on\u2026" }),
-        online && state === "failed" && /* @__PURE__ */ jsx7(Button4, { size: "xs", onClick: () => setAsking("on"), children: "Try again\u2026" }),
-        online && (running || state === "failed") && /* @__PURE__ */ jsx7(Button4, { size: "xs", variant: "outline", loading: busy, onClick: () => void off(), children: "Turn off" }),
-        online && (running || state === "off" || state === "failed") && /* @__PURE__ */ jsx7(Button4, { size: "xs", variant: "ghost", className: "text-muted-foreground", onClick: () => setRemoving(true), children: "Remove data\u2026" })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx7("div", { className: "mt-1 pl-7 text-muted-foreground text-xs", children: !online ? "Its helper can't be reached until the box is back." : view?.old ? "Shipyard on this computer is older than Leadline needs: its agent can't install a plugin's program on a box yet. Update Shipyard." : !s ? view?.fault ? /* @__PURE__ */ jsxs7("span", { className: "text-destructive-foreground", children: [
-      view.fault.message,
-      " ",
-      /* @__PURE__ */ jsx7("button", { type: "button", className: "underline underline-offset-2 hover:text-foreground", onClick: () => void readHelper(berth, box), children: "Try again" })
-    ] }) : null : state === "unsupported" ? cantRun(s, box).update ? /* @__PURE__ */ jsxs7(Fragment7, { children: [
-      cantRun(s, box).why,
-      " Update the box in",
-      " ",
-      /* @__PURE__ */ jsx7("button", { type: "button", className: "underline underline-offset-2 hover:text-foreground", onClick: () => berth.openSettings("boxes"), children: "Settings \u2192 Boxes" }),
-      "."
-    ] }) : cantRun(s, box).why : state === "failed" ? /* @__PURE__ */ jsx7("span", { className: "whitespace-pre-wrap text-destructive-foreground", children: s.error ?? "The box didn't say why." }) : state === "installing" ? "Downloading the program, checking it against its checksum and handing it to the box." : state === "starting" ? "The box has it and is starting it." : state === "off" ? /* @__PURE__ */ jsxs7(Fragment7, { children: [
-      "Nothing is recorded while it is off. Turning it on installs ",
-      HELPER,
-      " on ",
-      box,
-      " and keeps it running there; what it recorded before, if anything, is kept on the box until you remove it.",
-      restart && /* @__PURE__ */ jsx7("span", { className: "mt-1 block text-warning-foreground", "data-testid": "leadline-restart", children: restart })
-    ] }) : state === "none" ? `This copy of the plugin names no program to install. Install Leadline again from Settings \u2192 Plugins.` : null }),
-    online && running && /* @__PURE__ */ jsx7(Heard, { berth, box, active }),
-    /* @__PURE__ */ jsx7(TurnOnDialog, { berth, box: asking ? box : void 0, update: asking === "update", onClose: () => setAsking(void 0) }),
-    /* @__PURE__ */ jsx7(AlertDialog2, { open: removing, onOpenChange: setRemoving, children: /* @__PURE__ */ jsxs7(AlertDialogPopup2, { children: [
-      /* @__PURE__ */ jsxs7(AlertDialogHeader2, { children: [
-        /* @__PURE__ */ jsxs7(AlertDialogTitle2, { children: [
-          "Remove what Leadline recorded on ",
-          box,
-          "?"
-        ] }),
-        /* @__PURE__ */ jsxs7(AlertDialogDescription2, { children: [
-          "This stops ",
-          /* @__PURE__ */ jsx7("code", { children: HELPER }),
-          " on ",
-          box,
-          ", removes it, and deletes everything it recorded there: every worktree's queries, traces and logs. It can't be undone. Turn Leadline on again to start afresh."
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs7(AlertDialogFooter2, { children: [
-        /* @__PURE__ */ jsx7(AlertDialogClose2, { render: /* @__PURE__ */ jsx7(Button4, { variant: "ghost" }), children: "Cancel" }),
-        /* @__PURE__ */ jsx7(
-          Button4,
-          {
-            variant: "destructive",
-            loading: busy,
-            onClick: async () => {
-              setBusy(true);
-              try {
-                const still = await turnOff(berth, box, true);
-                setRemoving(false);
-                berth.notify(`Removed Leadline's data on ${box}`, still.length ? `Restart ${serviceNames(still)}: ${still.length === 1 ? "it still points" : "they still point"} at Leadline.` : void 0);
-              } catch (err) {
-                berth.notify(`Couldn't remove Leadline's data on ${box}`, String(err?.message ?? err));
-              } finally {
-                setBusy(false);
-              }
-            },
-            children: "Remove data"
-          }
-        )
-      ] })
-    ] }) })
-  ] });
-}
 function Heard({ berth, box, active }) {
   const api = useMemo6(() => leadline(berth), [berth]);
+  const { refresh } = useHelperState2(berth, box, false);
   const onFault = (fault) => {
-    if (fault.code === "helper_off") void readHelper(berth, box);
+    if (fault.code === "helper_off") refresh();
   };
   const live = useLive(async () => ({ sources: await api.sources(box), storage: await api.storage(box) }), box, { every: 1e4, active, onFault });
   if (!live.data) return live.fault ? /* @__PURE__ */ jsx7("p", { className: "mt-2 pl-7 text-destructive-foreground text-xs", children: live.fault.message }) : /* @__PURE__ */ jsx7(Skeleton3, { className: "mt-2 ml-7 h-4 w-64" });
