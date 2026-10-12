@@ -39,7 +39,7 @@ type rig struct {
 func newRig(t *testing.T) *rig {
 	t.Helper()
 	dir := t.TempDir()
-	st, err := store.Open(filepath.Join(dir, "leadline.db"))
+	st, err := store.Open(filepath.Join(dir, "leadline.db"), store.Options{ReadWait: time.Minute})
 	if err != nil {
 		t.Fatal(err)
 	}

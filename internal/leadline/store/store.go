@@ -164,6 +164,7 @@ type Store struct {
 	link *linker
 
 	flushEvery time.Duration
+	readWait   time.Duration
 	stop       chan struct{} // closed by Close
 	bg         sync.WaitGroup
 	closeOnce  sync.Once
@@ -187,6 +188,13 @@ type Options struct {
 	// to the database. A read never sees that wait, because every read
 	// first has what is waiting written. Zero means 200ms.
 	FlushEvery time.Duration
+	// ReadWait is the longest a read waits for rows on their way in before
+	// it answers with what is already written. Zero means one second. A
+	// write takes milliseconds, so this only matters when the disk has
+	// stalled, or on a machine slow enough that a large batch takes longer
+	// to write than that: a test that must read what it just wrote sets it
+	// long.
+	ReadWait time.Duration
 }
 
 const (
@@ -195,10 +203,9 @@ const (
 	// burst past it waits for the flusher, which is what slows a sender
 	// that outruns the disk.
 	maxWaiting = 20_000
-	// syncWait is the longest a read waits for rows on their way in. A
-	// write takes milliseconds; this only matters when the disk has
-	// stalled, and then a read a moment behind beats no read.
-	syncWait = time.Second
+	// defaultReadWait is Options.ReadWait when it is not given: with a
+	// stalled disk, a read a moment behind beats no read.
+	defaultReadWait = time.Second
 	// readers is how many reads may run at once.
 	readers = 4
 )
@@ -213,6 +220,9 @@ func Open(path string, opts ...Options) (*Store, error) {
 	if o.FlushEvery <= 0 {
 		o.FlushEvery = defaultFlushEvery
 	}
+	if o.ReadWait <= 0 {
+		o.ReadWait = defaultReadWait
+	}
 	if path == "" {
 		return nil, errors.New("the store needs a file to keep its rows in")
 	}
@@ -226,6 +236,7 @@ func Open(path string, opts ...Options) (*Store, error) {
 	s := &Store{
 		path:       path,
 		flushEvery: o.FlushEvery,
+		readWait:   o.ReadWait,
 		flushed:    make(chan struct{}),
 		wake:       make(chan struct{}, 1),
 		urgent:     make(chan struct{}, 1),
@@ -371,7 +382,7 @@ func (s *Store) Flush() { s.await(0) }
 
 // sync is Flush for a read about to run. It costs two atomic loads when
 // nothing is waiting, which is nearly always.
-func (s *Store) sync() { s.await(syncWait) }
+func (s *Store) sync() { s.await(s.readWait) }
 
 // await waits for the flusher to write every row added so far, and tells it
 // not to linger. With a limit it gives up after that long.
