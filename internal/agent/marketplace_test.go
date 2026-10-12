@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -744,8 +745,9 @@ func TestTheCommittedListingInstalls(t *testing.T) {
 	if err := json.Unmarshal(b, &index); err != nil || len(index.Plugins) == 0 {
 		t.Fatalf("site/plugins/index.json lists nothing: %v", err)
 	}
-	if index.Plugins[0].ID != "hello-ports" {
-		t.Fatalf("the first listing is %s", index.Plugins[0].ID)
+	// The example is always listed; where is the listing's own order (by id).
+	if !slices.ContainsFunc(index.Plugins, func(p listedPlugin) bool { return p.ID == "hello-ports" }) {
+		t.Fatalf("hello-ports is not in the listing")
 	}
 	srv := httptest.NewServer(http.FileServer(http.Dir(site)))
 	defer srv.Close()
