@@ -46,7 +46,8 @@ export function Lock({ writes, now, busy, onLock }: { writes: Writes; now: numbe
   return (
     <span className="flex shrink-0 items-center gap-1.5" data-testid="database-lock" data-writes="on">
       <Tip label="Edits and statements can change this database until the time runs out">
-        <Badge variant="warning" size="sm" className="gap-1 tabular-nums" role="timer" aria-label={`Writes are on for ${left((writes.until ?? now) - now)} more`}>
+        {/* Armed, said the way the app's destructive actions are: an outline, in red. Not amber, which is an agent asking for you. */}
+        <Badge variant="outline" size="sm" className="gap-1 border-destructive/40 text-destructive-foreground tabular-nums" role="timer" aria-label={`Writes are on for ${left((writes.until ?? now) - now)} more`}>
           <Icon name="LockOpen" className="size-3" />
           Writes on · {left((writes.until ?? now) - now)}
         </Badge>

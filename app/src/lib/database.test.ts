@@ -5,11 +5,11 @@ import { test } from "node:test";
 import type { Cell } from "../../../plugins/database/src/api.ts";
 import { editText, isLong, parseInput, pretty, quote, sameCell, show } from "../../../plugins/database/src/engines/families.ts";
 import { engineOf, tableName } from "../../../plugins/database/src/engines/index.ts";
-import { type Draft, filtersOf, filterText, jumpFilters, nextOrder, opsFor } from "../../../plugins/database/src/filters.ts";
+import { type Draft, filtersOf, jumpFilters, nextOrder, opsFor } from "../../../plugins/database/src/filters.ts";
 import { kindOf, rulesFor } from "../../../plugins/database/src/rules.ts";
 import { namePart, sourceOf } from "../../../plugins/database/src/source.ts";
 import { addRow, changes, count, dropRows, keyed, keyText, NOTHING, removeNew, removeRows, review, rowId, setCell, setNew, summary, undo } from "../../../plugins/database/src/staged.ts";
-import { errorAt, oneLine, reads, remember, split, statementAt } from "../../../plugins/database/src/statements.ts";
+import { errorAt, oneLine, remember, split, statementAt } from "../../../plugins/database/src/statements.ts";
 
 const pg = engineOf("postgres");
 
@@ -317,8 +317,6 @@ test("filters are sent once their value is entered, and as the column reads it",
     { column: "status", op: "not_null" },
     { column: "id", op: "=", value: "abc" },
   ]);
-  assert.equal(filterText(drafts[0]), "id ≥ 100");
-  assert.equal(filterText(drafts[6]), "status is NULL");
 });
 
 test("a column is offered the connection's operators that mean something for it", () => {
@@ -418,7 +416,4 @@ test("the history holds statements, newest first, each once, and never past its 
   assert.equal(remember(h, "SELECT 3", 400, 2).length, 2);
   assert.equal(oneLine("SELECT *\n  FROM orders\n  WHERE id = 1"), "SELECT * FROM orders WHERE id = 1");
   assert.equal(oneLine("x".repeat(200), 10), `${"x".repeat(10)}…`);
-  assert.equal(reads("  select 1"), true);
-  assert.equal(reads("-- note\nEXPLAIN UPDATE t SET a = 1"), true);
-  assert.equal(reads("UPDATE t SET a = 1"), false);
 });

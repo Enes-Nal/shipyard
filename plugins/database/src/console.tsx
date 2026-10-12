@@ -209,7 +209,7 @@ export function Console({ ctx, schemas, put }: { ctx: Ctx; schemas: Schema[]; pu
         </div>
       )}
       {result?.truncated && (
-        <Line tone="warn" testId="database-truncated">
+        <Line testId="database-truncated">
           Only the first {plural(result.rows.length, "row")} are shown: the statement returned more than the console keeps. Narrow it with WHERE or LIMIT to see the others.
         </Line>
       )}

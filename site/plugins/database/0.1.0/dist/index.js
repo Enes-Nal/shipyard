@@ -42,7 +42,7 @@ function faultOf(err) {
 var isOldHelper = (f) => f.status === 404 && f.code !== "box_outdated";
 
 // src/browser.tsx
-import { Badge as Badge2, Button as Button3, Icon as Icon3, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet as Sheet2, SheetDescription as SheetDescription2, SheetFooter as SheetFooter2, SheetHeader as SheetHeader2, SheetPanel as SheetPanel2, SheetPopup as SheetPopup2, SheetTitle as SheetTitle2, Tip as Tip2, cn as cn2 } from "@berth/plugin/ui";
+import { Badge as Badge2, Button as Button3, Card, CardHeader, CardPanel, Icon as Icon3, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet as Sheet2, SheetDescription as SheetDescription2, SheetFooter as SheetFooter2, SheetHeader as SheetHeader2, SheetPanel as SheetPanel2, SheetPopup as SheetPopup2, SheetTitle as SheetTitle2, Tip as Tip2, cn as cn3 } from "@berth/plugin/ui";
 import { useCallback as useCallback3, useEffect as useEffect3, useMemo as useMemo2, useRef as useRef3, useState as useState4 } from "react";
 
 // src/engines/families.ts
@@ -386,7 +386,7 @@ function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter, canEd
         return /* @__PURE__ */ jsxs("th", { scope: "col", "aria-colindex": i + 2, "aria-sort": by ? by.desc ? "descending" : "ascending" : onSort ? "none" : void 0, className: "group/head sticky top-0 z-20 border-r border-b bg-background px-2 text-left align-middle font-normal", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
             onSort ? /* @__PURE__ */ jsxs("button", { type: "button", onClick: () => onSort(c.name), className: cn("flex min-w-0 items-center gap-1 rounded-sm font-medium text-[13px] outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", by ? "text-foreground" : "text-foreground/90"), children: [
-              c.key && /* @__PURE__ */ jsx(Icon, { name: "KeyRound", className: "size-3 shrink-0 text-warning-foreground" }),
+              c.key && /* @__PURE__ */ jsx(Icon, { name: "KeyRound", className: "size-3 shrink-0 text-muted-foreground" }),
               /* @__PURE__ */ jsx("span", { className: "truncate", children: c.name }),
               by && /* @__PURE__ */ jsx(Icon, { name: by.desc ? "ArrowDown" : "ArrowUp", className: "size-3 shrink-0" })
             ] }) : /* @__PURE__ */ jsx("span", { className: "truncate font-medium text-[13px]", children: c.name }),
@@ -435,8 +435,20 @@ function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter, canEd
 }
 var RowView = memo(function RowView2({ at, number, row, columns, sel, tab, editing, picked, select, open, view, jump, pick, commit, cancel }) {
   const gone = row.state === "deleted" || row.state === "gone";
-  return /* @__PURE__ */ jsxs("tr", { "aria-rowindex": at + 2, "data-testid": "database-row", "data-row": row.id, "data-state": row.state, style: { height: ROW }, className: cn(row.state === "new" && "bg-success/8", row.state === "deleted" && "bg-destructive/8", row.state === "gone" && "bg-warning/12"), children: [
-    /* @__PURE__ */ jsx("td", { role: "rowheader", className: cn("sticky left-0 z-10 border-r border-b bg-background px-2 text-center text-muted-foreground text-xs tabular-nums", row.state === "new" && "shadow-[inset_3px_0_0_var(--success)]", row.state === "deleted" && "shadow-[inset_3px_0_0_var(--destructive)]", row.state === "gone" && "shadow-[inset_3px_0_0_var(--warning)]"), children: picked !== void 0 ? /* @__PURE__ */ jsx("input", { type: "checkbox", className: "size-3.5 cursor-pointer align-middle accent-primary", "aria-label": row.state === "new" ? "Pick the new row" : `Pick row ${number}`, checked: picked, onChange: (e) => pick(at, e.target.checked) }) : row.state === "new" ? /* @__PURE__ */ jsx("span", { className: "font-medium text-success-foreground", children: "new" }) : number }),
+  return /* @__PURE__ */ jsxs("tr", { "aria-rowindex": at + 2, "data-testid": "database-row", "data-row": row.id, "data-state": row.state, style: { height: ROW }, className: cn(row.state === "new" && "bg-success/8", gone && "bg-destructive/8"), children: [
+    /* @__PURE__ */ jsx(
+      "td",
+      {
+        role: "rowheader",
+        className: cn(
+          "sticky left-0 z-10 border-r border-b bg-background px-2 text-center text-muted-foreground text-xs tabular-nums",
+          row.state === "new" && "bg-[color-mix(in_oklab,var(--success)_8%,var(--background))]",
+          // A row that is gone, by this edit or by something else's, looks the same: it is not there.
+          gone && "bg-[color-mix(in_oklab,var(--destructive)_8%,var(--background))]"
+        ),
+        children: picked !== void 0 ? /* @__PURE__ */ jsx("input", { type: "checkbox", className: "size-3.5 cursor-pointer align-middle accent-primary", "aria-label": row.state === "new" ? "Pick the new row" : `Pick row ${number}`, checked: picked, onChange: (e) => pick(at, e.target.checked) }) : row.state === "new" ? /* @__PURE__ */ jsx("span", { className: "font-medium text-success-foreground", children: "new" }) : number
+      }
+    ),
     columns.map((c, col) => {
       const on = sel === col;
       const cell = row.cells[col] ?? null;
@@ -461,7 +473,8 @@ var RowView = memo(function RowView2({ at, number, row, columns, sel, tab, editi
           onDoubleClick: () => open(at, col),
           className: cn(
             "relative border-r border-b px-2 font-mono text-xs outline-none",
-            changed && "bg-warning/16 shadow-[inset_2px_0_0_var(--warning)]",
+            // Changed, as the File tab marks a changed line: the whole cell, tinted.
+            changed && "bg-info/14",
             on && "z-[5] shadow-[inset_0_0_0_2px_var(--ring)]",
             shown.right && "text-right tabular-nums",
             gone && "text-muted-foreground line-through"
@@ -655,7 +668,7 @@ function Value({ v, onClose }) {
       ] })
     ] }),
     /* @__PURE__ */ jsxs2(SheetPanel, { className: "flex min-h-0 flex-1 flex-col gap-3", children: [
-      v.cut && /* @__PURE__ */ jsxs2("p", { role: "status", className: "rounded-md bg-warning/8 px-3 py-2 text-pretty text-warning-foreground text-xs", "data-testid": "database-cut", children: [
+      v.cut && /* @__PURE__ */ jsxs2("p", { role: "status", className: "rounded-md bg-muted px-3 py-2 text-pretty text-foreground text-xs", "data-testid": "database-cut", children: [
         "Only the first ",
         CUT_AT.toLocaleString("en-US"),
         " characters were read: the value is longer. It can't be edited here, because saving would keep only this much. Read or change the rest from the console."
@@ -806,7 +819,7 @@ function summary(staged) {
 }
 
 // src/ui.tsx
-import { Button as Button2, Empty, EmptyDescription, EmptyHeader, EmptyTitle, Icon as Icon2, Skeleton } from "@berth/plugin/ui";
+import { Button as Button2, Empty, EmptyDescription, EmptyHeader, EmptyTitle, Icon as Icon2, Skeleton, cn as cn2 } from "@berth/plugin/ui";
 import { Fragment as Fragment2, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
 var HELPER = "berth-database";
 var GUIDE = "https://docs.berthd.app/guides/database";
@@ -859,9 +872,9 @@ function Waiting({ fault, onRetry, title = "Couldn't read from the database" }) 
   }
   return /* @__PURE__ */ jsx3("div", { className: "flex-1 space-y-2 p-3", "aria-busy": "true", children: [0, 1, 2, 3, 4, 5].map((i) => /* @__PURE__ */ jsx3(Skeleton, { className: "h-7 w-full" }, i)) });
 }
-function Line({ tone = "warn", children, actions, testId }) {
-  const tones = { warn: "bg-warning/8 text-warning-foreground", bad: "bg-destructive/8 text-destructive-foreground", note: "bg-muted/50 text-muted-foreground" };
-  return /* @__PURE__ */ jsxs3("div", { role: "status", "data-testid": testId, className: `flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b px-3 py-1.5 text-xs ${tones[tone]}`, children: [
+function Line({ tone = "note", children, actions, testId }) {
+  const tones = { bad: "bg-destructive/8 text-destructive-foreground", note: "bg-muted/50 text-muted-foreground" };
+  return /* @__PURE__ */ jsxs3("div", { role: "status", "data-testid": testId, className: cn2("flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b px-3 py-1.5 text-xs", tones[tone]), children: [
     /* @__PURE__ */ jsx3("span", { className: "min-w-0 flex-1 text-pretty", children }),
     actions
   ] });
@@ -899,7 +912,7 @@ function Browser({ ctx, schemas, onReload, toConsole }) {
   const go = useCallback3((schema, name, filters) => setOpen((o) => ({ schema, table: name, filters, n: (o?.n ?? 0) + 1 })), []);
   return /* @__PURE__ */ jsxs4("div", { className: "flex min-h-0 flex-1", children: [
     /* @__PURE__ */ jsx4(Tree, { ctx, schemas, open, staged, onOpen: go, onReload }),
-    /* @__PURE__ */ jsx4("div", { className: cn2("min-h-0 min-w-0 flex-1 flex-col", open ? "flex" : "hidden @2xl:flex"), children: open && table ? /* @__PURE__ */ jsx4(TableView, { ctx, schema: open.schema, table, initial: open.filters, staged: staged[key] ?? NOTHING, setStaged: (s) => setOne(key, s), onBack: () => setOpen(void 0), onJump: go, toConsole }, `${key}
+    /* @__PURE__ */ jsx4("div", { className: cn3("min-h-0 min-w-0 flex-1 flex-col", open ? "flex" : "hidden @2xl:flex"), children: open && table ? /* @__PURE__ */ jsx4(TableView, { ctx, schema: open.schema, table, initial: open.filters, staged: staged[key] ?? NOTHING, setStaged: (s) => setOne(key, s), onBack: () => setOpen(void 0), onJump: go, toConsole }, `${key}
 ${open.n}`) : open ? /* @__PURE__ */ jsx4(Notice, { icon: "table-2", title: `${open.table} isn't there any more`, body: "The table was dropped or renamed since the list was read.", actions: /* @__PURE__ */ jsx4(Button3, { size: "sm", variant: "outline", onClick: () => setOpen(void 0), children: "Back to the tables" }) }) : /* @__PURE__ */ jsx4(Notice, { icon: "table-2", title: "Pick a table", body: `Its rows open here. ${ctx.conn.database} is read-only until you unlock writes.` }) })
   ] });
 }
@@ -908,7 +921,7 @@ function Tree({ ctx, schemas, open, staged, onOpen, onReload }) {
   const q = text.trim().toLowerCase();
   const shown = schemas.map((s) => ({ ...s, tables: s.tables.filter((t) => !q || t.name.toLowerCase().includes(q) || ctx.caps.schemas && `${s.name}.${t.name}`.toLowerCase().includes(q)) })).filter((s) => s.tables.length > 0);
   const total = schemas.reduce((n, s) => n + s.tables.length, 0);
-  return /* @__PURE__ */ jsxs4("nav", { "aria-label": "Tables", "data-testid": "database-tree", className: cn2("min-h-0 w-full shrink-0 flex-col @2xl:w-60 @2xl:border-r", open ? "hidden @2xl:flex" : "flex"), children: [
+  return /* @__PURE__ */ jsxs4("nav", { "aria-label": "Tables", "data-testid": "database-tree", className: cn3("min-h-0 w-full shrink-0 flex-col @2xl:w-60 @2xl:border-r", open ? "hidden @2xl:flex" : "flex"), children: [
     /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 items-center gap-1.5 border-b p-2", children: [
       /* @__PURE__ */ jsx4(Input, { className: "min-w-0 flex-1", size: "sm", type: "search", placeholder: "Filter tables", "aria-label": "Filter tables", value: text, onChange: (e) => setText(e.target.value) }),
       /* @__PURE__ */ jsx4(Tip2, { label: "Read the tables again", children: /* @__PURE__ */ jsx4(Button3, { size: "icon-sm", variant: "ghost", "aria-label": "Read the tables again", onClick: onReload, children: /* @__PURE__ */ jsx4(Icon3, { name: "RefreshCw", className: "size-3.5" }) }) })
@@ -933,11 +946,11 @@ function Tree({ ctx, schemas, open, staged, onOpen, onReload }) {
             "data-testid": "database-table",
             "aria-current": on ? "true" : void 0,
             onClick: () => onOpen(s.name, t.name),
-            className: cn2("flex h-7 w-full items-center gap-2 px-3 text-left outline-none hover:bg-accent/50 focus-visible:bg-accent/60", on && "bg-accent/60 font-medium"),
+            className: cn3("flex h-7 w-full items-center gap-2 px-3 text-left outline-none hover:bg-accent/50 focus-visible:bg-accent/60", on && "bg-accent/60 font-medium"),
             children: [
               /* @__PURE__ */ jsx4(Icon3, { name: kind.icon, className: "size-3.5 shrink-0 text-muted-foreground" }),
               /* @__PURE__ */ jsx4("span", { className: "min-w-0 flex-1 truncate", children: t.name }),
-              n > 0 && /* @__PURE__ */ jsx4(Tip2, { label: `${plural(n, "staged change")}, not applied`, children: /* @__PURE__ */ jsx4("span", { role: "img", "aria-label": `${plural(n, "staged change")}, not applied`, className: "size-1.5 shrink-0 rounded-full bg-warning" }) }),
+              n > 0 && /* @__PURE__ */ jsx4(Tip2, { label: `${plural(n, "staged change")}, not applied`, children: /* @__PURE__ */ jsx4("span", { role: "img", "aria-label": `${plural(n, "staged change")}, not applied`, className: "size-1.5 shrink-0 rounded-full bg-info" }) }),
               /* @__PURE__ */ jsx4("span", { className: "shrink-0 text-muted-foreground text-xs tabular-nums", children: t.kind === "table" ? t.rows_estimate >= 0 ? `~${count2(t.rows_estimate)}` : "" : kind.short })
             ]
           }
@@ -1195,14 +1208,14 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
         "."
       ] }),
       !data ? /* @__PURE__ */ jsx4(Waiting, { fault: read.fault, onRetry: read.reload, title: `Couldn't read ${name}` }) : /* @__PURE__ */ jsxs4(Fragment3, { children: [
-        read.fault && /* @__PURE__ */ jsxs4(Line, { tone: "warn", children: [
+        read.fault && /* @__PURE__ */ jsxs4(Line, { tone: "bad", children: [
           "Couldn't read again: ",
           read.fault.message
         ] }),
         rows.length === 0 ? /* @__PURE__ */ jsx4(Notice, { icon: filters.length ? "Search" : "table-2", title: filters.length ? "No rows match" : offset > 0 ? "No more rows" : `${name} is empty`, body: filters.length ? "Nothing in the table matches the filters above." : offset > 0 ? "The page before was the last." : rules.inserts && !editing ? "Unlock writes to add a row." : void 0 }) : /* @__PURE__ */ jsx4(Grid, { label: `Rows of ${name}`, columns, rows, offset, order, onSort: (column) => (setOrder(nextOrder(order, column)), page(0)), onFilter: caps.operators.length ? addFilter : void 0, canEdit, onEdit: editing ? onEdit : void 0, onView, onJump: jump, picked, canPick: (r) => r.state === "new" || rules.rows && r.state !== "deleted", onPick: editing ? (ids, on) => setPicked((p) => new Set(on ? [...p, ...ids] : [...p].filter((id) => !ids.includes(id)))) : void 0 })
       ] }),
-      n > 0 && /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 flex-wrap items-center gap-2 border-t bg-warning/8 px-3 py-1.5", "data-testid": "database-staged", role: "status", children: [
-        /* @__PURE__ */ jsx4(Icon3, { name: "PencilLine", className: "size-3.5 shrink-0 text-warning-foreground" }),
+      n > 0 && /* @__PURE__ */ jsxs4("div", { className: "flex shrink-0 flex-wrap items-center gap-2 border-t bg-muted/50 px-3 py-1.5", "data-testid": "database-staged", role: "status", children: [
+        /* @__PURE__ */ jsx4(Icon3, { name: "PencilLine", className: "size-3.5 shrink-0 text-muted-foreground" }),
         /* @__PURE__ */ jsxs4("span", { className: "min-w-0 flex-1 text-sm", children: [
           /* @__PURE__ */ jsx4("b", { className: "font-medium", children: plural(n, "staged change") }),
           " ",
@@ -1259,15 +1272,15 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
       ] }),
       /* @__PURE__ */ jsxs4(SheetPanel2, { className: "min-h-0 flex-1 space-y-2 overflow-auto", children: [
         lines.map((l) => (
-          // Its kind is the bar at its edge, as in the grid's margin.
-          /* @__PURE__ */ jsxs4("div", { className: cn2("overflow-hidden rounded-lg border", l.kind === "delete" ? "shadow-[inset_3px_0_0_var(--destructive)]" : l.kind === "insert" ? "shadow-[inset_3px_0_0_var(--success)]" : "shadow-[inset_3px_0_0_var(--warning)]"), "data-testid": "database-change", "data-kind": l.kind, children: [
-            /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2 border-b px-3 py-1.5", children: [
-              /* @__PURE__ */ jsx4(Badge2, { variant: "outline", size: "sm", className: "shrink-0", children: l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update" }),
+          // One card a change: its kind is the badge's to say.
+          /* @__PURE__ */ jsxs4(Card, { className: "overflow-hidden rounded-xl before:rounded-[calc(var(--radius-xl)-1px)]", "data-testid": "database-change", "data-kind": l.kind, children: [
+            /* @__PURE__ */ jsxs4(CardHeader, { className: "flex items-center gap-2 border-b px-3 py-1.5 in-[[data-slot=card]:has(>[data-slot=card-panel])]:pb-1.5", children: [
+              /* @__PURE__ */ jsx4(Badge2, { variant: l.kind === "insert" ? "success" : "outline", size: "sm", className: cn3("shrink-0", l.kind === "delete" && "text-destructive-foreground"), children: l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update" }),
               /* @__PURE__ */ jsx4("span", { className: "min-w-0 flex-1 truncate font-mono text-xs", children: l.title }),
               gone.includes(l.id) && /* @__PURE__ */ jsx4(Badge2, { variant: "outline", size: "sm", className: "shrink-0", children: "No longer there" }),
               /* @__PURE__ */ jsx4(Tip2, { label: "Take this change back", children: /* @__PURE__ */ jsx4(Button3, { size: "icon-xs", variant: "ghost", "aria-label": `Take back the ${l.kind} of ${l.title}`, onClick: () => setStaged(undo(staged, l)), children: /* @__PURE__ */ jsx4(Icon3, { name: "undo-2", className: "size-3.5" }) }) })
             ] }),
-            l.kind === "delete" ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "The whole row goes." }) : l.fields.length === 0 ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "Every column takes its default." }) : /* @__PURE__ */ jsx4("dl", { className: "divide-y", children: l.fields.map((f) => /* @__PURE__ */ jsxs4("div", { className: "flex items-baseline gap-2 px-3 py-1.5 font-mono text-xs", children: [
+            /* @__PURE__ */ jsx4(CardPanel, { className: "p-0", children: l.kind === "delete" ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "The whole row goes." }) : l.fields.length === 0 ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "Every column takes its default." }) : /* @__PURE__ */ jsx4("dl", { className: "divide-y", children: l.fields.map((f) => /* @__PURE__ */ jsxs4("div", { className: "flex items-baseline gap-2 px-3 py-1.5 font-mono text-xs", children: [
               /* @__PURE__ */ jsx4("dt", { className: "w-32 shrink-0 truncate text-muted-foreground", children: f.column }),
               /* @__PURE__ */ jsxs4("dd", { className: "min-w-0 flex-1 break-words", children: [
                 l.kind === "update" && /* @__PURE__ */ jsxs4(Fragment3, { children: [
@@ -1276,7 +1289,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
                 ] }),
                 /* @__PURE__ */ jsx4("span", { className: "font-medium", children: quote(f.now) })
               ] })
-            ] }, f.column)) })
+            ] }, f.column)) }) })
           ] }, `${l.kind}
 ${l.id}`)
         )),
@@ -1348,13 +1361,13 @@ function Structure({ table, schema, ctx }) {
         /* @__PURE__ */ jsx4("th", { scope: "col", className: th, children: "Default" })
       ] }) }),
       /* @__PURE__ */ jsx4("tbody", { className: "[&_tr:last-child_td]:border-b-0", children: table.columns.map((c) => /* @__PURE__ */ jsxs4("tr", { children: [
-        /* @__PURE__ */ jsx4("td", { className: cn2(td, "font-mono text-xs"), children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ jsx4("td", { className: cn3(td, "font-mono text-xs"), children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-1.5", children: [
           c.name,
-          (c.primary_key || table.primary_key.includes(c.name)) && /* @__PURE__ */ jsx4(Tip2, { label: "Part of the primary key", children: /* @__PURE__ */ jsx4("span", { role: "img", "aria-label": "Part of the primary key", children: /* @__PURE__ */ jsx4(Icon3, { name: "KeyRound", className: "size-3 text-warning-foreground" }) }) })
+          (c.primary_key || table.primary_key.includes(c.name)) && /* @__PURE__ */ jsx4(Tip2, { label: "Part of the primary key", children: /* @__PURE__ */ jsx4("span", { role: "img", "aria-label": "Part of the primary key", children: /* @__PURE__ */ jsx4(Icon3, { name: "KeyRound", className: "size-3 text-muted-foreground" }) }) })
         ] }) }),
-        /* @__PURE__ */ jsx4("td", { className: cn2(td, "font-mono text-muted-foreground text-xs"), children: c.type }),
-        /* @__PURE__ */ jsx4("td", { className: cn2(td, "text-xs"), children: c.nullable ? "allowed" : /* @__PURE__ */ jsx4("span", { className: "text-muted-foreground", children: "never" }) }),
-        /* @__PURE__ */ jsx4("td", { className: cn2(td, "font-mono text-muted-foreground text-xs"), children: c.default ?? "" })
+        /* @__PURE__ */ jsx4("td", { className: cn3(td, "font-mono text-muted-foreground text-xs"), children: c.type }),
+        /* @__PURE__ */ jsx4("td", { className: cn3(td, "text-xs"), children: c.nullable ? "allowed" : /* @__PURE__ */ jsx4("span", { className: "text-muted-foreground", children: "never" }) }),
+        /* @__PURE__ */ jsx4("td", { className: cn3(td, "font-mono text-muted-foreground text-xs"), children: c.default ?? "" })
       ] }, c.name)) })
     ] }) }) }),
     /* @__PURE__ */ jsx4(Part, { title: "Primary key", children: table.primary_key.length ? /* @__PURE__ */ jsx4("p", { className: "rounded-lg border px-3 py-2 font-mono text-xs", children: table.primary_key.join(", ") }) : /* @__PURE__ */ jsxs4(Nothing, { children: [
@@ -1652,7 +1665,7 @@ function Console({ ctx, schemas, put }) {
         ", underlined in the editor."
       ] }) : run.fault.hint && /* @__PURE__ */ jsx5("p", { className: "whitespace-pre-wrap text-muted-foreground", children: run.fault.hint })
     ] }) }),
-    result?.truncated && /* @__PURE__ */ jsxs5(Line, { tone: "warn", testId: "database-truncated", children: [
+    result?.truncated && /* @__PURE__ */ jsxs5(Line, { testId: "database-truncated", children: [
       "Only the first ",
       plural(result.rows.length, "row"),
       " are shown: the statement returned more than the console keeps. Narrow it with WHERE or LIMIT to see the others."
@@ -1702,7 +1715,7 @@ function Lock({ writes, now, busy, onLock }) {
     ] });
   }
   return /* @__PURE__ */ jsxs6("span", { className: "flex shrink-0 items-center gap-1.5", "data-testid": "database-lock", "data-writes": "on", children: [
-    /* @__PURE__ */ jsx6(Tip4, { label: "Edits and statements can change this database until the time runs out", children: /* @__PURE__ */ jsxs6(Badge3, { variant: "warning", size: "sm", className: "gap-1 tabular-nums", role: "timer", "aria-label": `Writes are on for ${left((writes.until ?? now) - now)} more`, children: [
+    /* @__PURE__ */ jsx6(Tip4, { label: "Edits and statements can change this database until the time runs out", children: /* @__PURE__ */ jsxs6(Badge3, { variant: "outline", size: "sm", className: "gap-1 border-destructive/40 text-destructive-foreground tabular-nums", role: "timer", "aria-label": `Writes are on for ${left((writes.until ?? now) - now)} more`, children: [
       /* @__PURE__ */ jsx6(Icon5, { name: "LockOpen", className: "size-3" }),
       "Writes on \xB7 ",
       left((writes.until ?? now) - now)
@@ -1831,7 +1844,6 @@ ${source}`, { active, every: 1e4 });
   }, [conns.fault, onFault]);
   const pickKey = `connection:${box}/${source}`;
   const [picked, setPicked] = useState7(() => berth.storage.get(pickKey, ""));
-  const [updating, setUpdating] = useState7(false);
   if (!conns.data) {
     if (conns.fault && isOldHelper(conns.fault)) {
       const s = helper.status;
@@ -1870,7 +1882,7 @@ ${source}`, { active, every: 1e4 });
           actions: /* @__PURE__ */ jsxs7(Fragment5, { children: [
             /* @__PURE__ */ jsx7(Button6, { size: "sm", onClick: () => berth.openScreen("database"), children: "Open Database" }),
             !s?.update && /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "outline", onClick: () => berth.openSettings("plugins"), children: "Open Settings \u2192 Plugins" }),
-            /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", loading: updating, onClick: () => (setUpdating(true), refresh(), conns.reload(), setTimeout(() => setUpdating(false), 600)), children: "Check again" })
+            /* @__PURE__ */ jsx7(Button6, { size: "sm", variant: "ghost", onClick: () => (refresh(), conns.reload()), children: "Check again" })
           ] })
         }
       );
@@ -2008,7 +2020,7 @@ ${conn.id}`, { active });
       /* @__PURE__ */ jsx7("span", { className: "ml-auto", children: /* @__PURE__ */ jsx7(Lock, { writes, now, busy: locking, onLock: () => void lock() }) })
     ] }),
     ranOut && !on && /* @__PURE__ */ jsx7(Line, { tone: "note", testId: "database-ran-out", actions: /* @__PURE__ */ jsx7(Button6, { size: "xs", variant: "ghost", onClick: () => setRanOut(false), children: "Dismiss" }), children: "Writes locked themselves again: the fifteen minutes ran out. What you staged is still staged." }),
-    stale && /* @__PURE__ */ jsxs7(Line, { tone: "warn", children: [
+    stale && /* @__PURE__ */ jsxs7(Line, { tone: "bad", children: [
       "Couldn't ask ",
       box,
       " again: ",

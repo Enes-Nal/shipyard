@@ -129,10 +129,3 @@ export const oneLine = (sql: string, max = 90) => {
   const line = sql.replace(/\s+/g, " ").trim();
   return line.length > max ? `${line.slice(0, max)}…` : line;
 };
-
-// Whether a statement only reads, by its first word: what the console may
-// say before it asks, never what decides (the helper does).
-export function reads(sql: string): boolean {
-  const first = /^\s*(?:\/\*[\s\S]*?\*\/\s*|--[^\n]*\n\s*)*([A-Za-z]+)/.exec(sql)?.[1]?.toUpperCase() ?? "";
-  return ["SELECT", "SHOW", "EXPLAIN", "VALUES", "TABLE", "WITH"].includes(first);
-}

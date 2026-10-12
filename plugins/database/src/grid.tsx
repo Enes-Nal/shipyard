@@ -230,7 +230,7 @@ export function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter
                   <div className="flex items-center gap-1">
                     {onSort ? (
                       <button type="button" onClick={() => onSort(c.name)} className={cn("flex min-w-0 items-center gap-1 rounded-sm font-medium text-[13px] outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", by ? "text-foreground" : "text-foreground/90")}>
-                        {c.key && <Icon name="KeyRound" className="size-3 shrink-0 text-warning-foreground" />}
+                        {c.key && <Icon name="KeyRound" className="size-3 shrink-0 text-muted-foreground" />}
                         <span className="truncate">{c.name}</span>
                         {by && <Icon name={by.desc ? "ArrowDown" : "ArrowUp"} className="size-3 shrink-0" />}
                       </button>
@@ -318,9 +318,17 @@ interface RowProps {
 const RowView = memo(function RowView({ at, number, row, columns, sel, tab, editing, picked, select, open, view, jump, pick, commit, cancel }: RowProps) {
   const gone = row.state === "deleted" || row.state === "gone";
   return (
-    <tr aria-rowindex={at + 2} data-testid="database-row" data-row={row.id} data-state={row.state} style={{ height: ROW }} className={cn(row.state === "new" && "bg-success/8", row.state === "deleted" && "bg-destructive/8", row.state === "gone" && "bg-warning/12")}>
-      {/* Opaque, as rows scroll under it: its state is a bar at its edge. */}
-      <td role="rowheader" className={cn("sticky left-0 z-10 border-r border-b bg-background px-2 text-center text-muted-foreground text-xs tabular-nums", row.state === "new" && "shadow-[inset_3px_0_0_var(--success)]", row.state === "deleted" && "shadow-[inset_3px_0_0_var(--destructive)]", row.state === "gone" && "shadow-[inset_3px_0_0_var(--warning)]")}>
+    <tr aria-rowindex={at + 2} data-testid="database-row" data-row={row.id} data-state={row.state} style={{ height: ROW }} className={cn(row.state === "new" && "bg-success/8", gone && "bg-destructive/8")}>
+      {/* Opaque, as rows scroll under it: the row's tint, mixed with the page. */}
+      <td
+        role="rowheader"
+        className={cn(
+          "sticky left-0 z-10 border-r border-b bg-background px-2 text-center text-muted-foreground text-xs tabular-nums",
+          row.state === "new" && "bg-[color-mix(in_oklab,var(--success)_8%,var(--background))]",
+          // A row that is gone, by this edit or by something else's, looks the same: it is not there.
+          gone && "bg-[color-mix(in_oklab,var(--destructive)_8%,var(--background))]",
+        )}
+      >
         {picked !== undefined ? (
           <input type="checkbox" className="size-3.5 cursor-pointer align-middle accent-primary" aria-label={row.state === "new" ? "Pick the new row" : `Pick row ${number}`} checked={picked} onChange={(e) => pick(at, e.target.checked)} />
         ) : row.state === "new" ? (
@@ -354,7 +362,8 @@ const RowView = memo(function RowView({ at, number, row, columns, sel, tab, edit
             onDoubleClick={() => open(at, col)}
             className={cn(
               "relative border-r border-b px-2 font-mono text-xs outline-none",
-              changed && "bg-warning/16 shadow-[inset_2px_0_0_var(--warning)]",
+              // Changed, as the File tab marks a changed line: the whole cell, tinted.
+              changed && "bg-info/14",
               on && "z-[5] shadow-[inset_0_0_0_2px_var(--ring)]",
               shown.right && "text-right tabular-nums",
               gone && "text-muted-foreground line-through",

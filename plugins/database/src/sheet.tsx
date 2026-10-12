@@ -69,7 +69,7 @@ function Value({ v, onClose }: { v: Viewed; onClose(): void }) {
       </SheetHeader>
       <SheetPanel className="flex min-h-0 flex-1 flex-col gap-3">
         {v.cut && (
-          <p role="status" className="rounded-md bg-warning/8 px-3 py-2 text-pretty text-warning-foreground text-xs" data-testid="database-cut">
+          <p role="status" className="rounded-md bg-muted px-3 py-2 text-pretty text-foreground text-xs" data-testid="database-cut">
             Only the first {CUT_AT.toLocaleString("en-US")} characters were read: the value is longer. It can't be edited here, because saving would keep only this much. Read or change the rest from the console.
           </p>
         )}

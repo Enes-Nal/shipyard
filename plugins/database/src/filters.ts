@@ -84,8 +84,3 @@ export function jumpFilters(fk: ForeignKey, row: Record<string, Cell>): Draft[] 
   }
   return out;
 }
-
-// A filter in words, for the bar that says what the rows are narrowed to.
-export function filterText(d: Draft): string {
-  return takesValue(d.op) ? `${d.column} ${opLabel(d.op)} ${d.value ?? "…"}` : `${d.column} ${opLabel(d.op)}`;
-}

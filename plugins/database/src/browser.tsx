@@ -1,4 +1,4 @@
-import { Badge, Button, Icon, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetPopup, SheetTitle, Tip, cn } from "@berth/plugin/ui";
+import { Badge, Button, Card, CardHeader, CardPanel, Icon, Input, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetPopup, SheetTitle, Tip, cn } from "@berth/plugin/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type Cell, type Edited, type Fault, faultOf, MOST, PAGE, type Order, type Rows, type Schema, type Table } from "./api";
@@ -95,7 +95,7 @@ function Tree({ ctx, schemas, open, staged, onOpen, onReload }: { ctx: Ctx; sche
                         <span className="min-w-0 flex-1 truncate">{t.name}</span>
                         {n > 0 && (
                           <Tip label={`${plural(n, "staged change")}, not applied`}>
-                            <span role="img" aria-label={`${plural(n, "staged change")}, not applied`} className="size-1.5 shrink-0 rounded-full bg-warning" />
+                            <span role="img" aria-label={`${plural(n, "staged change")}, not applied`} className="size-1.5 shrink-0 rounded-full bg-info" />
                           </Tip>
                         )}
                         <span className="shrink-0 text-muted-foreground text-xs tabular-nums">{t.kind === "table" ? (t.rows_estimate >= 0 ? `~${count(t.rows_estimate)}` : "") : kind.short}</span>
@@ -436,7 +436,7 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             <Waiting fault={read.fault} onRetry={read.reload} title={`Couldn't read ${name}`} />
           ) : (
             <>
-              {read.fault && <Line tone="warn">Couldn't read again: {read.fault.message}</Line>}
+              {read.fault && <Line tone="bad">Couldn't read again: {read.fault.message}</Line>}
               {rows.length === 0 ? (
                 <Notice icon={filters.length ? "Search" : "table-2"} title={filters.length ? "No rows match" : offset > 0 ? "No more rows" : `${name} is empty`} body={filters.length ? "Nothing in the table matches the filters above." : offset > 0 ? "The page before was the last." : rules.inserts && !editing ? "Unlock writes to add a row." : undefined} />
               ) : (
@@ -445,8 +445,8 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             </>
           )}
           {n > 0 && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-warning/8 px-3 py-1.5" data-testid="database-staged" role="status">
-              <Icon name="PencilLine" className="size-3.5 shrink-0 text-warning-foreground" />
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-muted/50 px-3 py-1.5" data-testid="database-staged" role="status">
+              <Icon name="PencilLine" className="size-3.5 shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1 text-sm">
                 <b className="font-medium">{plural(n, "staged change")}</b> <span className="text-muted-foreground">in {name}: {summary(staged)}. Nothing is written until you apply.</span>
               </span>
@@ -511,10 +511,12 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             </SheetHeader>
             <SheetPanel className="min-h-0 flex-1 space-y-2 overflow-auto">
               {lines.map((l) => (
-                // Its kind is the bar at its edge, as in the grid's margin.
-                <div key={`${l.kind}\n${l.id}`} className={cn("overflow-hidden rounded-lg border", l.kind === "delete" ? "shadow-[inset_3px_0_0_var(--destructive)]" : l.kind === "insert" ? "shadow-[inset_3px_0_0_var(--success)]" : "shadow-[inset_3px_0_0_var(--warning)]")} data-testid="database-change" data-kind={l.kind}>
-                  <div className="flex items-center gap-2 border-b px-3 py-1.5">
-                    <Badge variant="outline" size="sm" className="shrink-0">
+                // One card a change: its kind is the badge's to say.
+                <Card key={`${l.kind}\n${l.id}`} className="overflow-hidden rounded-xl before:rounded-[calc(var(--radius-xl)-1px)]" data-testid="database-change" data-kind={l.kind}>
+                  {/* A compact header: the card's own is spaced for a page's section. */}
+                  <CardHeader className="flex items-center gap-2 border-b px-3 py-1.5 in-[[data-slot=card]:has(>[data-slot=card-panel])]:pb-1.5">
+                    {/* Delete in the app's destructive text on its outline badge, as its Delete buttons are: the filled and tinted red badges are under 4.5:1 on a sheet in the dark themes. */}
+                    <Badge variant={l.kind === "insert" ? "success" : "outline"} size="sm" className={cn("shrink-0", l.kind === "delete" && "text-destructive-foreground")}>
                       {l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update"}
                     </Badge>
                     <span className="min-w-0 flex-1 truncate font-mono text-xs">{l.title}</span>
@@ -528,7 +530,8 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
                         <Icon name="undo-2" className="size-3.5" />
                       </Button>
                     </Tip>
-                  </div>
+                  </CardHeader>
+                  <CardPanel className="p-0">
                   {l.kind === "delete" ? (
                     <p className="px-3 py-2 text-muted-foreground text-xs">The whole row goes.</p>
                   ) : l.fields.length === 0 ? (
@@ -553,7 +556,8 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
                       ))}
                     </dl>
                   )}
-                </div>
+                  </CardPanel>
+                </Card>
               ))}
               {lines.length === 0 && <p className="rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm">Nothing is staged.</p>}
             </SheetPanel>
@@ -676,7 +680,7 @@ function Structure({ table, schema, ctx }: { table: Table; schema: string; ctx: 
                       {(c.primary_key || table.primary_key.includes(c.name)) && (
                         <Tip label="Part of the primary key">
                           <span role="img" aria-label="Part of the primary key">
-                            <Icon name="KeyRound" className="size-3 text-warning-foreground" />
+                            <Icon name="KeyRound" className="size-3 text-muted-foreground" />
                           </span>
                         </Tip>
                       )}

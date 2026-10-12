@@ -61,7 +61,6 @@ function Connections({ berth, box, source, worktree, active }: Scope) {
   }, [conns.fault, onFault]);
   const pickKey = `connection:${box}/${source}`;
   const [picked, setPicked] = useState(() => berth.storage.get<string>(pickKey, ""));
-  const [updating, setUpdating] = useState(false);
 
   if (!conns.data) {
     // The helper answers, and has never heard of db/: it is from before this panel.
@@ -92,7 +91,7 @@ function Connections({ berth, box, source, worktree, active }: Scope) {
                   Open Settings → Plugins
                 </Button>
               )}
-              <Button size="sm" variant="ghost" loading={updating} onClick={() => (setUpdating(true), refresh(), conns.reload(), setTimeout(() => setUpdating(false), 600))}>
+              <Button size="sm" variant="ghost" onClick={() => (refresh(), conns.reload())}>
                 Check again
               </Button>
             </>
@@ -256,7 +255,7 @@ function Connected({ scope, api, conn, all, stale, onPick, onFault, reread }: { 
           Writes locked themselves again: the fifteen minutes ran out. What you staged is still staged.
         </Line>
       )}
-      {stale && <Line tone="warn">Couldn't ask {box} again: {stale.message}</Line>}
+      {stale && <Line tone="bad">Couldn't ask {box} again: {stale.message}</Line>}
       {!schema.data || !schema.fresh ? (
         schema.fault ? (
           // The helper has the connection, and the database isn't answering it.

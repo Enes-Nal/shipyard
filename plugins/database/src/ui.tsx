@@ -1,4 +1,4 @@
-import { Button, Empty, EmptyDescription, EmptyHeader, EmptyTitle, type HelperCopy, Icon, Skeleton } from "@berth/plugin/ui";
+import { Button, Empty, EmptyDescription, EmptyHeader, EmptyTitle, type HelperCopy, Icon, Skeleton, cn } from "@berth/plugin/ui";
 import type { ReactNode } from "react";
 
 import type { Fault } from "./api";
@@ -83,11 +83,12 @@ export function Waiting({ fault, onRetry, title = "Couldn't read from the databa
   );
 }
 
-// One line over what is shown: something went wrong, or needs saying.
-export function Line({ tone = "warn", children, actions, testId }: { tone?: "warn" | "bad" | "note"; children: ReactNode; actions?: ReactNode; testId?: string }) {
-  const tones = { warn: "bg-warning/8 text-warning-foreground", bad: "bg-destructive/8 text-destructive-foreground", note: "bg-muted/50 text-muted-foreground" };
+// One line over what is shown: something needs saying ("note"), or went
+// wrong ("bad"). Never amber: in Shipyard that means an agent needs you.
+export function Line({ tone = "note", children, actions, testId }: { tone?: "bad" | "note"; children: ReactNode; actions?: ReactNode; testId?: string }) {
+  const tones = { bad: "bg-destructive/8 text-destructive-foreground", note: "bg-muted/50 text-muted-foreground" };
   return (
-    <div role="status" data-testid={testId} className={`flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b px-3 py-1.5 text-xs ${tones[tone]}`}>
+    <div role="status" data-testid={testId} className={cn("flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b px-3 py-1.5 text-xs", tones[tone])}>
       <span className="min-w-0 flex-1 text-pretty">{children}</span>
       {actions}
     </div>
