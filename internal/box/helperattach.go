@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -67,17 +70,23 @@ func (h *Helpers) Attach(ctx context.Context, about HelperAttach, svc HelperServ
 	h.mu.Unlock()
 	sort.Slice(procs, func(i, j int) bool { return procs[i].rec.Plugin < procs[j].rec.Plugin })
 	asked := map[string]bool{}
+	// Each helper is told the service's own values, as the project has
+	// them, never what a helper before it answered: one that is shown a
+	// database URL must see the database's, not another helper's proxy in
+	// front of it.
+	own := maps.Clone(env)
 	for _, p := range procs {
 		asked[p.rec.Plugin] = true
-		h.noteAttached(p.rec.Plugin, svc, h.attachOne(ctx, p, about, env, refs))
+		h.noteAttached(p.rec.Plugin, svc, h.attachOne(ctx, p, about, own, env, refs))
 	}
 	// A helper that is off had no say: a service it changed the last time
 	// is as the project wrote it now (helperdetach.go).
 	h.startedPlain(svc, asked)
 }
 
-// attachOne asks one helper, and reports whether it changed env.
-func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAttach, env, refs map[string]string) (changed bool) {
+// attachOne asks one helper, showing it the service's own values (own), and
+// puts what it answers into env. It reports whether it changed env.
+func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAttach, own, env, refs map[string]string) (changed bool) {
 	timeout := orDuration(h.attachTimeout, 2*time.Second)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -89,7 +98,7 @@ func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAtta
 		return false
 	}
 	about.Env = map[string]string{}
-	for k, v := range env {
+	for k, v := range own {
 		if p.rec.matchesEnv(k) {
 			about.Env[k] = v
 		}
@@ -167,11 +176,54 @@ var helperClient = &http.Client{
 	},
 }
 
-var helperTransport = func() *http.Transport {
+// helperTransport is how every request of berthd's reaches a helper: what
+// it relays for the app, and its own attach and detach calls.
+var helperTransport http.RoundTripper = helperAuth{func() *http.Transport {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
 	return t
-}()
+}()}
+
+// A helper may ask that only berthd reach it: it makes a token when it
+// starts and writes it in its ready file, which is in a folder of this
+// user's alone, and berthd sends it back as "Authorization: Bearer" with
+// every request. Listening on loopback keeps other machines out; the token
+// keeps out the other users of this one, and its web pages.
+//
+// helperTokens holds each running helper's token by the address its ready
+// file gave with it, and helperAuth adds it on the way out. It is done
+// here, in the one transport every request to a helper goes through, so no
+// caller can forget it; and whatever Authorization a request came with
+// (the app's, on a relayed one) is taken off first, so nothing else is
+// ever passed to a helper as berthd's word.
+var (
+	helperTokens sync.Map // "127.0.0.1:port" → token
+	helperToken  = regexp.MustCompile(`^[A-Za-z0-9._~+/=-]{1,512}$`)
+)
+
+// holdHelperToken notes the token of the helper at api; "" forgets it.
+func holdHelperToken(api *url.URL, token string) {
+	if token == "" {
+		helperTokens.Delete(api.Host)
+		return
+	}
+	helperTokens.Store(api.Host, token)
+}
+
+type helperAuth struct{ next http.RoundTripper }
+
+func (t helperAuth) RoundTrip(req *http.Request) (*http.Response, error) {
+	token, _ := helperTokens.Load(req.URL.Host)
+	if _, had := req.Header["Authorization"]; had || token != nil {
+		// A RoundTripper leaves the caller's request as it was.
+		req = req.Clone(req.Context())
+		req.Header.Del("Authorization")
+		if token != nil {
+			req.Header.Set("Authorization", "Bearer "+token.(string))
+		}
+	}
+	return t.next.RoundTrip(req)
+}
 
 // attachHelpers is Attach for one service of a worktree.
 func (b *Box) attachHelpers(ctx context.Context, loc Location, wt Worktree, service string, env, refs map[string]string) {

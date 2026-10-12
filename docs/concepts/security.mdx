@@ -357,6 +357,17 @@ What Shipyard holds it to:
   the box itself. A request reaches the helper with its own loopback address
   as the `Host` and no `Origin`, so the helper can refuse every web page.
   Nothing of it is opened to the network.
+- **A helper can answer berthd alone.** Loopback is open to every user of
+  the box. A helper that needs more than that writes a token in its ready
+  file, which is in a folder only you can read, and berthd sends it with
+  every request it makes of that helper: `Authorization: Bearer`, on what it
+  relays and on its own calls. Whatever `Authorization` the app sent is
+  taken off first. A helper that does not ask for a token is as open as
+  loopback is: **Leadline's recorded queries, traces and logs can be read by
+  any user of the box, and by a page served from the box itself** (a
+  `localhost` page, such as the app you are developing; pages from anywhere
+  else are refused). That is its trade-off for now, and why the database
+  editor, below, does not share it.
 - **What it can change about your dev servers is named in the manifest.**
   Before a worktree's service starts, a helper may be shown, and may set,
   only the variables its manifest lists (`attach_env`): for Leadline the
@@ -377,6 +388,54 @@ manifest chooses the checksum in it, and whoever can change the listing a
 plugin is installed from can offer a manifest with another. What stands
 between that and your box is the consent dialog, which is for exactly the
 manifest you saw.
+
+### The database editor
+
+The Database plugin's helper, `berth-database`, can read and change a
+worktree's development database, so it is held tighter than a helper that
+only records:
+
+- **Only berthd may ask it.** Every route but its health check needs the
+  token it writes in its ready file (mode `0600`, new at every start). A
+  request with an `Origin`, from any page, is refused whatever it carries.
+  So the way in is the one the app uses: your paired laptop, to berthd, to
+  the helper.
+- **Only a database on the box itself.** It opens what berthd says a
+  worktree's service has (`DATABASE_URL`, `POSTGRES_URL`), and only when
+  that is a loopback address or a unix socket; it checks the address again
+  when it connects. A remote or shared database is passed over, and there is
+  no way to hand it a URL from the app.
+- **Nothing is written unless you turn writes on**, for one database, for
+  15 minutes. Until then every statement runs in a transaction the database
+  itself holds read-only; the switch is in the helper's memory, checked
+  against its own clock, and is off again after a restart. A statement is
+  stopped after 10 seconds, and answers are capped in rows and bytes.
+- **It keeps the database's URL, with its password, on the box**:
+  `helpers/database/data/connections.json`, mode `0600` in a folder that is
+  `0700`. berthd tells a helper which database a worktree has once, when
+  the service starts, so without the file the editor would be empty after
+  every berthd restart until each dev server was started again. It holds
+  what your project's own configuration already holds on that disk, for the
+  same user. A worktree's entry is removed when the worktree is detached
+  from the helper, and the file goes when the helper is removed with its
+  data (`berthd helper rm database --purge`). A URL that names a
+  [secret](/guides/secrets) is never shown to a helper, so such a database
+  does not appear in the editor.
+- **Its log has shapes, not values.** Each edit and each statement run with
+  writes on is logged: the worktree, the table and columns or the statement
+  with every string and number replaced by `?`, and the row counts. Never a
+  cell's value, a password, a URL or the token.
+- **It does not go through Leadline.** With both helpers on, the editor
+  connects to the database directly, not through Leadline's recording
+  proxy: what you run in the editor is not recorded as your app's queries.
+
+What this does not protect against: a program running as you on the box (an
+agent in a worktree, a script) can read the ready file, or ask berthd, which
+adds the token for it; and it could read the project's configuration and
+open the database itself. Read-only is Postgres's `READ ONLY` transaction:
+it stops writes to the database, not everything a superuser role can do
+from a statement, so the editor is for a development database and not a
+sandbox for untrusted SQL.
 
 ## The agent browser
 
