@@ -171,8 +171,9 @@ How berthd runs a helper:
 - **Never in the way of a service.** Before berthd starts a worktree's
   service it asks each running helper that wants to know, and waits at most
   two seconds for [what it adds to the service's environment](/guides/plugins#attach-what-a-helper-adds-to-a-service).
-<<<<<<< HEAD
-  A helper that is down, slow or wrong changes nothing.
+  A helper that is down, slow or wrong changes nothing. With several
+  helpers on, each is shown the service's variables as the project has
+  them, not as another helper changed them.
 - **Told when a worktree goes.** After a worktree is removed (with
   `berthd worktree rm`, from the app, by a review's clean-up, after an
   archive script, or by `git worktree remove` itself), berthd tells each
@@ -190,11 +191,6 @@ How berthd runs a helper:
   told them ([`attached.json`](/reference/files#on-a-box)) after the helper
   is gone, its data too: turned on and off again, the helper's removal
   names them again, until they are started again without it.
-=======
-  A helper that is down, slow or wrong changes nothing. With several
-  helpers on, each is shown the service's variables as the project has
-  them, not as another helper changed them.
->>>>>>> feat/leadline-db-box
 
 A `before:helper.install` [gate](/reference/events#gates) on the box can
 refuse a helper; `helper.installed` and `helper.removed` are announced.
