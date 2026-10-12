@@ -257,7 +257,7 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 	give := func(env string) []string {
 		t.Helper()
 		status, raw, look := r.look("database", `{"location": "acme", "worktree": "fix-orders", "env": `+env+`}`)
-		if status != 200 || look.Command != "manual" || len(look.Files) != 0 {
+		if status != 200 || look.Command != ".manual" || len(look.Files) != 0 {
 			t.Fatalf("a database given by hand: %d %s", status, raw)
 		}
 		if password != "" && strings.Contains(raw, password) || strings.Contains(raw, "postgres://") || strings.Contains(raw, "sslmode") {
@@ -295,7 +295,7 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 	if conns = connections(); len(conns) != 2 {
 		t.Fatalf("with one from the file and one by hand the connections are %+v", conns)
 	}
-	if raw := string(mustRead(saved)); !strings.Contains(raw, `"command": "manual"`) || !strings.Contains(raw, `"command": ".env"`) {
+	if raw := string(mustRead(saved)); !strings.Contains(raw, `"command": ".manual"`) || !strings.Contains(raw, `"command": ".env"`) {
 		t.Fatalf("connections.json does not file one under manual and one under .env:\n%s", strings.ReplaceAll(raw, password, "…"))
 	}
 	if status, body := helperCall(t, r.c, "POST", "/v1/helpers/database/api/api/db/"+pasted+"/rows", []byte(`{"schema": "`+schema+`", "table": "widgets"}`), asJSON); status != 200 || !strings.Contains(body, `"rows":[[1,"sprocket"],[2,"flange"]]`) {
@@ -316,7 +316,7 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 	if conns = connections(); len(conns) != 1 || conns[0].ID != first.ID {
 		t.Fatalf("after it was taken back the connections are %+v", conns)
 	}
-	if raw := string(mustRead(saved)); strings.Contains(raw, `"command": "manual"`) {
+	if raw := string(mustRead(saved)); strings.Contains(raw, `"command": ".manual"`) {
 		t.Fatal("connections.json still has the database that was taken back")
 	}
 	if status, _ := helperCall(t, r.c, "POST", "/v1/helpers/database/api/api/db/"+pasted+"/rows", []byte(`{"schema": "`+schema+`", "table": "widgets"}`), asJSON); status != 404 {

@@ -378,7 +378,7 @@ export function helperBoxCall(box: string, method: string, path: string, delay: 
     // With "env" the box reads no file: the helper is told what was given.
     const given = where.env && typeof where.env === "object" ? where.env : undefined;
     // Only Database's helper is told anything this way, in this mock.
-    if (asked !== "database") return delay({ plugin: asked, location, worktree: worktree || location, command: given ? "manual" : ".env", files: [], skipped: [], variables: [], answer: {} });
+    if (asked !== "database") return delay({ plugin: asked, location, worktree: worktree || location, command: given ? ".manual" : ".env", files: [], skipped: [], variables: [], answer: {} });
     if (given) {
       return (databaseMock ??= import("@/lib/mock-database")).then((m) => {
         try {

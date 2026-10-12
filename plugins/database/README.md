@@ -64,7 +64,7 @@ in one of three ways:
   picker when the worktree has several) takes an address in a dialog
   (`src/connect.tsx`) and calls `attachEnv` with
   `env: { DATABASE_URL: address }`: the box reads no file and calls
-  `/api/attach` with **`manual` as `command`**. An empty `env` takes it
+  `/api/attach` with **`.manual` as `command`**. An empty `env` takes it
   back, which is what **Forget…** does. The address is in the dialog's
   field until it is sent and nowhere in the plugin after that; what is
   kept (in the plugin's storage, on this computer) is the id of the

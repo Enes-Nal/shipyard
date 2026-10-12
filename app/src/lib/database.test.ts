@@ -556,14 +556,14 @@ test("what is typed as an address is only sent when it could be a Postgres addre
 });
 
 test("the box's answer to an address says which connection it became, that the helper passed it over, or that the box is too old", () => {
-  const told = (over: Partial<Look>): Look => looked({ command: "manual", variables: [{ name: BY_HAND_VARIABLE, file: "", sent: true }], ...over });
+  const told = (over: Partial<Look>): Look => looked({ command: ".manual", variables: [{ name: BY_HAND_VARIABLE, file: "", sent: true }], ...over });
   assert.deepEqual(connected(told({ answer: { source: "acme/fix-orders", connections: ["c_5f0e11aa90c2"] } })), { id: "c_5f0e11aa90c2" });
   // Sent, and no connection: not a Postgres on the box.
   assert.deepEqual(connected(told({ answer: { source: "acme/fix-orders", connections: [] } })), { refused: true });
   assert.deepEqual(connected(told({ answer: {} })), { refused: true });
   // A berthd that knows the route and not "env" looked in the files instead.
   assert.deepEqual(connected(looked({ answer: { source: "acme/fix-orders", connections: ["c_1c28ba20e1b6"] } })), { old: true });
-  assert.equal(BY_HAND, "manual");
+  assert.equal(BY_HAND, ".manual");
   assert.equal(BY_HAND_VARIABLE, "DATABASE_URL");
 });
 

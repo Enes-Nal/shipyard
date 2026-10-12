@@ -447,7 +447,7 @@ func TestOnlyAPairedLaptopHasAHelperToldOfDotenvFilesAndAGateCanRefuseIt(t *test
 		t.Fatalf("a look a gate refuses: %v", err)
 	}
 	_, err = remote.AttachHelperGiven(ctx, "acme", "acme", "fix-orders", map[string]string{"DATABASE_URL": byHand})
-	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused || !strings.Contains(he.Message, "not acme for fix-orders from manual") {
+	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused || !strings.Contains(he.Message, "not acme for fix-orders from .manual") {
 		t.Fatalf("a database given by hand that a gate refuses: %v", err)
 	}
 	if exists(filepath.Join(r.h.dataDir("acme"), "attach-request")) || dotenvReads.Load() != reads {
@@ -458,7 +458,7 @@ func TestOnlyAPairedLaptopHasAHelperToldOfDotenvFilesAndAGateCanRefuseIt(t *test
 }
 
 // The person may say which database a worktree has: the helper is told
-// that, under "manual", and no file is read. What was said is a secret: it
+// that, under ".manual", and no file is read. What was said is a secret: it
 // is in no answer, no log and no error.
 func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 	r := newEnvRig(t, nil)
@@ -487,13 +487,13 @@ func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 	if got := dotenvReads.Load(); got != reads {
 		t.Errorf("the worktree's dotenv files were read %d times for a database given by hand", got-reads)
 	}
-	if look.Command != "manual" || len(look.Files) != 0 || len(look.Skipped) != 0 ||
+	if look.Command != ".manual" || len(look.Files) != 0 || len(look.Skipped) != 0 ||
 		!reflect.DeepEqual(look.Variables, []HelperEnvVariable{{Name: "DATABASE_URL", Sent: true}}) ||
 		string(look.Answer["connections"]) != `["c_7d90a3b1e44f"]` || len(look.Answer) != 2 {
 		t.Errorf("the answer to a database given by hand: %s", raw)
 	}
 	told := r.told("acme")
-	if told.Box != "devbox" || told.Project != "acme" || told.Worktree != "fix-orders" || told.Path != r.wt.Path || told.Command != "manual" ||
+	if told.Box != "devbox" || told.Project != "acme" || told.Worktree != "fix-orders" || told.Path != r.wt.Path || told.Command != ".manual" ||
 		!reflect.DeepEqual(told.Env, map[string]string{"DATABASE_URL": byHand}) {
 		t.Errorf("the helper was told %s %s/%s with %d variables", told.Command, told.Project, told.Worktree, len(told.Env))
 	}
@@ -537,13 +537,13 @@ func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 		t.Error("the helper was told something that was refused")
 	}
 
-	// ---- Taken back: the helper is told "manual" with nothing.
+	// ---- Taken back: the helper is told ".manual" with nothing.
 	r.inData("acme", "attach-answer", `{"source": "acme/fix-orders", "connections": []}`)
 	status, raw, look = give(`{}`)
-	if status != 200 || look.Command != "manual" || len(look.Variables) != 0 || string(look.Answer["connections"]) != `[]` {
+	if status != 200 || look.Command != ".manual" || len(look.Variables) != 0 || string(look.Answer["connections"]) != `[]` {
 		t.Fatalf("taking back what was given: %d %s", status, raw)
 	}
-	if told = r.told("acme"); told.Command != "manual" || told.Env == nil || len(told.Env) != 0 {
+	if told = r.told("acme"); told.Command != ".manual" || told.Env == nil || len(told.Env) != 0 {
 		t.Errorf("to take it back the helper was told %s with %d variables", told.Command, len(told.Env))
 	}
 
@@ -572,7 +572,7 @@ func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 		t.Errorf("a helper that is off: %d %s", status, raw)
 	}
 	logs := r.logs.String()
-	if !strings.Contains(logs, "not told of acme/fix-orders's manual") {
+	if !strings.Contains(logs, "not told of acme/fix-orders's .manual") {
 		t.Errorf("berthd's log does not say the helper was not told:\n%s", logs)
 	}
 	holdsNone(t, "berthd's log", logs)

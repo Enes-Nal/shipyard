@@ -624,13 +624,12 @@ replaces what the last look found, and what a real service said stays.
 - **Or told what a person gave.** With `env` in the call
   (`berth.helper.attachEnv(box, { location, worktree, env: { DATABASE_URL } })`)
   berthd reads no file and tells the helper those variables with
-  **`"manual"` as `command`**: a third name, so what a person gave, what
+  **`".manual"` as `command`**: a third name, so what a person gave, what
   the files say and what a service was started with are each replaced on
   their own. `env: {}` takes it back. Every name must be one `attach_env`
   names. Treat what is given as a secret: berthd logs, answers and keeps
-  none of it, and your plugin should send it and forget it. A service may
-  be called `manual` in a project's config; if your helper keeps things by
-  `command`, such a service and what a person gave share that name.
+  none of it, and your plugin should send it and forget it. Like `.env`,
+  it starts with a dot, which no service's name can.
 - **Only from a paired laptop**, like installing the helper: what runs on
   the box cannot have a helper told through berthd's socket, and a
   `before:helper.attach` [gate](/reference/events#gates) can refuse a look.

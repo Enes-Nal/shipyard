@@ -25,7 +25,7 @@ function lookAgain(origin, conns, byHand = []) {
   return conns.every((c) => byHand.includes(c.id)) || conns.some((c) => !!origin?.ids?.includes(c.id));
 }
 var BY_HAND_VARIABLE = "DATABASE_URL";
-var BY_HAND = "manual";
+var BY_HAND = ".manual";
 var EXAMPLE = "postgres://user:password@localhost:5432/database";
 function addressProblem(text) {
   const address = text.trim();

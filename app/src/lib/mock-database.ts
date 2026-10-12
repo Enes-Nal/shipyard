@@ -983,7 +983,7 @@ function local(address: string): { host: string; port: number; database: string;
 
 // databaseConnect is the box telling the helper of a database the person
 // gave the address of (helpers/database/attach-env with "env"), under
-// "manual": what was given before goes, and what is given now is taken if
+// ".manual": what was given before goes, and what is given now is taken if
 // it is a Postgres on the box itself. With nothing given it is only taken
 // back. The answer has the variable's name and the connection's id, never
 // the address.
@@ -1008,7 +1008,7 @@ export function databaseConnect(box: string, location: string, worktree: string,
     connections.push(id);
     break;
   }
-  return { plugin: "database", location, worktree: worktree || location, command: "manual", files: [], skipped: [], variables: names.map((name) => ({ name, file: "", sent: true })), answer: { source, connections } };
+  return { plugin: "database", location, worktree: worktree || location, command: ".manual", files: [], skipped: [], variables: names.map((name) => ({ name, file: "", sent: true })), answer: { source, connections } };
 }
 
 // databaseEnvLook is the box looking in a worktree's .env files and telling

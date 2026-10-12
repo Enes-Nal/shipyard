@@ -72,7 +72,7 @@ export function lookAgain(origin: Origin | null | undefined, conns: { id: string
 //
 // When nothing says which database a worktree has, the person can: they
 // paste its address, the box hands it to the helper (the same route, with
-// "manual" where a look says ".env"), and the helper keeps it as it keeps
+// ".manual" where a look says ".env"), and the helper keeps it as it keeps
 // the others. One for a worktree: giving another replaces it, and giving
 // none forgets it. The address is a secret. It is in the dialog's field
 // until it is sent, and nowhere in the plugin after that: what is kept here
@@ -85,7 +85,7 @@ export const BY_HAND_VARIABLE = "DATABASE_URL";
 // What the box answers "command" with for a database given by hand. A box
 // that answers another did something else with the request: its berthd is
 // from before it took an address.
-export const BY_HAND = "manual";
+export const BY_HAND = ".manual";
 
 // What the helper opens, in words, for where the address is asked for.
 export const EXAMPLE = "postgres://user:password@localhost:5432/database";

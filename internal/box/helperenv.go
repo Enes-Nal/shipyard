@@ -43,7 +43,7 @@ import (
 //	{"location": "acme", "worktree": "fix-orders", "env": {"DATABASE_URL": "postgres://…"}}
 //
 // Then no file is read, and the helper is told those variables (only ones
-// its manifest names) with "manual" where the service's name would be: what
+// its manifest names) with ".manual" where the service's name would be: what
 // was said by hand, what the files say and what a service was started with
 // are three things, each replaced on its own. An empty "env" takes back what
 // was said by hand. A value given this way is a secret like any other: it
@@ -57,7 +57,7 @@ type HelperEnvLook struct {
 	// Worktree is the worktree's name on the box, its main checkout's too.
 	Worktree string `json:"worktree"`
 	// Command is what the helper was told in place of a service's name:
-	// ".env" for a look in the worktree's files, "manual" for variables the
+	// ".env" for a look in the worktree's files, ".manual" for variables the
 	// person gave.
 	Command string `json:"command"`
 	// Files are the dotenv files that were read, in the order they were
@@ -88,7 +88,7 @@ type HelperEnvVariable struct {
 
 // helperManualCommand is the Command a helper is told with variables the
 // person gave by hand (AttachGiven).
-const helperManualCommand = "manual"
+const helperManualCommand = ".manual"
 
 // AttachEnv tells a running helper what a worktree's dotenv files have of
 // the variables its manifest names. about is the worktree, as for a service.
