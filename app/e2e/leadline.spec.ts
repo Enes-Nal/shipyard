@@ -296,7 +296,7 @@ test("the Leadline screen says where it runs, and turns it on, off and removes w
   await app.open();
   const screen = await openLeadline(app.page);
   await expect(box(screen, "devl")).toHaveAttribute("data-state", "running");
-  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.0");
+  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.1");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("2 worktrees have sent something");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("shop/checkout-fix");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("for 3 days");
@@ -400,11 +400,11 @@ test("an older helper than the plugin carries offers an update, after a confirm"
   await app.open({ params: { helper: "update" } });
   const screen = await openLeadline(app.page);
   await expect(box(screen, "devl")).toContainText("berth-leadline 0.0.9");
-  await box(screen, "devl").getByRole("button", { name: "Update to 0.1.0…" }).click();
+  await box(screen, "devl").getByRole("button", { name: "Update to 0.1.1…" }).click();
   const confirm = app.page.getByRole("alertdialog");
   await expect(confirm).toContainText("Update Leadline on devl?");
   await confirm.getByRole("button", { name: "Update", exact: true }).click();
-  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.0");
+  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.1");
   await expect(box(screen, "devl").getByRole("button", { name: /^Update to/ })).toHaveCount(0);
 });
 
@@ -424,7 +424,7 @@ test("allowing a plugin that carries a program says it can install and run it on
   // By its own name: the note that it was turned off is a dialog too.
   const consent = app.page.getByRole("dialog", { name: "Allow Leadline?" });
   await expect(consent.getByTestId("consent-helper")).toHaveText("Install and run a program, berth-leadline, on the boxes you turn it on for");
-  await expect(consent).toContainText("berth-leadline 0.1.0");
+  await expect(consent).toContainText("berth-leadline 0.1.1");
   // It was turned off, not changed: nothing of it was left running.
   await expect(consent.getByTestId("consent-helper-held")).toHaveCount(0);
   await consent.getByRole("button", { name: "Allow and turn on" }).click();

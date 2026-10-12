@@ -32,7 +32,7 @@ import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 type Delay = <T>(v: T) => Promise<T>;
 
 const scenario = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("helper");
-const LATEST = "0.1.0";
+const LATEST = "0.1.1";
 const PLATFORM = "linux-amd64";
 
 interface Helper {
