@@ -24,7 +24,10 @@ update (**Settings → Plugins**).
   or `POSTGRES_URL` it finds, if it points at a Postgres on the box
   itself. The tab says where a database came from, the refresh button
   looks in the files again, and when there is none it says which files it
-  read and why a variable it found isn't shown. See
+  read and why a variable it found isn't shown. And when nothing says
+  which database a worktree has, **Connect a database…** takes its
+  address: it has to be a Postgres on the box itself, it is kept on the
+  box with the others, and **Forget…** removes it. See
   [which databases appear](/guides/database#which-databases-appear).
 - **Leadline records queries for projects that keep `DATABASE_URL` in
   `.env`.** When Shipyard starts a worktree's service and its own

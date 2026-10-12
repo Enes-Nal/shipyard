@@ -536,7 +536,8 @@ A helper that only needs to know about the service answers `{"env": {}}`:
   *override* on replaces it with the file's again, and goes round the
   helper. A helper that answers nothing for the variable, or answers the
   file's own value back, changes nothing. The files are only read when a
-  helper with `attach` is running; [how they are read](#attachenv-a-look-in-the-worktrees-env-on-request)
+  helper with `attach` is running and names a variable the project has not
+  set (a prefix such as `OTEL_*` always counts); [how they are read](#attachenv-a-look-in-the-worktrees-env-on-request)
   is below.
 - **Secrets stay out of it.** A variable that names a
   [secret](/guides/secrets) (`op://…`, `env://…`) is not sent, since its
@@ -620,6 +621,16 @@ replaces what the last look found, and what a real service said stays.
   not. An older box answers `box_outdated` (a 404), and an older Shipyard
   has no `berth.helper.attachEnv` at all: check for both, and fall back to
   what you showed before.
+- **Or told what a person gave.** With `env` in the call
+  (`berth.helper.attachEnv(box, { location, worktree, env: { DATABASE_URL } })`)
+  berthd reads no file and tells the helper those variables with
+  **`"manual"` as `command`**: a third name, so what a person gave, what
+  the files say and what a service was started with are each replaced on
+  their own. `env: {}` takes it back. Every name must be one `attach_env`
+  names. Treat what is given as a secret: berthd logs, answers and keeps
+  none of it, and your plugin should send it and forget it. A service may
+  be called `manual` in a project's config; if your helper keeps things by
+  `command`, such a service and what a person gave share that name.
 - **Only from a paired laptop**, like installing the helper: what runs on
   the box cannot have a helper told through berthd's socket, and a
   `before:helper.attach` [gate](/reference/events#gates) can refuse a look.

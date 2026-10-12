@@ -184,7 +184,8 @@ How berthd runs a helper:
   proxy ends up in front of a database whose address is only in `.env`.
   berthd reads those four names in the worktree's folder and nothing else,
   never through a link out of the worktree, at most 256 KB each, and only
-  when a helper with `attach` is running. A read that fails, or takes
+  when a helper with `attach` is running that names a variable the
+  project has not already set. A read that fails, or takes
   longer than the two seconds a helper has, changes nothing.
 - **Asked to look, by the app.** `POST helpers/{plugin}/attach-env`
   ([app API](/reference/app-api#boxes)) has berthd read the same files for
@@ -192,7 +193,11 @@ How berthd runs a helper:
   service's name would be: the Database tab does this when it opens.
   Nothing the helper answers is set anywhere, the worktree is not added to
   `attached.json`, and the answer names files and variables, never a value.
-  It is a paired laptop's to ask, not the box's own socket's.
+  It is a paired laptop's to ask, not the box's own socket's. The same
+  route takes the variables themselves in place of reading the files (an
+  address a person pasted in the Database tab): berthd hands them to the
+  helper with `manual` as the name, and logs, announces, answers and keeps
+  none of it.
 - **Told when a worktree goes.** After a worktree is removed (with
   `berthd worktree rm`, from the app, by a review's clean-up, after an
   archive script, or by `git worktree remove` itself), berthd tells each
@@ -213,7 +218,7 @@ How berthd runs a helper:
 
 A `before:helper.install` [gate](/reference/events#gates) on the box can
 refuse a helper, and a `before:helper.attach` gate a look in a worktree's
-`.env` files; `helper.installed` and `helper.removed` are announced.
+`.env` files or an address given by hand; `helper.installed` and `helper.removed` are announced.
 
 ## Skills, secrets and events
 

@@ -225,7 +225,7 @@ exits non-zero refuses it with what it printed. Gates in a laptop's
 | `before:flow.test` | `flow`, `scope` |
 | `before:box.upgrade` | `build` |
 | `before:helper.install` | `plugin`, `name`, `version`: a paired laptop installing a plugin's helper, a program that will run on the box |
-| `before:helper.attach` | `plugin`, `location`, `worktree`, `path`, `from` (`.env`): a paired laptop asking the box to read a worktree's `.env` files and tell that plugin's helper what they hold of the variables its manifest names. A service's start is gated by `before:service.start`, not by this |
+| `before:helper.attach` | `plugin`, `location`, `worktree`, `path`, `from`: a paired laptop asking the box to tell that plugin's helper of a worktree outside a service's start. `from` is `.env` when the box is to read the worktree's `.env` files for the variables the helper's manifest names, and `manual` when a person gave them (a database's address, pasted in the Database tab); what was given is never in the event. A service's start is gated by `before:service.start`, not by this |
 | `before:pairing.invite` | `for`, `by`: a paired laptop asking for a pairing code for another computer |
 | `before:client.revoke` | `name`, `fingerprint`: removing a laptop from the box |
 | `before:event.emit` | `type` |
