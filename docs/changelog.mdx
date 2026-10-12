@@ -10,6 +10,9 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Make a worktree without waiting for its setup.** `worktree new --no-setup`
+  creates it at once, without the setup script or autostart services, and
+  `worktree setup LOC/NAME [--wait]` runs them later.
 - **Leadline: what your code did in development, as tabs on a worktree.** A
   new plugin in **Settings → Plugins → Browse** adds **Queries**,
   **Traces**, **Logs** and **Endpoints** to a worktree: every database

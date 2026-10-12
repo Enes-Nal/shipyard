@@ -148,6 +148,12 @@ func (c *Client) AddWorktree(ctx context.Context, location string, req WorktreeR
 	return out, c.call(ctx, http.MethodPost, "/v1/locations/"+url.PathEscape(location)+"/worktrees", req, &out)
 }
 
+// SetupWorktree starts the location's setup script in a worktree made with
+// --no-setup (or any worktree: setup is safe to repeat).
+func (c *Client) SetupWorktree(ctx context.Context, location, name string) (out SetupStarted, err error) {
+	return out, c.call(ctx, http.MethodPost, "/v1/locations/"+url.PathEscape(location)+"/worktrees/"+url.PathEscape(name)+"/setup", nil, &out)
+}
+
 // RemoveOptions change how a worktree is removed. DeleteBranch is for
 // throwaway worktrees only; a person's branch outlives its worktree.
 type RemoveOptions struct {
