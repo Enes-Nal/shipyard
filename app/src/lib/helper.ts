@@ -1,6 +1,7 @@
 import type { BerthHelper, HelperStatus } from "@berth/plugin";
 
 import { ApiError, type Client } from "@/lib/api";
+import { helperRelayPath } from "@/lib/helper-path";
 
 // A plugin's helper: a program it carries (berth-plugin.json's "box.helper")
 // that the laptop agent installs on a box and the box daemon runs. The agent
@@ -16,9 +17,9 @@ export const helperApi = {
   remove: async (c: Client, id: string, box: string, purge = false) => {
     await c.laptop("DELETE", route(id, box, purge));
   },
-  // The helper's own API through the box (helpers/{plugin}/api/{path}).
+  // The helper's own API (/api/{path} on the helper) through the box's relay.
   request: <T,>(c: Client, id: string, box: string, method: string, path: string, body?: unknown) =>
-    c.box<T>(box, method, `helpers/${encodeURIComponent(id)}/api/${path.replace(/^\/+/, "")}`, body).catch((err: unknown) => {
+    c.box<T>(box, method, helperRelayPath(id, path), body).catch((err: unknown) => {
       throw helperError(err);
     }),
 };

@@ -1,6 +1,7 @@
 import type { HelperState, HelperStatus } from "@berth/plugin";
 
 import { ApiError } from "@/lib/api";
+import { helperRelayed } from "@/lib/helper-path";
 
 // Mock mode's plugin helpers, behaving like the laptop agent's
 // /v1/plugins/{id}/helper and a box's helpers/{plugin}/api/ closely enough
@@ -217,21 +218,27 @@ function answer(all: Fixture[], route: string, q: URLSearchParams, empty: boolea
 }
 
 // helperBoxCall answers a box's helpers/{plugin}/api/{path}, or undefined
-// for any other path.
+// for any other path. {path} is the path on the helper, and its API is
+// under /api/ there.
 export function helperBoxCall(box: string, method: string, path: string, delay: Delay): Promise<unknown> | undefined {
-  const m = /^helpers\/([^/]+)\/api\/([^?]*)(?:\?(.*))?$/.exec(path);
-  if (!m) return undefined;
-  const plugin = decodeURIComponent(m[1]);
+  const to = helperRelayed(path);
+  if (!to) return undefined;
+  const { plugin } = to;
   const h = helperOf(plugin, box);
   if (h.state !== "running") return delay(null).then(() => Promise.reject(new ApiError(`${plugin}'s helper isn't running on ${box}`, 409, "helper_off")));
-  if (method !== "GET" || plugin !== "leadline") return delay(null).then(() => Promise.reject(refusal(404, "not_found", `No such route: ${method} /api/${m[2]}.`)));
+  // Outside /api/ the helper answers as a plain web server does, and the
+  // laptop agent takes a plain 404 from a box for a berthd too old to know
+  // the route: so it reads to the app, as it does with real ones.
+  if (!to.path.startsWith("/api/")) return delay(null).then(() => Promise.reject(new ApiError(`${box} runs an older berthd that doesn't have this yet`, 404, "box_outdated")));
+  const route = to.path.slice("/api/".length).replace(/\/+$/, "");
+  if (method !== "GET" || plugin !== "leadline") return delay(null).then(() => Promise.reject(refusal(404, "not_found", `No such route: ${method} /api/${route}.`)));
   // Only devl's has heard from anything, until what it recorded is removed.
   const empty = box !== "devl" || !!h.purged;
   return load().then((all) => {
     const by = Date.now() - all[0].captured_ms;
     // Asked for in moved time; the fixture is filtered in its own.
-    const q = new URLSearchParams(m[3] ?? "");
+    const q = new URLSearchParams(to.query);
     if (q.get("since_ms")) q.set("since_ms", String(Number(q.get("since_ms")) - by));
-    return delay(moved(answer(all, m[2].replace(/\/+$/, ""), q, empty), by));
+    return delay(moved(answer(all, route, q, empty), by));
   });
 }

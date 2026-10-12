@@ -391,6 +391,12 @@ query and body, and the answer comes back as the helper wrote it, a
 server-sent event stream included. While the helper is not running on that
 box the answer is 409 with the code `helper_off`.
 
+[`berth.helper.request`](/reference/plugin-sdk#helper) is the same call with
+the plugin's own id and the helper's `/api/` filled in: `berth.helper.request("devbox",
+"GET", "queries?source=acme%2Ffix-orders")` asks for the path above. Keep a
+helper's API under `/api/`, and what it answers there as JSON: the laptop
+takes a plain-text 404 from a box for a berthd too old to know the route.
+
 ### Attach: what a helper adds to a service
 
 A helper that records what a dev server does has to be told about the dev

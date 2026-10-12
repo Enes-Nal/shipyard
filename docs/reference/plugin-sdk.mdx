@@ -247,7 +247,7 @@ plugin id to pass, and no way to reach another plugin's.
 | `status(box)` | `HelperStatus`: `{ plugin, box, state, platform, version?, latest?, update?, error? }`. `state` is `none` (not installed), `off`, `installing`, `starting`, `running`, `failed` (with `error`), or `unsupported`: the box's `berthd` is from before helpers, or there is no build for its `platform`. `update` is true when the box runs an older `version` than the plugin carries (`latest`). A box that is offline rejects |
 | `install(box)` | Installs the helper on the box, or updates it, and turns it on. Resolves with the `HelperStatus` it reached, which can still be `installing` or `starting`: read `status` until it settles |
 | `remove(box, { purge? })` | Stops the helper and removes it. What it recorded stays in its folder for the next install, unless `purge` |
-| `request(box, method, path, body?)` | The helper's own API through the box: `request("devl", "GET", "queries?limit=50")` asks the helper for `/api/queries?limit=50`. Rejects with `code: "helper_off"` (status 409) when the helper isn't running there, and with the helper's own `code` and `message` when it refuses |
+| `request(box, method, path, body?)` | The helper's own API through the box. `path` is written from the helper's `/api/`: `request("devl", "GET", "queries?limit=50")` asks the helper for `/api/queries?limit=50` (the box path `helpers/<id>/api/api/queries?limit=50`). Rejects with `code: "helper_off"` (status 409) when the helper isn't running there, and with the helper's own `code` and `message` when it refuses |
 
 Installing puts a program on someone's machine, so **ask first**, saying
 which program and which box: Shipyard doesn't ask for you. The consent
