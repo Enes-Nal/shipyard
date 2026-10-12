@@ -25,7 +25,28 @@
         "DATABASE_URL",
         "POSTGRES_URL"
       ],
-      "assets": {}
+      "assets": {
+        "linux-amd64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/database-helper-v0.1.0/berth-database-linux-amd64",
+          "sha256": "9944e1b9a706346d813699238c6ef1ba79c80d42c8fea0231c1532e292d28d10",
+          "size": 8487072
+        },
+        "linux-arm64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/database-helper-v0.1.0/berth-database-linux-arm64",
+          "sha256": "df22bc87fe50611f841697c7cb26ed1addddc2a1368a15d1dd2599615dc59a1d",
+          "size": 7930016
+        },
+        "darwin-arm64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/database-helper-v0.1.0/berth-database-darwin-arm64",
+          "sha256": "44c4fb1a9ec2b486fa97b1eeb69545687b5c6db8b3f246f3cde587c8b775fcd8",
+          "size": 8094082
+        },
+        "darwin-amd64": {
+          "url": "https://github.com/cosscom/shipyard/releases/download/database-helper-v0.1.0/berth-database-darwin-amd64",
+          "sha256": "6d97e3220e8b4e8ea210e3a9928599ab63c1b2fbf0718e3968f62bbf42e539dc",
+          "size": 8687056
+        }
+      }
     }
   }
 }

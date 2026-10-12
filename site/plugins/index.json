@@ -11,8 +11,8 @@
         {
           "path": "berth-plugin.json",
           "url": "database/0.1.0/berth-plugin.json",
-          "sha256": "ed277d54a9773ca2bbcb5287e1cdbccef244adffb5f8b56e58a2d4a48c71e729",
-          "size": 859
+          "sha256": "b7f7ae87a1703ef8ebcb1295b6b020ad28a4d162e01f620d1febe0780f2c9487",
+          "size": 1965
         },
         {
           "path": "dist/index.js",
