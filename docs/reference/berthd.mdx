@@ -122,7 +122,9 @@ owns, not the journal.
 
 A plugin can bring a [helper](/guides/plugins#give-a-plugin-a-helper): a
 program that runs on the box beside your dev servers, such as Leadline's
-`berth-leadline`, which records their queries, traces and logs. You turn one
+`berth-leadline`, which records their queries, traces and logs, or
+`berth-database`, which browses and edits a worktree's development database.
+You turn one
 on for a box from the plugin in the app; your laptop downloads it, checks it
 against the checksum in the plugin's manifest and uploads it. These commands
 are the box's own view of what was put there.
@@ -156,10 +158,21 @@ How berthd runs a helper:
   machine. The app reaches a helper's API through berthd
   ([`helpers/{plugin}/api/…`](/reference/app-api#boxes)); nothing of it is
   open to the network.
+- **With the helper's token, if it has one.** A helper may write a `token`
+  in that file beside its address. berthd then sends it back as
+  `Authorization: Bearer <token>` with every request it makes of that
+  helper: what it relays for the app, and its own calls before a service
+  starts. The file is in a folder only you can read, so the helper can
+  [refuse everyone but berthd](/guides/plugins#the-token-a-helper-only-berthd-can-ask).
+  Whatever `Authorization` the app sent is taken off a relayed request
+  first, for every helper, and the token is in no log and no answer of
+  berthd's.
 - **Never in the way of a service.** Before berthd starts a worktree's
   service it asks each running helper that wants to know, and waits at most
   two seconds for [what it adds to the service's environment](/guides/plugins#attach-what-a-helper-adds-to-a-service).
-  A helper that is down, slow or wrong changes nothing.
+  A helper that is down, slow or wrong changes nothing. With several
+  helpers on, each is shown the service's variables as the project has
+  them, not as another helper changed them.
 
 A `before:helper.install` [gate](/reference/events#gates) on the box can
 refuse a helper; `helper.installed` and `helper.removed` are announced.
