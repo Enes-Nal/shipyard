@@ -723,12 +723,16 @@ waiting:
 			}
 			return fmt.Errorf("it did not write %s to say it was ready", rec.Ready)
 		case <-tick.C:
-			api, err := readHelperReady(data, rec.Ready)
+			api, token, err := readHelperReady(data, rec.Ready)
 			if err != nil {
 				notReady = err
 				continue
 			}
 			if api != nil {
+				// Before it is shown as running: the first request of it
+				// already carries its token.
+				holdHelperToken(api, token)
+				defer holdHelperToken(api, "")
 				p.set(HelperRunning, pid, api, "")
 				h.logf("helper %s: %s %s is running (pid %d)", rec.Plugin, rec.Name, rec.Version, pid)
 				break waiting
@@ -768,29 +772,37 @@ func pathless(err error) error {
 // returns no address while the file is not there, and an error for one that
 // names anything but a loopback address: berthd relays to the helper, and
 // must not be pointed anywhere else.
-func readHelperReady(data, name string) (*url.URL, error) {
+//
+// token is the file's "token", for a helper that has one: what berthd sends
+// it as "Authorization: Bearer" with every request (helperAuth).
+func readHelperReady(data, name string) (api *url.URL, token string, err error) {
 	root, err := os.OpenRoot(data)
 	if err != nil {
-		return nil, nil
+		return nil, "", nil
 	}
 	defer root.Close()
 	f, err := root.Open(name)
 	if err != nil {
-		return nil, nil
+		return nil, "", nil
 	}
 	defer f.Close()
 	var doc struct {
-		API string `json:"api"`
+		API   string `json:"api"`
+		Token string `json:"token"`
 	}
 	if err := json.NewDecoder(io.LimitReader(f, 64<<10)).Decode(&doc); err != nil {
 		// Half written: it is read again in a moment.
-		return nil, nil
+		return nil, "", nil
 	}
 	u, err := url.Parse(doc.API)
 	if err != nil || u.Scheme != "http" || u.Port() == "" || !loopbackName(u.Hostname()) {
-		return nil, fmt.Errorf("its %s does not name an API on this machine (http://127.0.0.1:PORT)", name)
+		return nil, "", fmt.Errorf("its %s does not name an API on this machine (http://127.0.0.1:PORT)", name)
 	}
-	return &url.URL{Scheme: "http", Host: u.Host}, nil
+	if doc.Token != "" && !helperToken.MatchString(doc.Token) {
+		// Never the token itself.
+		return nil, "", fmt.Errorf("its %s has a token that cannot be sent in a header", name)
+	}
+	return &url.URL{Scheme: "http", Host: u.Host}, doc.Token, nil
 }
 
 func loopbackName(host string) bool {
