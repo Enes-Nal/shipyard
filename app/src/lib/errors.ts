@@ -94,6 +94,12 @@ export function explain(err: unknown, ctx: { box?: string } = {}): Explained {
   if (code === "plugin_invalid") return out("That plugin can't be installed", "The listing describes it wrongly, so Shipyard left it alone. Details has what's wrong.");
   if (code === "listing_changed") return out("The listing changed", "It has another version than the one shown here. Look at it again, then install.");
   if (code === "plugin_by_hand") return out("That folder is your own", "A plugin with this id is in ~/.berth/plugins that the listing didn't install, or that changed since. Replace it from Browse, or remove the folder yourself.");
+  // A plugin's helper (internal/agent/helpers.go): the agent downloads its
+  // program and hands it to a box, and the box relays requests to it. These
+  // are 502s that say nothing about whether the box can be reached.
+  if (code === "helper_download") return out("Couldn't download the plugin's program", "Shipyard couldn't fetch it from the address the plugin gives, so nothing was installed. Try again in a moment.", "retry");
+  if (code === "helper_mismatch") return out("The download didn't match the plugin", "What was downloaded isn't the program the plugin's checksum names, so nothing was installed.");
+  if (code === "helper_unreachable") return out("The plugin's program isn't answering", `It is installed${on} but didn't answer. Shipyard starts it again on its own; try again in a moment.`, "retry");
   // A read that got no answer in time (lib/net.ts): the link is slow or
   // has just dropped; the agent says which once it has checked.
   if (code === "box_timeout" || status === 504)
