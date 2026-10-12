@@ -10,6 +10,19 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Database: a worktree's own development database, as a tab.** A new
+  plugin in **Settings → Plugins → Browse** adds a **Database** tab to a
+  worktree: its tables with their rows in a grid you can sort, filter and
+  page through, each table's structure, and a console for SQL. It opens
+  read-only. **Unlock writes** asks once and lasts 15 minutes; then you can
+  edit cells, add and delete rows, review every change as old → new and
+  apply them together, or run statements that write. It is off until you
+  turn it on for a box, which installs a small program there
+  (`berth-database`) after asking, and it only shows a Postgres on the box
+  itself that the worktree's services were started with. See
+  [Database](/guides/database); plugin authors get a `SqlEditor` and the
+  per-box switch for a plugin's program, `HelperBox`, in the
+  [plugin SDK](/reference/plugin-sdk#ui-components).
 - **A plugin's program stops when the plugin does.** Turning off a plugin
   that runs a program on your boxes, such as Leadline, now stops that
   program and removes it from every box it runs on, keeping what it

@@ -174,6 +174,8 @@ agent's own provider then sees, like any prompt.
   request. It needs traces, so it needs an OpenTelemetry SDK in the app.
 - **Metrics are not kept.** An SDK may send them; Leadline takes them and
   drops them.
-- **No comparison with `main`**, no table editor and no SQL console.
+- **No comparison with `main`.**
+- **No table editor and no SQL console.** Those are another plugin's:
+  [Database](/guides/database).
 - **Where it runs.** The program is built for Linux and macOS, on amd64
   and arm64.

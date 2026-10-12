@@ -390,7 +390,7 @@ function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter, canEd
               /* @__PURE__ */ jsx("span", { className: "truncate", children: c.name }),
               by && /* @__PURE__ */ jsx(Icon, { name: by.desc ? "ArrowDown" : "ArrowUp", className: "size-3 shrink-0" })
             ] }) : /* @__PURE__ */ jsx("span", { className: "truncate font-medium text-[13px]", children: c.name }),
-            onFilter && /* @__PURE__ */ jsx(Tip, { label: `Filter by ${c.name}`, children: /* @__PURE__ */ jsx("button", { type: "button", "aria-label": `Filter by ${c.name}`, onClick: () => onFilter(c.name), className: "ml-auto flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/head:opacity-100", children: /* @__PURE__ */ jsx(Icon, { name: "ListFilter", className: "size-3" }) }) })
+            onFilter && /* @__PURE__ */ jsx(Tip, { label: `Filter by ${c.name}`, children: /* @__PURE__ */ jsx("button", { type: "button", "aria-label": `Filter by ${c.name}`, onClick: () => onFilter(c.name), className: "-mr-1 ml-auto flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/head:opacity-100", children: /* @__PURE__ */ jsx(Icon, { name: "ListFilter", className: "size-3" }) }) })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "truncate font-mono text-[11px] text-muted-foreground leading-4", children: [
             c.type,
@@ -455,7 +455,7 @@ var RowView = memo(function RowView2({ at, number, row, columns, sel, tab, editi
           "data-cell": `${at}:${col}`,
           "data-col": c.name,
           "data-changed": changed || void 0,
-          tabIndex: on ? 0 : col === 0 ? tab : -1,
+          tabIndex: on ? editing ? void 0 : 0 : col === 0 ? tab : -1,
           onClick: () => select(at, col),
           onFocus: () => !on && select(at, col),
           onDoubleClick: () => open(at, col),
@@ -468,8 +468,8 @@ var RowView = memo(function RowView2({ at, number, row, columns, sel, tab, editi
           ),
           children: on && editing ? /* @__PURE__ */ jsx(CellEditor, { initial: unset ? "" : editText(cell), column: c, onCommit: (v) => commit(at, col, v), onCancel: cancel }) : /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
             /* @__PURE__ */ jsx("span", { className: cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic"), children: unset ? "default" : shown.text }),
-            more && /* @__PURE__ */ jsx(Tip, { label: cut ? "Cut at 4,000 characters: show what was read" : "Show the whole value", children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Show the whole value of ${c.name}`, onClick: (e) => (e.stopPropagation(), view(at, col)), className: "flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: cut ? "Scissors" : "maximize-2", className: "size-3" }) }) }),
-            points && /* @__PURE__ */ jsx(Tip, { label: `Open the row in ${c.fk.ref_table}`, children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Open the row in ${c.fk.ref_table} that ${c.name} points at`, onClick: (e) => (e.stopPropagation(), jump(at, col)), className: "flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: "ArrowUpRight", className: "size-3" }) }) })
+            more && /* @__PURE__ */ jsx(Tip, { label: cut ? "Cut at 4,000 characters: show what was read" : "Show the whole value", children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Show the whole value of ${c.name}`, onClick: (e) => (e.stopPropagation(), view(at, col)), className: "-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: cut ? "Scissors" : "maximize-2", className: "size-3" }) }) }),
+            points && /* @__PURE__ */ jsx(Tip, { label: `Open the row in ${c.fk.ref_table}`, children: /* @__PURE__ */ jsx("button", { type: "button", tabIndex: on ? 0 : -1, "aria-label": `Open the row in ${c.fk.ref_table} that ${c.name} points at`, onClick: (e) => (e.stopPropagation(), jump(at, col)), className: "-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", children: /* @__PURE__ */ jsx(Icon, { name: "ArrowUpRight", className: "size-3" }) }) })
           ] })
         },
         c.name + col
@@ -675,7 +675,11 @@ function Value({ v, onClose }) {
         ),
         why && /* @__PURE__ */ jsx2("p", { role: "alert", className: "text-destructive-foreground text-xs", children: why }),
         /* @__PURE__ */ jsx2("p", { className: "text-muted-foreground text-xs", children: v.family === "text" ? "Left empty, this is the empty string. NULL is its own button." : "NULL is its own button: only text can be empty." })
-      ] }) : v.cell === null ? /* @__PURE__ */ jsx2("p", { className: "rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm italic", children: v.unset ? "Nothing typed: the column's default" : "NULL" }) : v.cell === "" ? /* @__PURE__ */ jsx2("p", { className: "rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm italic", children: "The empty string" }) : /* @__PURE__ */ jsx2("pre", { className: "min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/40 p-3 font-mono text-xs", tabIndex: 0, children: pretty(v.cell, v.cut ? "other" : v.family) })
+      ] }) : v.cell === null ? /* @__PURE__ */ jsx2("p", { className: "rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm italic", children: v.unset ? "Nothing typed: the column's default" : "NULL" }) : v.cell === "" ? /* @__PURE__ */ jsx2("p", { className: "rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm italic", children: "The empty string" }) : (
+        // The sheet's panel scrolls it; nothing here takes the keyboard
+        // first, so a long value opens at its top.
+        /* @__PURE__ */ jsx2("pre", { className: "whitespace-pre-wrap break-words rounded-lg border bg-muted/40 p-3 font-mono text-xs", children: pretty(v.cell, v.cut ? "other" : v.family) })
+      )
     ] }),
     /* @__PURE__ */ jsxs2(SheetFooter, { children: [
       v.cell !== null && /* @__PURE__ */ jsx2(
@@ -1254,25 +1258,28 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
         /* @__PURE__ */ jsx4(SheetDescription2, { className: "text-[13px]", children: caps.transactions ? `${plural(n, "change")}, sent together: all of them apply, or none do.` : `${plural(n, "change")}. ${engine.name} has no transactions, so they apply one after another, and one that fails leaves the ones before it applied.` })
       ] }),
       /* @__PURE__ */ jsxs4(SheetPanel2, { className: "min-h-0 flex-1 space-y-2 overflow-auto", children: [
-        lines.map((l) => /* @__PURE__ */ jsxs4("div", { className: "rounded-lg border", "data-testid": "database-change", "data-kind": l.kind, children: [
-          /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2 border-b bg-muted/40 px-3 py-1.5", children: [
-            /* @__PURE__ */ jsx4(Badge2, { variant: l.kind === "delete" ? "error" : l.kind === "insert" ? "success" : "warning", size: "sm", className: "shrink-0", children: l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update" }),
-            /* @__PURE__ */ jsx4("span", { className: "min-w-0 flex-1 truncate font-mono text-xs", children: l.title }),
-            gone.includes(l.id) && /* @__PURE__ */ jsx4(Badge2, { variant: "outline", size: "sm", className: "shrink-0", children: "No longer there" }),
-            /* @__PURE__ */ jsx4(Tip2, { label: "Take this change back", children: /* @__PURE__ */ jsx4(Button3, { size: "icon-xs", variant: "ghost", "aria-label": `Take back the ${l.kind} of ${l.title}`, onClick: () => setStaged(undo(staged, l)), children: /* @__PURE__ */ jsx4(Icon3, { name: "undo-2", className: "size-3.5" }) }) })
-          ] }),
-          l.kind === "delete" ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "The whole row goes." }) : l.fields.length === 0 ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "Every column takes its default." }) : /* @__PURE__ */ jsx4("dl", { className: "divide-y", children: l.fields.map((f) => /* @__PURE__ */ jsxs4("div", { className: "flex items-baseline gap-2 px-3 py-1.5 font-mono text-xs", children: [
-            /* @__PURE__ */ jsx4("dt", { className: "w-32 shrink-0 truncate text-muted-foreground", children: f.column }),
-            /* @__PURE__ */ jsxs4("dd", { className: "min-w-0 flex-1 break-words", children: [
-              l.kind === "update" && /* @__PURE__ */ jsxs4(Fragment3, { children: [
-                /* @__PURE__ */ jsx4("span", { className: "text-muted-foreground line-through", children: quote(f.was ?? null) }),
-                /* @__PURE__ */ jsx4("span", { className: "mx-1.5 text-muted-foreground", "aria-label": "becomes", children: "\u2192" })
-              ] }),
-              /* @__PURE__ */ jsx4("span", { className: "font-medium", children: quote(f.now) })
-            ] })
-          ] }, f.column)) })
-        ] }, `${l.kind}
-${l.id}`)),
+        lines.map((l) => (
+          // Its kind is the bar at its edge, as in the grid's margin.
+          /* @__PURE__ */ jsxs4("div", { className: cn2("overflow-hidden rounded-lg border", l.kind === "delete" ? "shadow-[inset_3px_0_0_var(--destructive)]" : l.kind === "insert" ? "shadow-[inset_3px_0_0_var(--success)]" : "shadow-[inset_3px_0_0_var(--warning)]"), "data-testid": "database-change", "data-kind": l.kind, children: [
+            /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2 border-b px-3 py-1.5", children: [
+              /* @__PURE__ */ jsx4(Badge2, { variant: "outline", size: "sm", className: "shrink-0", children: l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update" }),
+              /* @__PURE__ */ jsx4("span", { className: "min-w-0 flex-1 truncate font-mono text-xs", children: l.title }),
+              gone.includes(l.id) && /* @__PURE__ */ jsx4(Badge2, { variant: "outline", size: "sm", className: "shrink-0", children: "No longer there" }),
+              /* @__PURE__ */ jsx4(Tip2, { label: "Take this change back", children: /* @__PURE__ */ jsx4(Button3, { size: "icon-xs", variant: "ghost", "aria-label": `Take back the ${l.kind} of ${l.title}`, onClick: () => setStaged(undo(staged, l)), children: /* @__PURE__ */ jsx4(Icon3, { name: "undo-2", className: "size-3.5" }) }) })
+            ] }),
+            l.kind === "delete" ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "The whole row goes." }) : l.fields.length === 0 ? /* @__PURE__ */ jsx4("p", { className: "px-3 py-2 text-muted-foreground text-xs", children: "Every column takes its default." }) : /* @__PURE__ */ jsx4("dl", { className: "divide-y", children: l.fields.map((f) => /* @__PURE__ */ jsxs4("div", { className: "flex items-baseline gap-2 px-3 py-1.5 font-mono text-xs", children: [
+              /* @__PURE__ */ jsx4("dt", { className: "w-32 shrink-0 truncate text-muted-foreground", children: f.column }),
+              /* @__PURE__ */ jsxs4("dd", { className: "min-w-0 flex-1 break-words", children: [
+                l.kind === "update" && /* @__PURE__ */ jsxs4(Fragment3, { children: [
+                  /* @__PURE__ */ jsx4("span", { className: "text-muted-foreground line-through", children: quote(f.was ?? null) }),
+                  /* @__PURE__ */ jsx4("span", { className: "mx-1.5 text-muted-foreground", "aria-label": "becomes", children: "\u2192" })
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "font-medium", children: quote(f.now) })
+              ] })
+            ] }, f.column)) })
+          ] }, `${l.kind}
+${l.id}`)
+        )),
         lines.length === 0 && /* @__PURE__ */ jsx4("p", { className: "rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm", children: "Nothing is staged." })
       ] }),
       /* @__PURE__ */ jsxs4(SheetFooter2, { children: [

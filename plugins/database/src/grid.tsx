@@ -239,7 +239,7 @@ export function Grid({ label, columns, rows, offset = 0, order, onSort, onFilter
                     )}
                     {onFilter && (
                       <Tip label={`Filter by ${c.name}`}>
-                        <button type="button" aria-label={`Filter by ${c.name}`} onClick={() => onFilter(c.name)} className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/head:opacity-100">
+                        <button type="button" aria-label={`Filter by ${c.name}`} onClick={() => onFilter(c.name)} className="-mr-1 ml-auto flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/head:opacity-100">
                           <Icon name="ListFilter" className="size-3" />
                         </button>
                       </Tip>
@@ -347,7 +347,8 @@ const RowView = memo(function RowView({ at, number, row, columns, sel, tab, edit
             data-cell={`${at}:${col}`}
             data-col={c.name}
             data-changed={changed || undefined}
-            tabIndex={on ? 0 : col === 0 ? tab : -1}
+            // While it is typed in, the box inside it is what takes the keyboard.
+            tabIndex={on ? (editing ? undefined : 0) : col === 0 ? tab : -1}
             onClick={() => select(at, col)}
             onFocus={() => !on && select(at, col)}
             onDoubleClick={() => open(at, col)}
@@ -366,14 +367,14 @@ const RowView = memo(function RowView({ at, number, row, columns, sel, tab, edit
                 <span className={cn("min-w-0 flex-1 truncate", (shown.kind !== "value" || unset) && "font-sans text-[11px] text-muted-foreground italic")}>{unset ? "default" : shown.text}</span>
                 {more && (
                   <Tip label={cut ? "Cut at 4,000 characters: show what was read" : "Show the whole value"}>
-                    <button type="button" tabIndex={on ? 0 : -1} aria-label={`Show the whole value of ${c.name}`} onClick={(e) => (e.stopPropagation(), view(at, col))} className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                    <button type="button" tabIndex={on ? 0 : -1} aria-label={`Show the whole value of ${c.name}`} onClick={(e) => (e.stopPropagation(), view(at, col))} className="-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
                       <Icon name={cut ? "Scissors" : "maximize-2"} className="size-3" />
                     </button>
                   </Tip>
                 )}
                 {points && (
                   <Tip label={`Open the row in ${c.fk!.ref_table}`}>
-                    <button type="button" tabIndex={on ? 0 : -1} aria-label={`Open the row in ${c.fk!.ref_table} that ${c.name} points at`} onClick={(e) => (e.stopPropagation(), jump!(at, col))} className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                    <button type="button" tabIndex={on ? 0 : -1} aria-label={`Open the row in ${c.fk!.ref_table} that ${c.name} points at`} onClick={(e) => (e.stopPropagation(), jump!(at, col))} className="-mr-1 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
                       <Icon name="ArrowUpRight" className="size-3" />
                     </button>
                   </Tip>

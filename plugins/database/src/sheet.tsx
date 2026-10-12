@@ -96,7 +96,9 @@ function Value({ v, onClose }: { v: Viewed; onClose(): void }) {
         ) : v.cell === "" ? (
           <p className="rounded-lg border border-dashed px-3 py-6 text-center text-muted-foreground text-sm italic">The empty string</p>
         ) : (
-          <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/40 p-3 font-mono text-xs" tabIndex={0}>
+          // The sheet's panel scrolls it; nothing here takes the keyboard
+          // first, so a long value opens at its top.
+          <pre className="whitespace-pre-wrap break-words rounded-lg border bg-muted/40 p-3 font-mono text-xs">
             {pretty(v.cell, v.cut ? "other" : v.family)}
           </pre>
         )}

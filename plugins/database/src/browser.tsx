@@ -511,9 +511,10 @@ function TableView({ ctx, schema, table, initial, staged, setStaged, onBack, onJ
             </SheetHeader>
             <SheetPanel className="min-h-0 flex-1 space-y-2 overflow-auto">
               {lines.map((l) => (
-                <div key={`${l.kind}\n${l.id}`} className="rounded-lg border" data-testid="database-change" data-kind={l.kind}>
-                  <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-1.5">
-                    <Badge variant={l.kind === "delete" ? "error" : l.kind === "insert" ? "success" : "warning"} size="sm" className="shrink-0">
+                // Its kind is the bar at its edge, as in the grid's margin.
+                <div key={`${l.kind}\n${l.id}`} className={cn("overflow-hidden rounded-lg border", l.kind === "delete" ? "shadow-[inset_3px_0_0_var(--destructive)]" : l.kind === "insert" ? "shadow-[inset_3px_0_0_var(--success)]" : "shadow-[inset_3px_0_0_var(--warning)]")} data-testid="database-change" data-kind={l.kind}>
+                  <div className="flex items-center gap-2 border-b px-3 py-1.5">
+                    <Badge variant="outline" size="sm" className="shrink-0">
                       {l.kind === "delete" ? "Delete" : l.kind === "insert" ? "Add" : "Update"}
                     </Badge>
                     <span className="min-w-0 flex-1 truncate font-mono text-xs">{l.title}</span>
