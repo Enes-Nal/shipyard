@@ -471,7 +471,16 @@ export interface BerthHelper {
   // whose manifest names no attach path, "helper_unreachable" (502) when the
   // helper did not answer, and "refused" (403) when a hook on the box said
   // no. Absent in a Shipyard from before it: check before calling.
-  attachEnv<A = Record<string, unknown>>(box: string, where: { location: string; worktree: string }): Promise<HelperEnvLook<A>>;
+  //
+  // With `env`, no file is read: the helper is told those variables, which
+  // the person gave (a database's address they pasted), with "manual" where
+  // the service's name would be, in place of what it was last told that
+  // way. An empty `env` takes it back. Every name must be one the manifest's
+  // attach_env names (400 "bad_request" otherwise). A value given this way
+  // is a secret: it goes to the box in the request's body and on to the
+  // helper, and is in no answer, log or event. Don't keep it, and don't show
+  // it again.
+  attachEnv<A = Record<string, unknown>>(box: string, where: { location: string; worktree: string; env?: Record<string, string> }): Promise<HelperEnvLook<A>>;
 }
 
 // What a box found in a worktree's .env files for a helper (attachEnv).
@@ -480,7 +489,8 @@ export interface HelperEnvLook<A = Record<string, unknown>> {
   location: string;
   // The worktree's name on the box, its main checkout's too.
   worktree: string;
-  // What the helper was told in place of a service's name: ".env".
+  // What the helper was told in place of a service's name: ".env" for a
+  // look in the files, "manual" for variables that were given.
   command: string;
   // The files that were read, in the order they were read; a later one's
   // value for a variable wins. Of .env, .env.development, .env.local and
@@ -493,7 +503,8 @@ export interface HelperEnvLook<A = Record<string, unknown>> {
   // The variables of those files that the manifest names. sent says the
   // helper was told its value; when it was not, reason is "secret" (it names
   // a secret: op://, env://), "unresolved" (it refers to a variable the
-  // files do not set), "empty" or "too_long".
+  // files do not set), "empty" or "too_long". file is "" for a variable
+  // that was given and not read.
   variables: { name: string; file: string; sent: boolean; reason?: string }[];
   // The helper's own answer to being told, without its "env".
   answer: A;

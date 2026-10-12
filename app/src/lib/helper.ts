@@ -23,7 +23,12 @@ export const helperApi = {
   // The box looks in a worktree's .env files and tells the helper what it
   // found there (internal/box/helperenv.go). It is the box's own route, not
   // the helper's, so its errors are the box's.
-  attachEnv: <A,>(c: Client, id: string, box: string, where: { location: string; worktree: string }) => c.box<HelperEnvLook<A>>(box, "POST", helperEnvPath(id), { location: where.location, worktree: where.worktree }),
+  //
+  // With env the box reads no file and tells the helper those variables,
+  // which the person gave. They are a secret: in this request's body and
+  // nowhere else.
+  attachEnv: <A,>(c: Client, id: string, box: string, where: { location: string; worktree: string; env?: Record<string, string> }) =>
+    c.box<HelperEnvLook<A>>(box, "POST", helperEnvPath(id), { location: where.location, worktree: where.worktree, ...(where.env ? { env: where.env } : {}) }),
 };
 
 // helperError gives a helper's own refusal the shape every other error has.

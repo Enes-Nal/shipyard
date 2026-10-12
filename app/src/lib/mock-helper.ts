@@ -101,6 +101,13 @@ function statusOf(plugin: string, box: string): HelperStatus {
   return { plugin, box, state: h.state, platform: PLATFORM, version: h.version, latest: latestOf(plugin), ...(update ? { update: true as const } : {}), error: h.error };
 }
 
+// forgetData is a helper's data removed from a box: it holds nothing it
+// recorded or kept, the databases connected by hand among it.
+function forgetData(plugin: string, box: string, h: Helper) {
+  h.purged = true;
+  if (plugin === "database") void databaseMock?.then((m) => m.databasePurged(box));
+}
+
 // helperLaptopCall answers the laptop agent's helper routes, or undefined
 // for any other path. online says whether a box can be reached.
 export function helperLaptopCall(method: string, path: string, online: (box: string) => boolean, delay: Delay): Promise<unknown> | undefined {
@@ -152,7 +159,7 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
     if (h.state !== "unsupported") h.state = "off";
     h.version = undefined;
     h.error = undefined;
-    if (purge) h.purged = true;
+    if (purge) forgetData(plugin, box, h);
     return delay({ ...statusOf(plugin, box), ...(attached ? { attached } : {}) });
   }
   return undefined;
@@ -186,7 +193,7 @@ export function removeHelpers(plugin: string, boxes: MockBox[], purge: boolean):
     if (h.state !== "unsupported") h.state = "off";
     h.version = undefined;
     h.error = undefined;
-    if (purge) h.purged = true;
+    if (purge) forgetData(plugin, b.name, h);
     return { box: b.name, state: was ? "removed" : "none", ...(purge ? { purged: true } : {}), ...(attached ? { attached } : {}) };
   });
 }
@@ -365,11 +372,22 @@ export function helperBoxCall(box: string, method: string, path: string, delay: 
     if (method !== "POST" || dbScenario === "env-old") return delay(null).then(() => Promise.reject(new ApiError(`${box} runs an older berthd that doesn't have this yet`, 404, "box_outdated")));
     const h = helperOf(asked, box);
     if (h.state !== "running") return delay(null).then(() => Promise.reject(new ApiError(`the ${asked} helper is not running on this box`, 409, "helper_off")));
-    const where = (body ?? {}) as { location?: string; worktree?: string };
+    const where = (body ?? {}) as { location?: string; worktree?: string; env?: Record<string, unknown> | null };
     const location = where.location ?? "";
     const worktree = where.worktree ?? "";
-    // Only Database's helper is told anything by a look, in this mock.
-    if (asked !== "database") return delay({ plugin: asked, location, worktree: worktree || location, command: ".env", files: [], skipped: [], variables: [], answer: {} });
+    // With "env" the box reads no file: the helper is told what was given.
+    const given = where.env && typeof where.env === "object" ? where.env : undefined;
+    // Only Database's helper is told anything this way, in this mock.
+    if (asked !== "database") return delay({ plugin: asked, location, worktree: worktree || location, command: given ? "manual" : ".env", files: [], skipped: [], variables: [], answer: {} });
+    if (given) {
+      return (databaseMock ??= import("@/lib/mock-database")).then((m) => {
+        try {
+          return delay(m.databaseConnect(box, location, worktree, given));
+        } catch (err) {
+          return delay(null).then(() => Promise.reject(err));
+        }
+      });
+    }
     return (databaseMock ??= import("@/lib/mock-database")).then((m) => new Promise((done) => window.setTimeout(done, m.ENV_LOOK_MS)).then(() => delay(m.databaseEnvLook(location, worktree, box !== "devl" || !!h.purged))));
   }
   const to = helperRelayed(path);
@@ -391,7 +409,7 @@ export function helperBoxCall(box: string, method: string, path: string, delay: 
     if (!route.startsWith("db/") || h.version !== latestOf(plugin)) return delay(null).then(() => Promise.reject(refusal(404, "not_found", "There is no such route.")));
     return (databaseMock ??= import("@/lib/mock-database")).then((m) => {
       try {
-        return delay(m.databaseCall(method, route, new URLSearchParams(to.query), body, empty));
+        return delay(m.databaseCall(method, route, new URLSearchParams(to.query), body, empty, box));
       } catch (err) {
         return delay(null).then(() => Promise.reject(err));
       }
