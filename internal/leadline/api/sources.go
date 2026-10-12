@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cosscom/shipyard/internal/leadline"
 	"github.com/cosscom/shipyard/internal/leadline/capture"
 	"github.com/cosscom/shipyard/internal/leadline/store"
 )
@@ -322,12 +323,19 @@ func (s *Server) detach(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Service  string `json:"service"`
 		KeepData bool   `json:"keep_data"`
+		// What the box daemon says of a worktree it removed, in the words
+		// it attached with: the source's name is worked out from them.
+		Project  string `json:"project"`
+		Worktree string `json:"worktree"`
 	}
 	if !readBody(w, r, &in) {
 		return
 	}
+	if in.Service == "" && in.Project != "" {
+		in.Service = leadline.Worktree{Project: in.Project, Name: in.Worktree}.Service()
+	}
 	if in.Service == "" {
-		writeProblem(w, http.StatusBadRequest, "bad_request", "service is required.", "It is the source's name, as in acme/fix-orders.")
+		writeProblem(w, http.StatusBadRequest, "bad_request", "service is required.", "It is the source's name, as in acme/fix-orders; or give the worktree's project and worktree.")
 		return
 	}
 	_, known := s.store.Worktrees()[in.Service]

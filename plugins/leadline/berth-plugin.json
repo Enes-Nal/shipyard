@@ -16,6 +16,7 @@
       "ready": "helper.json",
       "attach": "/api/attach",
       "attach_env": ["DATABASE_URL", "POSTGRES_URL", "OTEL_*"],
+      "detach": "/api/detach",
       "assets": {}
     }
   }

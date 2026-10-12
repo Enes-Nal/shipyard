@@ -1712,8 +1712,21 @@ POST /api/detach
 
 | field | default | what |
 | --- | --- | --- |
-| `service` | required | The source's name. |
+| `service` | required, or `project` | The source's name. |
+| `project`, `worktree` | none | The worktree as [`/api/attach`](#post-apiattach) was told of it, in place of `service`: the source's name is worked out from them (`Service()`), with `worktree` empty for the project's main checkout. `service` wins when both are given. |
 | `keep_data` | `false` | `true` closes the proxies and keeps what was recorded. |
+
+The box daemon calls it when a worktree is removed (the plugin's manifest
+names this path as its helper's `detach`), with what it said to attach,
+less the command and its environment:
+
+```
+POST /api/detach
+{"box": "devbox", "project": "acme", "worktree": "add-refunds", "branch": "feat/refunds", "path": "/home/dev/acme-add-refunds"}
+```
+
+`box`, `branch` and `path` are taken and not used. Neither `service` nor
+`project` is a `400` (`bad_request`).
 
 Has the helper forget a worktree, for when the worktree is removed: closes
 every proxy opened for it (its own label and the names under it) and, unless
@@ -1858,7 +1871,9 @@ user, password, database and options keep every byte they had.
 | `jdbc:postgresql://localhost/acme?user=app` | `jdbc:postgresql://127.0.0.1:25432/acme?user=app` |
 | `postgres://app@db.acme.example/acme` | unchanged, `ok` false |
 
-When the worktree is removed: `POST /api/detach {"service": w.Service()}`.
+When the worktree is removed: `POST /api/detach {"service": w.Service()}`,
+or with the worktree's `project` and `worktree`, which is how the box daemon
+says it.
 
 ## What differs from Leadline's API
 
@@ -1879,8 +1894,9 @@ for Leadline reads these. What is different:
   (Leadline counts uses, and `DELETE` gives one back; here `DELETE` closes).
   Proxies are kept across restarts. A proxy has no `connection_ids`.
   `GET` has `total`.
-- **`/api/detach`** takes the same body; its answer has no `connections`
-  and its `deleted` no `metric_points`.
+- **`/api/detach`** takes the same body, and a worktree's `project` and
+  `worktree` in place of `service`; its answer has no `connections` and its
+  `deleted` no `metric_points`.
 - **`/api/attach`** is not Leadline's, which attaches a saved connection:
   here it takes a worktree's command and its environment, and answers with
   the variables to set. Nothing is saved but the proxy it opens.

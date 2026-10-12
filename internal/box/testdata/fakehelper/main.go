@@ -12,10 +12,13 @@
 //	attach-answer   the body to answer POST /api/attach with (default {"env":{}})
 //	attach-status   the status to answer it with (default 200)
 //	attach-delay    how long to wait before answering it, as a Go duration
+//	detach-status   the status to answer POST /api/detach with (default 200)
+//	detach-delay    how long to wait before answering it, as a Go duration
 //
 // It writes helper.json ({"api": "http://127.0.0.1:PORT"}) once it listens,
-// adds a line to starts each time it starts, and keeps the last attach
-// request as attach-request.
+// adds a line to starts each time it starts, keeps the last attach request
+// as attach-request, and adds each detach request it answered as a line of
+// detach-requests.
 package main
 
 import (
@@ -103,6 +106,22 @@ func main() {
 			answer = `{"env":{}}`
 		}
 		io.WriteString(w, answer)
+	})
+
+	mux.HandleFunc("POST /api/detach", func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if d, err := time.ParseDuration(read("detach-delay")); err == nil {
+			time.Sleep(d)
+		}
+		if f, err := os.OpenFile(in("detach-requests"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600); err == nil {
+			fmt.Fprintln(f, strings.TrimSpace(string(body)))
+			f.Close()
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if status, err := strconv.Atoi(read("detach-status")); err == nil {
+			w.WriteHeader(status)
+		}
+		io.WriteString(w, `{"found":true}`)
 	})
 
 	state, _ := json.Marshal(map[string]any{"api": "http://" + ln.Addr().String(), "pid": os.Getpid()})
