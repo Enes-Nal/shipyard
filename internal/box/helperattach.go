@@ -126,7 +126,7 @@ func (h *Helpers) attachOne(ctx context.Context, p *helperProc, about HelperAtta
 	// does not. It is the same for every helper: the files' own values,
 	// never what a helper before this one answered.
 	fromFile := map[string]string{}
-	if len(p.rec.AttachEnv) > 0 {
+	if p.rec.wantsMore(own, refs) {
 		for k, v := range dotenv(ctx) {
 			if p.rec.matchesEnv(k) {
 				about.Env[k], fromFile[k] = v, v

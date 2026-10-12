@@ -111,6 +111,21 @@ func (c *Client) AttachHelperEnv(ctx context.Context, plugin, location, worktree
 	return out, c.helperCall(ctx, http.MethodPost, "/v1/helpers/"+url.PathEscape(plugin)+"/attach-env", header, bytes.NewReader(body), &out)
 }
 
+// AttachHelperGiven has the box tell a plugin's helper the variables a
+// person gave for a worktree, in place of what was given before; with none,
+// that is taken back. No file is read.
+func (c *Client) AttachHelperGiven(ctx context.Context, plugin, location, worktree string, env map[string]string) (out HelperEnvLook, err error) {
+	if env == nil {
+		env = map[string]string{}
+	}
+	body, err := json.Marshal(map[string]any{"location": location, "worktree": worktree, "env": env})
+	if err != nil {
+		return out, err
+	}
+	header := http.Header{"Content-Type": {"application/json"}}
+	return out, c.helperCall(ctx, http.MethodPost, "/v1/helpers/"+url.PathEscape(plugin)+"/attach-env", header, bytes.NewReader(body), &out)
+}
+
 // HelperLog is the end of what a helper printed.
 func (c *Client) HelperLog(ctx context.Context, plugin string, limit int64) (out []byte, err error) {
 	return out, c.helperCall(ctx, http.MethodGet, fmt.Sprintf("/v1/helpers/%s/log?limit=%d", url.PathEscape(plugin), limit), nil, nil, &out)

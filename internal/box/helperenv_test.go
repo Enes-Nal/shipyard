@@ -422,18 +422,162 @@ func TestOnlyAPairedLaptopHasAHelperToldOfDotenvFilesAndAGateCanRefuseIt(t *test
 		t.Fatalf("a look from a paired laptop: %+v, %v", look, err)
 	}
 
-	// Until a gate says no.
-	if err := os.WriteFile(cfg, []byte(`{"hooks":[{"on":"before:helper.attach","run":"echo not $BERTH_EVENT_PLUGIN for $BERTH_EVENT_WORKTREE; exit 1"}]}`), 0o600); err != nil {
+	// Nor is a database said by hand from the box itself.
+	const byHand = "postgres://app:hunter2@localhost:5432/acme_by_hand"
+	os.Remove(filepath.Join(r.h.dataDir("acme"), "attach-request"))
+	_, err = local.AttachHelperGiven(ctx, "acme", "acme", "fix-orders", map[string]string{"DATABASE_URL": byHand})
+	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused || strings.Contains(he.Message, "hunter2") {
+		t.Fatalf("a database given from the box itself: %v", err)
+	}
+	if exists(filepath.Join(r.h.dataDir("acme"), "attach-request")) {
+		t.Fatal("the helper was told from the box itself")
+	}
+
+	// Until a gate says no. It is told which helper, which worktree and
+	// how, and nothing of what was given.
+	seen := filepath.Join(t.TempDir(), "gate-saw")
+	hook := `{"hooks":[{"on":"before:helper.attach","run":"env | grep -e '^BERTH_' > ` + seen + `; echo not $BERTH_PLUGIN for $BERTH_WORKTREE from $BERTH_FROM; exit 1"}]}`
+	if err := os.WriteFile(cfg, []byte(hook), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	os.Remove(filepath.Join(r.h.dataDir("acme"), "attach-request"))
 	reads := dotenvReads.Load()
 	_, err = remote.AttachHelperEnv(ctx, "acme", "acme", "fix-orders")
-	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused {
+	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused || !strings.Contains(he.Message, "not acme for fix-orders from .env") {
 		t.Fatalf("a look a gate refuses: %v", err)
 	}
+	_, err = remote.AttachHelperGiven(ctx, "acme", "acme", "fix-orders", map[string]string{"DATABASE_URL": byHand})
+	if !errors.As(err, &he) || he.Status != 403 || he.Code != CodeRefused || !strings.Contains(he.Message, "not acme for fix-orders from manual") {
+		t.Fatalf("a database given by hand that a gate refuses: %v", err)
+	}
 	if exists(filepath.Join(r.h.dataDir("acme"), "attach-request")) || dotenvReads.Load() != reads {
-		t.Fatal("a look a gate refused read the files or told the helper")
+		t.Fatal("what a gate refused read the files or told the helper")
+	}
+	holdsNone(t, "what the gate was told", string(mustRead(seen)))
+	holdsNone(t, "berthd's log", r.logs.String())
+}
+
+// The person may say which database a worktree has: the helper is told
+// that, under "manual", and no file is read. What was said is a secret: it
+// is in no answer, no log and no error.
+func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
+	r := newEnvRig(t, nil)
+	const token = "tok3n_For-berthd.only"
+	r.install("acme", nil, map[string]string{"token": token})
+	// What the worktree's own file says is another matter, and is not read.
+	r.dotenv(r.wt.Path, ".env", "DATABASE_URL=postgres://app:hunter2@localhost:5432/acme_in_the_file\n")
+	const byHand = "postgres://app:s3cret-by-hand@localhost:5432/acme_by_hand"
+	give := func(env string) (int, string, HelperEnvLook) {
+		t.Helper()
+		status, raw, look := r.look("acme", `{"location": "acme", "worktree": "fix-orders", "env": `+env+`}`)
+		holdsNone(t, "the answer", raw)
+		if strings.Contains(raw, "acme_by_hand") {
+			t.Errorf("the answer holds the address that was given: %s", raw)
+		}
+		return status, raw, look
+	}
+
+	// ---- Given: the helper is told it, as it is told of a service.
+	r.inData("acme", "attach-answer", `{"env": {"DATABASE_URL": "postgres://app:hunter2@127.0.0.1:25432/acme"}, "source": "acme/fix-orders", "connections": ["c_7d90a3b1e44f"]}`)
+	reads := dotenvReads.Load()
+	status, raw, look := give(`{"DATABASE_URL": "` + byHand + `"}`)
+	if status != 200 {
+		t.Fatalf("a database given by hand: %d %s", status, raw)
+	}
+	if got := dotenvReads.Load(); got != reads {
+		t.Errorf("the worktree's dotenv files were read %d times for a database given by hand", got-reads)
+	}
+	if look.Command != "manual" || len(look.Files) != 0 || len(look.Skipped) != 0 ||
+		!reflect.DeepEqual(look.Variables, []HelperEnvVariable{{Name: "DATABASE_URL", Sent: true}}) ||
+		string(look.Answer["connections"]) != `["c_7d90a3b1e44f"]` || len(look.Answer) != 2 {
+		t.Errorf("the answer to a database given by hand: %s", raw)
+	}
+	told := r.told("acme")
+	if told.Box != "devbox" || told.Project != "acme" || told.Worktree != "fix-orders" || told.Path != r.wt.Path || told.Command != "manual" ||
+		!reflect.DeepEqual(told.Env, map[string]string{"DATABASE_URL": byHand}) {
+		t.Errorf("the helper was told %s %s/%s with %d variables", told.Command, told.Project, told.Worktree, len(told.Env))
+	}
+	if got := readIn(t, r.h, "acme", "attach-authorization"); got != "Bearer "+token {
+		t.Errorf("the helper was sent the Authorization %q", got)
+	}
+	if got := r.h.attachedTo("acme"); len(got) != 0 || exists(r.h.attachedPath("acme")) {
+		t.Errorf("attached.json names %+v after a database was given by hand", got)
+	}
+
+	// ---- A look in the files afterwards is its own: ".env", with the
+	// file's value, and what was given by hand is not sent again.
+	if status, raw, look = r.look("acme", `{"location": "acme", "worktree": "fix-orders", "env": null}`); status != 200 || look.Command != ".env" || len(look.Files) != 1 {
+		t.Fatalf("a look with env null: %d %s", status, raw)
+	}
+	if told = r.told("acme"); told.Command != ".env" || told.Env["DATABASE_URL"] != "postgres://app:hunter2@localhost:5432/acme_in_the_file" {
+		t.Errorf("a look after a database was given by hand told the helper %s", told.Command)
+	}
+
+	// ---- Not given: a variable the manifest does not name, a name that is
+	// none (an address put where the name goes is not repeated), a secret's
+	// name, nothing, and too much. The helper is not told any of them.
+	os.Remove(filepath.Join(r.h.dataDir("acme"), "attach-request"))
+	for what, tc := range map[string]struct{ env, says string }{
+		"a variable the manifest does not name": {`{"UNRELATED": "` + byHand + `"}`, "UNRELATED is not a variable the acme helper is told"},
+		"one it names beside one it does not":   {`{"DATABASE_URL": "` + byHand + `", "PGPASSWORD": "s3cret"}`, "PGPASSWORD is not a variable the acme helper is told"},
+		"an address where the name goes":        {`{"` + byHand + `": "DATABASE_URL"}`, "env has a name that is not a variable's"},
+		"one of Shipyard's own":                 {`{"BERTH_PORT": "1"}`, "BERTH_PORT is not a variable"},
+		"a secret's name":                       {`{"DATABASE_URL": "op://dev/acme-db/url"}`, "DATABASE_URL names a secret"},
+		"nothing":                               {`{"DATABASE_URL": ""}`, "DATABASE_URL must be text"},
+		"too much":                              {`{"DATABASE_URL": "postgres://` + strings.Repeat("x", maxAttachValue) + `"}`, "DATABASE_URL must be text"},
+		"not text":                              {`{"DATABASE_URL": 5432}`, "invalid request body"},
+		"not variables":                         {`["` + byHand + `"]`, "invalid request body"},
+	} {
+		status, raw, _ := give(tc.env)
+		if status != 400 || !strings.Contains(raw, `"code":"`+CodeBadRequest+`"`) || !strings.Contains(raw, tc.says) {
+			t.Errorf("%s: %d %s, want 400 saying %q", what, status, raw, tc.says)
+		}
+	}
+	if exists(filepath.Join(r.h.dataDir("acme"), "attach-request")) {
+		t.Error("the helper was told something that was refused")
+	}
+
+	// ---- Taken back: the helper is told "manual" with nothing.
+	r.inData("acme", "attach-answer", `{"source": "acme/fix-orders", "connections": []}`)
+	status, raw, look = give(`{}`)
+	if status != 200 || look.Command != "manual" || len(look.Variables) != 0 || string(look.Answer["connections"]) != `[]` {
+		t.Fatalf("taking back what was given: %d %s", status, raw)
+	}
+	if told = r.told("acme"); told.Command != "manual" || told.Env == nil || len(told.Env) != 0 {
+		t.Errorf("to take it back the helper was told %s with %d variables", told.Command, len(told.Env))
+	}
+
+	// ---- A helper that fails, is slow or is off is an error, in which the
+	// address is not repeated; nor is it in berthd's log.
+	r.h.attachTimeout = 300 * time.Millisecond
+	r.inData("acme", "attach-status", "500")
+	if status, raw, _ = give(`{"DATABASE_URL": "` + byHand + `"}`); status != 502 || !strings.Contains(raw, `"code":"helper_unreachable"`) {
+		t.Errorf("a helper that answers an error: %d %s", status, raw)
+	}
+	r.inData("acme", "attach-status", "")
+	r.inData("acme", "attach-delay", "10s")
+	if status, raw, _ = give(`{"DATABASE_URL": "` + byHand + `"}`); status != 502 || !strings.Contains(raw, "did not answer in time") {
+		t.Errorf("a slow helper: %d %s", status, raw)
+	}
+	r.inData("acme", "attach-delay", "")
+	// One that echoes what it was told has its "env" dropped, as ever.
+	r.inData("acme", "attach-answer", `{"env": {"DATABASE_URL": "`+byHand+`"}, "connections": ["c_7d90a3b1e44f"]}`)
+	if status, raw, look = give(`{"DATABASE_URL": "` + byHand + `"}`); status != 200 || len(look.Answer) != 1 {
+		t.Errorf("a helper that answers with what it was told: %d %s", status, raw)
+	}
+	if _, err := r.h.Remove("acme", false); err != nil {
+		t.Fatal(err)
+	}
+	if status, raw, _ = give(`{"DATABASE_URL": "` + byHand + `"}`); status != 409 || !strings.Contains(raw, `"code":"helper_off"`) {
+		t.Errorf("a helper that is off: %d %s", status, raw)
+	}
+	logs := r.logs.String()
+	if !strings.Contains(logs, "not told of acme/fix-orders's manual") {
+		t.Errorf("berthd's log does not say the helper was not told:\n%s", logs)
+	}
+	holdsNone(t, "berthd's log", logs)
+	if strings.Contains(logs, "acme_by_hand") {
+		t.Errorf("berthd's log holds the address that was given:\n%s", logs)
 	}
 }
 
@@ -484,6 +628,16 @@ func TestAServiceIsShownItsWorktreesDotenvValues(t *testing.T) {
 	}
 	if told := r.told("acme"); len(told.Env) != 0 || told.Command != "web" {
 		t.Fatalf("a helper that names no variable was told %+v", told)
+	}
+	// Nor for one whose every variable the project already sets, as a value
+	// or as a secret's name: there is nothing a file could add.
+	r.install("acme", func(s *HelperSpec) { s.AttachEnv = []string{"OTEL_SERVICE_NAME", "API_TOKEN"} }, nil)
+	start()
+	if got := dotenvReads.Load(); got != reads {
+		t.Fatal("the worktree's dotenv files were read for a helper whose variables the project all sets")
+	}
+	if told := r.told("acme"); !reflect.DeepEqual(told.Env, map[string]string{"OTEL_SERVICE_NAME": "the-projects-own"}) {
+		t.Fatalf("a helper whose variables the project sets was shown %v", told.Env)
 	}
 
 	// ---- Two helpers, both of which read the database's address. By

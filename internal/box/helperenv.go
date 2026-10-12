@@ -36,6 +36,19 @@ import (
 // The answer says what was found and never what it holds: the files read,
 // the names of the variables, and the helper's own answer without "env".
 // No value is in it, in a log or in an error.
+//
+// The person may also say which database a worktree has, when nothing else
+// does: the same route with "env", the variables themselves,
+//
+//	{"location": "acme", "worktree": "fix-orders", "env": {"DATABASE_URL": "postgres://…"}}
+//
+// Then no file is read, and the helper is told those variables (only ones
+// its manifest names) with "manual" where the service's name would be: what
+// was said by hand, what the files say and what a service was started with
+// are three things, each replaced on its own. An empty "env" takes back what
+// was said by hand. A value given this way is a secret like any other: it
+// comes in the request's body over Shipyard's own connection, goes to the
+// helper, and is not logged, answered, announced or kept by berthd.
 
 // HelperEnvLook is the answer of POST /v1/helpers/{plugin}/attach-env.
 type HelperEnvLook struct {
@@ -43,7 +56,9 @@ type HelperEnvLook struct {
 	Location string `json:"location"`
 	// Worktree is the worktree's name on the box, its main checkout's too.
 	Worktree string `json:"worktree"`
-	// Command is what the helper was told in place of a service's name.
+	// Command is what the helper was told in place of a service's name:
+	// ".env" for a look in the worktree's files, "manual" for variables the
+	// person gave.
 	Command string `json:"command"`
 	// Files are the dotenv files that were read, in the order they were
 	// read: a later one's value for a variable wins.
@@ -62,7 +77,7 @@ type HelperEnvLook struct {
 // HelperEnvVariable is one variable a look found.
 type HelperEnvVariable struct {
 	Name string `json:"name"`
-	// File is the file whose value it is.
+	// File is the file whose value it is; empty for one the person gave.
 	File string `json:"file"`
 	// Sent says the helper was told its value. When it was not, Reason says
 	// why: "secret" (it names a secret and holds none), "unresolved" (it
@@ -71,10 +86,32 @@ type HelperEnvVariable struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// helperManualCommand is the Command a helper is told with variables the
+// person gave by hand (AttachGiven).
+const helperManualCommand = "manual"
+
 // AttachEnv tells a running helper what a worktree's dotenv files have of
 // the variables its manifest names. about is the worktree, as for a service.
 func (h *Helpers) AttachEnv(ctx context.Context, plugin string, about HelperAttach) (HelperEnvLook, error) {
-	out := HelperEnvLook{Plugin: plugin, Command: helperEnvCommand, Files: []string{}, Skipped: []dotenvSkipped{}, Variables: []HelperEnvVariable{}}
+	return h.attachTold(ctx, plugin, about, helperEnvCommand, nil)
+}
+
+// AttachGiven tells a running helper the variables a person gave for a
+// worktree, in place of what it was last told that way: with none, what was
+// given before is taken back. Every one must be a variable the helper's
+// manifest names. No file is read, and no error repeats a value, or a name
+// that is not one: someone may have put the address where the name goes.
+func (h *Helpers) AttachGiven(ctx context.Context, plugin string, about HelperAttach, env map[string]string) (HelperEnvLook, error) {
+	if env == nil {
+		env = map[string]string{}
+	}
+	return h.attachTold(ctx, plugin, about, helperManualCommand, env)
+}
+
+// attachTold is AttachEnv (given nil: the worktree's files are read) and
+// AttachGiven (given: what to tell the helper, and nothing is read).
+func (h *Helpers) attachTold(ctx context.Context, plugin string, about HelperAttach, command string, given map[string]string) (HelperEnvLook, error) {
+	out := HelperEnvLook{Plugin: plugin, Command: command, Files: []string{}, Skipped: []dotenvSkipped{}, Variables: []HelperEnvVariable{}}
 	off := helperProblem(http.StatusConflict, "helper_off", "the %s helper is not running on this box", plugin)
 	h.mu.Lock()
 	p := h.procs[plugin]
@@ -85,6 +122,29 @@ func (h *Helpers) AttachEnv(ctx context.Context, plugin string, about HelperAtta
 	if p.rec.Attach == "" {
 		return out, helperProblem(http.StatusConflict, "helper_no_attach", "the %s helper is not one berthd tells of a worktree: its plugin's manifest names no attach path", plugin)
 	}
+	about.Command, about.Env = command, map[string]string{}
+	if given != nil {
+		names := make([]string, 0, len(given))
+		for name := range given {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			value := given[name]
+			switch {
+			case !envName.MatchString(name) || len(name) > 64:
+				return out, badRequest("env has a name that is not a variable's")
+			case !p.rec.matchesEnv(name) || strings.HasPrefix(name, "BERTH_"):
+				return out, badRequest("%s is not a variable the %s helper is told: its plugin's manifest does not name it", name, plugin)
+			case value == "" || len(value) > maxAttachValue || strings.ContainsRune(value, 0):
+				return out, badRequest("%s must be text of 1 to %d bytes", name, maxAttachValue)
+			case IsSecretRef(value):
+				return out, badRequest("%s names a secret; give the value itself", name)
+			}
+			about.Env[name] = value
+			out.Variables = append(out.Variables, HelperEnvVariable{Name: name, Sent: true})
+		}
+	}
 	timeout := orDuration(h.attachTimeout, 2*time.Second)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -93,36 +153,38 @@ func (h *Helpers) AttachEnv(ctx context.Context, plugin string, about HelperAtta
 	if state != HelperRunning || api == nil {
 		return out, off
 	}
-	// Only now: with no helper to tell, no file is opened.
-	set := readDotenvWithin(ctx, about.Path)
-	if set == nil {
-		return out, helperProblem(http.StatusServiceUnavailable, CodeInternal, "the worktree's .env files could not be read in time")
-	}
-	out.Files, out.Skipped = set.files, set.skipped
-	about.Command, about.Env = helperEnvCommand, map[string]string{}
-	names := set.names()
-	sort.Strings(names)
-	for _, name := range names {
-		if !p.rec.matchesEnv(name) || strings.HasPrefix(name, "BERTH_") {
-			continue
+	if given == nil {
+		// Only now: with no helper to tell, no file is opened.
+		set := readDotenvWithin(ctx, about.Path)
+		if set == nil {
+			return out, helperProblem(http.StatusServiceUnavailable, CodeInternal, "the worktree's .env files could not be read in time")
 		}
-		v := HelperEnvVariable{Name: name, File: set.file(name)}
-		value, why := set.value(name, nil)
-		if why == "" {
-			about.Env[name], v.Sent = value, true
-		} else {
-			v.Reason = why
+		out.Files, out.Skipped = set.files, set.skipped
+		names := set.names()
+		sort.Strings(names)
+		for _, name := range names {
+			if !p.rec.matchesEnv(name) || strings.HasPrefix(name, "BERTH_") {
+				continue
+			}
+			v := HelperEnvVariable{Name: name, File: set.file(name)}
+			value, why := set.value(name, nil)
+			if why == "" {
+				about.Env[name], v.Sent = value, true
+			} else {
+				v.Reason = why
+			}
+			out.Variables = append(out.Variables, v)
 		}
-		out.Variables = append(out.Variables, v)
 	}
-	// Also with nothing to say: what the last look found is no longer so.
+	// Also with nothing to say: what it was last told this way is no
+	// longer so.
 	raw, err := askHelperRaw(ctx, api, p.rec.Attach, about)
 	if err == nil && json.Unmarshal(raw, &out.Answer) != nil {
 		err = errHelperAnswer
 	}
 	if err != nil {
 		// Never the request or the answer: they hold the environment.
-		h.logf("helper %s: not told of %s/%s's %s: %v", plugin, about.Project, about.Worktree, helperEnvCommand, err)
+		h.logf("helper %s: not told of %s/%s's %s: %v", plugin, about.Project, about.Worktree, command, err)
 		return out, helperProblem(http.StatusBadGateway, "helper_unreachable", "the %s helper was not told: %v", plugin, err)
 	}
 	// What it would set in a service's environment: there is no service.
@@ -131,6 +193,26 @@ func (h *Helpers) AttachEnv(ctx context.Context, plugin string, about HelperAtta
 		out.Answer = map[string]json.RawMessage{}
 	}
 	return out, nil
+}
+
+// wantsMore reports whether the helper names a variable that the
+// environment Shipyard assembled for a service (env, and the secrets' names
+// in refs) does not settle: a name that is not there, or a prefix, which may
+// match anything. Only then are the worktree's dotenv files worth reading
+// for it: a project that sets every variable a helper names never has its
+// files opened for that helper.
+func (s HelperSpec) wantsMore(env, refs map[string]string) bool {
+	for _, p := range s.AttachEnv {
+		if strings.HasSuffix(p, "*") {
+			return true
+		}
+		_, set := env[p]
+		_, secret := refs[p]
+		if !set && !secret {
+			return true
+		}
+	}
+	return false
 }
 
 // readDotenvWithin is readDotenv for as long as ctx lasts: nil when the
@@ -199,6 +281,9 @@ func dotenvForService(dir string, own, refs map[string]string) func(context.Cont
 // where the person allowed the plugin and what its helper is told, and
 // opening the plugin's tab there is the asking. What runs on the box itself
 // cannot have a helper told of a worktree.
+//
+// With "env" in the body the helper is told those variables and no file is
+// read (AttachGiven); they are never in a gate's data, an event or a log.
 func (b *Box) helperAttachEnv(w http.ResponseWriter, r *http.Request) error {
 	plugin := r.PathValue("plugin")
 	h, err := b.helpers(plugin)
@@ -212,6 +297,9 @@ func (b *Box) helperAttachEnv(w http.ResponseWriter, r *http.Request) error {
 		Location string `json:"location"`
 		// Worktree is its name; empty is the location's main checkout.
 		Worktree string `json:"worktree"`
+		// Env, when it is there at all, is what to tell the helper in place
+		// of reading the worktree's files; empty takes it back.
+		Env *map[string]string `json:"env"`
 	}
 	if err := decode(r, &req); err != nil {
 		return err
@@ -233,14 +321,24 @@ func (b *Box) helperAttachEnv(w http.ResponseWriter, r *http.Request) error {
 	if wt == nil {
 		return ErrUnknownWorktree
 	}
-	if err := b.before(r, "helper.attach", map[string]any{"plugin": plugin, "location": loc.Name, "worktree": wt.Name, "path": wt.Path, "from": helperEnvCommand}); err != nil {
+	from := helperEnvCommand
+	if req.Env != nil {
+		from = helperManualCommand
+	}
+	// Never what was given: a gate sees which helper, which worktree and how.
+	if err := b.before(r, "helper.attach", map[string]any{"plugin": plugin, "location": loc.Name, "worktree": wt.Name, "path": wt.Path, "from": from}); err != nil {
 		return err
 	}
 	about := HelperAttach{Box: b.Name, Project: loc.Name, Worktree: wt.Name, Branch: wt.Branch, Path: wt.Path}
 	if wt.Main {
 		about.Worktree = ""
 	}
-	look, err := h.AttachEnv(r.Context(), plugin, about)
+	var look HelperEnvLook
+	if req.Env != nil {
+		look, err = h.AttachGiven(r.Context(), plugin, about, *req.Env)
+	} else {
+		look, err = h.AttachEnv(r.Context(), plugin, about)
+	}
 	if err != nil {
 		return err
 	}

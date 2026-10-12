@@ -44,6 +44,8 @@ func manifestHelper(t *testing.T, plugin string) HelperManifest {
 //   - the Database tab's look finds the worktree's database in .env, and
 //     the editor reads a table of it through the box;
 //   - a look after the file changed replaces what the last one found;
+//   - a database said by hand is taken when it is on this machine, beside
+//     the file's, and taken back on its own;
 //   - the worktree's service, started with no DATABASE_URL of Shipyard's
 //     own, is given Leadline's proxy in front of the file's database, and a
 //     statement it runs is among Leadline's queries, while the editor's
@@ -248,6 +250,79 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 		t.Fatalf("a look once the variable is back: %v, want %s", ids, first.ID)
 	}
 
+	// ---- A database said by hand: the same server by its other name, which
+	// is another connection to the helper. One on another machine is not
+	// taken; one on this machine is, beside the file's, and is forgotten on
+	// its own.
+	give := func(env string) []string {
+		t.Helper()
+		status, raw, look := r.look("database", `{"location": "acme", "worktree": "fix-orders", "env": `+env+`}`)
+		if status != 200 || look.Command != "manual" || len(look.Files) != 0 {
+			t.Fatalf("a database given by hand: %d %s", status, raw)
+		}
+		if password != "" && strings.Contains(raw, password) || strings.Contains(raw, "postgres://") || strings.Contains(raw, "sslmode") {
+			t.Fatalf("the answer to a database given by hand holds its address: %s", raw)
+		}
+		var ids []string
+		if err := json.Unmarshal(look.Answer["connections"], &ids); err != nil {
+			t.Fatalf("the helper's answer: %s", raw)
+		}
+		return ids
+	}
+	quoted := func(url string) string {
+		b, _ := json.Marshal(url)
+		return string(b)
+	}
+	byHand := strings.Replace(databaseURL, "@127.0.0.1:", "@localhost:", 1)
+	if byHand == databaseURL {
+		byHand = strings.Replace(databaseURL, "@localhost:", "@127.0.0.1:", 1)
+	}
+	if byHand == databaseURL {
+		t.Fatal("could not write the test Postgres's URL with its host's other name")
+	}
+	elsewhere := strings.Replace(byHand, "@"+strings.SplitN(strings.SplitN(byHand, "@", 2)[1], ":", 2)[0]+":", "@db.acme.example:", 1)
+	if ids = give(`{"DATABASE_URL": ` + quoted(elsewhere) + `}`); len(ids) != 0 {
+		t.Fatalf("a database on another machine was taken: %v", ids)
+	}
+	if conns = connections(); len(conns) != 1 || conns[0].ID != first.ID {
+		t.Fatalf("after a database on another machine was refused the connections are %+v", conns)
+	}
+	ids = give(`{"DATABASE_URL": ` + quoted(byHand) + `}`)
+	if len(ids) != 1 || ids[0] == first.ID {
+		t.Fatalf("a database given by hand: connections %v", ids)
+	}
+	pasted := ids[0]
+	if conns = connections(); len(conns) != 2 {
+		t.Fatalf("with one from the file and one by hand the connections are %+v", conns)
+	}
+	if raw := string(mustRead(saved)); !strings.Contains(raw, `"command": "manual"`) || !strings.Contains(raw, `"command": ".env"`) {
+		t.Fatalf("connections.json does not file one under manual and one under .env:\n%s", strings.ReplaceAll(raw, password, "…"))
+	}
+	if status, body := helperCall(t, r.c, "POST", "/v1/helpers/database/api/api/db/"+pasted+"/rows", []byte(`{"schema": "`+schema+`", "table": "widgets"}`), asJSON); status != 200 || !strings.Contains(body, `"rows":[[1,"sprocket"],[2,"flange"]]`) {
+		t.Fatalf("rows of the database given by hand: %d %s", status, body)
+	}
+	// It is read-only until writes are turned on, like any other.
+	if status, body := helperCall(t, r.c, "POST", "/v1/helpers/database/api/api/db/"+pasted+"/query", []byte(`{"sql": "DELETE FROM `+schema+`.widgets"}`), asJSON); status != 403 || !strings.Contains(body, `"code":"read_only"`) {
+		t.Fatalf("a delete through the database given by hand, with writes off: %d %s", status, body)
+	}
+	// A look in the files again leaves it be, and taking it back leaves the
+	// file's.
+	if _, ids = look(); len(ids) != 1 || ids[0] != first.ID || len(connections()) != 2 {
+		t.Fatalf("a look after a database was given by hand: %v, connections %+v", ids, connections())
+	}
+	if ids = give(`{}`); len(ids) != 0 {
+		t.Fatalf("taking back the database given by hand: %v", ids)
+	}
+	if conns = connections(); len(conns) != 1 || conns[0].ID != first.ID {
+		t.Fatalf("after it was taken back the connections are %+v", conns)
+	}
+	if raw := string(mustRead(saved)); strings.Contains(raw, `"command": "manual"`) {
+		t.Fatal("connections.json still has the database that was taken back")
+	}
+	if status, _ := helperCall(t, r.c, "POST", "/v1/helpers/database/api/api/db/"+pasted+"/rows", []byte(`{"schema": "`+schema+`", "table": "widgets"}`), asJSON); status != 404 {
+		t.Fatalf("the connection that was taken back still answers: %d", status)
+	}
+
 	// ---- The worktree's service starts. Shipyard's environment for it has
 	// no DATABASE_URL; the file's is shown to both helpers, and the service
 	// is given Leadline's proxy in front of it.
@@ -332,7 +407,11 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 		}
 	}
 
-	// ---- The worktree is removed: both helpers forget it.
+	// ---- The worktree is removed: both helpers forget it, a database that
+	// was given by hand too.
+	if ids = give(`{"DATABASE_URL": ` + quoted(byHand) + `}`); len(ids) != 1 || ids[0] != pasted || len(connections()) != 2 {
+		t.Fatalf("the same database given by hand again: %v, want %s", ids, pasted)
+	}
 	if status := call(t, r.c, "DELETE", "/v1/locations/acme/worktrees/fix-orders?force=1", "", nil, nil); status != 200 {
 		t.Fatalf("removing the worktree: %d", status)
 	}
