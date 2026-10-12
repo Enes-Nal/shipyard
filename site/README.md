@@ -11,6 +11,9 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   renders once per size; without the script the plain painting shows. The
   lighthouse's beam is a CSS wedge of halftone dots from the lamp, sweeping
   by transform only (still for reduced motion, paused when hidden).
+- The header is coss.com's bar, as on coss.com/ui: `coss.com` in Cal Sans
+  with the product in grey, then Docs, GitHub (with the repository's stars,
+  from the GitHub API) and "Close the laptop" as ghost buttons.
 - "Close the laptop" in the header puts the page to night by hand
   (`data-theme` on `<html>`): the harbour redraws at night.
 - At night (dark mode, or the laptop closed) the harbour comes alive:
@@ -74,7 +77,8 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
 - `assets/og-film.jpg`: the 1200×630 link preview for Open Graph and
   Twitter, cut from the film's poster (`assets/og.png`, the earlier one, is
   kept but no longer referenced); `assets/favicon.svg` and `assets/apple-touch-icon.png`.
-- `assets/fonts/`: Inter and JetBrains Mono (SIL OFL, licences beside them).
+- `assets/fonts/`: Inter and JetBrains Mono, and Cal Sans cut down to the
+  letters of the header's wordmark (SIL OFL, licences beside them).
 - `scripts/capture.mjs`: retakes the screenshots.
 
 ## The live demo
