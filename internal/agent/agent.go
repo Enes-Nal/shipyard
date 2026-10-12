@@ -259,6 +259,9 @@ type Agent struct {
 	market marketState
 	// helperWork is the helpers being installed on boxes now (helpers.go).
 	helperWork helperWork
+	// helperLedger is the helpers this computer is to remove from boxes,
+	// and the removals not done yet (helpercleanup.go).
+	helperLedger helperLedger
 
 	// ctx lives as long as the agent; forwards added through the API run under
 	// it rather than under the request that created them.
@@ -375,6 +378,7 @@ func Run(ctx context.Context, cfg Config) error {
 	go a.keepLocalBoxCurrent(ctx)
 	go a.watchTeamUpdates(ctx)
 	go a.watchTeamSuggestions(ctx)
+	go a.keepHelpersTidy(ctx)
 	a.hooks = &hooks.Runner{Path: filepath.Join(cfg.UserDir, "hooks.json"), PluginsDir: filepath.Join(cfg.UserDir, "plugins"), Log: cfg.Log}
 	go a.hooks.Run(ctx, &a.bus)
 

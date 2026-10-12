@@ -296,7 +296,7 @@ test("the Leadline screen says where it runs, and turns it on, off and removes w
   await app.open();
   const screen = await openLeadline(app.page);
   await expect(box(screen, "devl")).toHaveAttribute("data-state", "running");
-  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.0");
+  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.1");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("2 worktrees have sent something");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("shop/checkout-fix");
   await expect(box(screen, "devl").getByTestId("leadline-heard")).toContainText("for 3 days");
@@ -400,11 +400,11 @@ test("an older helper than the plugin carries offers an update, after a confirm"
   await app.open({ params: { helper: "update" } });
   const screen = await openLeadline(app.page);
   await expect(box(screen, "devl")).toContainText("berth-leadline 0.0.9");
-  await box(screen, "devl").getByRole("button", { name: "Update to 0.1.0…" }).click();
+  await box(screen, "devl").getByRole("button", { name: "Update to 0.1.1…" }).click();
   const confirm = app.page.getByRole("alertdialog");
   await expect(confirm).toContainText("Update Leadline on devl?");
   await confirm.getByRole("button", { name: "Update", exact: true }).click();
-  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.0");
+  await expect(box(screen, "devl")).toContainText("berth-leadline 0.1.1");
   await expect(box(screen, "devl").getByRole("button", { name: /^Update to/ })).toHaveCount(0);
 });
 
@@ -419,11 +419,109 @@ test("allowing a plugin that carries a program says it can install and run it on
 
   // Off, then on again: turning it on asks, and the dialog says the same.
   await row.getByRole("switch", { name: "Turn off Leadline" }).click();
+  await app.page.getByRole("alertdialog", { name: "Turn off Leadline?" }).getByRole("button", { name: "Turn off", exact: true }).click();
   await row.getByRole("switch", { name: "Turn on Leadline" }).click();
-  const consent = app.page.getByRole("dialog", { name: /Leadline/ });
+  // By its own name: the note that it was turned off is a dialog too.
+  const consent = app.page.getByRole("dialog", { name: "Allow Leadline?" });
   await expect(consent.getByTestId("consent-helper")).toHaveText("Install and run a program, berth-leadline, on the boxes you turn it on for");
-  await expect(consent).toContainText("berth-leadline 0.1.0");
+  await expect(consent).toContainText("berth-leadline 0.1.1");
+  // It was turned off, not changed: nothing of it was left running.
+  await expect(consent.getByTestId("consent-helper-held")).toHaveCount(0);
   await consent.getByRole("button", { name: "Allow and turn on" }).click();
   await expect(consent).toHaveCount(0);
   await expect(row.getByRole("switch", { name: "Turn off Leadline" })).toBeVisible();
+});
+
+// A plugin's program doesn't outlive it. In mock mode berth-leadline runs
+// on devl, is off on gpu, and old-vps is offline (src/lib/mock-helper.ts).
+const leadlineRow = (section: Locator) => section.locator('[data-testid=plugin-row][data-plugin="leadline"]');
+
+test("turning off a plugin that carries a program says which boxes it stops on, and stops it there", async ({ app }) => {
+  mockOnly("removes a helper");
+  await app.open();
+  const section = await app.openSettings("plugins");
+  const row = leadlineRow(section);
+  await row.getByRole("switch", { name: "Turn off Leadline" }).click();
+
+  const confirm = app.page.getByRole("alertdialog", { name: "Turn off Leadline?" });
+  // The boxes are named once the agent has said where it runs.
+  await expect(confirm).toContainText("Its program, berth-leadline, is stopped and removed on devl. What it recorded there is kept.");
+  await expect(confirm).toContainText("old-vps is offline: if it runs there, it's stopped when old-vps next connects.");
+  await expect(confirm).toContainText("Turning Leadline on again doesn't start it: you turn it on for each box again.");
+  // Cancelled, nothing changed.
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(row.getByRole("switch", { name: "Turn off Leadline" })).toHaveAttribute("aria-checked", "true");
+
+  await row.getByRole("switch", { name: "Turn off Leadline" }).click();
+  await confirm.getByRole("button", { name: "Turn off", exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(row.getByRole("switch", { name: "Turn on Leadline" })).toHaveAttribute("aria-checked", "false");
+  // What was done: where it stopped, where that waits, what to restart.
+  await expect(app.page.getByText("Turned off Leadline")).toBeVisible();
+  await expect(app.page.getByText("Stopped berth-leadline on devl. old-vps can't be reached: it's stopped there when old-vps next connects. Restart web in shop/checkout-fix on devl: it still points at berth-leadline.")).toBeVisible();
+
+  // Turned on again, its program is not: devl has it off until asked.
+  await row.getByRole("switch", { name: "Turn on Leadline" }).click();
+  await app.page.getByRole("dialog", { name: "Allow Leadline?" }).getByRole("button", { name: "Allow and turn on" }).click();
+  await expect(row.getByRole("switch", { name: "Turn off Leadline" })).toBeVisible();
+  const screen = await openLeadline(app.page);
+  await expect(box(screen, "devl")).toHaveAttribute("data-state", "off");
+  await expect(box(screen, "devl").getByRole("button", { name: "Turn on…" })).toBeVisible();
+});
+
+test("removing a plugin that carries a program says its program and what it recorded go from the boxes", async ({ app }) => {
+  mockOnly("removes a helper and its data");
+  await app.open();
+  const section = await app.openSettings("plugins");
+  const row = leadlineRow(section);
+  await row.getByRole("button", { name: "Remove…" }).click();
+
+  const confirm = app.page.getByRole("alertdialog", { name: "Remove Leadline?" });
+  await expect(confirm).toContainText("~/.berth/plugins/leadline");
+  await expect(confirm).toContainText("Its program, berth-leadline, is stopped and removed on devl. What it recorded on your boxes is deleted too.");
+  await expect(confirm).toContainText("old-vps is offline: if it runs there, it's stopped when old-vps next connects.");
+  await confirm.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(row).toHaveCount(0);
+  await expect(app.page.getByText("Removed Leadline")).toBeVisible();
+  await expect(app.page.getByText(/^Stopped berth-leadline on devl\./)).toBeVisible();
+  await expect(section.locator('[data-testid=market-plugin][data-plugin="leadline"]').getByRole("button", { name: "Install", exact: true })).toBeVisible();
+});
+
+test("a plugin with no program is turned off without asking", async ({ app }) => {
+  mockOnly("changes what is allowed");
+  await app.open();
+  const section = await app.openSettings("plugins");
+  const row = section.locator('[data-testid=plugin-row][data-plugin="acme-deploys"]');
+  await row.getByRole("switch", { name: "Turn on Deploy board" }).click();
+  await app.page.getByRole("dialog", { name: "Allow Deploy board?" }).getByRole("button", { name: "Allow and turn on" }).click();
+  await row.getByRole("switch", { name: "Turn off Deploy board" }).click();
+  await expect(row.getByRole("switch", { name: "Turn on Deploy board" })).toHaveAttribute("aria-checked", "false");
+  await expect(app.page.getByRole("alertdialog")).toHaveCount(0);
+});
+
+test("a plugin that changed says its program is still running while it waits for review, and can stop it", async ({ app }) => {
+  mockOnly("removes a helper");
+  await app.open({ params: { helper: "held" } });
+  // Shipyard asks about the changed plugin by itself, and says what was
+  // left running meanwhile.
+  const consent = app.page.getByRole("dialog", { name: "Leadline has changed" });
+  await expect(consent.getByTestId("consent-helper-held")).toHaveText(
+    "berth-leadline is still running on devl while this waits for your review. Allowing this version keeps it running. To stop it instead, choose Stop it beside Leadline in Settings → Plugins.",
+  );
+  await consent.getByRole("button", { name: "Not now" }).click();
+  await expect(consent).toHaveCount(0);
+
+  const section = await app.openSettings("plugins");
+  const row = leadlineRow(section);
+  await expect(row.getByRole("switch", { name: "Turn on Leadline" })).toHaveAttribute("aria-checked", "false");
+  const held = row.getByTestId("plugin-helper-held");
+  await expect(held).toContainText("berth-leadline is still running on devl while this waits for your review.");
+  await held.getByRole("button", { name: "Stop it" }).click();
+  const confirm = app.page.getByRole("alertdialog", { name: "Stop berth-leadline?" });
+  await expect(confirm).toContainText("Its program, berth-leadline, is stopped and removed on devl. What it recorded there is kept.");
+  await confirm.getByRole("button", { name: "Stop it", exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(held).toHaveCount(0);
+  await expect(app.page.getByText(/^Stopped berth-leadline on devl\./)).toBeVisible();
 });

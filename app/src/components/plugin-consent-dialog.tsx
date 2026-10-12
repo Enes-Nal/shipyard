@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import { laptopApi } from "@/lib/api";
 import { plainError } from "@/lib/errors";
+import { heldNote, type PluginHelpers } from "@/lib/plugin-helpers";
 import { useStore } from "@/lib/store";
 import { answerConsent, helperPower, PLUGIN_POWERS, type PluginFiles, readPluginFiles, usePluginConsent } from "@/plugins/consent";
 import { ErrorText } from "@/components/error-note";
@@ -18,16 +19,25 @@ export function PluginConsentDialog() {
   const [files, setFiles] = useState<PluginFiles>();
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
+  // Where its program runs, for a plugin that changed while it was on: one
+  // that names the same program had it left running while this asks.
+  const [where, setWhere] = useState<PluginHelpers>();
 
   useEffect(() => {
     setFiles(undefined);
     setError(undefined);
+    setWhere(undefined);
     const client = useStore.getState().client;
     if (!plugin || !client) return;
     let live = true;
     readPluginFiles(client, plugin)
       .then((f) => live && setFiles(f))
       .catch((err) => live && setError(plainError(err)));
+    // An agent older than this has no such answer: then nothing is said.
+    void laptopApi.pluginHelpers(client, plugin.id).then(
+      (h) => live && setWhere(h),
+      () => undefined,
+    );
     return () => {
       live = false;
     };
@@ -49,6 +59,7 @@ export function PluginConsentDialog() {
 
   const again = !!plugin?.allowed || !!plugin?.changed;
   const name = plugin?.name ?? plugin?.id ?? "";
+  const held = files?.helper ? heldNote(files.helper.name, where) : undefined;
 
   return (
     <Dialog open={!!plugin} onOpenChange={(open) => !open && answerConsent(false)}>
@@ -110,6 +121,11 @@ export function PluginConsentDialog() {
                 ))}
               </ul>
             </div>
+          )}
+          {held && (
+            <p className="text-muted-foreground text-xs" data-testid="consent-helper-held">
+              {held} Allowing this version keeps it running. To stop it instead, choose Stop it beside {name} in Settings → Plugins.
+            </p>
           )}
           <p className="text-muted-foreground text-xs">Allow only plugins you trust. Shipyard asks again whenever the plugin's code changes, and you can turn it off in Settings → Plugins.</p>
           {error && <ErrorText className="text-destructive-foreground text-xs" text={error} />}

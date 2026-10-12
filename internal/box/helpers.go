@@ -112,6 +112,9 @@ type HelperManifest struct {
 	// name or a prefix ending in "*".
 	Attach    string   `json:"attach,omitempty"`
 	AttachEnv []string `json:"attach_env,omitempty"`
+	// Detach, when set, is the path on the helper's API berthd POSTs to
+	// when a worktree is removed (helperdetach.go).
+	Detach string `json:"detach,omitempty"`
 	// Assets are its builds, by platform ("linux-amd64").
 	Assets map[string]HelperAsset `json:"assets,omitempty"`
 }
@@ -125,6 +128,7 @@ type HelperSpec struct {
 	Ready     string   `json:"ready"`
 	Attach    string   `json:"attach,omitempty"`
 	AttachEnv []string `json:"attach_env,omitempty"`
+	Detach    string   `json:"detach,omitempty"`
 	SHA256    string   `json:"sha256"`
 	Size      int64    `json:"size"`
 }
@@ -137,13 +141,13 @@ func (m HelperManifest) Spec(platform string) (HelperSpec, HelperAsset, bool) {
 		return HelperSpec{}, HelperAsset{}, false
 	}
 	return HelperSpec{Name: m.Name, Version: m.Version, Args: m.Args, Ready: m.Ready,
-		Attach: m.Attach, AttachEnv: m.AttachEnv, SHA256: asset.SHA256, Size: asset.Size}, asset, true
+		Attach: m.Attach, AttachEnv: m.AttachEnv, Detach: m.Detach, SHA256: asset.SHA256, Size: asset.Size}, asset, true
 }
 
 // Validate says what is wrong with the manifest's own words: everything but
 // the builds, which Spec and HelperSpec.Validate check for one platform.
 func (m HelperManifest) Validate() error {
-	return HelperSpec{Name: m.Name, Version: m.Version, Args: m.Args, Ready: m.Ready, Attach: m.Attach, AttachEnv: m.AttachEnv}.validateWords()
+	return HelperSpec{Name: m.Name, Version: m.Version, Args: m.Args, Ready: m.Ready, Attach: m.Attach, AttachEnv: m.AttachEnv, Detach: m.Detach}.validateWords()
 }
 
 // Validate says what is wrong with a helper someone asks a box to run.
@@ -181,6 +185,11 @@ func (s HelperSpec) validateWords() error {
 	if s.Attach != "" {
 		if !helperAttach.MatchString(s.Attach) || strings.Contains(s.Attach, "//") || strings.Contains(s.Attach, "..") {
 			return fmt.Errorf("the helper's attach path %q must be a plain path such as /api/attach", clip(s.Attach, 80))
+		}
+	}
+	if s.Detach != "" {
+		if !helperAttach.MatchString(s.Detach) || strings.Contains(s.Detach, "//") || strings.Contains(s.Detach, "..") {
+			return fmt.Errorf("the helper's detach path %q must be a plain path such as /api/detach", clip(s.Detach, 80))
 		}
 	}
 	if len(s.AttachEnv) > 32 {
@@ -327,6 +336,7 @@ type Helpers struct {
 	readyTimeout  time.Duration             // how long a helper has to say it is ready (30s)
 	stopTimeout   time.Duration             // how long one has to stop before it is killed (5s)
 	attachTimeout time.Duration             // how long one has to answer an attach (2s)
+	detachTimeout time.Duration             // how long one has to answer a detach (2s)
 	backoff       func(n int) time.Duration // the wait before start n+1, after n failures
 
 	mu        sync.Mutex
@@ -337,6 +347,9 @@ type Helpers struct {
 	change sync.Mutex
 	// attachMu guards each helper's attached.json.
 	attachMu sync.Mutex
+	// detaching is the helpers being told of removed worktrees
+	// (helperdetach.go).
+	detaching sync.WaitGroup
 }
 
 func (h *Helpers) logf(format string, args ...any) {
@@ -411,13 +424,7 @@ func (h *Helpers) noteAttached(plugin string, svc HelperService, changed bool) {
 	if changed {
 		list = append(list, svc)
 	}
-	if len(list) == 0 {
-		os.Remove(h.attachedPath(plugin))
-		return
-	}
-	if b, err := json.Marshal(list); err == nil {
-		statefile.Write(h.attachedPath(plugin), append(b, '\n'))
-	}
+	h.saveAttached(plugin, list)
 }
 
 func (h *Helpers) binPath(rec helperRecord) string {
@@ -544,6 +551,7 @@ func (h *Helpers) Stop() {
 	for _, p := range procs {
 		<-p.done
 	}
+	h.detaching.Wait()
 }
 
 // supervise runs a helper until it is told to stop, starting it again each
@@ -1053,6 +1061,10 @@ func receiveHelper(home string, spec HelperSpec, program io.Reader) (path string
 
 // Remove stops a plugin's helper and removes its program. Its data and its
 // log stay for the next time unless purge, which removes the whole folder.
+//
+// berthd's own note of the services the helper changed (attached.json)
+// outlives both: those services still run with what the helper answered,
+// and a helper turned on again and off again has to be able to say so.
 func (h *Helpers) Remove(plugin string, purge bool) (HelperStatus, error) {
 	if !helperPlugin.MatchString(plugin) {
 		return HelperStatus{}, helperProblem(http.StatusBadRequest, "helper_invalid", "%q is not a plugin's id", clip(plugin, 80))
@@ -1063,9 +1075,14 @@ func (h *Helpers) Remove(plugin string, purge bool) (HelperStatus, error) {
 	home := h.home(plugin)
 	var err error
 	if purge {
-		err = os.RemoveAll(home)
+		h.attachMu.Lock()
+		attached := h.readAttached(plugin)
+		if err = os.RemoveAll(home); err == nil {
+			h.saveAttached(plugin, attached)
+		}
+		h.attachMu.Unlock()
 	} else {
-		err = errors.Join(os.RemoveAll(filepath.Join(home, "bin")), removeIfThere(h.recordPath(plugin)), removeIfThere(h.attachedPath(plugin)))
+		err = errors.Join(os.RemoveAll(filepath.Join(home, "bin")), removeIfThere(h.recordPath(plugin)))
 		// A folder with nothing in it is no data worth keeping.
 		os.Remove(home)
 	}

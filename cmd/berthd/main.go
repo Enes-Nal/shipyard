@@ -375,6 +375,8 @@ func serve(b boxHome, args []string) error {
 	bx.Update.BeforeRestart = func() { shares.StopAll(); bx.Helpers.Stop(); ln.Close() }
 	bx.Helpers.Start()
 	defer bx.Helpers.Stop()
+	// A worktree that is removed, however it was, is one they forget.
+	defer bx.Helpers.Watch(bus)()
 	bx.AutoFix = &box.AutoFixStore{Path: filepath.Join(b.dir, "autofix.json")}
 	bx.Triggers = &box.TriggerSecrets{Path: filepath.Join(b.dir, "trigger-secrets.json")}
 	rc := box.LoadRunsConfig(filepath.Join(userDir, "runs.json"))

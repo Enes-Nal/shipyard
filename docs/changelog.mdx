@@ -10,6 +10,24 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **A plugin's program stops when the plugin does.** Turning off a plugin
+  that runs a program on your boxes, such as Leadline, now stops that
+  program and removes it from every box it runs on, keeping what it
+  recorded; **Remove…** removes that too. Shipyard asks first and names the
+  boxes, and a box that is offline is done when it next connects. Before,
+  the program kept running and recording, with nothing in the app to stop
+  it. Turning the plugin on again starts nothing: you turn it on for each
+  box again. An update that keeps the same program leaves it running while
+  Shipyard asks you about the new version, with **Stop it** in the plugin's
+  row. See [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
+- **Removing a worktree tells Leadline.** Leadline closes the connection it
+  kept in front of that worktree's database and deletes what it recorded
+  for it, however the worktree was removed; before, it kept both until its
+  data was removed. Plugin authors: a helper can name a
+  [`detach` path](/guides/plugins#detach-when-a-worktree-is-removed).
+- **Turning Leadline off again still names the services to restart.**
+  Turned off, on and off again without restarting a service, the second
+  time named none, though the service was sending to Leadline again.
 - **The sidebar says when a box's skills are missing or out of date.** On a
   box where Shipyard's skills were never installed, or after a box upgrade
   leaves them older than its berthd ships, a quiet note at the foot of the

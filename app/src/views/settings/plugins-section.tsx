@@ -10,6 +10,7 @@ import { plainError } from "@/lib/errors";
 import { bytes, errorMessage } from "@/lib/format";
 import { marketAction, marketNote, type Marketplace, type MarketPlugin } from "@/lib/marketplace";
 import { openDocs, openUrl } from "@/lib/open-url";
+import { heldNote, type PluginHelpers, stopNote, stoppedNote } from "@/lib/plugin-helpers";
 import { builtinOn, setBuiltinOn, usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -260,6 +261,42 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.id, p.version, p.allowed, p.changed]);
 
+  // A plugin's program doesn't outlive it: turning the plugin off, or
+  // removing it, stops the program on the boxes. So both ask first, and say
+  // where; and a plugin that is off for review says if its program was left
+  // running meanwhile. where is the agent's word on which boxes have it.
+  const [turningOff, setTurningOff] = useState(false);
+  const [where, setWhere] = useState<PluginHelpers>();
+  const asking = turningOff || removing;
+  useEffect(() => {
+    const client = useStore.getState().client;
+    if (!client || !helper || (enabled && !asking)) return;
+    let live = true;
+    // An agent older than this answers nothing: the words then name no box.
+    laptopApi.pluginHelpers(client, p.id).then(
+      (h) => live && setWhere(h),
+      () => live && setWhere(undefined),
+    );
+    return () => {
+      live = false;
+    };
+  }, [p.id, helper, enabled, asking, p.changed, p.allowed]);
+  const held = !enabled && helper ? heldNote(helper.name, where) : undefined;
+
+  const turnOff = async () => {
+    const client = useStore.getState().client;
+    if (!client) return;
+    try {
+      const out = await laptopApi.disablePlugin(client, p.id);
+      const note = helper && stoppedNote(helper.name, out.helpers);
+      if (note) toastManager.add({ title: enabled ? `Turned off ${p.name}` : `Stopped ${helper.name}`, description: note, type: "success" });
+      setWhere(undefined);
+      onChanged();
+    } catch (err) {
+      toastManager.add({ title: `Couldn't turn off ${p.name}`, description: errorMessage(err), type: "error" });
+    }
+  };
+
   return (
     <div className="flex items-center gap-4 px-4 py-3" data-testid="plugin-row" data-plugin={p.id}>
       <StatusDot state={state} />
@@ -288,6 +325,14 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
             </button>
           </div>
         )}
+        {held && (
+          <div className="mt-1 text-muted-foreground text-xs" data-testid="plugin-helper-held">
+            {held}{" "}
+            <button type="button" onClick={() => setTurningOff(true)} className="underline underline-offset-2 hover:text-foreground">
+              Stop it
+            </button>
+          </div>
+        )}
         {error && enabled && status?.state !== "review" && (
           <div className="mt-1 text-xs">
             <span className="text-destructive-foreground">{error}</span> <span className="text-muted-foreground">Fix it in ~/.berth/plugins/{p.id}, then Reload.</span>
@@ -305,34 +350,44 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
         onOpenChange={setRemoving}
         destructive
         title={`Remove ${p.name}?`}
-        description={`Its folder, ~/.berth/plugins/${p.id}, is deleted and what you allowed is forgotten. You can install it again from Browse.`}
+        description={`Its folder, ~/.berth/plugins/${p.id}, is deleted and what you allowed is forgotten. ${helper ? `${stopNote(helper.name, where, true)} ` : ""}You can install it again from Browse.`}
         confirm="Remove"
         onConfirm={async () => {
           const client = useStore.getState().client;
           if (!client) return;
           try {
-            await laptopApi.uninstallPlugin(client, p.id);
-            toastManager.add({ title: `Removed ${p.name}`, type: "success" });
+            const out = await laptopApi.uninstallPlugin(client, p.id);
+            toastManager.add({ title: `Removed ${p.name}`, description: helper && stoppedNote(helper.name, out.helpers), type: "success" });
             onChanged();
           } catch (err) {
             toastManager.add({ title: `Couldn't remove ${p.name}`, description: errorMessage(err), type: "error" });
           }
         }}
       />
+      {helper && (
+        <ConfirmDialog
+          open={turningOff}
+          onOpenChange={setTurningOff}
+          title={enabled ? `Turn off ${p.name}?` : `Stop ${helper.name}?`}
+          description={`${stopNote(helper.name, where)} Turning ${p.name} on again doesn't start it: you turn it on for each box again.`}
+          confirm={enabled ? "Turn off" : "Stop it"}
+          onConfirm={turnOff}
+        />
+      )}
       <Switch
         checked={enabled}
         aria-label={enabled ? `Turn off ${p.name}` : `Turn on ${p.name}`}
         onCheckedChange={async (on) => {
           const client = useStore.getState().client;
           if (!client) return;
+          // Turning a plugin on asks first: see plugin-consent-dialog. So
+          // does turning off one whose program runs on boxes.
+          if (!on && helper) return setTurningOff(true);
+          if (!on) return turnOff();
           try {
-            // Turning a plugin on asks first: see plugin-consent-dialog.
-            if (on) {
-              if (!(await askToAllow(p))) return;
-            } else await laptopApi.disablePlugin(client, p.id);
-            onChanged();
+            if (await askToAllow(p)) onChanged();
           } catch (err) {
-            toastManager.add({ title: `Couldn't turn ${on ? "on" : "off"} ${p.name}`, description: errorMessage(err), type: "error" });
+            toastManager.add({ title: `Couldn't turn on ${p.name}`, description: errorMessage(err), type: "error" });
           }
         }}
       />

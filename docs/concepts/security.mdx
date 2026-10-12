@@ -329,9 +329,18 @@ What Shipyard holds it to:
   box.** The plugin's manifest names the helper and the SHA-256 of its build
   for each platform, and the manifest is part of the hash you allowed. When
   the plugin changes, the permission lapses and its helper is not installed
-  or updated until you allow it again. A helper that is already running
-  keeps running until you turn it off (turning one off never needs the
-  plugin to be allowed).
+  or updated until you allow it again.
+- **A helper does not outlive its plugin.** Turning the plugin off stops
+  its helper and removes it from every paired box that has it, and keeps
+  what it recorded there; removing the plugin removes that too. So does a
+  change to the plugin that names another helper, or none. Your laptop does
+  it, at once for the boxes it can reach and for an offline box when it
+  next connects. The one helper left running without a plugin that is on
+  is the helper of a plugin that changed and still names the very same
+  program: it runs while Shipyard asks you about the new version, the
+  plugin's row in Settings → Plugins says so, and **Stop it** there removes
+  it. Removing a helper never needs the plugin to be allowed. See
+  [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
 - **The program that runs is the one the manifest names.** Your laptop
   downloads the build, from whatever address the manifest gives, and uploads
   it over Shipyard's own connection only if its size and SHA-256 match.

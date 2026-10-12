@@ -681,6 +681,17 @@ export const scenes: Scene[] = [
     },
   },
   {
+    // A plugin that changed, with its program left running meanwhile.
+    id: "plugin-helper-held",
+    extra: true,
+    async run(app, theme) {
+      await app.open({ theme, params: { helper: "held" } });
+      await app.page.getByRole("dialog", { name: "Leadline has changed" }).getByRole("button", { name: "Not now" }).click();
+      const body = await app.openSettings("plugins");
+      await expect(body.getByTestId("plugin-helper-held")).toBeVisible();
+    },
+  },
+  {
     id: "leadline-nothing-yet",
     extra: true,
     async run(app, theme) {

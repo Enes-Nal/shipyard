@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api";
 import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
+import type { HelperRemoved } from "@/lib/plugin-helpers";
 import { hashPluginFiles } from "@/plugins/consent-core";
 
 // Mock mode's plugin marketplace, behaving like internal/agent/marketplace.go
@@ -141,6 +142,12 @@ export function marketplaceReady(installed: MockPlugin[], fresh: boolean): Promi
     listing.push(l);
     if (fresh || installed.some((p) => p.id === l.id)) return;
     installedFiles.set(l.id, files);
+    // ?helper=held: it changed since it was allowed (an older bundle was),
+    // so it is off until it is reviewed again (mock-helper.ts).
+    if (new URLSearchParams(window.location.search).get("helper") === "held") {
+      installed.push({ ...installedAs(l, version), allowed: await hashPluginFiles(manifest, enc.encode("// the bundle before this one\n")), changed: true });
+      return;
+    }
     installed.push({ ...installedAs(l, version), enabled: true, allowed: await hashPluginFiles(manifest, files[MAIN]) });
   })().catch((err) => console.warn("mock: could not read Leadline's files", err));
   return ready;
@@ -180,7 +187,9 @@ const refuse = (delay: Delay, message: string, status: number, code?: string) =>
     throw new ApiError(message, status, code);
   });
 
-export function marketplaceCall(method: string, path: string, body: unknown, installed: MockPlugin[], delay: Delay): Promise<unknown> | undefined {
+// removeHelpers is what uninstalling a plugin does to its helper on the
+// boxes (mock-helper.ts), and what the agent answers of each.
+export function marketplaceCall(method: string, path: string, body: unknown, installed: MockPlugin[], delay: Delay, removeHelpers?: (id: string) => HelperRemoved[] | undefined): Promise<unknown> | undefined {
   if (method === "GET" && /^\/v1\/marketplace(\?fresh=1)?$/.test(path)) {
     reads++;
     if (scenario === "offline" || (scenario === "flaky" && reads === 1)) return refuse(delay, `could not reach ${REGISTRY}: dial tcp: lookup berthd.app: no such host`, 502, "registry_unreachable");
@@ -214,7 +223,8 @@ export function marketplaceCall(method: string, path: string, body: unknown, ins
     if (at < 0) return refuse(delay, `${id} wasn't installed from the listing; remove ~/.berth/plugins/${id} yourself`, 409, "plugin_by_hand");
     installed.splice(at, 1);
     installedFiles.delete(id);
-    return delay({ removed: id });
+    const helpers = removeHelpers?.(id);
+    return delay({ removed: id, ...(helpers ? { helpers } : {}) });
   }
   return undefined;
 }

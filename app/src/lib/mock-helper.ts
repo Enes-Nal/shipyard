@@ -2,6 +2,7 @@ import type { HelperState, HelperStatus } from "@berth/plugin";
 
 import { ApiError } from "@/lib/api";
 import { helperRelayed } from "@/lib/helper-path";
+import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 
 // Mock mode's plugin helpers, behaving like the laptop agent's
 // /v1/plugins/{id}/helper and a box's helpers/{plugin}/api/ closely enough
@@ -23,13 +24,15 @@ import { helperRelayed } from "@/lib/helper-path";
 // helpers, ?helper=nobuild one whose boxes the plugin has no build for,
 // ?helper=failed a helper that installs and then will not start,
 // ?helper=mismatch a download that is not what the manifest's checksum
-// says (the agent refuses the install: nothing changes on the box), and
-// ?helper=update has devl on an older build than the plugin carries.
+// says (the agent refuses the install: nothing changes on the box),
+// ?helper=update has devl on an older build than the plugin carries, and
+// ?helper=held has the plugin changed since it was allowed, so it is off
+// for review while its helper, which did not change, is left running.
 
 type Delay = <T>(v: T) => Promise<T>;
 
 const scenario = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("helper");
-const LATEST = "0.1.0";
+const LATEST = "0.1.1";
 const PLATFORM = "linux-amd64";
 
 interface Helper {
@@ -119,6 +122,57 @@ export function helperLaptopCall(method: string, path: string, online: (box: str
     return delay({ ...statusOf(plugin, box), ...(attached ? { attached } : {}) });
   }
   return undefined;
+}
+
+// A plugin's helper does not outlive it (internal/agent/helpercleanup.go):
+// turning the plugin off, or uninstalling it, stops the helper on every box
+// that has it. A box that is offline is done when it next connects.
+
+interface MockBox {
+  name: string;
+  online: boolean;
+}
+
+// carries says whether a plugin brings a helper at all, in this mock.
+const carries = (plugin: string, boxes: MockBox[]) => boxes.some((b) => helperOf(plugin, b.name).state !== "none");
+
+// removeHelpers is what the agent does to a plugin's helper when the plugin
+// is turned off (or, with purge, uninstalled), and what it answers of each
+// box. Undefined for a plugin with no helper.
+export function removeHelpers(plugin: string, boxes: MockBox[], purge: boolean): HelperRemoved[] | undefined {
+  if (!carries(plugin, boxes)) return undefined;
+  return boxes.map((b): HelperRemoved => {
+    const h = helperOf(plugin, b.name);
+    if (!b.online) return { box: b.name, state: "pending" };
+    const was = h.state !== "off" && h.state !== "unsupported";
+    // devl's dev server was started while the helper was on, and runs on.
+    const attached = was && plugin === "leadline" && b.name === "devl" ? [{ location: "shop", worktree: "checkout-fix", service: "web" }] : undefined;
+    h.timers.forEach((t) => window.clearTimeout(t));
+    h.timers = [];
+    if (h.state !== "unsupported") h.state = "off";
+    h.version = undefined;
+    h.error = undefined;
+    if (purge) h.purged = true;
+    return { box: b.name, state: was ? "removed" : "none", ...(purge ? { purged: true } : {}), ...(attached ? { attached } : {}) };
+  });
+}
+
+// pluginHelpersCall answers GET /v1/plugins/{id}/helpers: where a plugin's
+// helper is, for Settings to say before the plugin is turned off. plugin is
+// the plugin as the mock has it: one that changed while it was on has its
+// helper held until it is reviewed.
+export function pluginHelpersCall(method: string, path: string, boxes: MockBox[], plugin: (id: string) => { enabled: boolean; changed?: boolean } | undefined, delay: Delay): Promise<PluginHelpers> | undefined {
+  const m = /^\/v1\/plugins\/([^/]+)\/helpers$/.exec(path);
+  if (!m || method !== "GET") return undefined;
+  const id = decodeURIComponent(m[1]);
+  const p = plugin(id);
+  const has = carries(id, boxes);
+  return delay({
+    plugin: id,
+    ...(has && id === "leadline" ? { name: "berth-leadline" } : {}),
+    ...(has && p && !p.enabled && p.changed ? { held: true } : {}),
+    boxes: has ? boxes.map((b) => (b.online ? { box: b.name, state: helperOf(id, b.name).state, version: helperOf(id, b.name).version } : { box: b.name, state: "offline" })) : [],
+  });
 }
 
 type Row = Record<string, unknown>;

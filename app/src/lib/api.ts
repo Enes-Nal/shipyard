@@ -1,5 +1,6 @@
 import type { ToolDetail } from "@/lib/transcript";
 import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
+import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 import { invoke } from "@tauri-apps/api/core";
 import { readTimeout, reconnectDelay, STREAM_SILENCE_MS } from "@/lib/net";
 import { IS_LINUX } from "@/lib/platform";
@@ -508,7 +509,11 @@ export const laptopApi = {
   // Turning a plugin on takes the hash of the files the user reviewed (see
   // plugins/consent.ts); the agent refuses it if they have changed since.
   allowPlugin: (c: Client, id: string, hash: string) => c.laptop<PluginInfo>("POST", `/v1/plugins/${encodeURIComponent(id)}/enable`, { hash }),
-  disablePlugin: (c: Client, id: string) => c.laptop<PluginInfo>("POST", `/v1/plugins/${encodeURIComponent(id)}/disable`),
+  // Turning one off stops its helper on the boxes, if it brings one:
+  // helpers says what became of it on each (lib/plugin-helpers.ts).
+  disablePlugin: (c: Client, id: string) => c.laptop<PluginInfo & { helpers?: HelperRemoved[] }>("POST", `/v1/plugins/${encodeURIComponent(id)}/disable`),
+  // Where a plugin's helper is, to say before turning the plugin off.
+  pluginHelpers: (c: Client, id: string) => c.laptop<PluginHelpers>("GET", `/v1/plugins/${encodeURIComponent(id)}/helpers`),
   // The plugin listing (lib/marketplace.ts). The agent reads it from the
   // web, since the app's own page may talk only to the agent; fresh reads
   // it again rather than the copy the agent keeps for a few minutes.
@@ -518,7 +523,8 @@ export const laptopApi = {
   // listing_changed); replace installs over a folder the listing didn't.
   installPlugin: (c: Client, id: string, version: string, replace = false) =>
     c.laptop<MarketPlugin>("POST", `/v1/marketplace/${encodeURIComponent(id)}/install`, replace ? { version, replace } : { version }),
-  uninstallPlugin: (c: Client, id: string) => c.laptop<{ removed: string }>("DELETE", `/v1/marketplace/${encodeURIComponent(id)}`),
+  // Removing one removes its helper from the boxes too, and what it recorded.
+  uninstallPlugin: (c: Client, id: string) => c.laptop<{ removed: string; helpers?: HelperRemoved[] }>("DELETE", `/v1/marketplace/${encodeURIComponent(id)}`),
 };
 
 export function httpClient(ep: Endpoint): Client {

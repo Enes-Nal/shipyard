@@ -3,9 +3,11 @@ package box
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -120,21 +122,38 @@ func (b *Box) deleteHelper(w http.ResponseWriter, r *http.Request) error {
 	}
 	purge := r.URL.Query().Get("purge") == "1"
 	was := h.Status(plugin)
+	// Something of it is here to remove: the helper, or what one left. A
+	// laptop that uninstalls a plugin asks every box it knows.
+	_, statErr := os.Stat(h.home(plugin))
+	there := was.State != HelperOff || purge && statErr == nil
 	// The services it changed that are running now: they were told where
 	// the helper is when they started, and still point there. Nothing is
 	// restarted for someone; the answer says which need it.
-	var attached []HelperService
-	for _, s := range h.attachedTo(plugin) {
-		if now, err := b.serviceStatus(r.Context(), s.Location, s.Worktree, s.Service); err == nil && now.State == "running" {
-			attached = append(attached, s)
+	//
+	// The ones that run stay in berthd's note, helper or no helper: turned
+	// on and off again before they restart, it has to name them again. One
+	// that has stopped is forgotten: it is looked at afresh when it starts.
+	had := h.attachedTo(plugin)
+	var attached, keep []HelperService
+	for _, s := range had {
+		now, err := b.serviceStatus(r.Context(), s.Location, s.Worktree, s.Service)
+		switch {
+		case err == nil && now.State == "running":
+			attached, keep = append(attached, s), append(keep, s)
+		case err != nil && !errors.Is(err, ErrUnknownLocation) && !errors.Is(err, ErrUnknownWorktree) && !errors.Is(err, ErrUnknownService):
+			// Not known either way: kept, and not said to be running.
+			keep = append(keep, s)
 		}
 	}
 	st, err := h.Remove(plugin, purge)
 	if err != nil {
 		return err
 	}
+	if len(keep) != len(had) {
+		h.setAttached(plugin, keep)
+	}
 	st.Attached = attached
-	if was.State != HelperOff || purge {
+	if there {
 		b.publish(r, "helper.removed", map[string]any{"plugin": plugin, "purged": purge, "attached": len(attached)})
 	}
 	writeJSON(w, st)

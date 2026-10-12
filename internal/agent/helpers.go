@@ -231,6 +231,11 @@ func (a *Agent) installHelper(ctx context.Context, id, boxName string) (HelperSt
 		return HelperStatus{}, marketErr(http.StatusConflict, "helper_busy", "%s's helper is already being installed on %s", id, boxName)
 	}
 	defer done()
+	// Turned on here by the person: a removal still waiting for this box
+	// is called off, and the helper is this computer's to remove later
+	// (helpercleanup.go).
+	a.ledger().settle(id, boxName)
+	a.noteHelperGrant(id)
 
 	st, err := bc.Helper(ctx, id)
 	if msg, no := noHelpers(err); no {

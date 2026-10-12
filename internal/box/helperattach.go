@@ -66,9 +66,14 @@ func (h *Helpers) Attach(ctx context.Context, about HelperAttach, svc HelperServ
 	}
 	h.mu.Unlock()
 	sort.Slice(procs, func(i, j int) bool { return procs[i].rec.Plugin < procs[j].rec.Plugin })
+	asked := map[string]bool{}
 	for _, p := range procs {
+		asked[p.rec.Plugin] = true
 		h.noteAttached(p.rec.Plugin, svc, h.attachOne(ctx, p, about, env, refs))
 	}
+	// A helper that is off had no say: a service it changed the last time
+	// is as the project wrote it now (helperdetach.go).
+	h.startedPlain(svc, asked)
 }
 
 // attachOne asks one helper, and reports whether it changed env.

@@ -66,13 +66,27 @@ runs. **Turn off** stops and removes the program and keeps what it
 recorded for next time. **Remove data** also deletes what it recorded on
 that box, for every worktree; it can't be undone.
 
+Leadline runs on a box only while the plugin is on. Turning Leadline off in
+**Settings → Plugins** stops and removes the program on every box it runs
+on, and keeps what each recorded; **Remove…** there removes that too.
+Shipyard asks first and names the boxes, and a box that is offline is done
+when it next connects. Turning the plugin on again starts nothing: you turn
+Leadline on for each box again. An update to the plugin that brings a new
+`berth-leadline` does the same once it is installed, so after allowing the
+update you turn Leadline on for your boxes again; an update that keeps the
+same program leaves it running while Shipyard asks you about the new
+version. See [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
+
 <Callout title="Restart your services after turning it off">
   While Leadline is on, a service's Postgres connection goes through it (see
   below). A service started then was given that address, so after you turn
   Leadline off, restart the worktree's services: until then their database
   connections fail. Turning it off tells you which: the box's row and a
   notification name each service that was started while Leadline was on
-  and is still running.
+  and is still running. A service you don't restart is named again each
+  time Leadline is turned off, since it goes through Leadline again
+  whenever Leadline is on; once it has been started with Leadline off, it
+  isn't.
 </Callout>
 
 ## What an app needs to send
@@ -112,6 +126,12 @@ readable only by you on that box.
 - A row is kept for **72 hours**.
 - Past **2 GB**, the oldest rows go early.
 - Old rows are dropped once a minute.
+- **A worktree you remove takes its rows with it.** Shipyard tells Leadline
+  when a worktree is removed, however it was removed, and Leadline closes
+  the connection it kept in front of that worktree's Postgres and deletes
+  what it recorded under the worktree's name. Removing a project from the
+  box does the same for each of its worktrees. If Leadline wasn't running
+  at that moment it isn't told later: those rows age out as usual.
 
 The **Leadline** screen shows how much a box holds. **Remove data** empties
 it.

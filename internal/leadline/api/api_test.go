@@ -441,6 +441,26 @@ func TestDetach(t *testing.T) {
 	if code, raw := detach(map[string]any{}); code != 400 || !strings.Contains(raw, `"bad_request"`) {
 		t.Errorf("detaching nobody: %d %s", code, raw)
 	}
+	// A worktree alone names nothing: its project is what files it.
+	if code, raw := detach(map[string]any{"worktree": "fix-orders-2"}); code != 400 || !strings.Contains(raw, `"bad_request"`) {
+		t.Errorf("detaching a worktree of no project: %d %s", code, raw)
+	}
+	// As the box daemon says it, in the words it attached with: the
+	// project and the worktree, and the source's name follows from them.
+	code, raw = detach(map[string]any{"box": "devbox", "project": "acme", "worktree": "fix-orders-2", "branch": "fix/orders", "path": "/srv/acme/fix-orders-2"})
+	out.Found, out.Proxies = false, 0
+	json.Unmarshal([]byte(raw), &out)
+	if code != 200 || !out.Found || out.Proxies != 1 || out.Deleted.Spans != 2 || !strings.Contains(raw, `"service":"acme/fix-orders-2"`) {
+		t.Errorf("detach, as the box daemon asks: %d %s", code, raw)
+	}
+	getJSON(t, r.URL+"/api/sources", &got)
+	if len(got.Sources) != 0 || len(got.Proxies) != 0 {
+		t.Errorf("what is left after the last worktree went = %+v", got)
+	}
+	// The project's own checkout has no worktree's name.
+	if code, raw := detach(map[string]any{"project": "acme", "worktree": ""}); code != 200 || !strings.Contains(raw, `"service":"acme"`) {
+		t.Errorf("detaching the main checkout: %d %s", code, raw)
+	}
 }
 
 // Any page on this machine may read and may send telemetry: an app under

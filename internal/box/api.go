@@ -392,9 +392,17 @@ func (b *Box) removeLocation(w http.ResponseWriter, r *http.Request) error {
 	if err := b.before(r, "location.remove", map[string]any{"location": name}); err != nil {
 		return err
 	}
+	// Its worktrees, while they can still be listed: plugins' helpers are
+	// told of each once the location is gone (helperdetach.go).
+	var loc Location
+	if b.Helpers != nil {
+		loc, _ = b.Locations.Get(r.Context(), name)
+	}
 	if err := b.Locations.Remove(name); err != nil {
 		return err
 	}
+	loc.Name = name
+	b.detachLocation(loc)
 	b.publish(r, "location.removed", map[string]any{"location": name})
 	writeJSON(w, map[string]string{"removed": name})
 	return nil

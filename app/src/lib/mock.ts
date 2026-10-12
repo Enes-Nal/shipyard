@@ -16,7 +16,7 @@ import { reviewCall, reviewExec } from "@/lib/mock-review";
 import { editorsCall } from "@/lib/mock-editors";
 import { imageGenCall } from "@/lib/mock-imagegen";
 import { linearCall } from "@/lib/mock-linear";
-import { helperBoxCall, helperLaptopCall } from "@/lib/mock-helper";
+import { helperBoxCall, helperLaptopCall, pluginHelpersCall, removeHelpers } from "@/lib/mock-helper";
 import { mockShell } from "@/lib/mock-shell";
 import { mockServiceAttach, wireMockServices } from "@/lib/mock-services";
 import { mockIssueTitle } from "@/lib/mock-issues";
@@ -41,6 +41,9 @@ import { crowd } from "@/lib/mock-crowd";
 const now = Date.now();
 const ago = (min: number) => new Date(now - min * 60_000).toISOString();
 const GB = 1024 ** 3;
+
+// The paired boxes as the mock's helpers see them (mock-helper.ts).
+const helperBoxes = () => status.boxes.map((b) => ({ name: b.name, online: b.state === "online" }));
 
 const status: Status = {
   boxes: [
@@ -1153,7 +1156,9 @@ function laptopBoxes(method: string, path: string, body: unknown): Promise<unkno
     p.enabled = toggle[2] === "enable";
     p.allowed = p.enabled ? hash : undefined;
     p.changed = undefined;
-    return delay(p);
+    // Turned off, its helper stops on the boxes (mock-helper.ts).
+    const helpers = p.enabled ? undefined : removeHelpers(p.id, helperBoxes(), false);
+    return delay(helpers ? { ...p, helpers } : p);
   }
   return undefined;
 }
@@ -1393,8 +1398,10 @@ function mockAgent(): Client {
       if (queued) return queued as Promise<T>;
       const kits = kitsCall(method, path, body, emit, delay);
       if (kits) return kits as Promise<T>;
-      const market = marketplaceCall(method, path, body, mockPlugins, delay);
+      const market = marketplaceCall(method, path, body, mockPlugins, delay, (id) => removeHelpers(id, helperBoxes(), true));
       if (market) return market as Promise<T>;
+      const where = pluginHelpersCall(method, path, helperBoxes(), (id) => mockPlugins.find((p) => p.id === id), delay);
+      if (where) return where as Promise<T>;
       const team = teamLaptopCall(method, path, body, delay);
       if (team) return team as Promise<T>;
       const prReview = prReviewLaptopCall(method, path, body, delay);
