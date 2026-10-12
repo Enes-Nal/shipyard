@@ -33,6 +33,7 @@ import (
 //	helper_mismatch  an uploaded helper is not the size and SHA-256 named
 //	helper_missing   the box does not hold the helper it was asked to start (409)
 //	helper_unreachable  a running helper did not answer (502)
+//	helper_no_attach  a helper that is not told of worktrees was asked to be (409)
 //	bad_request      the request itself was wrong
 //	internal         anything else
 const (

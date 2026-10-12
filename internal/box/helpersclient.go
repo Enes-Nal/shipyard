@@ -99,6 +99,18 @@ func (c *Client) RemoveHelper(ctx context.Context, plugin string, purge bool) (o
 	return out, c.helperCall(ctx, http.MethodDelete, path, nil, nil, &out)
 }
 
+// AttachHelperEnv has the box tell a plugin's helper what a worktree's .env
+// files have of the variables its manifest names (helperenv.go). worktree
+// "" is the location's main checkout.
+func (c *Client) AttachHelperEnv(ctx context.Context, plugin, location, worktree string) (out HelperEnvLook, err error) {
+	body, err := json.Marshal(map[string]string{"location": location, "worktree": worktree})
+	if err != nil {
+		return out, err
+	}
+	header := http.Header{"Content-Type": {"application/json"}}
+	return out, c.helperCall(ctx, http.MethodPost, "/v1/helpers/"+url.PathEscape(plugin)+"/attach-env", header, bytes.NewReader(body), &out)
+}
+
 // HelperLog is the end of what a helper printed.
 func (c *Client) HelperLog(ctx context.Context, plugin string, limit int64) (out []byte, err error) {
 	return out, c.helperCall(ctx, http.MethodGet, fmt.Sprintf("/v1/helpers/%s/log?limit=%d", url.PathEscape(plugin), limit), nil, nil, &out)
