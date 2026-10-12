@@ -50,7 +50,7 @@ export function DatabaseScreen({ berth }: ScreenProps) {
       <Frame variant="card">
         <FrameHeader>
           <FrameTitle>Which databases show</FrameTitle>
-          <FrameDescription>A worktree's Database tab shows the worktree's own development database. It learns of it in one of two ways.</FrameDescription>
+          <FrameDescription>A worktree's Database tab shows the worktree's own development database. It learns of it from a service, from the worktree's files, or from you.</FrameDescription>
         </FrameHeader>
         <FramePanel>
           <ol className="space-y-3 text-sm">
@@ -63,7 +63,10 @@ export function DatabaseScreen({ berth }: ScreenProps) {
             <Step n={3} title="Its DATABASE_URL or POSTGRES_URL points at a Postgres on the box">
               On the box itself: <code>localhost</code>, <code>127.0.0.1</code> or a Unix socket. That is the worktree's own development database, and the only kind shown. Nothing in a service's environment is changed, and no file is written.
             </Step>
-            <Step n={4} title="What doesn't show">
+            <Step n={4} title="Or connect it yourself">
+              When neither says which database a worktree has, its tab offers <b>Connect a database…</b>: paste the address, and it is kept on the box with the others until you forget it. The same rule holds: a Postgres on the box itself.
+            </Step>
+            <Step n={5} title="What doesn't show">
               A database on another host (a shared staging database, a hosted one) is never opened from here. Neither is one whose address is a reference to a secret and not the address itself, or a <code>.env</code> that is a link to a file outside the worktree. Other engines than Postgres don't show yet.
             </Step>
           </ol>

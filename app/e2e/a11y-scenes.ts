@@ -827,6 +827,33 @@ export const scenes: Scene[] = [
       await expect(p.getByTestId("database-looked")).toBeVisible();
     },
   },
+  // Connect a database…: the address field, masked, with what went wrong under it.
+  {
+    id: "database-connect",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "none" });
+      await p.getByRole("button", { name: "Connect a database…" }).click();
+      const dialog = app.page.getByRole("alertdialog");
+      await dialog.getByLabel("Address", { exact: true }).fill("postgres://acme:acme@db.acme.example:5432/shop_staging");
+      await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+      await expect(dialog.getByTestId("database-connect-problem")).toBeVisible();
+      await app.page.waitForTimeout(400);
+    },
+  },
+  // A connection added by hand: how it got here, and Forget.
+  {
+    id: "database-by-hand",
+    extra: true,
+    async run(app, theme) {
+      const p = await database(app, theme, "devl/checkout-fix", { db: "none" });
+      await p.getByRole("button", { name: "Connect a database…" }).click();
+      const dialog = app.page.getByRole("alertdialog");
+      await dialog.getByLabel("Address", { exact: true }).fill("postgres://acme:acme@localhost:5433/shop_scratch");
+      await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+      await expect(p.getByTestId("database-by-hand")).toBeVisible();
+    },
+  },
   {
     id: "database-screen",
     async run(app, theme) {

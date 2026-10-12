@@ -1,10 +1,11 @@
 import { useBoxes, type BerthPluginContext, type WorktreePanelProps } from "@berth/plugin";
-import { Badge, Button, HelperBox, Icon, Menu, MenuItem, MenuPopup, MenuTrigger, PickOne, Tip, useHelperState } from "@berth/plugin/ui";
+import { Badge, Button, HelperBox, Icon, Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger, PickOne, Tip, useHelperState } from "@berth/plugin/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type Connection, database, type Fault, faultOf, isOldBox, isOldHelper, lostHelper, NO_CAPABILITIES, type Schema } from "./api";
 import { skewOf, untilHere, WRITES_FOR_MS } from "./clock.ts";
 import { Browser } from "./browser";
+import { type At, ConnectDialog, ForgetDialog } from "./connect";
 import { Console } from "./console";
 import type { Ctx } from "./context";
 import { cannotLook, fromFile, lookAgain, type Looked, type Origin, originOf, said } from "./dotenv.ts";
@@ -88,6 +89,9 @@ interface Scope {
 // asked to look in the worktree's own .env files and tell the helper what it
 // finds there (dotenv.ts): once for each time the panel is opened, which is
 // the person asking, and again when they ask to look again.
+//
+// And when nothing says which database the worktree has, the person can:
+// Connect a database… takes its address (connect.tsx).
 function Connections({ berth, box, source, worktree, at, active }: Scope & { at: { location: string; worktree: string } }) {
   const api = useMemo(() => database(berth), [berth]);
   const helper = useHelperState(berth, box, false);
@@ -111,12 +115,19 @@ function Connections({ berth, box, source, worktree, at, active }: Scope & { at:
   const again = useRef(false);
   const known = useRef(origin);
   known.current = origin;
+  // The connections that were made by hand from this computer: their ids,
+  // never their address.
+  const handKey = `hand:${box}/${source}`;
+  const [byHand, setByHand] = useState(() => berth.storage.get<string[]>(handKey, []));
+  const hand = useRef(byHand);
+  hand.current = byHand;
+  const [connecting, setConnecting] = useState(false);
   const read = async () => {
     const asked = again.current;
     again.current = false;
     const list = await api.connections(box, source);
     const first = lookedFor.current !== key;
-    if (!(first && list.length === 0) && !(asked && lookAgain(known.current, list))) return list;
+    if (!(first && list.length === 0) && !(asked && lookAgain(known.current, list, hand.current))) return list;
     lookedFor.current = key;
     let result: Looked = { kind: "old" };
     if (api.canLook) {
@@ -149,6 +160,27 @@ function Connections({ berth, box, source, worktree, at, active }: Scope & { at:
   }, [conns.fault, onFault]);
   const pickKey = `connection:${box}/${source}`;
   const [picked, setPicked] = useState(() => berth.storage.get<string>(pickKey, ""));
+  const pick = (id: string) => {
+    setPicked(id);
+    berth.storage.set(pickKey, id);
+  };
+  const where: At = { box, location: at.location, worktree: at.worktree };
+  const connect = (
+    <ConnectDialog
+      open={connecting}
+      api={api}
+      at={where}
+      name={worktree}
+      onConnected={(id) => {
+        berth.storage.set(handKey, [id]);
+        setByHand([id]);
+        // The one that was just connected is the one to show.
+        pick(id);
+        reload();
+      }}
+      onClose={() => setConnecting(false)}
+    />
+  );
 
   if (!conns.data) {
     // The helper is there and won't answer the box: the box's berthd is from
@@ -227,66 +259,89 @@ function Connections({ berth, box, source, worktree, at, active }: Scope & { at:
   if (conns.data.length === 0) {
     const result = looked?.key === key ? looked.result : undefined;
     return (
-      <Notice
-        icon="table-2"
-        title={`No database for ${worktree} yet`}
-        body={
-          result?.kind === "looked" || result?.kind === "failed" ? (
+      <>
+        {connect}
+        <Notice
+          icon="table-2"
+          title={`No database for ${worktree} yet`}
+          body={
+            result?.kind === "looked" || result?.kind === "failed" ? (
+              <>
+                <span className="block text-foreground" data-testid="database-looked">
+                  {result.kind === "looked" ? said(result.look, box).join(" ") : `Couldn't look in ${worktree}'s .env files on ${box}: ${result.message}`}
+                </span>
+                <span className="mt-2 block">
+                  Database shows the Postgres a worktree's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> points at when it is on {box} itself. It reads that from the worktree's <code>.env</code> files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database {worktree} has, connect it yourself with its address.
+                </span>
+              </>
+            ) : (
+              <>
+                A service of this worktree that Shipyard starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
+              </>
+            )
+          }
+          actions={
             <>
-              <span className="block text-foreground" data-testid="database-looked">
-                {result.kind === "looked" ? said(result.look, box).join(" ") : `Couldn't look in ${worktree}'s .env files on ${box}: ${result.message}`}
-              </span>
-              <span className="mt-2 block">
-                Database shows the Postgres a worktree's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> points at when it is on {box} itself. It reads that from the worktree's <code>.env</code> files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
-              </span>
+              <Button size="sm" variant="outline" loading={looking} onClick={relook}>
+                Look again
+              </Button>
+              {/* Not on a box that can't be asked to look: it can't be given an address either. */}
+              {api.canLook && result?.kind !== "old" && (
+                <Button size="sm" variant="outline" onClick={() => setConnecting(true)}>
+                  Connect a database…
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => berth.openScreen("database")}>
+                Which databases show
+              </Button>
             </>
-          ) : (
-            <>
-              A service of this worktree that Shipyard starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
-            </>
-          )
-        }
-        actions={
-          <>
-            <Button size="sm" variant="outline" loading={looking} onClick={relook}>
-              Look again
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => berth.openScreen("database")}>
-              Which databases show
-            </Button>
-          </>
-        }
-      />
+          }
+        />
+      </>
     );
   }
   const conn = conns.data.find((c) => c.id === picked) ?? conns.data[0];
   return (
-    <Connected
-      key={conn.id}
-      scope={{ berth, box, source, worktree, active }}
-      api={api}
-      conn={conn}
-      all={conns.data}
-      origin={origin}
-      relook={relook}
-      stale={conns.fault}
-      onPick={(id) => {
-        setPicked(id);
-        berth.storage.set(pickKey, id);
-      }}
-      onFault={onFault}
-      reread={conns.reload}
-    />
+    <>
+      {connect}
+      <Connected
+        key={conn.id}
+        scope={{ berth, box, source, worktree, active }}
+        api={api}
+        at={where}
+        conn={conn}
+        all={conns.data}
+        origin={origin}
+        byHand={byHand}
+        relook={relook}
+        // One connection by hand for a worktree: another would replace it,
+        // so it is forgotten first.
+        onConnect={api.canLook && conns.data.length > 1 && !conns.data.some((c) => byHand.includes(c.id)) ? () => setConnecting(true) : undefined}
+        onForgotten={() => {
+          berth.storage.set(handKey, []);
+          setByHand([]);
+          relook();
+        }}
+        stale={conns.fault}
+        onPick={pick}
+        onFault={onFault}
+        reread={conns.reload}
+      />
+    </>
   );
 }
 
 function Connected({
   scope,
   api,
+  at,
   conn,
   all,
   origin,
+  byHand,
   relook,
+  onConnect,
+  onForgotten,
   stale,
   onPick,
   onFault,
@@ -294,12 +349,19 @@ function Connected({
 }: {
   scope: Scope;
   api: ReturnType<typeof database>;
+  at: At;
   conn: Connection;
   all: Connection[];
   // What the worktree's .env files gave, when the last look found any.
   origin: Origin | null;
+  // The connections that were made by hand, by id.
+  byHand: string[];
   // Reads the worktree's databases again, its .env files too.
   relook(): void;
+  // Asks for another database's address; absent when one can't be added.
+  onConnect?(): void;
+  // The connection that was made by hand was forgotten.
+  onForgotten(): void;
   stale?: Fault;
   onPick(id: string): void;
   onFault(fault: Fault): void;
@@ -307,6 +369,8 @@ function Connected({
 }) {
   const { berth, box, source, worktree, active } = scope;
   const file = fromFile(origin, conn);
+  const mine = byHand.includes(conn.id);
+  const [forgetting, setForgetting] = useState(false);
   const engine = useMemo(() => engineOf(conn.engine), [conn.engine]);
   const caps = conn.capabilities ?? NO_CAPABILITIES;
   const [mode, setMode] = useState<"browse" | "console">("browse");
@@ -391,11 +455,20 @@ function Connected({
                   <span className="min-w-0 flex-1 truncate">{c.database}</span>
                   <span className="ml-3 shrink-0 text-muted-foreground text-xs">
                     {engineOf(c.engine).name}
-                    {c.label && ` · ${c.label}`}
-                    {fromFile(origin, c) && ` in ${fromFile(origin, c)}`}
+                    {byHand.includes(c.id) ? " · added by hand" : c.label && ` · ${c.label}`}
+                    {!byHand.includes(c.id) && fromFile(origin, c) && ` in ${fromFile(origin, c)}`}
                   </span>
                 </MenuItem>
               ))}
+              {onConnect && (
+                <>
+                  <MenuSeparator />
+                  <MenuItem onClick={onConnect}>
+                    <Icon name="Plus" className="size-3.5 text-muted-foreground" />
+                    Connect a database…
+                  </MenuItem>
+                </>
+              )}
             </MenuPopup>
           </Menu>
         ) : (
@@ -404,12 +477,26 @@ function Connected({
             <span className="truncate">{conn.database}</span>
           </span>
         )}
-        <Tip label={`${engine.name}${where ? ` at ${where}` : ""}${conn.user ? `, as ${conn.user}` : ""}${conn.label ? `, from ${conn.label}` : ""}`}>
+        <Tip label={`${engine.name}${where ? ` at ${where}` : ""}${conn.user ? `, as ${conn.user}` : ""}${mine ? ", added by hand" : conn.label ? `, from ${conn.label}` : ""}`}>
           <Badge variant="outline" size="sm" className="hidden shrink-0 font-normal @lg:inline-flex">
             {engine.name}
           </Badge>
         </Tip>
-        {file && (
+        {mine && (
+          // Where Database learned of it: someone pasted its address. Only
+          // such a connection can be forgotten: the others would come back.
+          <>
+            <Tip label={`You connected this one by hand. Its address is kept on ${box} until you forget it, ${worktree} is removed, or Database's data on ${box} is removed.`}>
+              <Badge variant="outline" size="sm" className="shrink-0 font-normal text-muted-foreground" data-testid="database-by-hand">
+                added by hand
+              </Badge>
+            </Tip>
+            <Button size="xs" variant="ghost" className="shrink-0" aria-label="Forget this connection…" onClick={() => setForgetting(true)}>
+              Forget…
+            </Button>
+          </>
+        )}
+        {file && !mine && (
           // Where Database learned of it: not a service Shipyard started.
           <Tip label={`${conn.label}, read from ${worktree}'s ${file} on ${box}. Reading the tables again looks in the file again.`}>
             <Badge variant="outline" size="sm" className="shrink-0 font-mono font-normal text-muted-foreground" data-testid="database-from-env" aria-label={`From ${conn.label} in ${worktree}'s ${file}`}>
@@ -485,6 +572,7 @@ function Connected({
         </>
       )}
       <UnlockDialog open={asking} conn={conn} engine={engine} box={box} worktree={worktree} onUnlock={unlock} onClose={() => setAsking(false)} />
+      <ForgetDialog open={forgetting} api={api} at={at} name={worktree} conn={conn} onForgotten={onForgotten} onClose={() => setForgetting(false)} />
     </>
   );
 }

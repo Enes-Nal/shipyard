@@ -60,11 +60,55 @@ export function fromFile(origin: Origin | null | undefined, conn: { id: string; 
 }
 
 // lookAgain says whether reading the tables again should look in the .env
-// files again too: when the worktree has no database, or has one the files
-// gave. One that only a service gave is the service's: the files are not
-// asked, so a .env the service's environment overrides adds nothing here.
-export function lookAgain(origin: Origin | null | undefined, conns: { id: string }[]): boolean {
-  return conns.length === 0 || conns.some((c) => !!origin?.ids?.includes(c.id));
+// files again too: when the worktree has no database, has one the files
+// gave, or has only what was connected by hand. One that a service gave is
+// the service's: the files are not asked, so a .env the service's
+// environment overrides adds nothing here.
+export function lookAgain(origin: Origin | null | undefined, conns: { id: string }[], byHand: string[] = []): boolean {
+  return conns.every((c) => byHand.includes(c.id)) || conns.some((c) => !!origin?.ids?.includes(c.id));
+}
+
+// ---- A database connected by hand ----
+//
+// When nothing says which database a worktree has, the person can: they
+// paste its address, the box hands it to the helper (the same route, with
+// "manual" where a look says ".env"), and the helper keeps it as it keeps
+// the others. One for a worktree: giving another replaces it, and giving
+// none forgets it. The address is a secret. It is in the dialog's field
+// until it is sent, and nowhere in the plugin after that: what is kept here
+// is the id of the connection it became.
+
+// The variable a pasted address is given as. The helper is only told the
+// variables the manifest names, and labels a connection by its variable.
+export const BY_HAND_VARIABLE = "DATABASE_URL";
+
+// What the box answers "command" with for a database given by hand. A box
+// that answers another did something else with the request: its berthd is
+// from before it took an address.
+export const BY_HAND = "manual";
+
+// What the helper opens, in words, for where the address is asked for.
+export const EXAMPLE = "postgres://user:password@localhost:5432/database";
+
+// addressProblem is what is plainly wrong with what was typed as an
+// address, before it is sent anywhere: nothing, or not a Postgres address at
+// all. Whether it is a database on the box is the helper's to say; this
+// only saves sending something that could never be one. It never repeats
+// what was typed.
+export function addressProblem(text: string): string | undefined {
+  const address = text.trim();
+  if (!address) return "Paste the database's address.";
+  if (/\s/.test(address)) return "An address has no spaces or line breaks in it. Paste the one address alone.";
+  if (!/^(jdbc:)?postgres(ql)?(\+[a-z0-9]+)?:\/\//i.test(address)) return `That isn't a Postgres address. One looks like ${EXAMPLE}.`;
+  return undefined;
+}
+
+// connected is the connection a given address became, by the box's answer:
+// its id, or why there is none. "old" is a box that cannot take an address.
+export function connected(look: Look): { id: string } | { refused: true } | { old: true } {
+  if (look.command !== BY_HAND) return { old: true };
+  const id = (look.answer?.connections ?? []).find((x): x is string => typeof x === "string");
+  return id ? { id } : { refused: true };
 }
 
 // list writes names as words do: "a", "a and b", "a, b and c".

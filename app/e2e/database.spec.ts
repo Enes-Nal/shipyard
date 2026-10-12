@@ -670,7 +670,8 @@ test("another engine is shown by what its connection says it can do: no schemas,
   const p = await open(app);
   await expect(p.getByTestId("database-bar")).toHaveAttribute("data-engine", "postgres");
   await p.getByTestId("database-connection").click();
-  await expect(app.page.getByRole("menuitem")).toHaveText([/shop_checkout_fix.*PostgreSQL · DATABASE_URL/, /events.*driftdb · EVENTS_URL/]);
+  // The worktree's databases, and a way to connect another by its address.
+  await expect(app.page.getByRole("menuitem")).toHaveText([/shop_checkout_fix.*PostgreSQL · DATABASE_URL/, /events.*driftdb · EVENTS_URL/, "Connect a database…"]);
   await app.page.getByRole("menuitem", { name: /events/ }).click();
   await expect(p.getByTestId("database-bar")).toHaveAttribute("data-engine", "driftdb");
 
@@ -855,6 +856,144 @@ test("a box too old to look in .env says what it always said, and nothing went w
   await said.getByRole("button", { name: "Look again" }).click();
   await expect(said).toContainText("Database learns of a database when a service starts");
   await expect(said.getByTestId("database-looked")).toHaveCount(0);
+  // A box that can't look can't be given an address either.
+  await expect(said.getByRole("button", { name: "Connect a database…" })).toHaveCount(0);
+});
+
+// A database connected by hand: its address is pasted once, goes to the box,
+// and is nowhere in the app after that.
+const HAND = "berth.plugin.database.hand:devl/shop/checkout-fix";
+const SECRET = "hunter2-by-hand";
+
+// Everything the page holds that someone could read back: what it shows,
+// what its fields hold, and what it saved.
+const pageHolds = (app: App, text: string) =>
+  app.page.evaluate((t) => {
+    const fields = [...document.querySelectorAll("input, textarea")].map((el) => (el as HTMLInputElement).value);
+    const saved = Object.keys(localStorage).map((k) => localStorage.getItem(k) ?? "");
+    return [document.body.innerText, document.body.innerHTML, ...fields, ...saved].some((s) => s.includes(t));
+  }, text);
+
+test("with no database found, one is connected by pasting its address, which is masked and never shown again", async ({ app }) => {
+  mockOnly("connects a database");
+  const p = await open(app, undefined, { db: "none" });
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  await expect(dialog).toContainText("Connect a database to checkout-fix on devl");
+  await expect(dialog).toContainText("It has to be a Postgres on devl itself (localhost, 127.0.0.1 or a Unix socket): berth-database opens no other, and a database on another machine is not taken.");
+  await expect(dialog).toContainText("The address is kept on devl, in a file only you can read there, until checkout-fix is removed, you forget the connection, or Database's data on devl is removed. It isn't kept on this computer, and isn't shown again");
+  // Masked like a password, with a way to see what was pasted.
+  const address = dialog.getByLabel("Address", { exact: true });
+  await expect(address).toBeFocused();
+  await expect(address).toHaveAttribute("type", "password");
+  await expect(address).toHaveAttribute("autocomplete", "off");
+  await dialog.getByRole("button", { name: "Show the address" }).click();
+  await expect(address).toHaveAttribute("type", "text");
+  await dialog.getByRole("button", { name: "Hide the address" }).click();
+  await expect(address).toHaveAttribute("type", "password");
+
+  // Nothing, and something that is no address, are not sent anywhere.
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  const problem = dialog.getByTestId("database-connect-problem");
+  await expect(problem).toHaveText("Paste the database's address.");
+  await address.fill(`mysql://acme:${SECRET}@localhost:3306/shop_scratch`);
+  await address.press("Enter");
+  await expect(problem).toContainText("That isn't a Postgres address. One looks like postgres://user:password@localhost:5432/database.");
+  await expect(problem).not.toContainText(SECRET);
+
+  await address.fill(`postgres://acme:${SECRET}@localhost:5433/shop_scratch`);
+  await address.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  // It shows as its database, like any other, and says how it got here.
+  await expect(p.getByTestId("database-connection")).toHaveText("shop_scratch");
+  await expect(p.getByTestId("database-by-hand")).toHaveText("added by hand");
+  await expect(p.getByTestId("database-from-env")).toHaveCount(0);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await p.getByTestId("database-by-hand").hover();
+  await expect(app.page.getByText("You connected this one by hand. Its address is kept on devl until you forget it, checkout-fix is removed, or Database's data on devl is removed.")).toBeVisible();
+  // The address is nowhere in the page, and what was saved is the connection's id.
+  expect(await pageHolds(app, SECRET)).toBe(false);
+  expect(await pageHolds(app, "postgres://")).toBe(false);
+  const ids = (await app.stored(HAND)) as string[];
+  expect(ids).toHaveLength(1);
+  expect(ids[0]).toMatch(/^c_[0-9a-f]{12}$/);
+
+  // The lock is the same lock.
+  await expect(lock(p)).toHaveAttribute("data-writes", "off");
+  await unlock(app, p);
+  await openTable(p, "customers");
+  await expect(range(p)).toHaveText("Rows 1–100 of about 240");
+});
+
+test("a database on another machine is not taken, in the helper's rule, and nothing is kept", async ({ app }) => {
+  mockOnly("connects a database");
+  const p = await open(app, undefined, { db: "none" });
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  const address = dialog.getByLabel("Address", { exact: true });
+  await address.fill(`postgres://acme:${SECRET}@db.acme.example:5432/shop_staging`);
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  const problem = dialog.getByTestId("database-connect-problem");
+  await expect(problem).toHaveText("berth-database on devl didn't take this address. It opens a Postgres on devl itself and nothing else: one at localhost, 127.0.0.1 or a Unix socket. Nothing was kept.");
+  // The dialog stays, with what was pasted, for it to be put right.
+  await expect(address).toHaveValue(`postgres://acme:${SECRET}@db.acme.example:5432/shop_staging`);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(notice(p)).toContainText("No database for checkout-fix yet");
+  expect(await pageHolds(app, SECRET)).toBe(false);
+  expect((await app.stored(HAND)) ?? []).toEqual([]);
+  // Opened again, the field is empty: what was typed went with the dialog.
+  await notice(p).getByRole("button", { name: "Connect a database…" }).click();
+  await expect(app.page.getByRole("alertdialog").getByLabel("Address", { exact: true })).toHaveValue("");
+});
+
+test("a database connected by hand is forgotten after a confirm, and one a service gave does not offer it", async ({ app }) => {
+  mockOnly("connects and forgets a database");
+  // shop / checkout-fix has two databases its services gave: the picker offers a third.
+  const p = await open(app);
+  await expect(p.getByTestId("database-tree").getByTestId("database-table")).toHaveCount(9);
+  await expect(p.getByRole("button", { name: "Forget this connection…" })).toHaveCount(0);
+  await p.getByTestId("database-connection").click();
+  await app.page.getByRole("menuitem", { name: "Connect a database…" }).click();
+  const dialog = app.page.getByRole("alertdialog");
+  await dialog.getByLabel("Address", { exact: true }).fill(`postgres://acme:${SECRET}@127.0.0.1:5433/shop_scratch`);
+  await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  // The one just connected is the one in front, among the three.
+  await expect(p.getByTestId("database-connection")).toContainText("shop_scratch");
+  await expect(p.getByTestId("database-by-hand")).toBeVisible();
+  await p.getByTestId("database-connection").click();
+  await expect(app.page.getByRole("menuitem")).toHaveCount(3);
+  await expect(app.page.getByRole("menuitem", { name: /shop_scratch/ })).toContainText("added by hand");
+  // One by hand for a worktree: no second is offered while it is there.
+  await expect(app.page.getByRole("menuitem", { name: "Connect a database…" })).toHaveCount(0);
+  // A database a service gave says where it came from, and can't be forgotten: it would come back.
+  await app.page.getByRole("menuitem", { name: /shop_checkout_fix/ }).click();
+  await expect(p.getByTestId("database-connection")).toContainText("shop_checkout_fix");
+  await expect(p.getByTestId("database-by-hand")).toHaveCount(0);
+  await expect(p.getByRole("button", { name: "Forget this connection…" })).toHaveCount(0);
+
+  await p.getByTestId("database-connection").click();
+  await app.page.getByRole("menuitem", { name: /shop_scratch/ }).click();
+  await p.getByRole("button", { name: "Forget this connection…" }).click();
+  const confirm = app.page.getByRole("alertdialog");
+  await expect(confirm).toContainText("Forget shop_scratch for checkout-fix?");
+  await expect(confirm).toContainText("berth-database on devl forgets the address you gave it for shop_scratch (127.0.0.1:5433)");
+  await expect(confirm).toContainText("The database itself isn't touched.");
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(p.getByTestId("database-by-hand")).toBeVisible();
+
+  await p.getByRole("button", { name: "Forget this connection…" }).click();
+  await app.page.getByRole("alertdialog").getByRole("button", { name: "Forget this connection" }).click();
+  await expect(app.page.getByRole("alertdialog")).toHaveCount(0);
+  // Back to the two a service gave, and another can be connected again.
+  await expect(p.getByTestId("database-by-hand")).toHaveCount(0);
+  await expect(p.getByTestId("database-connection")).toContainText("shop_checkout_fix");
+  await p.getByTestId("database-connection").click();
+  await expect(app.page.getByRole("menuitem")).toHaveCount(3);
+  await expect(app.page.getByRole("menuitem", { name: "Connect a database…" })).toBeVisible();
+  expect(await app.stored(HAND)).toEqual([]);
+  expect(await pageHolds(app, SECRET)).toBe(false);
 });
 
 test("a database that isn't answering says so in the helper's words, and can be tried again", async ({ app }) => {

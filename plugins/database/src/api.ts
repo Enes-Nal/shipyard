@@ -1,6 +1,6 @@
 import type { BerthPluginContext } from "@berth/plugin";
 
-import type { Told } from "./dotenv.ts";
+import { BY_HAND_VARIABLE, type Told } from "./dotenv.ts";
 
 // The berth-database helper's API, as internal/database/API.md documents it,
 // through the box (berth.helper.request): every path is relative to the
@@ -167,6 +167,12 @@ export function database(berth: BerthPluginContext) {
     // the database it finds there (dotenv.ts). worktree "" is the main
     // checkout. This is the box's own route, not one of the helper's.
     look: (box: string, location: string, worktree: string) => berth.helper.attachEnv<Told>(box, { location, worktree }),
+    // Tells the helper of a database the person gave the address of, in
+    // place of the one they gave before (dotenv.ts: "by hand"). The address
+    // goes to the box in the request and is not kept here.
+    connect: (box: string, location: string, worktree: string, address: string) => berth.helper.attachEnv<Told>(box, { location, worktree, env: { [BY_HAND_VARIABLE]: address } }),
+    // Takes back the database that was given by hand.
+    forget: (box: string, location: string, worktree: string) => berth.helper.attachEnv<Told>(box, { location, worktree, env: {} }),
     schema: (box: string, conn: string) => berth.helper.request<{ schemas: Schema[] }>(box, "GET", on(conn, "schema")).then((r) => r.schemas ?? []),
     rows: (box: string, conn: string, req: RowsRequest) => post<Rows>(box, on(conn, "rows"), { ...req, schema: req.schema || undefined }),
     query: (box: string, conn: string, sql: string, limit = QUERY_LIMIT) => post<QueryResult>(box, on(conn, "query"), { sql, limit }),
