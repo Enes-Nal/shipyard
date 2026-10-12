@@ -19,7 +19,9 @@ import { type BrowserContext, expect, type Locator, type Page, test as base } fr
 // chat-background, settings-nav-<id>, settings-<id>, theme-option with
 // data-theme-id, plugin-row and market-plugin with data-plugin,
 // market-error, zoom-hud, leadline with data-leadline and data-state, and
-// its leadline-row, -detail, -notice, -box), and the attributes the app
+// its leadline-row, -detail, -notice, -box, skills-notices and its
+// skills-notice with data-box, data-kind and data-state, skills-notices-more
+// and -rail, skills-reminder), and the attributes the app
 // already keys on
 // (data-tab, data-ws, data-group, data-tab-strip, data-pane-area).
 
@@ -131,7 +133,8 @@ export const test = base.extend<{ app: App }>({
         // A real fleet folds worktrees with nothing going on under
         // "N more worktrees" (smoke:live): unfold them to find this one.
         const more = page.getByText(/^\d+ more worktrees?$/);
-        await expect(row.or(more.first())).toBeVisible();
+        // Both may show at once: the row, and a fold with others under it.
+        await expect(row.or(more).first()).toBeVisible();
         if (!(await row.isVisible())) {
           while ((await more.count()) > 0 && !(await row.isVisible())) await more.first().click();
         }

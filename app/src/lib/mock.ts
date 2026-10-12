@@ -21,7 +21,7 @@ import { mockShell } from "@/lib/mock-shell";
 import { mockServiceAttach, wireMockServices } from "@/lib/mock-services";
 import { mockIssueTitle } from "@/lib/mock-issues";
 import { usageCall, usageExec } from "@/lib/mock-usage";
-import { initMockQueue, queueCall } from "@/lib/mock-queue";
+import { initMockQueue, mockSetBoxOnline, queueCall } from "@/lib/mock-queue";
 import { computersBoxCall, computersCall, initMockComputers } from "@/lib/mock-computers";
 import { initMockLocalBox, localBoxCall, localBoxFolders, localBoxStream } from "@/lib/mock-local-box";
 import { initMockInstall, mockBoxAgents, mockInstallAgents, mockInstallPlan, mockInstallTerminal } from "@/lib/mock-install";
@@ -598,15 +598,24 @@ function mockOrchestration(box: string, method: string, path: string, body?: unk
   }
   if (method === "POST" && path === "exec") {
     const r = body as { location: string; command: string };
+    // A box announces every command it ran (exec.finished), which is what
+    // makes the Review inbox look again; so does this one.
+    const after = <T extends { exit_code: number }>(ms: number, res: T) =>
+      new Promise<T>((resolve) =>
+        setTimeout(() => {
+          emit({ type: "exec.finished", box, data: { location: r.location, command: r.command, exit_code: res.exit_code } });
+          resolve(res);
+        }, ms),
+      );
     const reviewed = reviewExec(box, r.location, r.command, emit);
-    if (reviewed) return new Promise((resolve) => setTimeout(() => resolve(reviewed), 400));
+    if (reviewed) return after(400, reviewed);
     const usage = usageExec(box, r.command);
-    if (usage) return new Promise((resolve) => setTimeout(() => resolve(usage), 600));
+    if (usage) return after(600, usage);
     const shell = mockShell(box, r.location, r.command);
-    if (shell) return new Promise((resolve) => setTimeout(() => resolve(shell), 250));
+    if (shell) return after(250, shell);
     const n = (checksRun[`${box}:${r.location}`] = (checksRun[`${box}:${r.location}`] ?? 0) + 1);
     const output = n === 1 ? `$ ${r.command}\n FAIL  src/checkout.test.ts > rejects a double charge\n   Expected: 409\n   Received: 200\n\nTests: 1 failed, 213 passed\n` : `$ ${r.command}\nTests: 214 passed\n`;
-    return new Promise((resolve) => setTimeout(() => resolve({ exit_code: n === 1 ? 1 : 0, output }), 700));
+    return after(700, { exit_code: n === 1 ? 1 : 0, output });
   }
   return undefined;
 }
@@ -1208,6 +1217,7 @@ async function mockStream(method: string, path: string, body: unknown, onValue: 
     await say(`Uploading berthd-linux-amd64 to ${name}…`, 300);
     await say(`${name} upgraded: ${from} → ${SHIPPED_BUILD}. Sessions kept running.`, 1600);
     mockBuilds[name] = SHIPPED_BUILD;
+    mockSkillsAfterUpgrade(name);
     onValue({ done: true });
     return;
   }
@@ -1419,8 +1429,11 @@ function mockAgent(): Client {
   };
 }
 
-// Skills on each box: some installed, one outdated, the rest missing, so
-// every state shows. Project copies start missing and are kept out of git.
+// Skills on each box, so every state shows and the sidebar has its notices
+// (lib/skills-notice.ts): devl has Codex's but none for Claude Code, gpu,
+// which runs an older berthd, has them all with three out of date, and any
+// other box (one added here, the crowd's) has them all, as an install
+// leaves it. Project copies start missing and are kept out of git.
 const skillCatalog = [
   { name: "berth", description: "Use berth to work across development boxes — repos, worktrees, tasks, sessions, ports and the repo's config.", version: "eb32be71b151" },
   { name: "berth-artifacts", description: "Show the user data as a chart, table, diagram, notes or a small page in their Shipyard app instead of a wall of text.", version: "3b7e9c41d2a0" },
@@ -1434,12 +1447,44 @@ type MockSkillState = "installed" | "outdated" | "missing";
 const skillStates: Record<string, Record<string, MockSkillState>> = {};
 const skillCommitted: Record<string, boolean> = {};
 
+const OLDER_ON_GPU = new Set(["berth", "berth-orchestrate", "berth-preview"]);
+
+function seedSkill(scope: string, skill: string, agent: string): MockSkillState {
+  if (scope.includes("/")) return "missing";
+  if (scope === "devl") return agent === "claude" ? "missing" : "installed";
+  if (scope === "gpu") return agent === "claude" && OLDER_ON_GPU.has(skill) ? "outdated" : "installed";
+  return "installed";
+}
+
+// A box's new berthd ships newer skills than the copies installed from the
+// one before: after an upgrade they are out of date until installed again.
+function mockSkillsAfterUpgrade(box: string) {
+  for (const s of skillCatalog) {
+    for (const a of ["claude", "codex"]) {
+      if (skillState(box, s.name, a) === "installed") skillStates[box][`${box}|${s.name}|${a}`] = "outdated";
+    }
+  }
+}
+
+// What a test or a demo can make the next installs on a box do
+// (window.__berthMockSkills): refuse(box, why) is a before:skills.install
+// hook saying no, until allow(box); drop(box) takes the box offline while
+// the next install is under way.
+const skillsRefused: Record<string, string> = {};
+const skillsDrop = new Set<string>();
+if (typeof window !== "undefined") {
+  (window as unknown as { __berthMockSkills: unknown }).__berthMockSkills = {
+    refuse: (box: string, why = "skills on this box are installed by the platform team") => void (skillsRefused[box] = why),
+    allow: (box: string) => void delete skillsRefused[box],
+    drop: (box: string) => void skillsDrop.add(box),
+  };
+}
+
 function skillState(scope: string, skill: string, agent: string): MockSkillState {
   const k = `${scope}|${skill}|${agent}`;
   if (!skillStates[scope]) skillStates[scope] = {};
   if (!(k in skillStates[scope])) {
-    const seeded = !scope.includes("/") && agent === "claude" ? (skill === "berth" ? "installed" : skill === "berth-orchestrate" ? "outdated" : "missing") : "missing";
-    skillStates[scope][k] = seeded;
+    skillStates[scope][k] = seedSkill(scope, skill, agent);
   }
   return skillStates[scope][k];
 }
@@ -1471,6 +1516,21 @@ function mockSkills(box: string, method: string, path: string, body?: unknown): 
   if (method !== "POST" || !m) return undefined;
   const req = body as { skills: string[] | "all"; agent: string; target: string; location?: string; commit?: boolean };
   if (req.target === "project" && !req.location) return Promise.reject(new Error("a project install needs a location"));
+  // A gate on the box says no, in the box's own words (internal/hooks).
+  if (m[1] === "install" && skillsRefused[box]) {
+    const refused = new ApiError(`a "before:skills.install" hook stopped skills.install: ${skillsRefused[box]}`, 403, "refused");
+    return new Promise((_, reject) => setTimeout(() => reject(refused), 300));
+  }
+  // The box goes away before it answers: 503, as the agent says of a
+  // request that never reached it.
+  if (m[1] === "install" && skillsDrop.delete(box)) {
+    return new Promise((_, reject) =>
+      setTimeout(() => {
+        mockSetBoxOnline(box, false);
+        reject(new ApiError(`${box} is offline`, 503));
+      }, 300),
+    );
+  }
   const names = req.skills === "all" || (req.skills.length === 1 && req.skills[0] === "all") ? skillCatalog.map((s) => s.name) : req.skills;
   const agents = req.agent === "all" ? ["claude", "codex"] : [req.agent];
   const scope = req.target === "project" ? `${box}/${req.location}` : box;

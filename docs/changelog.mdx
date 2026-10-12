@@ -28,6 +28,24 @@ again.
 - **Turning Leadline off again still names the services to restart.**
   Turned off, on and off again without restarting a service, the second
   time named none, though the service was sending to Leadline again.
+- **The sidebar says when a box's skills are missing or out of date.** On a
+  box where Shipyard's skills were never installed, or after a box upgrade
+  leaves them older than its berthd ships, a quiet note at the foot of the
+  sidebar names the box ("devl: Shipyard's skills aren't installed for
+  Claude Code", "gpu: 3 skills are out of date") with two ways out.
+  **Install now** installs or updates them all for the box's user and the
+  note goes; if a hook refuses or the box drops off, it says why.
+  **Snooze** puts that box's note away until tomorrow, for a week or for a
+  month, or **Don't remind me** for that box, which Settings → Agents turns
+  back on. No toast, no sound. See
+  [the sidebar's reminder](/guides/agent-integrations#the-sidebars-reminder).
+- The website's header is now coss.com's: "coss.com shipyard", with Docs,
+  GitHub and its stars, and "Close the laptop" beside it, and coss.com's
+  lines down the sides of the page and across the top of each chapter.
+- **Review no longer keeps a box busy while an item is open.** With an item
+  open, Review read the box's inbox and the item's diff again every couple of
+  seconds for as long as it showed, each read setting off the next. It now
+  reads them once, and again only when something changes.
 - **Make a worktree without waiting for its setup.** `worktree new --no-setup`
   creates it at once, without the setup script or autostart services, and
   `worktree setup LOC/NAME [--wait]` runs them later.

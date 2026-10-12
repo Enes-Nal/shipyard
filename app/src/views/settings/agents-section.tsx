@@ -1,13 +1,18 @@
 import { CheckIcon, MinusIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AgentIcon } from "@/components/agent-glyph";
+import { useMinute } from "@/components/notifications/notification-center";
 import { SkillsPanel } from "@/components/skills/skills-panel";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AgentPreset } from "@/lib/api";
+import { endSnooze, setRemind, useSkillsNotice } from "@/lib/skills-notice";
+import { neverRemind, untilText } from "@/lib/skills-notice-model";
 import { NONE, useStore } from "@/lib/store";
 import { Segmented } from "@/views/settings/controls";
-import { Code, SettingsGroup, SettingsPage } from "@/views/settings/rows";
+import { Code, SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings/rows";
 
 // How to put each built-in agent on a box's PATH.
 const INSTALL: Record<string, string> = {
@@ -30,7 +35,14 @@ export function AgentsSection() {
   const boxes = useStore((s) => s.status?.boxes ?? NONE);
   const data = useStore((s) => s.boxes);
   const online = boxes.filter((b) => b.state === "online");
-  const [skillsBox, setSkillsBox] = useState<string>();
+  // The sidebar's notice opens this page on its box ("Open Settings"), each
+  // time it is asked, whichever box was picked here since.
+  const view = useStore((s) => s.view);
+  const asked = view.kind === "settings" ? view.box : undefined;
+  const [skillsBox, setSkillsBox] = useState(asked);
+  useEffect(() => {
+    if (asked) setSkillsBox(asked);
+  }, [asked, view]);
   const shownSkills = online.some((b) => b.name === skillsBox) ? skillsBox! : online[0]?.name;
 
   // Every agent any box has, built-ins first, then each box's own.
@@ -109,10 +121,43 @@ export function AgentsSection() {
             {online.length > 1 && <Segmented label="Box" value={shownSkills} options={online.map((b) => ({ value: b.name, label: b.name }))} onChange={setSkillsBox} />}
           </div>
           <SkillsPanel key={shownSkills} box={shownSkills} hideTitle />
+          <SkillsReminder key={`remind-${shownSkills}`} box={shownSkills} />
         </section>
       )}
 
       {boxes.length > online.length && <p className="text-muted-foreground text-xs">Offline boxes are listed once they reconnect.</p>}
     </SettingsPage>
+  );
+}
+
+// SkillsReminder is where the sidebar's notice about a box's skills
+// (lib/skills-notice.ts) is seen and undone: a snooze ends with Remind me
+// now, and "Don't remind me for this box" is the switch, off.
+function SkillsReminder({ box }: { box: string }) {
+  const prefs = useSkillsNotice((s) => s.prefs);
+  const loaded = useSkillsNotice((s) => s.loaded);
+  const off = neverRemind(prefs, box);
+  const snooze = prefs.snoozed[box];
+  const until = snooze ? Date.parse(snooze.until) : 0;
+  // Looked at again each minute, so a snooze that ends says so.
+  const now = useMinute();
+  // A snooze holds for the state it was made in; Settings says which.
+  const snoozed = !off && until > now;
+  const description = off
+    ? `Off. The sidebar says nothing about ${box}'s skills until you turn this back on.`
+    : snoozed
+      ? `Snoozed until ${untilText(until, now)}, while its skills ${snooze.kind === "outdated" ? "are out of date" : "aren't installed"}.`
+      : `The sidebar says so when ${box}'s skills aren't installed or are out of date, with Install now and Snooze.`;
+  return (
+    <div data-testid="skills-reminder" className="mt-3 overflow-hidden rounded-xl border bg-card/40">
+      <SettingsRow label={`Remind me about ${box}'s skills`} description={description}>
+        {snoozed && (
+          <Button size="sm" variant="outline" onClick={() => void endSnooze(box)}>
+            Remind me now
+          </Button>
+        )}
+        <Switch checked={!off} disabled={!loaded} onCheckedChange={(on) => void setRemind(box, on)} />
+      </SettingsRow>
+    </div>
   );
 }

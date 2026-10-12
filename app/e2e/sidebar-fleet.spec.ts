@@ -143,7 +143,10 @@ test("projects fold and open, and drag into a section", async ({ app }) => {
   await expect(sidebar.getByTestId("worktree-row")).toHaveCount(all);
 
   // Dragged onto Personal, a project moves there (in the plain fixtures:
-  // with hundreds of rows between them the drag would have to scroll).
+  // with hundreds of rows between them the drag would have to scroll). The
+  // window is tall enough that the list fits above whatever sits at the
+  // sidebar's foot (the skills notice), so nothing scrolls under the drag.
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await app.open();
   const personal = sidebar.locator("div.mt-2", { hasText: "Personal" });
   const evals = sidebar.locator("[draggable=true]", { hasText: "evals" });
