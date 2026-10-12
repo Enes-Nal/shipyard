@@ -11,9 +11,10 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   renders once per size; without the script the plain painting shows. The
   lighthouse's beam is a CSS wedge of halftone dots from the lamp, sweeping
   by transform only (still for reduced motion, paused when hidden).
-- The header is coss.com's bar, as on coss.com/ui: `coss.com` in Cal Sans
-  with the product in grey, then Docs, GitHub (with the repository's stars,
-  from the GitHub API) and "Close the laptop" as ghost buttons. Its lines
+- The header is coss.com's bar, as on coss.com/ui: `coss.com shipyard` in
+  Cal Sans (the product in grey), then Docs and Download as ghost buttons,
+  a hairline, GitHub with the repository's stars (from the GitHub API) and
+  "Close the laptop" as an icon. Its lines
   too: a rail down each side of the page at the header's width, a hairline
   across the top of a chapter, and a small square where they cross.
 - "Close the laptop" in the header puts the page to night by hand
