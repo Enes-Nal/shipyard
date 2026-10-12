@@ -3,7 +3,7 @@
 // tables and columns from a schema the plugin gives, and a key to run. It is
 // its own chunk, loaded the first time a plugin draws one, so a plugin gets
 // an editor without carrying CodeMirror in its bundle.
-import { autocompletion } from "@codemirror/autocomplete";
+import { autocompletion, closeCompletion } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { Cassandra, MariaSQL, MSSQL, MySQL, PLSQL, PostgreSQL, type SQLDialect, SQLite, sql, StandardSQL } from "@codemirror/lang-sql";
 import { bracketMatching, indentOnInput, syntaxHighlighting } from "@codemirror/language";
@@ -107,6 +107,8 @@ export function SqlEditor({ value, onChange, onRun, onSelect, schema, defaultSch
   useEffect(() => {
     if (!host.current) return;
     const run = (v: EditorView) => {
+      // The list of completions is about what was being typed, not what ran.
+      closeCompletion(v);
       const s = v.state.selection.main;
       cb.current.onRun?.({ from: s.from, to: s.to });
       return true;
@@ -156,12 +158,15 @@ export function SqlEditor({ value, onChange, onRun, onSelect, schema, defaultSch
   }, [readOnly, label, placeholder]);
 
   // Text from outside (a statement from the history): only what differs is
-  // replaced, and the cursor goes to its end.
+  // replaced, the cursor goes to its end, and the editor takes the keyboard,
+  // so it can be run or changed at once.
   useEffect(() => {
     const v = view.current;
     if (!v) return;
     const p = patchText(v.state.doc.toString(), value);
-    if (p) v.dispatch({ changes: p, selection: { anchor: value.length } });
+    if (!p) return;
+    v.dispatch({ changes: p, selection: { anchor: value.length } });
+    v.focus();
   }, [value]);
 
   const names = useMemo(() => JSON.stringify([schema, defaultSchema, dialect]), [schema, defaultSchema, dialect]);

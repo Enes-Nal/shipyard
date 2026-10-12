@@ -1,6 +1,28 @@
 {
   "plugins": [
     {
+      "id": "database",
+      "name": "Database",
+      "description": "A worktree's own development database, as a tab on the worktree: browse its tables, edit rows and run SQL, read-only until you unlock it. Postgres for now. Installs berth-database on the boxes you turn it on for.",
+      "version": "0.1.0",
+      "author": "Shipyard",
+      "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/database",
+      "files": [
+        {
+          "path": "berth-plugin.json",
+          "url": "database/0.1.0/berth-plugin.json",
+          "sha256": "ed277d54a9773ca2bbcb5287e1cdbccef244adffb5f8b56e58a2d4a48c71e729",
+          "size": 859
+        },
+        {
+          "path": "dist/index.js",
+          "url": "database/0.1.0/dist/index.js",
+          "sha256": "e992fc78c451fdaa4ebff69593adbf651ec5bc201a6c2d5d3e5cd529662dc6f1",
+          "size": 117917
+        }
+      ]
+    },
+    {
       "id": "hello-ports",
       "name": "Hello ports (example)",
       "description": "An example plugin to copy from: every dev server on every box, one click from your browser. Off until you turn it on.",

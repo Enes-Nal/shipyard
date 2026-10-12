@@ -644,7 +644,7 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
   const doc = mockBoxDoctor(box, !!status.boxes.find((b) => b.name === box)?.local, method, path);
   if (doc) return doc;
   // A plugin's helper on the box (lib/mock-helper.ts).
-  const helper = helperBoxCall(box, method, path, delay);
+  const helper = helperBoxCall(box, method, path, delay, body);
   if (helper) return helper;
   // In-app artifacts (lib/art/mock-artifacts.ts, loaded when first asked).
   if (/^locations\/[^/]+\/worktrees\/[^/]+\/artifacts/.test(path)) return artifactsMock().then((m) => delay(m.artifactsMockCall(box, method, path) ?? null));
