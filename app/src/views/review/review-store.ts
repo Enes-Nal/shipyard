@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { BerthEvent, Client } from "@/lib/api";
 import { useEventLog } from "@/lib/events";
 import { type FlowRun, flowsApi } from "@/lib/flows";
+import { shareByKey } from "@/lib/share";
 import { load, save } from "@/lib/storage";
 import { useStore } from "@/lib/store";
 import { titleAt, useTitleAt } from "@/lib/worktree-names";
@@ -165,7 +166,13 @@ async function doRefresh(only?: Set<string>) {
       }
     }),
   );
-  const entries = [...useReview.getState().entries.filter((e) => kept(e.box)), ...lists.flat()].sort((a, b) => (b.state_since ?? "").localeCompare(a.state_since ?? ""));
+  // An item a read didn't change is the object it was. The page showing it
+  // reads its diff again whenever the item changes, with a command on the
+  // box, and a command finishing is one of the events that bring the inbox
+  // here to be read again: with a new object every time, an open item kept
+  // the box reading its inbox and its diff in a loop for as long as it showed.
+  const read = [...useReview.getState().entries.filter((e) => kept(e.box)), ...lists.flat()].sort((a, b) => (b.state_since ?? "").localeCompare(a.state_since ?? ""));
+  const entries = shareByKey(useReview.getState().entries, read);
   useReview.setState({ entries, runs, outdated, errors, loading: false, loaded: true });
   void fetchPullRequests(client, entries);
 }
