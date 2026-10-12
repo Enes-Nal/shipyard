@@ -185,7 +185,12 @@ func (c *conn) Query(ctx context.Context, in database.QueryRequest) (*database.Q
 			// Cut short before the server said what ran.
 			command = lead
 		}
-		if !counted {
+		// Rows are fetched a few at a time, and the server's count is then
+		// of the last fetch alone. So for a statement that returns rows
+		// (a SELECT, or a change with RETURNING, which returns each row it
+		// changed) the rows that came are the count; the server's is for
+		// one that returns none.
+		if !counted || len(res.fields) > 0 {
 			rows = int64(len(grid.Rows))
 		}
 		out.Command, out.RowCount = command, rows

@@ -598,6 +598,26 @@ func TestAnswersAreCapped(t *testing.T) {
 		t.Fatalf("a statement's cut = %s, %v", js(res.Cut), err)
 	}
 
+	// More rows than are fetched at a time are all there, in order, and the
+	// server's own count of them with them.
+	res, err = r.query(`SELECT id FROM `+s+`.many ORDER BY id`, false)
+	if err != nil || len(res.Rows) != 600 || res.Truncated || res.RowCount != 600 || res.Rows[0][0] != int64(1) || res.Rows[599][0] != int64(600) {
+		t.Fatalf("600 rows, fetched %d at a time: %d rows, truncated %v, %v", chunk, len(res.Rows), res.Truncated, err)
+	}
+	res, err = r.query(`UPDATE `+s+`.many SET body = 'y' RETURNING id`, true)
+	if err != nil || len(res.Rows) != 600 || res.Truncated || res.RowCount != 600 || res.Command != "UPDATE" {
+		t.Fatalf("a change of 600 rows that returns them: %d rows, count %d, %s, %v", len(res.Rows), res.RowCount, res.Command, err)
+	}
+	if res, err = r.query(`UPDATE `+s+`.many SET body = 'x'`, true); err != nil || len(res.Rows) != 0 || res.RowCount != 600 || res.Command != "UPDATE" {
+		t.Fatalf("a change of 600 rows that returns none: count %d, %v", res.RowCount, err)
+	}
+	if page = r.rows(database.RowsRequest{Table: "many", Limit: 500}); len(page.Rows) != 500 || !page.More || page.Rows[499][0] != int64(500) {
+		t.Fatalf("a page of 500 of 600: %d rows, more %v", len(page.Rows), page.More)
+	}
+	if page = r.rows(database.RowsRequest{Table: "many", Limit: 500, Offset: 500}); len(page.Rows) != 100 || page.More || page.Rows[99][0] != int64(600) {
+		t.Fatalf("the page after it: %d rows, more %v", len(page.Rows), page.More)
+	}
+
 	// Bytes: past the cap the rows stop, and the answer says so.
 	r.c.maxBytes = 2000
 	page = r.rows(database.RowsRequest{Table: "many", Limit: 500})

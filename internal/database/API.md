@@ -641,7 +641,7 @@ Runs one statement ([The guard rails](#the-guard-rails)).
 | --- | --- |
 | `columns` | The result's columns; `[]` for a statement that returns none. Two may share a name. |
 | `rows` | The rows, at most `limit`. |
-| `row_count` | The rows the statement returned or changed, as the database counted them (`UPDATE` of 40 rows: 40, with no `rows`). For a result that was cut short, the rows that are here. |
+| `row_count` | For a statement that returns rows, how many it returned; for one that returns none, the rows it changed, as the database counted them (`UPDATE` of 40 rows: 40, with no `rows`). For a result that was cut short, only the rows that are here. |
 | `command` | What ran, as the database names it: `"SELECT"`, `"UPDATE"`, `"CREATE TABLE"`. For a result that was cut short, the statement's first word. |
 | `duration_ms` | How long the statement took, on the helper's clock. |
 | `truncated` | The statement had more rows than are here. The rest were not fetched. |

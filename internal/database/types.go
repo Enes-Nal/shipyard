@@ -256,8 +256,9 @@ func (in *QueryRequest) Check() *Problem {
 type QueryResult struct {
 	Columns []Column `json:"columns"`
 	Rows    [][]any  `json:"rows"`
-	// RowCount is the rows the statement returned or changed, as the
-	// database counted them; of a result that was cut short, the rows here.
+	// RowCount is the rows the statement returned, or for one that returns
+	// none the rows it changed, as the database counted them; of a result
+	// that was cut short, the rows here.
 	RowCount int64 `json:"row_count"`
 	// Command is what ran: "SELECT", "UPDATE", "CREATE TABLE".
 	Command    string  `json:"command"`
