@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { BerthEvent } from "@/lib/api";
+import { handleBrowserOpened } from "@/lib/agent-browser-open";
 import { handleArtifactEvent } from "@/lib/art/model";
 import { agentLabel, agentOf, sessionAgent, sessionName } from "@/lib/derive";
 import { isLive, useLoops } from "@/lib/loops";
@@ -102,6 +103,8 @@ function notifyFor(e: BerthEvent) {
     }
   }
   if (e.type === "preview.open") handlePreview(e);
+  // An agent opened its browser: its live view beside it, when it's showing.
+  if (e.type === "browser.opened") handleBrowserOpened(e);
   // An artifact added, rewritten or removed: the worktree's list, live.
   if (e.type.startsWith("artifact.")) handleArtifactEvent(e);
   if (e.type === "session.open") handleSessionOpen(e);

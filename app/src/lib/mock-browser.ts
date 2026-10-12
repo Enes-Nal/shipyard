@@ -3,7 +3,9 @@ import { mockAgentDevtools } from "@/lib/mock-devtools";
 // The demo's agent browser: the checkout-fix worktree on devl has one open,
 // at the default 1920×1080, cast as a drawing of the shop's cart page, with
 // two shots for Review. window.__berthMockBrowser.resize("390x844", 3) does
-// what an agent's `berthd browser resize` would, for tests and screenshots.
+// what an agent's `berthd browser resize` would, and .opened() the event an
+// agent's `berthd browser open` sends as its browser starts, for tests and
+// screenshots.
 
 interface Size {
   width: number;
@@ -59,8 +61,18 @@ export function browserCall(box: string, method: string, path: string): unknown 
   return undefined;
 }
 
+let emit: ((e: { type: string; box: string; origin?: string; data?: Record<string, unknown> }) => void) | undefined;
+
+// wireBrowserMock gives the mock its event stream.
+export function wireBrowserMock(e: typeof emit) {
+  emit = e;
+}
+
 if (typeof window !== "undefined") {
   (window as unknown as { __berthMockBrowser: unknown }).__berthMockBrowser = {
+    opened() {
+      emit?.({ type: "browser.opened", box: "devl", origin: "browser", data: { location: "shop", name: "checkout-fix", path: "/home/me/work/shop-checkout-fix" } });
+    },
     resize(wxh: string, scale = 1) {
       const [width, height] = wxh.split("x").map(Number);
       size = { width, height, scale };
