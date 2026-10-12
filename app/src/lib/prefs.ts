@@ -59,6 +59,9 @@ export interface Prefs {
   chatDrafts: boolean;
   // The Files panel beside the worktree's tabs (⌘⇧E), for every worktree.
   filesPanel: boolean;
+  // When an agent opens its browser in the worktree showing, its live view
+  // opens beside the agent's pane (lib/agent-browser-open).
+  agentBrowserBeside: boolean;
   // The themes "Match system" uses by day and when macOS is dark.
   systemThemes: { light: string; dark: string };
   // Home's widgets, in order and size (lib/home-layout.ts). Null until the
@@ -99,6 +102,7 @@ const DEFAULTS: Prefs = {
   chatWidth: "default",
   chatDrafts: true,
   filesPanel: false,
+  agentBrowserBeside: true,
   systemThemes: { light: "berth-light", dark: "berth-dark" },
   home: null,
   installAgents: null,

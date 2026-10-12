@@ -145,7 +145,7 @@ export function Pane({ wsKey, tab, pane, visible, focused, split, mixed, compare
           )}
           {c.kind === "browser" && (
             <Suspense fallback={<div className="flex-1" />}>
-              <BrowserPane id={pane.id} url={c.url} visible={visible} worktree={owner} onNavigate={(url) => setPaneContent(wsKey, tab, pane.id, { kind: "browser", url })} onLoading={compare ? (l) => pageLoading(pane.id, l) : undefined} />
+              <BrowserPane id={pane.id} url={c.url} visible={visible} worktree={owner} onNavigate={(url) => setPaneContent(wsKey, tab, pane.id, { kind: "browser", url })} onLoading={compare ? (l) => pageLoading(pane.id, l) : undefined} watch={c.watch} onUnwatch={() => setPaneContent(wsKey, tab, pane.id, { kind: "browser", url: c.url })} />
             </Suspense>
           )}
           {c.kind === "preview" && (

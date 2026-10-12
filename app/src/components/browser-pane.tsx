@@ -13,6 +13,7 @@ import { isTauri } from "@/lib/api";
 import { openPreviewAt } from "@/lib/actions";
 import { agentBrowserStatus, boxHasBrowser, fitFrame, type Frame, sizeLabel, watchAgentBrowser } from "@/lib/agent-browser";
 import { agentOf } from "@/lib/derive";
+import { useEventLog } from "@/lib/events";
 import { DEVTOOLS_FRAME, proxiedHost, useAgentDevtoolsFeed, useDevtoolsFeed, useDrawerOpen, withDevtoolsFlag } from "@/lib/devtools";
 import { send as sendPrompt } from "@/lib/orchestrate";
 import { PICKER_SCRIPT, type Pick, parsePick, pickMessage } from "@/lib/picker";
@@ -39,6 +40,11 @@ interface Props {
   worktree?: string;
   // Told when a page starts and finishes loading (a Compare tab times both).
   onLoading?(loading: boolean): void;
+  // Set when an agent opened its browser here (lib/agent-browser-open): the
+  // pane shows the agent's view, again each time it changes. onUnwatch is
+  // told when you go back to your own.
+  watch?: number;
+  onUnwatch?(): void;
 }
 
 type Mode = "native" | "iframe";
@@ -48,7 +54,7 @@ type Mode = "native" | "iframe";
 // http://checkout.shop.devl.localhost:1377/). In the app it is a native child
 // webview laid over the pane, so every page works as in a browser; in a plain
 // browser, or when that fails, it is an iframe.
-export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, onLoading }: Props) {
+export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, onLoading, watch, onUnwatch }: Props) {
   const fallbackId = useId();
   const id = useMemo(() => (paneId ?? fallbackId).replace(/[^A-Za-z0-9_-]/g, ""), [paneId, fallbackId]);
   const [mode, setMode] = useState<Mode>(isTauri() ? "native" : "iframe");
@@ -86,7 +92,7 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
   // the terminal that had it, though never from a dialog or menu. The next
   // frame, after the pane is shown.
   useEffect(() => {
-    if (!visible || url) return;
+    if (!visible || url || watching) return;
     const frame = requestAnimationFrame(() => {
       if (!overlayOpen()) address.current?.focus();
     });
@@ -118,8 +124,18 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
   // While an agent drives its own browser on the box for this worktree, its
   // view can be watched here instead, live, and it says so.
   const agentLive = useAgentBrowserLive(ctx.ref, visible);
-  const [watching, setWatching] = useState(false);
-  const agentView = watching && !!agentLive?.running;
+  const [watching, setWatching] = useState(!!watch);
+  useEffect(() => {
+    if (watch) setWatching(true);
+  }, [watch]);
+  useEffect(() => {
+    if (!watching && watch) onUnwatch?.();
+    // Only as you stop watching.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watching]);
+  // Opened for the agent, its view shows while the box is still asked
+  // whether its browser runs.
+  const agentView = watching && (agentLive ? agentLive.running : !!watch && !!ctx.ref && boxHasBrowser(ctx.ref.box));
   // Where the agent's page is, from its frames as they come, and its size
   // and how much of it shows.
   const [agentAt, setAgentAt] = useState<string>();
@@ -735,12 +751,14 @@ interface AgentSize {
 
 // useAgentBrowserLive is whether an agent's browser runs on the box for the
 // pane's worktree, checked while the pane is on screen (undefined until
-// known, and always for a box without one).
+// known, and always for a box without one), and again at once when the box
+// says it opened or closed.
 function useAgentBrowserLive(ref: BrowserContext["ref"], visible: boolean): AgentLive | undefined {
   const box = ref?.box;
   const location = ref?.location;
   const worktree = ref?.worktree;
   const capable = !!box && boxHasBrowser(box);
+  const nudge = useEventLog((s) => s.events.find((e) => e.box === box && (e.type === "browser.opened" || e.type === "browser.closed") && e.data?.path === ref?.path)?.time);
   const [live, setLive] = useState<AgentLive>();
   useEffect(() => {
     setLive(undefined);
@@ -770,7 +788,7 @@ function useAgentBrowserLive(ref: BrowserContext["ref"], visible: boolean): Agen
       on = false;
       p.stop();
     };
-  }, [capable, visible, box, location, worktree]);
+  }, [capable, visible, box, location, worktree, nudge]);
   return live;
 }
 

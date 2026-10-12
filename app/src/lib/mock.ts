@@ -4,7 +4,7 @@ import type { BerthEvent, Client, Hook, HooksFile, Location, Service, Session, S
 import { flowsCall } from "@/lib/mock-flows";
 import { runsCall } from "@/lib/mock-runs";
 import { mockRequirements } from "@/lib/mock-requirements";
-import { browserCall, mockScreencast, mockShotSvg } from "@/lib/mock-browser";
+import { browserCall, mockScreencast, mockShotSvg, wireBrowserMock } from "@/lib/mock-browser";
 import { mockDevtoolsCall } from "@/lib/mock-devtools";
 import { phoneCall } from "@/lib/mock-phone";
 import { worktreesCall } from "@/lib/mock-worktrees";
@@ -298,6 +298,7 @@ const artifactsMock = () =>
     return m;
   });
 if (typeof window !== "undefined") (window as unknown as { __art: unknown }).__art = { bump: () => artifactsMock().then((m) => m.bumpArtifacts()), vdiff: () => artifactsMock().then((m) => m.bumpVdiff()) };
+wireBrowserMock(emit);
 wireMockServices({
   sessions: (box) => (sessions[box] ??= []),
   path: (box, loc, wt) => locations[box]?.find((l) => l.name === loc)?.worktrees?.find((w) => w.name === wt)?.path ?? `/home/me/work/${loc}-${wt}`,

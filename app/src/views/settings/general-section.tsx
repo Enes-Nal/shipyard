@@ -14,6 +14,7 @@ import { Code, SettingsGroup, SettingsPage, SettingsRow, Value } from "@/views/s
 export function GeneralSection() {
   const confirmClose = usePrefs((p) => p.confirmCloseShells);
   const closeAgents = usePrefs((p) => p.closeAgents);
+  const agentBrowser = usePrefs((p) => p.agentBrowserBeside);
   const proxy = useStore((s) => s.status?.proxy);
   const port = proxy?.url_port ?? 1377;
 
@@ -51,6 +52,12 @@ export function GeneralSection() {
         </SettingsRow>
         <SettingsRow label="Confirm before closing stops something" description="Closing a shell's pane or tab stops the shell on its box, and so does closing an agent when it's set to stop.">
           <Switch checked={confirmClose} onCheckedChange={(confirmCloseShells) => setPrefs({ confirmCloseShells })} />
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup title="Browser">
+        <SettingsRow label="Show an agent's browser beside it" description="When an agent opens its browser in the worktree you're looking at, its live view opens next to the agent, so you see the chat and the page side by side. Nothing opens while you're elsewhere.">
+          <Switch checked={agentBrowser} onCheckedChange={(agentBrowserBeside) => setPrefs({ agentBrowserBeside })} />
         </SettingsRow>
       </SettingsGroup>
 
