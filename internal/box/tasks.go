@@ -379,6 +379,7 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 		if s.Agent == "" {
 			continue
 		}
+		s.Driver = b.driverFor(*s).Kind()
 		if s.Exited {
 			if b.Turns != nil {
 				b.Turns.Exited(s.Name)

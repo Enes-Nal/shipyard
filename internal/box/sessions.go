@@ -60,6 +60,9 @@ type Session struct {
 	// "terminal": true): the service's name, kept as @berth_service. It is
 	// never an agent, whatever it runs.
 	Service string `json:"service,omitempty"`
+	// Driver is how berthd reaches the session's agent (driver.go):
+	// "terminal" for every agent today. Empty when it runs no agent.
+	Driver string `json:"driver,omitempty"`
 	// Scope is the systemd scope unit its program runs in (@berth_scope),
 	// on boxes where sessions get one; Usage what its processes use, in
 	// the session list.

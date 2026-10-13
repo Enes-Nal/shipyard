@@ -77,7 +77,7 @@ func (b *Box) sendQueued(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := b.Sessions.Send(ctx, name, it.Text, it.Enter); err != nil {
+	if err := b.driverFor(sess).Send(ctx, sess, it.Text, it.Enter); err != nil {
 		b.Turns.putBack(it)
 		return err
 	}
