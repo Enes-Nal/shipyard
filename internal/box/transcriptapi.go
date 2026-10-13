@@ -90,9 +90,8 @@ func (b *Box) transcript(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if r.URL.Query().Has("before") {
-		// Older pages come from the agent's own record, under any driver.
-		if agent, path, _ := b.transcriptFile(r.Context(), sess, all); path != "" && (agent == "claude" || agent == "codex") {
-			return olderPage(w, r, agent, path, sess.Dir)
+		if source, path := b.driverFor(sess).Record(r.Context(), sess, all); path != "" {
+			return olderPage(w, r, source, path, sess.Dir)
 		}
 	}
 	since, _ := strconv.Atoi(r.URL.Query().Get("since"))

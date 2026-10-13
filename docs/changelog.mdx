@@ -11,6 +11,16 @@ again.
 
 ## Unreleased
 
+- **Labs: structured Claude agents.** Turn on *Structured Claude agents*
+  in Settings › Labs and new Claude Code agents run without their
+  terminal: the box drives Claude Code through its stream and keeps its own
+  record of the conversation, so replies stream in as they are written,
+  nothing is read off a screen, and an agent keeps working while your
+  laptop is away or the box's berthd restarts. Permissions come to the chat
+  as Allow / Always allow / Deny, or with *Permissions: Bypass* (the
+  default) the box allows them for you; questions and plans always wait for
+  you. They open as conversations. Needs the box upgraded.
+
 - **Doctor no longer says berthd runs "not as a service" when it does.**
   `berthd install` puts your login shell's PATH in the service, and doctor
   compared the service with one that had no PATH, so on a Mac it always

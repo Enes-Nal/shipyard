@@ -213,8 +213,9 @@ export interface Session {
   // name. It never runs an agent, and closing its tab never stops it.
   service?: string;
   // How the box reaches the agent ("driver" capability): "terminal", its
-  // own screen in tmux, for every agent today.
-  driver?: "terminal" | string;
+  // own screen in tmux, or "claude", Claude Code driven through its stream
+  // ("driver.claude" capability).
+  driver?: "terminal" | "claude" | string;
   // The systemd scope its processes run in, on boxes where sessions get
   // one (Linux with systemd), and what they use: memory (bytes, page cache
   // included), its ceiling if the box sets one (Settings → Boxes), processor
@@ -233,6 +234,10 @@ export interface Ask {
   input?: string;
   why?: string;
   message?: string;
+  // The answers a structured session offers, by the key that picks one
+  // (POST sessions/{name}/send with that key); a terminal's are on its
+  // screen instead.
+  choices?: { key: string; label: string }[];
 }
 
 // A prompt the box holds for an agent until it is idle: the start of its
@@ -447,6 +452,12 @@ export interface TaskRequest {
   // Asks the app to show the new agent: as a tab of its worktree when the
   // person is looking at it, otherwise as a toast that opens it.
   open?: "split" | "tab";
+  // How berthd runs the agent: "terminal" (the default) or "claude", Claude
+  // Code structured ("driver.claude" capability); mode is a structured
+  // agent's permission mode to start in ("bypassPermissions": berthd allows
+  // what it asks, questions and plans aside).
+  driver?: "terminal" | "claude";
+  mode?: string;
 }
 
 export interface TaskResult {

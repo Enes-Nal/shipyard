@@ -228,8 +228,10 @@ export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined
     const s = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session);
     return !!(s && agentOf(s));
   });
+  // A structured agent has no screen of its own to read: its conversation.
+  const structured = useStore((st) => c.kind === "terminal" && st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver === "claude");
   if (c.kind !== "terminal" || !labs || !runsAgent) return undefined;
-  return c.view ?? fallback;
+  return c.view ?? (structured ? "conversation" : fallback);
 }
 
 // ViewSwitch flips an agent's pane between its terminal and its
