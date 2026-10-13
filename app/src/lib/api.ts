@@ -262,7 +262,7 @@ export const boxApi = {
     c.box(box, "DELETE", `locations/${encodeURIComponent(location)}/worktrees/${encodeURIComponent(worktree)}${force ? "?force=1" : ""}`),
   // home: in the box user's home folder, tied to no worktree, in place of a
   // location (boxes with the "session.home" capability).
-  startSession: (c: Client, box: string, req: ({ location: string } | { home: true }) & { name?: string; command?: string; agent?: string; prompt?: string; model?: string; effort?: string; title?: string }) =>
+  startSession: (c: Client, box: string, req: ({ location: string } | { home: true }) & { name?: string; command?: string; agent?: string; prompt?: string; model?: string; effort?: string; title?: string; driver?: "terminal" | "claude"; mode?: string }) =>
     c.box<Session>(box, "POST", "sessions", req),
   stopSession: (c: Client, box: string, name: string) => c.box(box, "DELETE", `sessions/${encodeURIComponent(name)}`),
   // Names a session's work; "" clears its title.

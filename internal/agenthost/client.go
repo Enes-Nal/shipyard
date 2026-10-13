@@ -13,6 +13,9 @@ import (
 // is still there to read), or never started.
 var ErrNoHost = errors.New("agent-host: no host is running")
 
+// Dial connects to the host on sock: ErrNoHost when none answers.
+func Dial(ctx context.Context, sock string) (net.Conn, error) { return dial(ctx, sock) }
+
 func dial(ctx context.Context, sock string) (net.Conn, error) {
 	var d net.Dialer
 	c, err := d.DialContext(ctx, "unix", sock)

@@ -43,9 +43,15 @@ type Driver interface {
 	// Conversation is the chat's view of the session from item since.
 	// all is the box's sessions when the caller has just listed them.
 	Conversation(ctx context.Context, sess Session, all []Session, since int, gen string) (transcript.Result, error)
+	// Record is the file the conversation is read from, and how: its
+	// older pages are read from it too. An empty path is none yet.
+	Record(ctx context.Context, sess Session, all []Session) (source, path string)
+	// Draft is the reply the agent is writing, before its record has it.
+	Draft(ctx context.Context, sess Session) (Draft, error)
 }
 
-// DriverTerminal is the driver every session has today.
+// DriverTerminal is a session's agent in its own terminal: every session
+// but a structured one (DriverClaude).
 const DriverTerminal = "terminal"
 
 // driverFor is the driver for a session's agent.
@@ -53,6 +59,9 @@ func (b *Box) driverFor(sess Session) Driver {
 	kind := firstNonEmpty(sess.Driver, DriverTerminal)
 	if d := b.Drivers[kind]; d != nil {
 		return d
+	}
+	if kind == DriverClaude {
+		return b.claude()
 	}
 	return terminalDriver{b}
 }
@@ -195,6 +204,32 @@ func (t terminalDriver) Answer(ctx context.Context, sess Session, req AnswerRequ
 		return nil, err
 	}
 	return shown, nil
+}
+
+// Record is the agent's own transcript file.
+func (t terminalDriver) Record(ctx context.Context, sess Session, all []Session) (string, string) {
+	agent, path, _ := t.b.transcriptFile(ctx, sess, all)
+	if agent != "claude" && agent != "codex" {
+		return "", ""
+	}
+	return agent, path
+}
+
+// Draft reads the reply Claude Code is drawing from its styled screen
+// (draft.go). Other agents aren't drafted.
+func (t terminalDriver) Draft(ctx context.Context, sess Session) (Draft, error) {
+	agent := firstNonEmpty(sess.Preset, firstNonEmpty(sess.Agent, agentOf(sess.Command)))
+	out := Draft{Agent: agent}
+	if agent != "claude" || sess.Service != "" || sess.Exited {
+		return out, nil
+	}
+	_, raw, err := t.b.Sessions.getAndCapture(ctx, sess.Name, "-J", "-e")
+	if err != nil {
+		return out, err
+	}
+	out = ParseClaudeDraft(string(raw))
+	out.Agent = agent
+	return out, nil
 }
 
 // Conversation reads the agent's own transcript file (internal/transcript),

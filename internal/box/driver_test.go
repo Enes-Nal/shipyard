@@ -61,6 +61,15 @@ func (d *recordingDriver) Conversation(_ context.Context, sess Session, _ []Sess
 	return transcript.Result{Source: "driver", Items: []transcript.Item{{Kind: "text", ID: "1", Text: "hello"}}}, nil
 }
 
+func (d *recordingDriver) Record(_ context.Context, sess Session, _ []Session) (string, string) {
+	return "", ""
+}
+
+func (d *recordingDriver) Draft(_ context.Context, sess Session) (Draft, error) {
+	d.note("draft " + sess.Name)
+	return Draft{Agent: "claude", Text: "writing"}, nil
+}
+
 func TestTheAgentIsReachedThroughItsSessionsDriver(t *testing.T) {
 	d := &recordingDriver{}
 	c, _ := servedBox(t, func(b *Box) { b.Drivers = map[string]Driver{DriverTerminal: d} })

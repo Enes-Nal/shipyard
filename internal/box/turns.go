@@ -74,6 +74,10 @@ type Ask struct {
 	Input   string `json:"input,omitempty"`
 	Why     string `json:"why,omitempty"`
 	Message string `json:"message,omitempty"`
+	// Choices are the answers a structured session offers, by the key
+	// that picks one (claudedriver.go); a terminal's are on its screen.
+	// Never kept: the session list asks its driver.
+	Choices []AskChoice `json:"choices,omitempty"`
 }
 
 // SessionState is what an agent session is doing now.
@@ -1052,7 +1056,7 @@ func (t *Turns) NoteAsk(data map[string]any, raw any) {
 		return
 	}
 	ask := Ask{Tool: askStr(m, "tool"), Input: askStr(m, "input"), Why: askStr(m, "why"), Message: askStr(m, "message")}
-	if ask == (Ask{}) {
+	if ask.Tool == "" && ask.Input == "" && ask.Why == "" && ask.Message == "" {
 		return
 	}
 	t.mu.Lock()

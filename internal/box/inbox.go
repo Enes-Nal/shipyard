@@ -62,7 +62,7 @@ func (b *Box) sendQueued(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if agent := agentFor(sess); b.atStartupQuestion(ctx, Session{Name: name, Agent: agent}) {
+	if agent := agentFor(sess); b.atStartupQuestion(ctx, Session{Name: name, Agent: agent, Driver: sess.Driver}) {
 		// Even forced: the question would drop the text and take its Enter.
 		return startupText(agent)
 	}
