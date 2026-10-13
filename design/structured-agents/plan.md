@@ -1,6 +1,6 @@
 # Structured agents: plan
 
-Status: 2026-10-13. Phase 0 (spike) done: go. Phases 1 (driver interface) and 2 (agent-host + log) merged. Phase 3 (Claude driver, behind Labs) merged. Phase 4a (terminal and back) merged; 4b (resume, conversation index) in review. The spike's recordings join the repo as test fixtures in phase 3, once reviewed.
+Status: 2026-10-13. Phase 0 (spike) done: go. Phases 1 (driver interface) and 2 (agent-host + log) merged. Phase 3 (Claude driver, behind Labs) merged. Phase 4a (terminal and back) merged; 4b (resume, conversation index), 5 (Codex) and 6 (ACP) in review, stacked. The spike's recordings join the repo as test fixtures in phase 3, once reviewed.
 
 ## Why
 
