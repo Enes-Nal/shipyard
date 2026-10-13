@@ -96,13 +96,14 @@ const fail = (title: string, err: unknown, box?: string) => {
   return false;
 };
 
-// structured is how a Claude agent starts when Labs runs it structured: on
-// a box whose berthd drives Claude Code through its stream.
-function structured(box: string, agent: string): { driver?: "claude"; mode?: string } {
+// structured is how a Claude Code or Codex agent starts when Labs runs it
+// structured: on a box whose berthd drives that agent through its stream
+// ("driver.claude") or app server ("driver.codex").
+function structured(box: string, agent: string): { driver?: "claude" | "codex"; mode?: string } {
   const p = usePrefs.getState();
   const caps = useStore.getState().boxes[box]?.info?.capabilities ?? [];
-  if (agent !== "claude" || !p.labs || !p.structuredClaude || !caps.includes("driver.claude")) return {};
-  return { driver: "claude", mode: p.approvals === "bypass" ? "bypassPermissions" : "default" };
+  if ((agent !== "claude" && agent !== "codex") || !p.labs || !p.structuredClaude || !caps.includes(`driver.${agent}`)) return {};
+  return { driver: agent, mode: p.approvals === "bypass" ? "bypassPermissions" : "default" };
 }
 
 export async function startWork(d: StartDraft): Promise<boolean> {

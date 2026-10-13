@@ -1,6 +1,7 @@
 package box
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -36,6 +37,9 @@ type Conversation struct {
 	// permission mode it ran in ("bypassPermissions": berthd allowed).
 	AgentSessionID string `json:"agent_session_id,omitempty"`
 	Mode           string `json:"mode,omitempty"`
+	// Model and Effort, when asked for: a Codex thread's turns carry them.
+	Model  string `json:"model,omitempty"`
+	Effort string `json:"effort,omitempty"`
 	// Title is its first prompt's first line.
 	Title   string    `json:"title,omitempty"`
 	Created time.Time `json:"created"`
@@ -190,15 +194,17 @@ func (b *Box) resumeInPlace(r *http.Request, sess Session, sid string) error {
 	if sid == "" {
 		sid = conversationSession(sess.conv)
 	}
-	if sid == "" {
+	if meta, _ := readConversation(sess.conv); sid == "" && meta.Agent != "codex" {
+		// Codex opens its thread again itself (codexdriver.go); Claude needs
+		// its conversation named.
 		return httpError{http.StatusConflict, "berthd doesn't know which Claude conversation this is"}
 	}
-	l, err := b.launchClaudeIn(b.claudePreset(ctx, sess), "", "", modeFor(sess), sid, sess.conv, sess.sock)
+	l, err := b.relaunch(ctx, sess.Location, sess.conv, sess.sock, sid, modeFor(sess))
 	if err != nil {
 		return err
 	}
 	l.labels[labelHandoff] = ""
-	b.claude().forget(sess.Name)
+	b.forgetConversation(sess.Name)
 	if err := b.respawnAgent(ctx, sess, l.command, l.env, l.labels); err != nil {
 		return err
 	}
@@ -209,6 +215,37 @@ func (b *Box) resumeInPlace(r *http.Request, sess Session, sid string) error {
 		b.startStructured(origin(r), gateOrigin(r), live, "")
 	}
 	return nil
+}
+
+// relaunch is what starts a structured conversation's agent again, in its
+// folder and on sock: Claude Code with --resume sid, or Codex's app
+// server, which opens its thread again itself.
+func (b *Box) relaunch(ctx context.Context, location, dir, sock, sid, mode string) (structuredLaunch, error) {
+	meta, _ := readConversation(dir)
+	if meta.Agent == "codex" {
+		p, ok := b.presetAt(ctx, location, "codex")
+		if !ok {
+			return structuredLaunch{}, badRequest("this box has no Codex preset")
+		}
+		return b.launchCodexIn(p, firstNonEmpty(mode, meta.Mode), dir, sock)
+	}
+	return b.launchClaudeIn(b.claudePreset(ctx, Session{Location: location}), "", "", mode, sid, dir, sock)
+}
+
+// presetAt is an agent preset as a location has it.
+func (b *Box) presetAt(ctx context.Context, location, agent string) (AgentPreset, bool) {
+	name, _, _ := strings.Cut(location, "/")
+	if loc, err := b.Locations.Get(ctx, name); err == nil {
+		if p, ok := presetFor(&loc, agent); ok {
+			return p, true
+		}
+	}
+	for _, p := range builtinAgents {
+		if p.ID == agent {
+			return p, true
+		}
+	}
+	return AgentPreset{}, false
 }
 
 // conversationSession is the Claude conversation a structured
@@ -267,20 +304,19 @@ func (b *Box) resumeConversation(w http.ResponseWriter, r *http.Request) error {
 		return httpError{http.StatusGone, "the folder it worked in, " + conv.Dir + ", is gone"}
 	}
 	sid := conversationSession(dir)
-	if sid == "" {
+	if sid == "" && conv.Agent != "codex" {
 		return httpError{http.StatusConflict, "berthd doesn't know which Claude conversation this is"}
 	}
 	sock, err := hostSocket(filepath.Base(dir))
 	if err != nil {
 		return err
 	}
-	p := b.claudePreset(r.Context(), Session{Location: conv.Location})
-	l, err := b.launchClaudeIn(p, "", "", conv.Mode, sid, dir, sock)
+	l, err := b.relaunch(r.Context(), conv.Location, dir, sock, sid, conv.Mode)
 	if err != nil {
 		return err
 	}
-	name := defaultSessionName(firstNonEmpty(conv.Location, filepath.Base(conv.Dir)), p.Command)
-	sess, err := b.startStructuredSession(r, name, conv.Location, conv.Dir, "claude", l, "")
+	name := defaultSessionName(firstNonEmpty(conv.Location, filepath.Base(conv.Dir)), firstNonEmpty(conv.Agent, "claude"))
+	sess, err := b.startStructuredSession(r, name, conv.Location, conv.Dir, firstNonEmpty(conv.Agent, "claude"), l, "")
 	if err != nil {
 		return err
 	}
@@ -294,11 +330,17 @@ func (b *Box) resumeConversation(w http.ResponseWriter, r *http.Request) error {
 }
 
 // noteStarted keeps what a new structured conversation is.
-func noteStarted(dir, location, cwd, session, mode, prompt string) {
-	noteConversation(dir, func(c *Conversation) {
-		c.Agent, c.Location, c.Dir, c.Session = "claude", location, cwd, session
-		if mode != "" {
-			c.Mode = mode
+func noteStarted(l structuredLaunch, location, cwd, session, prompt string) {
+	noteConversation(l.labels[labelConv], func(c *Conversation) {
+		c.Agent, c.Location, c.Dir, c.Session = firstNonEmpty(l.agent, "claude"), location, cwd, session
+		if l.mode != "" {
+			c.Mode = l.mode
+		}
+		if l.model != "" {
+			c.Model = l.model
+		}
+		if l.effort != "" {
+			c.Effort = l.effort
 		}
 		if c.Created.IsZero() {
 			c.Created = time.Now().UTC()

@@ -234,7 +234,11 @@ export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined
     return !!(s && agentOf(s));
   });
   // A structured agent has no screen of its own to read: its conversation.
-  const structured = useStore((st) => c.kind === "terminal" && st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver === "claude");
+  const structured = useStore((st) => {
+    if (c.kind !== "terminal") return false;
+    const d = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver;
+    return d === "claude" || d === "codex";
+  });
   if (c.kind !== "terminal" || !labs || !runsAgent) return undefined;
   return c.view ?? (structured ? "conversation" : fallback);
 }

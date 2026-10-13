@@ -169,7 +169,8 @@ func (b *Box) Capabilities() []string {
 		// Claude Code's terminal and back (switch.go).
 		// conversations: GET /v1/conversations, POST .../{id}/resume and
 		// POST /v1/sessions/{name}/resume (conversations.go).
-		caps = append(caps, "driver.claude", "driver.switch", "conversations")
+		// driver.codex: "driver": "codex", Codex's app server (codexdriver.go).
+		caps = append(caps, "driver.claude", "driver.codex", "driver.switch", "conversations")
 	}
 	if b.Artifacts != nil {
 		// artifacts: berthd artifact add, a worktree's artifacts and their

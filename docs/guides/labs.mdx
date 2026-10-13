@@ -235,9 +235,9 @@ box with the `commands` capability: `GET /v1/sessions/{name}/commands`
 (cached a minute, capped at 600) and `GET …/files?q=`. MCP servers' prompts
 aren't listed: the agent reads them from each server once it starts.
 
-## Structured Claude agents
+## Structured agents
 
-With *Structured Claude agents* on in Settings › Labs, a new Claude Code
+With *Structured agents* on in Settings › Labs, a new Claude Code or Codex
 agent runs without its terminal. The box starts `claude -p` speaking
 stream-json under `berthd agent-host`, which keeps the agent running in its
 tmux session and writes everything that passes between them to the box's
@@ -265,9 +265,17 @@ own record of the conversation. The box drives it from there:
   Claude Code's `--resume`, in its own record, so the chat shows its earlier
   turns.
 
+- **Codex** runs as `codex app-server` under the same host: the box opens its
+  thread, sends each prompt as a turn with the agent's mode, model and effort,
+  and brings its command and file-change approvals and its questions to the
+  chat. Its modes are default (asks to go past its workspace sandbox),
+  untrusted (asks before untrusted commands), read only, and bypass (no
+  sandbox, nothing asked). It has no terminal switch.
+
 The agent keeps working while berthd restarts or upgrades, and the record
 keeps every streamed word even if the agent is killed. The box needs the
-`driver.claude` capability, and `driver.switch` for the terminal (upgrade
+`driver.claude` capability (`driver.codex` for Codex), and `driver.switch`
+for the terminal (upgrade
 it).
 
 ## Zen

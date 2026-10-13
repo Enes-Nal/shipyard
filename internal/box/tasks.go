@@ -299,10 +299,10 @@ func (b *Box) addTask(w http.ResponseWriter, r *http.Request) error {
 		if !ok {
 			return badRequest("unknown agent %q", req.Agent)
 		}
-		if structured, err := wantStructured(req.Driver); err != nil {
+		if kind, err := wantStructured(req.Driver); err != nil {
 			return err
-		} else if structured {
-			l, err := b.launchClaude(p, req.Model, req.Effort, req.Mode, "")
+		} else if kind != "" {
+			l, err := b.launchStructured(kind, p, req.Model, req.Effort, req.Mode)
 			if err != nil {
 				return err
 			}
@@ -402,13 +402,13 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 		switch {
 		case s.Driver == DriverClaude:
 			s.Switch = "terminal"
-		case s.conv != "":
+		case s.Driver == DriverTerminal && s.conv != "":
 			s.Switch = "chat"
 		}
-		if s.Driver == DriverClaude && !s.Exited {
+		if !s.Exited {
 			// Followed from the first time it is seen (after a restart,
 			// the first list), so what it does is said as it does it.
-			b.claude().conv(*s)
+			b.follow(*s)
 		}
 		if s.Exited {
 			if b.Turns != nil {
@@ -426,8 +426,15 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 			s.Queued = st.Queued
 			if s.AgentState == "waiting" {
 				s.Ask = st.Ask
-				if s.Driver == DriverClaude {
-					if choices := b.claude().askChoices(*s); len(choices) > 0 {
+				var choices []AskChoice
+				switch s.Driver {
+				case DriverClaude:
+					choices = b.claude().askChoices(*s)
+				case DriverCodex:
+					choices = b.codex().askChoices(*s)
+				}
+				{
+					if len(choices) > 0 {
 						ask := Ask{Choices: choices}
 						if s.Ask != nil {
 							ask = *s.Ask

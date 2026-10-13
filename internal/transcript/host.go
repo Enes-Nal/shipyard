@@ -67,8 +67,11 @@ func unwrapHost(b []byte) ([]byte, bool) {
 // shownSource is the agent a conversation's source is: a structured Claude
 // session's log is Claude's conversation.
 func shownSource(source string) string {
-	if source == SourceClaudeHost {
+	switch source {
+	case SourceClaudeHost:
 		return "claude"
+	case SourceCodexHost:
+		return "codex"
 	}
 	return source
 }

@@ -29,8 +29,8 @@ export function LabsSection() {
         )}
         {labs && (
           <SettingsRow
-            label="Structured Claude agents"
-            description="New Claude Code agents run without their terminal: the box drives them through their stream and keeps its own record. They open as conversations, and their terminal shows what streams by."
+            label="Structured agents"
+            description="New Claude Code and Codex agents run without their terminal: the box drives them through their stream (Codex: its app server) and keeps its own record. They open as conversations; Claude Code's own terminal is one switch away."
           >
             <Switch checked={structured} onCheckedChange={(on) => setPrefs({ structuredClaude: on })} />
           </SettingsRow>
