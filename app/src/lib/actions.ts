@@ -106,11 +106,11 @@ export async function startSession(command: string, target: Target = { kind: "ta
 export async function resumeConversation(box: string, conv: Conversation, worktree: string): Promise<string | undefined> {
   const client = useStore.getState().client;
   if (!client) return;
-  const at = place({ kind: "starting", label: agentLabel("claude") }, { kind: "tab" }, worktree);
+  const at = place({ kind: "starting", label: agentLabel(conv.agent) }, { kind: "tab" }, worktree);
   if (!at) return;
   try {
     const s = await boxApi.resumeConversation(client, box, conv.id);
-    setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box, session: s.name, agent: "claude" });
+    setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box, session: s.name, agent: conv.agent });
     scheduleRefresh(box, ["sessions"]);
     return s.name;
   } catch (err) {
