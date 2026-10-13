@@ -68,6 +68,8 @@ type Box struct {
 	claudeDrv        *claudeDriver
 	codexOnce        sync.Once
 	codexDrv         *codexDriver
+	acpOnce          sync.Once
+	acpDrv           *acpDriver
 	// Hooks, when set, may refuse actions through "before:" hooks.
 	Hooks *hooks.Runner
 	// Flows runs the box's and its repositories' automations.
@@ -819,10 +821,10 @@ func wantStructured(driver string) (string, error) {
 	switch driver {
 	case "", DriverTerminal:
 		return "", nil
-	case DriverClaude, DriverCodex:
+	case DriverClaude, DriverCodex, DriverACP:
 		return driver, nil
 	}
-	return "", badRequest("unknown driver %q: terminal, claude or codex", driver)
+	return "", badRequest("unknown driver %q: terminal, claude, codex or acp", driver)
 }
 
 // launchStructured is what starts preset p under a structured driver, in a
@@ -830,6 +832,15 @@ func wantStructured(driver string) (string, error) {
 func (b *Box) launchStructured(kind string, p AgentPreset, model, effort, mode string) (structuredLaunch, error) {
 	if kind == DriverClaude {
 		return b.launchClaude(p, model, effort, mode, "")
+	}
+	if kind == DriverACP {
+		dir, sock, err := b.newConversation()
+		if err != nil {
+			return structuredLaunch{}, err
+		}
+		l, err := b.launchACPIn(p, mode, dir, sock)
+		l.model = model
+		return l, err
 	}
 	if p.ID != "codex" {
 		return structuredLaunch{}, badRequest("the codex driver runs Codex; %s runs in its terminal", p.Name)

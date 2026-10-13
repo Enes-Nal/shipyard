@@ -72,6 +72,8 @@ func shownSource(source string) string {
 		return "claude"
 	case SourceCodexHost:
 		return "codex"
+	case SourceACPHost:
+		return "acp"
 	}
 	return source
 }

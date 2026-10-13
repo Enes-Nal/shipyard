@@ -237,8 +237,8 @@ aren't listed: the agent reads them from each server once it starts.
 
 ## Structured agents
 
-With *Structured agents* on in Settings › Labs, a new Claude Code or Codex
-agent runs without its terminal. The box starts `claude -p` speaking
+With *Structured agents* on in Settings › Labs, a new Claude Code, Codex,
+OpenCode, Gemini CLI or Cursor Agent agent runs without its terminal. The box starts `claude -p` speaking
 stream-json under `berthd agent-host`, which keeps the agent running in its
 tmux session and writes everything that passes between them to the box's
 own record of the conversation. The box drives it from there:
@@ -271,10 +271,17 @@ own record of the conversation. The box drives it from there:
   chat. Its modes are default (asks to go past its workspace sandbox),
   untrusted (asks before untrusted commands), read only, and bypass (no
   sandbox, nothing asked). It has no terminal switch.
+- **OpenCode, Gemini CLI and Cursor Agent** speak the Agent Client Protocol
+  (`opencode acp`, `gemini --acp`, `cursor-agent acp`), and so does any agent
+  whose preset in a repository's config has an [`acp`](/reference/config):
+  the box opens its session (with its own login, for Cursor Agent), streams
+  its reply, cancels its turn, switches its own modes, and brings its
+  permission requests to the chat; *Bypass* has the box allow them.
 
 The agent keeps working while berthd restarts or upgrades, and the record
 keeps every streamed word even if the agent is killed. The box needs the
-`driver.claude` capability (`driver.codex` for Codex), and `driver.switch`
+`driver.claude` capability (`driver.codex` for Codex, `driver.acp` for ACP
+agents), and `driver.switch`
 for the terminal (upgrade
 it).
 

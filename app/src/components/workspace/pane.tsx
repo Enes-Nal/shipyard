@@ -237,7 +237,7 @@ export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined
   const structured = useStore((st) => {
     if (c.kind !== "terminal") return false;
     const d = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver;
-    return d === "claude" || d === "codex";
+    return d === "claude" || d === "codex" || d === "acp";
   });
   if (c.kind !== "terminal" || !labs || !runsAgent) return undefined;
   return c.view ?? (structured ? "conversation" : fallback);

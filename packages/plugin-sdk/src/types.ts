@@ -215,7 +215,7 @@ export interface Session {
   // How the box reaches the agent ("driver" capability): "terminal", its
   // own screen in tmux, or "claude", Claude Code driven through its stream
   // ("driver.claude" capability).
-  driver?: "terminal" | "claude" | "codex" | string;
+  driver?: "terminal" | "claude" | "codex" | "acp" | string;
   // Where a structured session can switch ("driver.switch" capability):
   // "terminal", to Claude Code's own screen, or "chat", back from it. POST
   // sessions/{name}/switch with { to } switches it.
@@ -398,6 +398,9 @@ export interface AgentPreset {
   // it has them). Leaving one out means the CLI's default.
   models?: string[];
   efforts?: string[];
+  // What starts its Agent Client Protocol server ("acp", "--acp"): with it,
+  // the agent can run structured on boxes listing "driver.acp".
+  acp?: string;
 }
 
 // AgentPath is where a box found an agent CLI: through the person's shell
@@ -478,7 +481,7 @@ export interface TaskRequest {
   // Code structured ("driver.claude" capability); mode is a structured
   // agent's permission mode to start in ("bypassPermissions": berthd allows
   // what it asks, questions and plans aside).
-  driver?: "terminal" | "claude" | "codex";
+  driver?: "terminal" | "claude" | "codex" | "acp";
   mode?: string;
 }
 

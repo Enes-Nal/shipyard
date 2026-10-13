@@ -194,9 +194,9 @@ func (b *Box) resumeInPlace(r *http.Request, sess Session, sid string) error {
 	if sid == "" {
 		sid = conversationSession(sess.conv)
 	}
-	if meta, _ := readConversation(sess.conv); sid == "" && meta.Agent != "codex" {
-		// Codex opens its thread again itself (codexdriver.go); Claude needs
-		// its conversation named.
+	if meta, _ := readConversation(sess.conv); sid == "" && meta.Agent == "claude" {
+		// Codex and ACP agents open their sessions again themselves; Claude
+		// needs its conversation named.
 		return httpError{http.StatusConflict, "berthd doesn't know which Claude conversation this is"}
 	}
 	l, err := b.relaunch(ctx, sess.Location, sess.conv, sess.sock, sid, modeFor(sess))
@@ -222,6 +222,13 @@ func (b *Box) resumeInPlace(r *http.Request, sess Session, sid string) error {
 // server, which opens its thread again itself.
 func (b *Box) relaunch(ctx context.Context, location, dir, sock, sid, mode string) (structuredLaunch, error) {
 	meta, _ := readConversation(dir)
+	if meta.Agent != "claude" && meta.Agent != "codex" && meta.Agent != "" {
+		p, ok := b.presetAt(ctx, location, meta.Agent)
+		if !ok {
+			return structuredLaunch{}, badRequest("this box has no %s preset", meta.Agent)
+		}
+		return b.launchACPIn(p, firstNonEmpty(mode, meta.Mode), dir, sock)
+	}
 	if meta.Agent == "codex" {
 		p, ok := b.presetAt(ctx, location, "codex")
 		if !ok {
@@ -304,7 +311,7 @@ func (b *Box) resumeConversation(w http.ResponseWriter, r *http.Request) error {
 		return httpError{http.StatusGone, "the folder it worked in, " + conv.Dir + ", is gone"}
 	}
 	sid := conversationSession(dir)
-	if sid == "" && conv.Agent != "codex" {
+	if sid == "" && conv.Agent == "claude" {
 		return httpError{http.StatusConflict, "berthd doesn't know which Claude conversation this is"}
 	}
 	sock, err := hostSocket(filepath.Base(dir))

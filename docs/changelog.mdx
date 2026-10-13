@@ -11,6 +11,13 @@ again.
 
 ## Unreleased
 
+- **Labs: OpenCode, Gemini CLI and Cursor Agent run structured too.** With
+  *Structured agents* on, they start through the Agent Client Protocol: their
+  replies stream into the chat, their permission requests come to it (or,
+  with Bypass, the box allows them), Stop cancels their turn, their own modes
+  are in the chat's mode menu, and they can be resumed. A repository's own
+  agent can join in by giving its preset an `acp`. Needs the box upgraded.
+
 - **Labs: Codex agents can run structured too.** With *Structured agents*
   on (Settings › Labs), a new Codex agent
   runs as Codex's app server, driven by the box: replies stream into the

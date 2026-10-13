@@ -1044,6 +1044,8 @@ func (b *Box) follow(sess Session) {
 		b.claude().conv(sess)
 	case DriverCodex:
 		b.codex().conv(sess)
+	case DriverACP:
+		b.acp().conv(sess)
 	}
 }
 
@@ -1052,6 +1054,7 @@ func (b *Box) follow(sess Session) {
 func (b *Box) forgetConversation(name string) {
 	b.claude().forget(name)
 	b.codex().forget(name)
+	b.acp().forget(name)
 }
 
 // awaitHost waits up to d for a session's host to listen.
