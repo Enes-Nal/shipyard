@@ -747,8 +747,9 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
       build: mockBuilds[box] ?? SHIPPED_BUILD,
       tools: ["claude", "codex"],
       home: HOME,
-      // gpu runs an older berthd (mockBuilds): it can't keep worktree names.
-      capabilities: ["diff", "turns", "queue", "ask", "answer", "journal", "runs", "exec.detach", "browser", "browser.devtools", "titles", "sample", "service.terminal", "session.home", "agents.install", "artifacts", "processes", ...(box === "gpu" ? [] : ["worktree.titles", "agents.paths"])],
+      // gpu runs an older berthd (mockBuilds): it can't keep worktree names,
+      // and its agent browser has no tabs.
+      capabilities: ["diff", "turns", "queue", "ask", "answer", "journal", "runs", "exec.detach", "browser", "browser.devtools", "titles", "sample", "service.terminal", "session.home", "agents.install", "artifacts", "processes", ...(box === "gpu" ? [] : ["worktree.titles", "agents.paths", "browser.tabs"])],
       // Claude Code from npm under nvm, as the person's shell finds it;
       // Codex from Shipyard's own installer.
       agent_paths: [
@@ -1168,7 +1169,7 @@ function laptopBoxes(method: string, path: string, body: unknown): Promise<unkno
 // streams the CLI's.
 async function mockStream(method: string, path: string, body: unknown, onValue: (v: unknown) => void, signal?: AbortSignal) {
   if (method === "POST" && (await kitsStream(path, body, onValue, emit, signal))) return;
-  if (method === "GET" && path.endsWith("/browser/screencast")) return mockScreencast(onValue, signal);
+  if (method === "GET" && /\/browser\/screencast(\?|$)/.test(path)) return mockScreencast(path, onValue, signal);
   if (await localBoxStream(method, path, body, onValue, signal)) return;
   const wait = (ms: number) =>
     new Promise<void>((resolve, reject) => {
