@@ -9,6 +9,16 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **Agents sharing a worktree each get a browser tab of their own.** When
+  several agents check pages in one worktree at once, each passes
+  `--tab NAME` to `berthd browser` and gets its own page, cookies and size,
+  so they no longer take the page from each other. Every tab keeps rendering
+  at full speed while nobody watches it. The agent's view in a browser pane
+  shows the tabs, stays on the one you pick, and no longer jumps from one
+  agent's page to the next. Needs the box upgraded.
+
 ## v0.3.17
 
 - **Labs: OpenCode, Gemini CLI and Cursor Agent run structured too.** With

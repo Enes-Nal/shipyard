@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { isTauri } from "@/lib/api";
 import { openPreviewAt } from "@/lib/actions";
-import { agentBrowserStatus, boxHasBrowser, fitFrame, type Frame, sizeLabel, watchAgentBrowser } from "@/lib/agent-browser";
+import { type AgentBrowserTab, agentBrowserStatus, boxHasBrowser, fitFrame, type Frame, sizeLabel, watchAgentBrowser } from "@/lib/agent-browser";
+import { chooseTab, noteTabs, showTabStrip, tabActive, tabLabel, tabMovedNote, type TabSeen } from "@/lib/browser-tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { agentOf } from "@/lib/derive";
 import { useEventLog } from "@/lib/events";
 import { DEVTOOLS_FRAME, proxiedHost, useAgentDevtoolsFeed, useDevtoolsFeed, useDrawerOpen, withDevtoolsFlag } from "@/lib/devtools";
@@ -22,7 +24,7 @@ import { berthUrlLabel, boxAliases, type BrowserContext, describeBerthUrl, hostS
 import { openUrl } from "@/lib/open-url";
 import { initialPageLoads, type PageEvent, pageEvent, type PageLoads, reloadLoop, settle } from "@/lib/page-loads";
 import { overlayOpen } from "@/lib/overlays";
-import { poll } from "@/lib/poll";
+import { poll, type Poller } from "@/lib/poll";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { demoDevServer } from "@/demo/dev-server";
@@ -123,8 +125,9 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
   // The pane is always your own browser, on this laptop, through its proxy.
   // While an agent drives its own browser on the box for this worktree, its
   // view can be watched here instead, live, and it says so.
-  const agentLive = useAgentBrowserLive(ctx.ref, visible);
   const [watching, setWatching] = useState(!!watch);
+  const tabsBox = useStore((s) => !!ctx.ref && !!s.boxes[ctx.ref.box]?.info?.capabilities?.includes("browser.tabs"));
+  const agentLive = useAgentBrowserLive(ctx.ref, visible, watching && tabsBox);
   useEffect(() => {
     if (watch) setWatching(true);
   }, [watch]);
@@ -143,6 +146,53 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
   useEffect(() => {
     if (agentLive && !agentLive.running) setWatching(false);
   }, [agentLive]);
+  // On a box with tabs (lib/browser-tabs), the tab the view watches. It is
+  // chosen as the view opens, the one used last then, from a status asked
+  // for at that moment, and after that only you change it: agents working in
+  // other tabs never move the view, however busy they are. Only when the
+  // watched tab goes does it move, to the one used last, and say so. It is
+  // the pane's, for its worktree; one you picked is kept for when you come
+  // back to the agent's view, one it chose is chosen again.
+  const path = ctx.ref?.path;
+  const [tab, setTab] = useState<{ path: string; name: string; picked: boolean }>();
+  const [tabMoved, setTabMoved] = useState<string>();
+  const openedAt = useRef(0);
+  useEffect(() => {
+    if (!agentView) {
+      openedAt.current = 0;
+      setTab((t) => (t?.picked ? t : undefined));
+      setTabMoved(undefined);
+      return;
+    }
+    if (!openedAt.current) openedAt.current = Date.now();
+    if (!tabsBox || !path || !agentLive) return;
+    const current = tab?.path === path ? tab.name : undefined;
+    // A status from well before the view opened may be half a minute old;
+    // the poll asks again as it opens.
+    if (current === undefined && agentLive.at < openedAt.current - FRESH_MS) return;
+    const next = chooseTab(agentLive.tabs, current) ?? { name: "" };
+    if (next.name === current) return;
+    setTab({ path, name: next.name, picked: false });
+    if (next.movedFrom !== undefined) setTabMoved(tabMovedNote(next.movedFrom, next.name));
+  }, [agentView, tabsBox, path, agentLive, tab]);
+  useEffect(() => {
+    if (!tabMoved) return;
+    const t = window.setTimeout(() => setTabMoved(undefined), 8000);
+    return () => window.clearTimeout(t);
+  }, [tabMoved]);
+  // What the view streams: main on a box without tabs; nothing yet while a
+  // box with them is asked which.
+  const watchedTab = !tabsBox ? "" : tab && tab.path === path ? tab.name : undefined;
+  const watchedInfo = watchedTab === undefined ? undefined : agentLive?.tabs?.find((t) => t.name === watchedTab);
+  // Its page and size until its frames say them; the browser's own for main
+  // on a box that lists no tabs.
+  const watchedUrl = watchedInfo ? watchedInfo.url : watchedTab === "" ? agentLive?.url : undefined;
+  const watchedSize = watchedInfo ? watchedInfo.size : watchedTab === "" ? agentLive?.size : undefined;
+  const pickTab = (name: string) => {
+    if (!path) return;
+    setTab({ path, name, picked: true });
+    setTabMoved(undefined);
+  };
   // The agent's browser can't start on the box (Chromium's sandbox): a
   // marked chip, and a card in the agent's view with the ways out.
   const sandbox = useSandboxCardState(ctx.ref?.box ?? "");
@@ -163,7 +213,7 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
   const drawer = useDrawerOpen(id) && !!url;
   const agentKey = `${id}-agent`;
   const agentDrawer = useDrawerOpen(agentKey);
-  const agentDevtools = useAgentDevtoolsFeed(agentKey, ctx.ref, agentView && agentDrawer);
+  const agentDevtools = useAgentDevtoolsFeed(agentKey, ctx.ref, agentView && agentDrawer && watchedTab !== undefined, watchedTab);
 
   // A pick from the native webview comes back as an event.
   useEffect(() => {
@@ -205,9 +255,9 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
       ) : agentView && ctx.ref ? (
         <AgentBar
           ctx={ctx}
-          url={agentAt ?? agentLive?.url}
+          url={agentAt ?? watchedUrl}
           size={agentSize}
-          fallbackSize={agentLive?.size}
+          fallbackSize={watchedSize}
           logKey={agentDevtools ? agentKey : undefined}
           onBack={() => setWatching(false)}
           onOpenHere={(u) => {
@@ -309,8 +359,17 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
         <ReloadLoopNotice loop={loop} onOpen={() => void openUrl(loop.url)} onDismiss={() => setLoopDismissed(loop.url)} />
       )}
       {failure && mode === "iframe" && <p className="shrink-0 border-b bg-muted/40 px-3 py-1 text-muted-foreground text-xs">The built-in browser could not open ({failure}); showing the page in a frame instead.</p>}
+      {agentView && ctx.ref && tabsBox && showTabStrip(agentLive?.tabs) && watchedTab !== undefined && <AgentTabs tabs={agentLive!.tabs!} watched={watchedTab} onPick={pickTab} />}
+      {agentView && tabMoved && (
+        <div role="status" className="flex shrink-0 items-center gap-2 border-b bg-muted/40 px-3 py-1 text-muted-foreground text-xs">
+          <span className="min-w-0 flex-1 truncate">{tabMoved}</span>
+          <button type="button" aria-label="Dismiss" className="rounded p-0.5 hover:bg-accent hover:text-foreground" onClick={() => setTabMoved(undefined)}>
+            <XIcon className="size-3" />
+          </button>
+        </div>
+      )}
       {/* Watching the agent keeps your page as it was, hidden underneath. */}
-      {agentView && ctx.ref && <AgentView ctx={ctx} visible={visible} onUrl={setAgentAt} onSize={setAgentSize} />}
+      {agentView && ctx.ref && <AgentView ctx={ctx} visible={visible} tab={watchedTab} onUrl={setAgentAt} onSize={setAgentSize} />}
       {sandboxView && (
         <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6 pt-12">
           <BrowserSandboxCard box={ctx.ref!.box} worktree={ctx.ref} className="w-full max-w-2xl bg-background shadow-xs" />
@@ -344,7 +403,7 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
         </div>
       )}
       {drawer && !agentView && !sandboxView && <DevtoolsDrawer logKey={id} pageUrl={url} ctx={ctx} proxied={proxied} />}
-      {agentView && agentDrawer && agentDevtools && <DevtoolsDrawer logKey={agentKey} pageUrl={agentAt ?? agentLive?.url ?? ""} ctx={ctx} proxied agent />}
+      {agentView && agentDrawer && agentDevtools && <DevtoolsDrawer logKey={agentKey} pageUrl={agentAt ?? watchedUrl ?? ""} ctx={ctx} proxied agent />}
     </div>
   );
 }
@@ -738,7 +797,20 @@ export interface AgentLive {
   url?: string;
   // Its page's size, as the box says it: 1920×1080.
   size?: string;
+  // Its tabs, on a box that has them.
+  tabs?: AgentBrowserTab[];
+  // When the box said so (Date.now()).
+  at: number;
 }
+
+// How old a status the agent's view may choose its tab from as it opens.
+const FRESH_MS = 3000;
+
+// The box's events that a tab opened, closed, or was used: worth asking
+// again at once rather than at the next poll. Navigations and shots only
+// while the tabs show, where activity is drawn.
+const TAB_EVENTS = new Set(["browser.tab.opened", "browser.tab.closed"]);
+const TAB_ACTIVITY = new Set(["browser.navigated", "browser.shot"]);
 
 // AgentSize is the agent's page as the view shows it: w×h CSS pixels at a
 // scale, shown at zoom (1 is its own size).
@@ -752,21 +824,30 @@ interface AgentSize {
 // useAgentBrowserLive is whether an agent's browser runs on the box for the
 // pane's worktree, checked while the pane is on screen (undefined until
 // known, and always for a box without one), and again at once when the box
-// says it opened or closed.
-function useAgentBrowserLive(ref: BrowserContext["ref"], visible: boolean): AgentLive | undefined {
+// says it opened or closed. tabs is set while the agent's view shows a box's
+// tabs: it asks every 2s then, and at once when a tab opens, closes or is
+// used, so the strip's activity is current and a closed tab is noticed.
+function useAgentBrowserLive(ref: BrowserContext["ref"], visible: boolean, tabs: boolean): AgentLive | undefined {
   const box = ref?.box;
   const location = ref?.location;
   const worktree = ref?.worktree;
   const capable = !!box && boxHasBrowser(box);
   const nudge = useEventLog((s) => s.events.find((e) => e.box === box && (e.type === "browser.opened" || e.type === "browser.closed") && e.data?.path === ref?.path)?.time);
+  const tabNudge = useEventLog((s) => s.events.find((e) => e.box === box && (TAB_EVENTS.has(e.type) || (tabs && TAB_ACTIVITY.has(e.type))) && e.data?.path === ref?.path)?.time);
   const [live, setLive] = useState<AgentLive>();
+  const poller = useRef<Poller | null>(null);
+  // Forgotten for another worktree, while the pane is away, and as the
+  // browser opens or closes (a pane opened to watch it must not see the old
+  // "not running" first); not when tabs only ask again, which would drop
+  // the view for a moment.
+  useEffect(() => setLive(undefined), [capable, visible, box, location, worktree, nudge]);
   useEffect(() => {
-    setLive(undefined);
     if (!capable || !visible || !box || !location || !worktree) return;
     let on = true;
     let seen = "";
-    // Every 5s, backing off to 30s while nothing changes; never while the
-    // window is hidden (lib/poll).
+    // Every 5s, backing off to 30s while nothing changes, or every 2s up to
+    // 10s while the view shows tabs; never while the window is hidden
+    // (lib/poll).
     const p = poll(
       () =>
         agentBrowserStatus(box, location, worktree).then(
@@ -774,21 +855,27 @@ function useAgentBrowserLive(ref: BrowserContext["ref"], visible: boolean): Agen
             if (!on) return false;
             seedSandbox(box, s.health);
             const size = s.status?.size ?? s.size;
-            setLive((was) => (was?.running === s.running && was?.url === s.status?.url && was?.size === size ? was : { running: s.running, url: s.status?.url, size }));
-            const now = `${s.running}|${s.status?.url ?? ""}|${size ?? ""}`;
+            const list = s.tabs ?? s.status?.tabs;
+            setLive({ running: s.running, url: s.status?.url, size, tabs: list, at: Date.now() });
+            const now = `${s.running}|${s.status?.url ?? ""}|${size ?? ""}|${JSON.stringify(list ?? [])}`;
             const changed = now !== seen;
             seen = now;
             return changed;
           },
-          () => (on && setLive({ running: false }), false),
+          () => (on && setLive({ running: false, at: Date.now() }), false),
         ),
-      { every: 5000, max: 30_000 },
+      tabs ? { every: 2000, max: 10_000 } : { every: 5000, max: 30_000 },
     );
+    poller.current = p;
     return () => {
       on = false;
       p.stop();
+      if (poller.current === p) poller.current = null;
     };
-  }, [capable, visible, box, location, worktree, nudge]);
+  }, [capable, visible, box, location, worktree, nudge, tabs]);
+  useEffect(() => {
+    if (tabNudge) poller.current?.kick();
+  }, [tabNudge]);
   return live;
 }
 
@@ -863,6 +950,68 @@ function AgentBar({
   );
 }
 
+// AgentTabs is the strip of the agent's browser's tabs under its bar, one
+// per agent that asked for its own: which one the view watches, which are
+// being used now (a dot), and each one's page and size on hover. Choosing
+// is the only thing it does; the agents' activity never chooses for you.
+function AgentTabs({ tabs, watched, onPick }: { tabs: AgentBrowserTab[]; watched: string; onPick(name: string): void }) {
+  const [seen, setSeen] = useState<TabSeen>({});
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const at = Date.now();
+    setSeen((s) => noteTabs(s, tabs, at));
+    setNow(at);
+  }, [tabs]);
+  const active = new Set(tabs.filter((t) => tabActive(t, seen, now)).map((t) => t.name));
+  // A dot fades a few seconds after its tab was last used, between polls.
+  useEffect(() => {
+    if (!active.size) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [active.size > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="flex h-8 shrink-0 items-center border-b bg-emerald-500/[0.03] px-2">
+      <ToggleGroup
+        size="sm"
+        value={[`tab:${watched}`]}
+        onValueChange={(v) => {
+          const next = (v as string[])[0];
+          if (next !== undefined) onPick(next.slice(4));
+        }}
+        aria-label="The agent's browser's tabs"
+        className="min-w-0 overflow-x-auto [scrollbar-width:none]"
+      >
+        {tabs.map((t) => (
+          <Tip
+            key={t.name}
+            label={
+              <span className="flex flex-col gap-0.5">
+                {t.title && <span>{t.title}</span>}
+                {t.url && <span className="break-all font-mono text-[11px] opacity-80">{t.url}</span>}
+                <span className="font-mono text-[11px] tabular-nums opacity-80">
+                  {t.size}
+                  {active.has(t.name) && <span className="font-sans"> · in use</span>}
+                </span>
+              </span>
+            }
+            side="bottom"
+            className="max-w-sm"
+          >
+            <ToggleGroupItem
+              value={`tab:${t.name}`}
+              data-active={active.has(t.name) || undefined}
+              className="h-6! min-w-0! shrink-0 gap-1.5 px-2! font-normal text-muted-foreground text-xs sm:text-xs data-pressed:bg-background data-pressed:text-foreground data-pressed:shadow-xs dark:data-pressed:bg-input"
+            >
+              <span className={cn("size-1.5 shrink-0 rounded-full transition-colors", active.has(t.name) ? "bg-emerald-500" : "bg-muted-foreground/25")} aria-hidden />
+              {tabLabel(t.name)}
+            </ToggleGroupItem>
+          </Tip>
+        ))}
+      </ToggleGroup>
+    </div>
+  );
+}
+
 // SandboxBar stands in for the address bar while the pane shows why the
 // agent's browser can't start.
 function SandboxBar({ box, fixed, onBack }: { box: string; fixed: boolean; onBack(): void }) {
@@ -885,7 +1034,9 @@ function SandboxBar({ box, fixed, onBack }: { box: string; fixed: boolean; onBac
 // while this view is on screen. It only watches; the agent drives. The page
 // shows as large as the pane allows but never past its own size: a frame's
 // image is the page at its scale, so up to its CSS size it stays sharp.
-function AgentView({ ctx, visible, onUrl, onSize }: { ctx: BrowserContext; visible: boolean; onUrl(url?: string): void; onSize(size?: AgentSize): void }) {
+// tab is the one it shows (lib/browser-tabs); undefined while that is still
+// being chosen.
+function AgentView({ ctx, visible, tab, onUrl, onSize }: { ctx: BrowserContext; visible: boolean; tab?: string; onUrl(url?: string): void; onSize(size?: AgentSize): void }) {
   const ref = ctx.ref!;
   const [frame, setFrame] = useState<Frame>();
   const [error, setError] = useState<string>();
@@ -911,14 +1062,16 @@ function AgentView({ ctx, visible, onUrl, onSize }: { ctx: BrowserContext; visib
   }, [fw, fh, frame?.scale, fit?.zoom]);
   useEffect(() => () => onSize(undefined), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || tab === undefined) return;
     const ac = new AbortController();
     setError(undefined);
+    // Another tab's last frame must not stand in for this one's.
+    setFrame(undefined);
     const show = (f: Frame) => {
       setFrame(f);
       if (f.url) onUrl(f.url);
     };
-    watchAgentBrowser(ref.box, ref.location, ref.worktree, show, ac.signal).catch((e) => {
+    watchAgentBrowser(ref.box, ref.location, ref.worktree, show, ac.signal, tab).catch((e) => {
       if (!ac.signal.aborted) setError(String(e));
     });
     return () => {
@@ -927,13 +1080,14 @@ function AgentView({ ctx, visible, onUrl, onSize }: { ctx: BrowserContext; visib
     };
     // onUrl is the pane's state setter, the same every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, ref.box, ref.location, ref.worktree]);
+  }, [visible, ref.box, ref.location, ref.worktree, tab]);
   return (
     <div ref={space} className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted/30 p-3">
       {frame ? (
         <img
           alt="The agent's browser"
           data-testid="agent-frame"
+          data-tab={tab}
           data-size={sizeLabel(frame.w, frame.h, frame.scale)}
           src={`data:${frame.mime ?? "image/jpeg"};base64,${frame.data}`}
           // A ring, not a border: a border would take two pixels off the

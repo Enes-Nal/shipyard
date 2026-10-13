@@ -196,7 +196,7 @@ func (b *Box) Capabilities() []string {
 		// browser.health: GET /v1/browser/health, PUT /v1/browser/settings
 		// and POST /v1/browser/check (browsersandbox.go).
 		// browser.devtools: GET …/browser/devtools (browserdevtools.go).
-		caps = append(caps, "browser", "browser.health", "browser.devtools")
+		caps = append(caps, "browser", "browser.health", "browser.devtools", "browser.tabs")
 	}
 	if b.Events.Journal != nil {
 		caps = append(caps, "journal")
