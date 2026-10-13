@@ -9,6 +9,14 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **Doctor no longer says berthd runs "not as a service" when it does.**
+  `berthd install` puts your login shell's PATH in the service, and doctor
+  compared the service with one that had no PATH, so on a Mac it always
+  asked you to run `berthd install` again. Now any PATH counts; the program,
+  its arguments and the rest must still match.
+
 ## v0.3.16
 
 - **Typing `/` in a chat lists your skills.** A bare `/` used to stop after
