@@ -44,7 +44,8 @@ type AgentPreset struct {
 // The model and effort flags are each CLI's own, from its --help: Claude
 // Code's --model takes aliases (opus, sonnet, haiku) and --effort low to max;
 // Codex takes -m/--model and its reasoning effort as the config key
-// model_reasoning_effort; OpenCode and Cursor Agent take --model.
+// model_reasoning_effort; OpenCode and Cursor Agent take --model; oh-my-pi
+// takes --model and --thinking.
 var builtinAgents = []AgentPreset{
 	{ID: "claude", Name: "Claude Code", Command: "claude", ModelFlag: "--model", EffortFlag: "--effort",
 		Models: []string{"opus", "sonnet", "haiku"}, Efforts: []string{"low", "medium", "high", "xhigh", "max"}},
@@ -53,6 +54,8 @@ var builtinAgents = []AgentPreset{
 	{ID: "opencode", Name: "OpenCode", Command: "opencode", PromptFlag: "--prompt", ModelFlag: "--model", ACP: "acp"},
 	{ID: "gemini", Name: "Gemini CLI", Command: "gemini", PromptFlag: "-i", ACP: "--acp"},
 	{ID: "cursor", Name: "Cursor Agent", Command: "cursor-agent", ModelFlag: "--model", ACP: "acp"},
+	{ID: "omp", Name: "oh-my-pi", Command: "omp", ModelFlag: "--model", EffortFlag: "--thinking",
+		Efforts: []string{"low", "medium", "high", "xhigh", "max"}, ACP: "acp"},
 }
 
 // Presets are the built-in agents this box has, then the location's own from
@@ -214,6 +217,7 @@ var agentPackages = map[string]string{
 	"@openai/codex":             "codex",
 	"@google/gemini-cli":        "gemini",
 	"opencode-ai":               "opencode",
+	"@oh-my-pi/pi-coding-agent": "omp",
 }
 
 // wrapperWord is a word that runs the command after it.

@@ -71,8 +71,8 @@ const GROUPS = [
   ["finished", "Done"],
   ["idle", "Ready"],
 ];
-const AGENTS = { claude: "C", codex: "X", opencode: "O", gemini: "G", cursor: "U" };
-const AGENT_NAMES = { claude: "Claude Code", codex: "Codex", opencode: "OpenCode", gemini: "Gemini", cursor: "Cursor" };
+const AGENTS = { claude: "C", codex: "X", opencode: "O", gemini: "G", omp: "P", cursor: "U" };
+const AGENT_NAMES = { claude: "Claude Code", codex: "Codex", opencode: "OpenCode", gemini: "Gemini", omp: "oh-my-pi", cursor: "Cursor" };
 
 // A worktree by its display name when it was given one (worktree_title).
 function where(s) {

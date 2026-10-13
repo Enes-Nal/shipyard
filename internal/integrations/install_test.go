@@ -1,6 +1,7 @@
 package integrations
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -138,5 +139,39 @@ func TestNewAgentHooksInstallOnceAndKeepOtherSettings(t *testing.T) {
 		if !strings.Contains(string(b), "hook claude "+ev) {
 			t.Errorf("claude settings lack %s", ev)
 		}
+	}
+}
+
+func TestInstallOmpExtensionWritesBerthsFileOnce(t *testing.T) {
+	ext := filepath.Join(t.TempDir(), "agent", "extensions", "berth.ts")
+	if changed, err := InstallOmpExtension(ext, "/opt/berthd"); !changed || err != nil {
+		t.Fatalf("first install: %v %v", changed, err)
+	}
+	if changed, _ := InstallOmpExtension(ext, "/opt/berthd"); changed {
+		t.Fatal("extension rewritten unchanged")
+	}
+	b, _ := os.ReadFile(ext)
+	for _, want := range []string{`"/opt/berthd"`, "hook omp", "agent_start", "agent_end", "tool_approval_requested", "hasUI"} {
+		if !strings.Contains(string(b), want) {
+			t.Errorf("extension missing %q:\n%s", want, b)
+		}
+	}
+	if changed, _ := InstallOmpExtension(ext, "/usr/bin/berthd"); !changed {
+		t.Fatal("extension kept a stale berth path")
+	}
+}
+
+func TestInstallToolOmpPutsTheExtensionInOmpsAgentFolder(t *testing.T) {
+	home := t.TempDir()
+	var out bytes.Buffer
+	if err := InstallTool(home, "omp", "/opt/berthd", &out); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(home, ".omp", "agent", "extensions", "berth.ts")); err != nil {
+		t.Fatalf("extension not written: %v", err)
+	}
+	omp, _ := ToolByID("omp")
+	if !omp.Hooked(home) || !omp.Current(home) {
+		t.Fatal("omp is not hooked after install")
 	}
 }

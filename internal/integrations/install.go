@@ -102,6 +102,19 @@ func InstallOpenCodePlugin(path, bin string) (bool, error) {
 	return true, statefile.Write(path, want)
 }
 
+// InstallOmpExtension writes berth's oh-my-pi extension. It is berth's own
+// file, so it is replaced when it differs.
+func InstallOmpExtension(path, bin string) (bool, error) {
+	want := []byte(adapters.OmpExtension(bin))
+	if have, err := os.ReadFile(path); err == nil && string(have) == string(want) {
+		return false, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return false, err
+	}
+	return true, statefile.Write(path, want)
+}
+
 // InstallCursorHooks appends berth's hook to Cursor's hooks file, after any
 // hooks other tools (such as Orca) already registered there.
 func InstallCursorHooks(hooksPath, bin string) (bool, error) {

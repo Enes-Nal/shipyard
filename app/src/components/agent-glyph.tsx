@@ -19,6 +19,8 @@ export function AgentIcon({ agent, className }: { agent?: string; className?: st
       return <SparkleIcon className={cn(cls, "text-[#6f9bff]")} strokeWidth={2.25} />;
     case "pi":
       return <span className={cn("shrink-0 font-semibold text-[#a78bfa] text-xs leading-none", className)}>π</span>;
+    case "omp":
+      return <span className={cn("shrink-0 font-semibold text-[#f472b6] text-xs leading-none", className)}>π</span>;
     case "opencode":
       return <SquareTerminalIcon className={cn(cls, "text-foreground/80")} />;
     default:

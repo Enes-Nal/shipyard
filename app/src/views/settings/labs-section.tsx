@@ -30,7 +30,7 @@ export function LabsSection() {
         {labs && (
           <SettingsRow
             label="Structured agents"
-            description="New Claude Code, Codex, OpenCode, Gemini CLI and Cursor Agent agents run without their terminal: the box drives them through their own protocol (Claude Code's stream, Codex's app server, ACP for the rest) and keeps its own record. They open as conversations; Claude Code's own terminal is one switch away."
+            description="New Claude Code, Codex, OpenCode, Gemini CLI, Cursor Agent and oh-my-pi agents run without their terminal: the box drives them through their own protocol (Claude Code's stream, Codex's app server, ACP for the rest) and keeps its own record. They open as conversations; Claude Code's own terminal is one switch away."
           >
             <Switch checked={structured} onCheckedChange={(on) => setPrefs({ structuredClaude: on })} />
           </SettingsRow>
