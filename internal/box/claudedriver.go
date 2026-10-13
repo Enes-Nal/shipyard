@@ -83,6 +83,24 @@ func (b *Box) launchClaude(p AgentPreset, model, effort, mode, resume string) (s
 	default:
 		return structuredLaunch{}, badRequest("unknown permission mode %q", mode)
 	}
+	id := newConvID()
+	dir := filepath.Join(b.ConversationsDir, id)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return structuredLaunch{}, err
+	}
+	sock, err := hostSocket(id)
+	if err != nil {
+		return structuredLaunch{}, err
+	}
+	return b.launchClaudeIn(p, model, effort, mode, resume, dir, sock)
+}
+
+// launchClaudeIn is launchClaude keeping its log in dir and listening on
+// sock: a new conversation's, or one carrying on (resume).
+func (b *Box) launchClaudeIn(p AgentPreset, model, effort, mode, resume, dir, sock string) (structuredLaunch, error) {
+	if mode == "" {
+		mode = "default"
+	}
 	base, err := AgentCommandWith(p, "", model, effort)
 	if err != nil {
 		return structuredLaunch{}, err
@@ -94,15 +112,6 @@ func (b *Box) launchClaude(p AgentPreset, model, effort, mode, resume string) (s
 			return structuredLaunch{}, err
 		}
 		host = []string{exe, "agent-host"}
-	}
-	id := newConvID()
-	dir := filepath.Join(b.ConversationsDir, id)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return structuredLaunch{}, err
-	}
-	sock, err := hostSocket(id)
-	if err != nil {
-		return structuredLaunch{}, err
 	}
 	claudeMode, bypass := mode, "0"
 	if mode == "bypassPermissions" {
@@ -189,6 +198,11 @@ type claudeConv struct {
 	// after is new, and is said as it comes.
 	caught     chan struct{}
 	caughtOnce sync.Once
+	// queue is what is to be said, in the order it happened, by speak;
+	// kick wakes it. gone stops it, once the session is let go.
+	queue []func()
+	kick  chan struct{}
+	gone  bool
 }
 
 // claudeDriver holds the structured sessions berthd follows.
@@ -205,6 +219,36 @@ func (b *Box) claude() *claudeDriver {
 
 func (d *claudeDriver) Kind() string { return DriverClaude }
 
+// forget lets a session's conversation go: it is followed afresh from its
+// log when next asked for (a session switching to its terminal and back).
+func (d *claudeDriver) forget(name string) {
+	d.mu.Lock()
+	c := d.convs[name]
+	delete(d.convs, name)
+	d.mu.Unlock()
+	if c != nil {
+		c.mu.Lock()
+		if !c.gone {
+			c.gone = true
+			close(c.kick)
+		}
+		c.mu.Unlock()
+	}
+}
+
+// speak says what the log said, one thing after another, in its order.
+func (c *claudeConv) speak() {
+	for range c.kick {
+		c.mu.Lock()
+		q := c.queue
+		c.queue = nil
+		c.mu.Unlock()
+		for _, f := range q {
+			f()
+		}
+	}
+}
+
 // conv is the session's, followed from its log from the first time it is
 // asked for.
 func (d *claudeDriver) conv(sess Session) (*claudeConv, error) {
@@ -215,7 +259,9 @@ func (d *claudeDriver) conv(sess Session) (*claudeConv, error) {
 	c := d.convs[sess.Name]
 	if c == nil || c.conv != sess.conv {
 		c = &claudeConv{b: d.b, name: sess.Name, cwd: sess.Dir, conv: sess.conv, sock: sess.sock,
-			log: filepath.Join(sess.conv, agenthost.LogName), replies: map[string]chan json.RawMessage{}, changed: make(chan struct{}), caught: make(chan struct{})}
+			log: filepath.Join(sess.conv, agenthost.LogName), replies: map[string]chan json.RawMessage{}, changed: make(chan struct{}), caught: make(chan struct{}),
+			kick: make(chan struct{}, 1)}
+		go c.speak()
 		d.convs[sess.Name] = c
 	}
 	d.mu.Unlock()
@@ -325,9 +371,11 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 	var say []func()
 	defer func() {
 		c.signal()
-		if live {
-			for _, f := range say {
-				go f()
+		if live && len(say) > 0 && !c.gone {
+			c.queue = append(c.queue, say...)
+			select {
+			case c.kick <- struct{}{}:
+			default:
 			}
 		}
 	}()
@@ -335,7 +383,8 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 	case "host":
 		switch e.Event {
 		case "started":
-			c.busy, c.pending, c.since = false, nil, time.Time{}
+			// A host started again (resumed, or back from its terminal).
+			c.busy, c.pending, c.since, c.exited = false, nil, time.Time{}, false
 			say = append(say, func() { c.event(adapters.Ready, nil, nil) })
 		case "exited":
 			c.exited, c.busy, c.pending = true, false, nil
@@ -392,7 +441,13 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 			if text, ok := promptText(l.Message); ok && !c.busy {
 				c.busy, c.since = true, time.UnixMilli(e.At)
 				title := adapters.Title(text)
-				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "prompt"}, map[string]any{"title": title}) })
+				say = append(say, func() {
+					// The send that started it is said first.
+					if c.b.Turns != nil {
+						c.b.Turns.AwaitSent(c.name, 2*time.Second)
+					}
+					c.event(adapters.Started, map[string]any{"signal": "prompt"}, map[string]any{"title": title})
+				})
 			}
 		}
 		say = append(say, c.changedConversation)
@@ -407,7 +462,7 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		}
 		r.ID = l.RequestID
 		if live && c.bypass && !interactiveTools[r.Tool] {
-			say = append(say, func() { c.answer(r, true, false, "") })
+			go c.answer(r, true, false, "")
 			return
 		}
 		c.pending = append(c.pending, r)
@@ -589,13 +644,23 @@ func (c *claudeConv) write(ctx context.Context, v any) error {
 	if err != nil {
 		return err
 	}
-	if _, err := agenthost.Write(ctx, c.sock, b); err != nil {
-		if errors.Is(err, agenthost.ErrNoHost) {
+	// A host starting (just launched, or back from its terminal) is
+	// waited for a moment.
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		_, err := agenthost.Write(ctx, c.sock, b)
+		if !errors.Is(err, agenthost.ErrNoHost) {
+			return err
+		}
+		if time.Now().After(deadline) {
 			return ErrSessionExited
 		}
-		return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
-	return nil
 }
 
 // control sends Claude a control request and waits for its answer.
@@ -945,18 +1010,24 @@ func (d *claudeDriver) askChoices(sess Session) []AskChoice {
 	return c.choices()
 }
 
+// awaitHost waits up to d for a session's host to listen.
+func awaitHost(sock string, d time.Duration) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if c, err := agenthost.Dial(context.Background(), sock); err == nil {
+			c.Close()
+			return true
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return false
+}
+
 // startStructured gives a new structured session its first prompt once its
 // host listens.
 func (b *Box) startStructured(origin, from string, sess Session, prompt string) {
 	go func() {
-		deadline := time.Now().Add(30 * time.Second)
-		for time.Now().Before(deadline) {
-			if c, err := agenthost.Dial(context.Background(), sess.sock); err == nil {
-				c.Close()
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
+		awaitHost(sess.sock, 30*time.Second)
 		// Followed from its start, so its first turn is said as it goes.
 		b.claude().conv(sess)
 		if strings.TrimSpace(prompt) == "" {

@@ -399,6 +399,12 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 			continue
 		}
 		s.Driver = b.driverFor(*s).Kind()
+		switch {
+		case s.Driver == DriverClaude:
+			s.Switch = "terminal"
+		case s.conv != "":
+			s.Switch = "chat"
+		}
 		if s.Driver == DriverClaude && !s.Exited {
 			// Followed from the first time it is seen (after a restart,
 			// the first list), so what it does is said as it does it.

@@ -2,6 +2,7 @@ package box
 
 import (
 	"encoding/json"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,8 +19,24 @@ import (
 // tests", asks a question to "ask me", works until interrupted on "work",
 // and answers control requests.
 const fakeStreamClaude = `#!/usr/bin/env python3
-import json, sys
+import json, os, re, sys
 S = "00000000-0000-4000-8000-0000000000c1"
+def transcript(sid):
+    d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"), "projects", re.sub(r"[^A-Za-z0-9]", "-", os.getcwd()))
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, sid + ".jsonl")
+if "-p" not in sys.argv:
+    # Claude Code's own screen, resumed: a turn typed there, then /exit.
+    sid = sys.argv[sys.argv.index("--resume") + 1]
+    with open(transcript(sid), "a") as f:
+        f.write(json.dumps({"type": "user", "message": {"role": "user", "content": "typed in the terminal"}, "uuid": "00000000-0000-4000-8000-0000000000f1", "sessionId": sid, "timestamp": "2026-10-13T12:00:00Z"}) + "\n")
+        f.write(json.dumps({"type": "assistant", "message": {"id": "msg_t", "role": "assistant", "content": [{"type": "text", "text": "answered in the terminal"}]}, "uuid": "00000000-0000-4000-8000-0000000000f2", "sessionId": sid, "timestamp": "2026-10-13T12:00:01Z"}) + "\n")
+    print("Claude Code, resumed " + sid, flush=True)
+    for line in sys.stdin:
+        if "/exit" in line:
+            sys.exit(0)
+    sys.exit(0)
+open(transcript(S), "a").close()
 mode = sys.argv[sys.argv.index("--permission-mode") + 1]
 n = [0]
 def out(d):
@@ -340,4 +357,129 @@ func TestALiveClaudeSessionWorks(t *testing.T) {
 	// Bypass: the box allows the command it runs.
 	call(t, c, "POST", "/v1/sessions/"+sess.Name+"/send", "", map[string]any{"text": "Run `echo shipyard-live` with the Bash tool, then reply with just its output.", "when": "now"}, nil)
 	wait("the command's output", said("shipyard-live"))
+
+	// To Claude Code's own terminal and back, the same conversation.
+	if status := call(t, c, "POST", "/v1/sessions/"+sess.Name+"/switch", "", map[string]string{"to": "terminal"}, nil); status != 200 {
+		t.Fatalf("to terminal: %d", status)
+	}
+	var screen struct{ Screen string }
+	deadline := time.Now().Add(60 * time.Second)
+	for !strings.Contains(screen.Screen, "shipyard-live") {
+		if time.Now().After(deadline) {
+			t.Fatalf("Claude Code's screen never showed the conversation:\n%s", screen.Screen)
+		}
+		time.Sleep(500 * time.Millisecond)
+		call(t, c, "GET", "/v1/sessions/"+sess.Name+"/screen", "", nil, &screen)
+		if strings.Contains(screen.Screen, "Yes, I trust this folder") {
+			// A folder it hasn't seen: answered as a person would.
+			call(t, c, "POST", "/v1/sessions/"+sess.Name+"/keys", "", map[string]any{"keys": []string{"down", "enter"}}, nil)
+			time.Sleep(time.Second)
+		}
+	}
+	if status := call(t, c, "POST", "/v1/sessions/"+sess.Name+"/switch", "", map[string]string{"to": "chat"}, nil); status != 200 {
+		t.Fatalf("to chat: %d", status)
+	}
+	call(t, c, "POST", "/v1/sessions/"+sess.Name+"/send", "", map[string]any{"text": "What word did you reply with first? Reply with just that word.", "when": "now"}, nil)
+	wait("a reply that remembers", func(items []transcript.Item, st SessionState) bool {
+		n := 0
+		for _, it := range items {
+			if it.Kind == "text" && strings.Contains(strings.ToLower(it.Text), "harbour") {
+				n++
+			}
+		}
+		return n >= 2 && st.State == "finished"
+	})
+}
+
+func TestAStructuredSessionGoesToItsTerminalAndBack(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("the stand-in Claude needs python3")
+	}
+	bin := t.TempDir()
+	os.WriteFile(filepath.Join(bin, "claude"), []byte(fakeStreamClaude), 0o755)
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
+	exe, _ := os.Executable()
+	states := &Turns{}
+	c, bus := servedBox(t, func(b *Box) {
+		b.Turns = states
+		b.ConversationsDir = t.TempDir()
+		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
+	})
+	states.Attach(bus)
+	repo := gitRepo(t)
+	call(t, c, "POST", "/v1/locations", "", map[string]string{"name": "acme", "path": repo}, nil)
+	var sess Session
+	call(t, c, "POST", "/v1/sessions", "", map[string]any{"location": "acme", "agent": "claude", "driver": "claude", "prompt": "hello"}, &sess)
+	t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+sess.Name, "", nil, nil) })
+	name := sess.Name
+	until := func(what string, ok func() bool) {
+		t.Helper()
+		deadline := time.Now().Add(15 * time.Second)
+		for !ok() {
+			if time.Now().After(deadline) {
+				t.Fatalf("%s never happened", what)
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	said := func(text string) func() bool {
+		return func() bool {
+			var res transcript.Result
+			call(t, c, "GET", "/v1/sessions/"+name+"/transcript?since=0", "", nil, &res)
+			for _, it := range res.Items {
+				if strings.Contains(it.Text, text) {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	finished := func() bool { st, _ := states.State(name); return st.State == "finished" }
+	until("the first reply", said("echo: hello"))
+	until("the first turn's end", finished)
+	if sess.Switch != "terminal" {
+		t.Fatalf("a structured session can't go to its terminal: %+v", sess)
+	}
+
+	var moved Session
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/switch", "", map[string]string{"to": "terminal"}, &moved); status != 200 {
+		t.Fatalf("to terminal: %d", status)
+	}
+	if moved.Driver != DriverTerminal || moved.Switch != "chat" || moved.Exited {
+		t.Fatalf("in its terminal it reads %+v", moved)
+	}
+	until("Claude Code's own screen", func() bool {
+		var screen struct{ Screen string }
+		call(t, c, "GET", "/v1/sessions/"+name+"/screen", "", nil, &screen)
+		return strings.Contains(screen.Screen, "resumed 00000000-0000-4000-8000-0000000000c1")
+	})
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/switch", "", map[string]string{"to": "terminal"}, nil); status != http.StatusConflict {
+		t.Fatalf("switching to the terminal twice: %d", status)
+	}
+
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/switch", "", map[string]string{"to": "chat"}, &moved); status != 200 {
+		t.Fatalf("to chat: %d", status)
+	}
+	if moved.Driver != DriverClaude || moved.Switch != "terminal" {
+		t.Fatalf("back in its chat it reads %+v", moved)
+	}
+	// What was said in the terminal reads in the chat, in its place.
+	until("the terminal's turn in the chat", said("answered in the terminal"))
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/send", "", map[string]any{"text": "back again", "when": "now"}, nil); status != 200 {
+		st, _ := states.State(name)
+		t.Fatalf("send after coming back: %d (%+v)", status, st)
+	}
+	until("a reply after coming back", said("echo: back again"))
+	var res transcript.Result
+	call(t, c, "GET", "/v1/sessions/"+name+"/transcript?since=0", "", nil, &res)
+	var order []string
+	for _, it := range res.Items {
+		if it.Kind == "text" {
+			order = append(order, it.Text)
+		}
+	}
+	if strings.Join(order, " | ") != "echo: hello | answered in the terminal | echo: back again" {
+		t.Fatalf("the conversation reads %q", order)
+	}
 }

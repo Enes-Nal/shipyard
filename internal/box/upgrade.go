@@ -165,7 +165,9 @@ func (b *Box) Capabilities() []string {
 	if b.ConversationsDir != "" {
 		// driver.claude: sessions and tasks take "driver": "claude", Claude
 		// Code driven through its stream (claudedriver.go).
-		caps = append(caps, "driver.claude")
+		// driver.switch: POST .../switch takes a structured session to
+		// Claude Code's terminal and back (switch.go).
+		caps = append(caps, "driver.claude", "driver.switch")
 	}
 	if b.Artifacts != nil {
 		// artifacts: berthd artifact add, a worktree's artifacts and their
