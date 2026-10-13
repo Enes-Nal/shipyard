@@ -33,6 +33,11 @@ type AgentPreset struct {
 	// them for a built-in agent by giving its id and no command.
 	Models  []string `json:"models,omitempty"`
 	Efforts []string `json:"efforts,omitempty"`
+	// ACP is what follows the command to start the agent's Agent Client
+	// Protocol server ("acp", "--acp"): with it, the agent can run
+	// structured (acpdriver.go). A repository can give an agent of its own
+	// one, or a built-in one by its id.
+	ACP string `json:"acp,omitempty"`
 }
 
 // builtinAgents are the agent CLIs berth knows how to start, by binary.
@@ -45,9 +50,9 @@ var builtinAgents = []AgentPreset{
 		Models: []string{"opus", "sonnet", "haiku"}, Efforts: []string{"low", "medium", "high", "xhigh", "max"}},
 	{ID: "codex", Name: "Codex", Command: "codex", ModelFlag: "--model", EffortFlag: "-c model_reasoning_effort=",
 		Efforts: []string{"minimal", "low", "medium", "high"}},
-	{ID: "opencode", Name: "OpenCode", Command: "opencode", PromptFlag: "--prompt", ModelFlag: "--model"},
-	{ID: "gemini", Name: "Gemini CLI", Command: "gemini", PromptFlag: "-i"},
-	{ID: "cursor", Name: "Cursor Agent", Command: "cursor-agent", ModelFlag: "--model"},
+	{ID: "opencode", Name: "OpenCode", Command: "opencode", PromptFlag: "--prompt", ModelFlag: "--model", ACP: "acp"},
+	{ID: "gemini", Name: "Gemini CLI", Command: "gemini", PromptFlag: "-i", ACP: "--acp"},
+	{ID: "cursor", Name: "Cursor Agent", Command: "cursor-agent", ModelFlag: "--model", ACP: "acp"},
 }
 
 // Presets are the built-in agents this box has, then the location's own from
@@ -76,6 +81,9 @@ func Presets(loc *Location) []AgentPreset {
 				}
 				if own.Efforts != nil {
 					out[i].Efforts = own.Efforts
+				}
+				if own.ACP != "" {
+					out[i].ACP = own.ACP
 				}
 				continue
 			}
@@ -432,6 +440,8 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 					choices = b.claude().askChoices(*s)
 				case DriverCodex:
 					choices = b.codex().askChoices(*s)
+				case DriverACP:
+					choices = b.acp().askChoices(*s)
 				}
 				{
 					if len(choices) > 0 {

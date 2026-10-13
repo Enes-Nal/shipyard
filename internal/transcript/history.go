@@ -35,6 +35,8 @@ func parserFor(source string) parser {
 		return &hostParser{}
 	case SourceCodexHost:
 		return &codexHostParser{}
+	case SourceACPHost:
+		return &acpHostParser{}
 	}
 	return &claudeParser{}
 }

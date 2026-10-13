@@ -227,7 +227,8 @@ every agent but a structured one, or `claude` (Claude Code driven through
 its stream); boxes that say it list `driver` in `capabilities`. `POST
 sessions` and `POST tasks` take `driver: "claude"` with `agent: "claude"`
 (or `driver: "codex"` with `agent: "codex"`, Codex's app server, on boxes
-listing `driver.codex`),
+listing `driver.codex`, or `driver: "acp"` with an agent whose preset has
+`acp`, on boxes listing `driver.acp`),
 and `mode`, the permission mode it starts in (`bypassPermissions` has the
 box allow what it asks; questions and plans still wait), on boxes that list
 `driver.claude`. A waiting structured session's `ask` carries `choices`

@@ -65,6 +65,8 @@ func (b *Box) driverFor(sess Session) Driver {
 		return b.claude()
 	case DriverCodex:
 		return b.codex()
+	case DriverACP:
+		return b.acp()
 	}
 	return terminalDriver{b}
 }
