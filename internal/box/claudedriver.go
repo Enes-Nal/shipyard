@@ -310,7 +310,9 @@ func (c *claudeConv) follow() {
 		c.mu.Lock()
 		from, done := c.lastSeq, c.exited
 		c.mu.Unlock()
-		if done {
+		if done && !hostAlive(c.sock) {
+			// Its last word was its end, and no host has started since. (A
+			// host started again listens a moment before it says so.)
 			return
 		}
 		err := agenthost.Attach(context.Background(), c.sock, from, func(e agenthost.Entry) error {
@@ -414,7 +416,10 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 	case "in":
 		var l streamLine
 		if json.Unmarshal(e.Data, &l) == nil && l.Type == "control_response" && l.Response != nil {
-			c.drop(l.Response.RequestID)
+			if c.drop(l.Response.RequestID) && live {
+				// Answered: the tool runs, or the agent goes on without it.
+				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "tool"}, nil) })
+			}
 		}
 		return
 	case "out":
@@ -527,15 +532,16 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 	}
 }
 
-// drop forgets a permission that was answered or withdrawn. Called with
-// c.mu held.
-func (c *claudeConv) drop(id string) {
+// drop forgets a permission that was answered or withdrawn, and says
+// whether it was waiting. Called with c.mu held.
+func (c *claudeConv) drop(id string) bool {
 	for i, r := range c.pending {
 		if r.ID == id {
 			c.pending = append(c.pending[:i], c.pending[i+1:]...)
-			return
+			return true
 		}
 	}
+	return false
 }
 
 // reconcile tells the ledger what the log says now, after a restart read
@@ -738,10 +744,8 @@ func (c *claudeConv) respond(r claudeRequest, resp map[string]any) error {
 	err := c.write(context.Background(), map[string]any{"type": "control_response", "response": map[string]any{
 		"subtype": "success", "request_id": r.ID, "response": resp,
 	}})
-	if err == nil {
-		// The tool runs, or the agent goes on without it: working again.
-		c.event(adapters.Started, map[string]any{"signal": "tool"}, nil)
-	}
+	// Working again is said when the answer is read back from the log
+	// (apply), before anything the agent says after it.
 	return err
 }
 
@@ -1055,6 +1059,18 @@ func (b *Box) forgetConversation(name string) {
 	b.claude().forget(name)
 	b.codex().forget(name)
 	b.acp().forget(name)
+}
+
+// hostAlive says whether a host answers on sock.
+func hostAlive(sock string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	c, err := agenthost.Dial(ctx, sock)
+	if err != nil {
+		return false
+	}
+	c.Close()
+	return true
 }
 
 // awaitHost waits up to d for a session's host to listen.

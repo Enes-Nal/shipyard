@@ -214,7 +214,9 @@ func (c *acpConv) follow() {
 		c.mu.Lock()
 		from, done := c.lastSeq, c.exited
 		c.mu.Unlock()
-		if done {
+		if done && !hostAlive(c.sock) {
+			// Its last word was its end, and no host has started since. (A
+			// host started again listens a moment before it says so.)
 			return
 		}
 		err := agenthost.Attach(context.Background(), c.sock, from, func(e agenthost.Entry) error {
@@ -341,7 +343,9 @@ func (c *acpConv) apply(e agenthost.Entry, live bool) {
 		case m.Method != "" && len(m.ID) > 0:
 			c.sent[string(m.ID)] = m.Method
 		case m.Method == "" && len(m.ID) > 0:
-			c.drop(string(m.ID))
+			if c.drop(string(m.ID)) && live {
+				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "tool"}, nil) })
+			}
 		}
 		return
 	case "out":
@@ -519,13 +523,14 @@ func (c *acpConv) readSession(raw json.RawMessage) {
 	}
 }
 
-func (c *acpConv) drop(id string) {
+func (c *acpConv) drop(id string) bool {
 	for i, r := range c.pending {
 		if string(r.ID) == id {
 			c.pending = append(c.pending[:i], c.pending[i+1:]...)
-			return
+			return true
 		}
 	}
+	return false
 }
 
 // ask is what a permission asks, as a hook's ask is.
@@ -736,11 +741,9 @@ func (c *acpConv) choose(r acpRequest, optionID string) error {
 	if optionID == "" {
 		result = map[string]any{"outcome": map[string]any{"outcome": "cancelled"}}
 	}
-	err := c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": r.ID, "result": result})
-	if err == nil {
-		c.event(adapters.Started, map[string]any{"signal": "tool"}, nil)
-	}
-	return err
+	// Working again is said when the answer is read back from the log
+	// (apply), before anything the agent says after it.
+	return c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": r.ID, "result": result})
 }
 
 // allow says yes to a permission, for this time or always.

@@ -214,7 +214,9 @@ func (c *codexConv) follow() {
 		c.mu.Lock()
 		from, done := c.lastSeq, c.exited
 		c.mu.Unlock()
-		if done {
+		if done && !hostAlive(c.sock) {
+			// Its last word was its end, and no host has started since. (A
+			// host started again listens a moment before it says so.)
 			return
 		}
 		err := agenthost.Attach(context.Background(), c.sock, from, func(e agenthost.Entry) error {
