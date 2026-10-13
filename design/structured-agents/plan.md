@@ -1,6 +1,6 @@
 # Structured agents: plan
 
-Status: 2026-10-13. Phase 0 (spike) done: go. Phase 1 (driver interface) in progress. The spike's recordings join the repo as test fixtures in phase 3, once reviewed.
+Status: 2026-10-13. Phase 0 (spike) done: go. Phase 1 (driver interface) merged. Phase 2 (agent-host + log) in review. The spike's recordings join the repo as test fixtures in phase 3, once reviewed.
 
 ## Why
 
@@ -90,8 +90,9 @@ Exit: a go/no-go note per item; any no-go changes the phases below.
 - Keep streamed partial text in the log (a killed agent loses it). Stop =
   interrupt, then SIGTERM, then kill the process tree (SIGKILL leaves Bash
   children running).
-- SQLite index: conversation id, location/worktree, agent, driver, agent session
-  id, title, status, cost, timestamps.
+- The SQLite index (conversation id, location/worktree, agent, driver, agent
+  session id, title, status, cost, timestamps) comes with the Claude driver
+  (phase 3), the first thing that has those to record.
 - Push to the app via the events bus (items in the event, not a "changed" ping);
   no stat-polling for driver agents.
 - Attaching to the tmux session shows a readable live render, so `berth attach` keeps working.

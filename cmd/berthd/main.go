@@ -20,6 +20,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/cosscom/shipyard/internal/agenthost"
 	"github.com/cosscom/shipyard/internal/box"
 	"github.com/cosscom/shipyard/internal/boxcmd"
 	"github.com/cosscom/shipyard/internal/debugserver"
@@ -205,6 +206,12 @@ func run(args []string) error {
 		return nil
 	case "headless":
 		return box.RunHeadless(args[1:], os.Stdout)
+	case "agent-host":
+		code, err := agenthost.Main(args[1:], os.Stdout)
+		if err != nil {
+			return err
+		}
+		os.Exit(code)
 	case "mcp":
 		return mcpserver.Serve(context.Background(), b.socket(), os.Stdin, os.Stdout)
 	case "agents":
