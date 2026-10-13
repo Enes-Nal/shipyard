@@ -229,7 +229,11 @@ sessions` and `POST tasks` take `driver: "claude"` with `agent: "claude"`,
 and `mode`, the permission mode it starts in (`bypassPermissions` has the
 box allow what it asks; questions and plans still wait), on boxes that list
 `driver.claude`. A waiting structured session's `ask` carries `choices`
-(`{ key, label }`): send the key to answer. `exited` is
+(`{ key, label }`): send the key to answer. `POST sessions/{name}/switch`
+with `{ to: "terminal" }` or `{ to: "chat" }` moves a structured session to
+Claude Code's own terminal (`claude --resume`) and back, answering the
+`Session`; its `switch` says where it can go, 409 while the agent works.
+Boxes that take it list `driver.switch`. `exited` is
 true once the program has ended. `title` names the work: the first line of
 the prompt it started with, or of the first prompt it was sent or typed, cut
 to about 48 characters; `PATCH sessions/{name}` with `{ title }` renames it

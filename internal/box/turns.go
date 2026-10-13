@@ -1250,6 +1250,29 @@ func (t *Turns) failQueued(it inboxItem, why string) {
 }
 
 // Changed returns a channel closed at the ledger's next change.
+// AwaitSent waits up to d for a prompt sent to the session to be in the
+// ledger: a turn pending, or begun. A structured agent's start can be read
+// before berthd has said it sent the prompt that starts it.
+func (t *Turns) AwaitSent(name string, d time.Duration) {
+	deadline := time.After(d)
+	for {
+		t.mu.Lock()
+		t.init()
+		s := t.sess[name]
+		ready := s != nil && (s.oldest("pending") != nil || (s.current() != nil && s.current().State == "running"))
+		changed := t.changed
+		t.mu.Unlock()
+		if ready {
+			return
+		}
+		select {
+		case <-changed:
+		case <-deadline:
+			return
+		}
+	}
+}
+
 func (t *Turns) Changed() <-chan struct{} {
 	t.mu.Lock()
 	defer t.mu.Unlock()

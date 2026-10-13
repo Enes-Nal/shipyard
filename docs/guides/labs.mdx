@@ -251,13 +251,18 @@ own record of the conversation. The box drives it from there:
   for you. The chat's mode menu switches between bypass, ask, accept edits,
   plan and auto.
 - **Stop** interrupts the turn, as Esc does in its terminal.
-- **Its terminal** shows what streams by; it takes no typing.
+- **Claude Code's own terminal** is one click away: the pane's Terminal
+  switch stops the structured agent and opens the same conversation in
+  Claude Code's screen (`claude --resume`), for what only it does
+  (`/login`, `/resume`, `/memory`, `/permissions`, its menus). Conversation
+  takes it back to the chat, with what you said in the terminal in its place.
+  Either way needs the agent to be idle. In a folder Claude Code hasn't
+  seen, its screen first asks whether you trust it.
 
 The agent keeps working while berthd restarts or upgrades, and the record
-keeps every streamed word even if the agent is killed. Slash commands that
-need Claude Code's own screen (`/login`, `/resume`, `/memory`,
-`/permissions`) don't run here: start a terminal agent for those. The box
-needs the `driver.claude` capability (upgrade it).
+keeps every streamed word even if the agent is killed. The box needs the
+`driver.claude` capability, and `driver.switch` for the terminal (upgrade
+it).
 
 ## Zen
 

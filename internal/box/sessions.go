@@ -62,6 +62,10 @@ type Session struct {
 	// "terminal": true): the service's name, kept as @berth_service. It is
 	// never an agent, whatever it runs.
 	Service string `json:"service,omitempty"`
+	// Switch is where a structured session can go: "terminal" (Claude
+	// Code's own screen), or "chat" for one in its terminal now
+	// (switch.go).
+	Switch string `json:"switch,omitempty"`
 	// Driver is how berthd reaches the session's agent (driver.go):
 	// "terminal" for every agent today. Empty when it runs no agent.
 	Driver string `json:"driver,omitempty"`
