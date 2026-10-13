@@ -260,7 +260,7 @@ func TestAgentBrowserDrivesARealChromium(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	loc, _ := b.Locations.Get(ctx, "cal")
-	br, err := m.get(ctx, loc, wt)
+	br, err := m.get(ctx, loc, wt, "")
 	if errors.Is(err, ErrBrowserSandbox) {
 		t.Skip(err) // CI sets BERTH_BROWSER_NO_SANDBOX=1 instead
 	}
@@ -351,12 +351,12 @@ func TestAgentBrowserDrivesARealChromium(t *testing.T) {
 	done := make(chan struct{})
 	go func() { m.Run(rctx); close(done) }()
 	deadline := time.Now().Add(10 * time.Second)
-	for m.Lookup(wt.Path) != nil && time.Now().Before(deadline) {
+	for m.Lookup(wt.Path, "") != nil && time.Now().Before(deadline) {
 		time.Sleep(100 * time.Millisecond)
 	}
 	stop()
 	<-done
-	if m.Lookup(wt.Path) != nil || treeRSS(pid) != 0 {
+	if m.Lookup(wt.Path, "") != nil || treeRSS(pid) != 0 {
 		t.Fatal("an idle browser was not closed")
 	}
 	// Its goroutines (the pipe reader, the waiter, tunnels) went with it,

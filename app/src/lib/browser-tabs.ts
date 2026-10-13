@@ -14,6 +14,9 @@ export interface AgentBrowserTab {
   title?: string;
   // RFC3339, by the box's clock.
   last_used: string;
+  // How long since it was used, as of the box's answer: unlike last_used,
+  // this doesn't need the laptop's clock to agree with the box's.
+  idle_ms?: number;
   watchers: number;
   viewport: Viewport;
   // As the box says it: "1920×1080", "390×844 @3x".
@@ -35,9 +38,12 @@ export const tabQuery = (tab?: string) => (tab ? `?tab=${encodeURIComponent(tab)
 // one tab, or a named one (an agent on its own tab while main is unused).
 export const showTabStrip = (tabs: AgentBrowserTab[] | undefined) => !!tabs && (tabs.length > 1 || tabs.some((t) => t.name !== ""));
 
+// usedAt orders tabs by use: by idle_ms where the box says it, else by
+// last_used.
 const usedAt = (t: AgentBrowserTab) => {
+  if (t.idle_ms !== undefined) return -t.idle_ms;
   const at = Date.parse(t.last_used);
-  return Number.isNaN(at) ? 0 : at;
+  return Number.isNaN(at) ? Number.NEGATIVE_INFINITY : at;
 };
 
 // mostRecentTab is the tab used last; on a tie, the earlier in the box's
@@ -94,6 +100,8 @@ export function tabActive(t: AgentBrowserTab, seen: TabSeen, now: number): boole
   if (t.busy) return true;
   const changed = seen[t.name]?.changedAt ?? 0;
   if (changed && now - changed < ACTIVE_MS) return true;
-  const age = now - usedAt(t);
-  return age >= 0 && age < ACTIVE_MS;
+  if (t.idle_ms !== undefined) return t.idle_ms < ACTIVE_MS;
+  const at = Date.parse(t.last_used);
+  const age = now - at;
+  return !Number.isNaN(at) && age >= 0 && age < ACTIVE_MS;
 }

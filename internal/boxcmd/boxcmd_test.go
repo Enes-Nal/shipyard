@@ -378,3 +378,38 @@ func TestHelperRmKeepsTheDataUnlessPurged(t *testing.T) {
 		}
 	}
 }
+
+func TestBrowserTabsFromTheCommandLine(t *testing.T) {
+	reply := `{"text":"ok"}`
+	// --tab goes anywhere, and on every command.
+	r, _ := run(t, reply, "browser", "open", "--tab", "signup-a", "cal/billing", "/cart")
+	if r.path != "/v1/worktrees/cal/billing/browser/open?tab=signup-a" || r.body["url"] != "/cart" {
+		t.Fatalf("open: %s %v", r.path, r.body)
+	}
+	r, _ = run(t, reply, "browser", "click", "cal/billing", "@e3", "--tab=signup-a")
+	if r.path != "/v1/worktrees/cal/billing/browser/act?tab=signup-a" || r.body["target"] != "@e3" {
+		t.Fatalf("click: %s %v", r.path, r.body)
+	}
+	r, _ = run(t, reply, "browser", "console", "cal/billing", "--all", "--tab", "signup-a")
+	if r.path != "/v1/worktrees/cal/billing/browser/console?all=1&tab=signup-a" {
+		t.Fatalf("console: %s", r.path)
+	}
+	// $BERTH_BROWSER_TAB is the default, and --tab beats it.
+	t.Setenv("BERTH_BROWSER_TAB", "onboarding")
+	r, _ = run(t, reply, "browser", "snapshot", "cal/billing")
+	if r.path != "/v1/worktrees/cal/billing/browser/snapshot?tab=onboarding" {
+		t.Fatalf("from the environment: %s", r.path)
+	}
+	r, _ = run(t, reply, "browser", "close", "cal/billing", "--tab", "signup-b")
+	if r.method != "POST" || r.path != "/v1/worktrees/cal/billing/browser/close?tab=signup-b" {
+		t.Fatalf("close: %s %s", r.method, r.path)
+	}
+	t.Setenv("BERTH_BROWSER_TAB", "")
+	r, _ = run(t, reply, "browser", "tabs", "cal/billing")
+	if r.method != "GET" || r.path != "/v1/worktrees/cal/billing/browser/tabs" {
+		t.Fatalf("tabs: %s %s", r.method, r.path)
+	}
+	if err := Run(context.Background(), &box.Client{Doer: &recorder{reply: reply}}, []string{"browser", "open", "cal/billing", "--tab", "a b"}, io.Discard); err == nil {
+		t.Fatal("a tab named \"a b\"")
+	}
+}

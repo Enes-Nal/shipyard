@@ -71,3 +71,13 @@ test("activity: busy, recently used by its clock, or seen to change when the clo
   // A clock ahead of this one doesn't make a tab look busy forever.
   assert.equal(tabActive(tab("ahead", 120), {}, now), false);
 });
+
+test("a box that says how long a tab has been idle is believed over the clocks", () => {
+  // Its clock is an hour behind this one: last_used alone would say idle.
+  const behind = (name: string, idle: number) => tab(name, -3600, { idle_ms: idle });
+  const list = [behind("", 60_000), behind("signup-a", 500), behind("signup-b", 9000)];
+  assert.equal(tabActive(list[1], {}, Date.now()), true);
+  assert.equal(tabActive(list[2], {}, Date.now()), false);
+  assert.equal(mostRecentTab(list)?.name, "signup-a");
+  assert.deepEqual(chooseTab(list, undefined), { name: "signup-a" });
+});
