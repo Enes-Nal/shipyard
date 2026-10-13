@@ -10,11 +10,15 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - **Settings › Boxes reads correctly to a screen reader.** A box with no
   browsers running put its "No browsers running" note inside the browsers
   list, so assistive tech announced an empty list with a stray line in it.
   The note now stands on its own.
+- **Doctor no longer says berthd runs "not as a service" when it does.**
+  `berthd install` puts your login shell's PATH in the service, and doctor
+  compared the service with one that had no PATH, so on a Mac it always
+  asked you to run `berthd install` again. Now any PATH counts; the program,
+  its arguments and the rest must still match.
 
 ## v0.3.16
 
