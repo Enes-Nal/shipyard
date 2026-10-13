@@ -64,6 +64,8 @@ type structuredLaunch struct {
 	command string
 	env     []string
 	labels  map[string]string
+	// mode is the permission mode asked for.
+	mode string
 }
 
 // launchClaude is the command, environment and labels that start the
@@ -129,6 +131,7 @@ func (b *Box) launchClaudeIn(p AgentPreset, model, effort, mode, resume, dir, so
 		words = append(words, "--resume", shellQuote(resume))
 	}
 	return structuredLaunch{
+		mode:    mode,
 		command: strings.Join(words, " "),
 		env:     []string{"BERTH_DRIVER=structured"},
 		labels:  map[string]string{labelDriver: DriverClaude, labelConv: dir, labelSock: sock, labelBypass: bypass},
@@ -405,8 +408,12 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 	if len(e.Data) == 0 || json.Unmarshal(e.Data, &l) != nil {
 		return
 	}
-	if l.SessionID != "" {
+	if l.SessionID != "" && l.SessionID != c.sessionID {
 		c.sessionID = l.SessionID
+		if live {
+			sid, dir := l.SessionID, c.conv
+			say = append(say, func() { noteConversation(dir, func(m *Conversation) { m.AgentSessionID = sid }) })
+		}
 	}
 	helper := l.Parent != nil && *l.Parent != ""
 	switch l.Type {
@@ -497,7 +504,9 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 				data["status"] = "interrupted"
 			}
 		}
-		say = append(say, func() { c.event(adapters.Finished, data, nil) }, c.changedConversation)
+		dir := c.conv
+		say = append(say, func() { c.event(adapters.Finished, data, nil) }, c.changedConversation,
+			func() { noteConversation(dir, func(m *Conversation) { m.Updated = time.Now().UTC() }) })
 	}
 }
 
@@ -908,6 +917,7 @@ func (d *claudeDriver) SetMode(ctx context.Context, sess Session, mode string) (
 		v = "1"
 	}
 	d.b.Sessions.tmux(ctx, "set-option", "-t", "="+sess.Name+":", labelBypass, v)
+	noteConversation(c.conv, func(m *Conversation) { m.Mode = mode })
 	for _, r := range allow {
 		c.answer(r, true, false, "")
 	}
