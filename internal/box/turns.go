@@ -1511,7 +1511,7 @@ func (b *Box) deliverInbox(ctx context.Context) {
 			continue
 		}
 		unlock := b.lockSend(it.Session)
-		if err := b.Sessions.Send(ctx, it.Session, it.Text, it.Enter); err != nil {
+		if err := b.sendText(ctx, it.Session, it.Text, it.Enter); err != nil {
 			b.Turns.failQueued(it, err.Error())
 			unlock()
 			continue

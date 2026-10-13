@@ -212,6 +212,9 @@ export interface Session {
   // true, from boxes with the "service.terminal" capability): the service's
   // name. It never runs an agent, and closing its tab never stops it.
   service?: string;
+  // How the box reaches the agent ("driver" capability): "terminal", its
+  // own screen in tmux, for every agent today.
+  driver?: "terminal" | string;
   // The systemd scope its processes run in, on boxes where sessions get
   // one (Linux with systemd), and what they use: memory (bytes, page cache
   // included), its ceiling if the box sets one (Settings → Boxes), processor

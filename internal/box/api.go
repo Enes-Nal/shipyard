@@ -55,6 +55,9 @@ type Box struct {
 	// Turns is the turn ledger: what every agent session is doing, turn by
 	// turn. Without it agents read as running.
 	Turns *Turns
+	// Drivers replace a driver by kind (driver.go); nil, or a kind not in
+	// it, is the built-in one.
+	Drivers map[string]Driver
 	// Hooks, when set, may refuse actions through "before:" hooks.
 	Hooks *hooks.Runner
 	// Flows runs the box's and its repositories' automations.

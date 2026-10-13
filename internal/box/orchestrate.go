@@ -218,7 +218,7 @@ func (b *Box) sendPrompt(ctx context.Context, name string, req SendRequest, orig
 	if b.Turns != nil && req.When == "idle" && !b.Turns.Ready(name) {
 		return hold()
 	}
-	if err := b.Sessions.Send(ctx, name, req.Text, enter); err != nil {
+	if err := b.driverFor(sess).Send(ctx, sess, req.Text, enter); err != nil {
 		return SendResult{}, err
 	}
 	// Only that something was sent: prompts never go into events.
