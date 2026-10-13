@@ -233,7 +233,14 @@ box allow what it asks; questions and plans still wait), on boxes that list
 with `{ to: "terminal" }` or `{ to: "chat" }` moves a structured session to
 Claude Code's own terminal (`claude --resume`) and back, answering the
 `Session`; its `switch` says where it can go, 409 while the agent works.
-Boxes that take it list `driver.switch`. `exited` is
+Boxes that take it list `driver.switch`. A structured conversation outlives
+its session: `GET conversations?path=P` lists those that worked in `P`,
+newest first (`{ id, agent, location?, dir, session?, live?,
+agent_session_id?, mode?, title?, created, updated? }`); `POST
+conversations/{id}/resume` carries one on, in its session (started again if
+it ended) or a new one, answering the `Session`; `POST
+sessions/{name}/resume` starts an ended structured session again on its own
+record. Boxes that take them list `conversations`. `exited` is
 true once the program has ended. `title` names the work: the first line of
 the prompt it started with, or of the first prompt it was sent or typed, cut
 to about 48 characters; `PATCH sessions/{name}` with `{ title }` renames it

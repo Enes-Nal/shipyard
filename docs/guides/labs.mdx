@@ -259,6 +259,12 @@ own record of the conversation. The box drives it from there:
   Either way needs the agent to be idle. In a folder Claude Code hasn't
   seen, its screen first asks whether you trust it.
 
+- **Resume.** A structured agent that ended offers *Resume the conversation*
+  in its pane, and a worktree's menu lists its conversations whose agents
+  aren't running under *Resume a conversation*: each carries on, with
+  Claude Code's `--resume`, in its own record, so the chat shows its earlier
+  turns.
+
 The agent keeps working while berthd restarts or upgrades, and the record
 keeps every streamed word even if the agent is killed. The box needs the
 `driver.claude` capability, and `driver.switch` for the terminal (upgrade

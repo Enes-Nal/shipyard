@@ -233,6 +233,24 @@ export interface Session {
 // tool, a short summary of its input (the command, or the file's path;
 // never what it would write), its reason, and the message it showed. Each
 // is at most 300 characters.
+// A structured agent's conversation, kept on the box past its session
+// ("conversations" capability): GET conversations lists them, newest first.
+export interface Conversation {
+  id: string;
+  agent: string;
+  location?: string;
+  dir: string;
+  // The session it last ran in, and whether that one is running.
+  session?: string;
+  live?: boolean;
+  agent_session_id?: string;
+  mode?: string;
+  // Its first prompt's first line.
+  title?: string;
+  created: string;
+  updated?: string;
+}
+
 export interface Ask {
   tool?: string;
   input?: string;

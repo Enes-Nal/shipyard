@@ -8,6 +8,7 @@ import type {
   BerthEvent,
   BoxInfo,
   BoxRoute,
+  Conversation,
   ExecResult,
   QueuedPrompt,
   SendResult,
@@ -265,6 +266,15 @@ export const boxApi = {
   startSession: (c: Client, box: string, req: ({ location: string } | { home: true }) & { name?: string; command?: string; agent?: string; prompt?: string; model?: string; effort?: string; title?: string; driver?: "terminal" | "claude"; mode?: string }) =>
     c.box<Session>(box, "POST", "sessions", req),
   stopSession: (c: Client, box: string, name: string) => c.box(box, "DELETE", `sessions/${encodeURIComponent(name)}`),
+  // A structured agent's conversations, those that worked in path
+  // ("conversations" capability).
+  conversations: async (c: Client, box: string, path?: string) =>
+    (await c.box<Conversation[] | null>(box, "GET", `conversations${path ? `?path=${encodeURIComponent(path)}` : ""}`)) ?? [],
+  // Carries a conversation on: in its session, started again if it ended,
+  // or in a new one when that is gone.
+  resumeConversation: (c: Client, box: string, id: string) => c.box<Session>(box, "POST", `conversations/${encodeURIComponent(id)}/resume`),
+  // Starts a structured session whose agent ended again, on its own record.
+  resumeSession: (c: Client, box: string, name: string) => c.box<Session>(box, "POST", `sessions/${encodeURIComponent(name)}/resume`),
   // Takes a structured session to Claude Code's own terminal, or back to its
   // chat (Session.switch).
   switchSession: (c: Client, box: string, name: string, to: "terminal" | "chat") =>

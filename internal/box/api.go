@@ -261,6 +261,7 @@ func (b *Box) Mount(s *wire.Server) {
 	b.mountRuns(route)
 	b.mountHistory(route)
 	b.mountAnswer(route)
+	b.mountConversations(route)
 	b.mountBrowser(route)
 	b.mountNotify(route)
 	b.mountArtifacts(route)
@@ -835,6 +836,7 @@ func (b *Box) startStructuredSession(r *http.Request, name, location, dir, prese
 	}
 	data["agent"], data["driver"] = agentFor(sess), DriverClaude
 	b.publish(r, "session.started", data)
+	noteStarted(l.labels[labelConv], location, dir, sess.Name, l.mode, prompt)
 	b.setUpOnFirstOpen(origin(r), dir)
 	sess = b.enrich(r.Context(), []Session{sess})[0]
 	b.startStructured(origin(r), gateOrigin(r), sess, prompt)
