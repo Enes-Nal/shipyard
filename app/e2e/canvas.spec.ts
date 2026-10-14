@@ -77,3 +77,55 @@ test("canvas arranges live work and remembers edits", async ({ app }) => {
     return Object.values(saved)[0].nodes.length;
   }).toBe(4);
 });
+
+test("canvas combines worktrees and gives subagents their own nodes", async ({ app }) => {
+  mockOnly();
+  await app.open();
+  await app.openWorktree("devl/checkout-fix");
+  await app.page.getByRole("button", { name: "More", exact: true }).click();
+  await app.page.getByRole("menuitem", { name: "Canvas" }).click();
+
+  const board = app.page.getByRole("combobox", { name: "Canvas worktree" });
+  const source = app.page.getByRole("combobox", { name: "Source worktree" });
+  await expect(board).toHaveValue("devl:/home/me/work/shop-checkout-fix");
+  await source.selectOption("devl:/home/me/work/shop-qa-deck");
+  await app.page.getByRole("button", { name: "Add node" }).click();
+  await app.page.getByRole("menuitem", { name: "Build the QA deck for the release" }).click();
+  const otherAgent = app.page.locator('section[aria-label="Build the QA deck for the release canvas node"]');
+  await expect(otherAgent).toBeVisible();
+  await expect(otherAgent).toContainText("shop / qa-deck · devl");
+  await expect(otherAgent.getByTestId("chat")).toBeVisible();
+  await expect(app.page.locator('section[aria-label="Fix checkout webhook retries canvas node"]')).toContainText("shop / checkout-fix · devl");
+
+  await app.page.getByRole("button", { name: "Add node" }).click();
+  await app.page.getByRole("menuitem", { name: "Preview · port 4789" }).click();
+  const otherPreview = app.page.locator('section[aria-label="Preview · 4789 canvas node"]');
+  await expect(otherPreview).toContainText("shop / qa-deck · devl");
+
+  await app.page.evaluate(() => {
+    (window as unknown as { __berthCrew: { set(box: string, session: string, members: unknown[]): void } }).__berthCrew.set("devl", "checkout-fix-claude", [
+      { id: "canvas-helper-1", name: "Explore: retry paths", state: "running", doing: "Reading retry.ts", ago: 25 },
+    ]);
+  });
+  await source.selectOption("devl:/home/me/work/shop-checkout-fix");
+  await expect.poll(async () => {
+    await app.page.getByRole("button", { name: "Add node" }).click();
+    const found = await app.page.getByRole("menuitem", { name: "retry paths" }).count();
+    await app.page.keyboard.press("Escape");
+    return found;
+  }, { timeout: 12_000 }).toBe(1);
+  await app.page.getByRole("button", { name: "Add node" }).click();
+  await app.page.getByRole("menuitem", { name: "retry paths" }).click();
+  const helper = app.page.locator('section[aria-label="retry paths canvas node"]');
+  await expect(helper).toContainText("subagent");
+  await expect(helper.getByTestId("helper")).toHaveAttribute("data-state", "running");
+  await expect(helper.getByText("Read-only", { exact: true })).toBeVisible();
+
+  await app.page.reload();
+  await app.page.getByRole("button", { name: "More", exact: true }).click();
+  await app.page.getByRole("menuitem", { name: "Canvas" }).click();
+  await expect(otherAgent).toBeVisible();
+  await expect(otherPreview).toBeVisible();
+  await expect(helper).toBeVisible();
+  await expect(board).toHaveValue("devl:/home/me/work/shop-checkout-fix");
+});

@@ -33,7 +33,7 @@ import { AgentIcon } from "@/components/agent-glyph";
 import { loadDiffs } from "@/components/diff/load";
 import { cn } from "@/lib/utils";
 import { HelperBox, useHelperState } from "@/plugins/helper-box";
-import { BrowserSurface, SessionSurface } from "@/plugins/surfaces";
+import { BrowserSurface, HelperSurface, SessionSurface } from "@/plugins/surfaces";
 import { WidgetEmpty, WidgetRow, WidgetSkeleton } from "@/views/home/widgets/parts";
 import { PluginPage, ViewHeader } from "@/views/view-header";
 
@@ -163,6 +163,7 @@ export const pluginUi = {
   Chart,
   SqlEditor,
   SessionSurface,
+  HelperSurface,
   BrowserSurface,
   HelperBox,
   useHelperState,

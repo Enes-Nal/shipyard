@@ -5,6 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 const TerminalView = lazy(() => import("@/components/workspace/terminal-view").then((m) => ({ default: m.TerminalView })));
 const ConversationPane = lazy(() => import("@/components/conversation/conversation-pane").then((m) => ({ default: m.ConversationPane })));
 const BrowserPane = lazy(() => import("@/components/browser-pane").then((m) => ({ default: m.BrowserPane })));
+const HelperPane = lazy(() => import("@/components/conversation/helper-pane").then((m) => ({ default: m.HelperPane })));
 
 interface SessionSurfaceProps {
   box: string;
@@ -30,6 +31,17 @@ export function SessionSurface({ box, session, agent, mode, visible = true, focu
       </Suspense>
     </div>
   );
+}
+
+// A subagent owns a transcript, but not a terminal. Reuse its read-only live
+// pane so a canvas can show it beside its parent or another worktree.
+export function HelperSurface({ box, session, helper, name, onClose }: { box: string; session: string; helper: string; name?: string; onClose(): void }) {
+  const [resolved, setResolved] = useState({ id: helper, name });
+  return <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
+    <Suspense fallback={<div className="flex h-full items-center justify-center"><Spinner className="size-5" /></div>}>
+      <HelperPane box={box} session={session} helper={resolved.id} title={resolved.name} onResolve={(id, title) => setResolved({ id, name: title })} onClose={onClose} />
+    </Suspense>
+  </div>;
 }
 
 interface BrowserSurfaceProps {
