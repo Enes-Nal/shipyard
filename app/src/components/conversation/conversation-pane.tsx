@@ -41,6 +41,7 @@ import { addComment, type LineComment, pending, removeComment, sendComments, use
 import { answerQuestions, type QuestionAnswer } from "@/lib/questions";
 import { permissionChoices } from "@/lib/screen";
 import { NONE, useStore } from "@/lib/store";
+import { isStructured } from "@/lib/structured";
 import type { TranscriptItem } from "@/lib/transcript";
 import { noteSent, usePromptRecall } from "@/lib/history";
 import { plainWords, useScreenStatus } from "@/lib/screen-status";
@@ -66,7 +67,7 @@ const mockConversation = () => import("@/lib/mock-conversation");
 // ended (and never offers a reply); a box that is away says so and the pane
 // comes back by itself when it returns; a conversation that can't be read
 // says why, with a way to try again.
-export function ConversationPane({ box, session, agent: remembered, visible, onShowTerminal, onStartAgain }: { box: string; session: string; agent?: string; visible: boolean; onShowTerminal(): void; onStartAgain?(): void }) {
+export function ConversationPane({ box, session, agent: remembered, visible, onShowTerminal, onStartAgain }: { box: string; session: string; agent?: string; visible: boolean; onShowTerminal?(): void; onStartAgain?(): void }) {
   const key = keyOf(box, session);
   const items = useConversations((s) => s.items[key]) ?? (NONE as TranscriptItem[]);
   const listed = useStore((st) => st.boxes[box]?.sessions);
@@ -254,7 +255,10 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   }, [answered, s?.state_since, state, forWords]);
   const staleNow = !!stale && stale === s?.state_since;
   const recognised = state === "waiting" && !staleNow && (answerable || (!formAsk && !ask?.form && (ask ? !!ask.choices.length : !!s?.ask?.tool)));
-  const live = useLiveScreen({ box, session, agent, enabled: visible && !mock && !away && !!s && state !== "exited" && !recognised, running: state === "running", nudge });
+  // A structured session's screen is its host's, never the agent's own:
+  // there is nothing on it to answer, and it never shows a prompt.
+  const structured = isStructured(s?.driver);
+  const live = useLiveScreen({ box, session, agent, enabled: visible && !mock && !away && !!s && state !== "exited" && !recognised && !structured, running: state === "running", nudge });
 
   // Claude Code and Codex write their conversation once they start: until
   // then a new agent has nothing to read yet, which is not a dead end.
@@ -318,10 +322,12 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
           <RefreshCwIcon />
           Retry
         </Button>
-        <Button variant="outline" onClick={onShowTerminal}>
-          <SquareTerminalIcon />
-          Show terminal
-        </Button>
+        {onShowTerminal && (
+          <Button variant="outline" onClick={onShowTerminal}>
+            <SquareTerminalIcon />
+            Show terminal
+          </Button>
+        )}
       </PaneEmpty>
     );
   }
@@ -336,14 +342,16 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
         }
       >
         {feed === "unsupported" && <UpgradeBox box={box} />}
-        <Button variant="outline" onClick={onShowTerminal}>
-          <SquareTerminalIcon />
-          Show terminal
-        </Button>
+        {onShowTerminal && (
+          <Button variant="outline" onClick={onShowTerminal}>
+            <SquareTerminalIcon />
+            Show terminal
+          </Button>
+        )}
       </PaneEmpty>
     );
   }
-  const onStep = (step: NextStep) => (step === "start-again" ? again() : step === "show-terminal" ? onShowTerminal() : step === "update-box" ? void updateBoxes([box]) : undefined);
+  const onStep = (step: NextStep) => (step === "start-again" ? again() : step === "show-terminal" ? onShowTerminal?.() : step === "update-box" ? void updateBoxes([box]) : undefined);
   const fail = (err: unknown) => toastError(err, { title: "Couldn't send it", box, onStep });
 
   const answer = (id: string, choice: string) => {
@@ -426,7 +434,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   // A prompt typed into an agent that hasn't taken it: its screen is
   // likely showing something else (a dialog of its own), which only its
   // terminal can answer.
-  const untaken = !mock && state !== "running" && sent.some((p, i) => now - p.at > 8000 && !taken(items, p, i + 1));
+  const untaken = !mock && !structured && !!onShowTerminal && state !== "running" && sent.some((p, i) => now - p.at > 8000 && !taken(items, p, i + 1));
   const tail = (
     <>
       {queue.items.map((q) => (
@@ -465,7 +473,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   // leaves the agent at a text field once picked: the reply box types them.
   const wantsWords = forWords;
   const atMenu = !wantsWords && (formAsk || !!ask?.form || !!ask?.choices.length || !!s?.ask?.tool || (open?.kind === "ask" && !open.decided && (!!open.choices?.length || !!open.structured)));
-  latest.current = { reply, fail, again, showTerminal: onShowTerminal, hideLive: live.hide, sendComments: () => sendComments(box, session, reviewKey!) };
+  latest.current = { reply, fail, again, showTerminal: () => onShowTerminal?.(), hideLive: live.hide, sendComments: () => sendComments(box, session, reviewKey!) };
 
   if (ended && !shown.length) {
     return (
@@ -478,7 +486,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
           <AgentIcon agent={agent} className="size-3.5" />
           Start {agent ? agentLabel(agent) : "an agent"} again
         </Button>
-        {!gone && (
+        {!gone && onShowTerminal && (
           <Button variant="outline" onClick={onShowTerminal}>
             <SquareTerminalIcon />
             Show terminal
@@ -501,10 +509,12 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
           <RefreshCwIcon />
           Retry
         </Button>
-        <Button variant="outline" onClick={onShowTerminal}>
-          <SquareTerminalIcon />
-          Show terminal
-        </Button>
+        {onShowTerminal && (
+          <Button variant="outline" onClick={onShowTerminal}>
+            <SquareTerminalIcon />
+            Show terminal
+          </Button>
+        )}
       </PaneEmpty>
     );
   }
@@ -546,6 +556,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
             ended={ended}
             comments={reviewKey ? toSend.length : 0}
             live={live.show}
+            terminal={!!onShowTerminal}
             mode={state === "running" ? "queue" : state === "waiting" ? "answer" : "send"}
             blocked={(state === "waiting" && atMenu) || live.show}
             hint={live.show ? (liveWhy ?? `${who} is showing its own screen: answer it above`) : wantsWords ? `Tell ${who} what to change, then press Enter` : answerable ? `Answer ${who}'s ${openQ?.questions.length === 1 ? "question" : "questions"} above` : undefined}
@@ -596,6 +607,7 @@ const ChatFoot = memo(function ChatFoot({
   ended,
   comments,
   live,
+  terminal,
   mode,
   blocked,
   hint,
@@ -612,6 +624,7 @@ const ChatFoot = memo(function ChatFoot({
   ended: boolean;
   comments: number;
   live: boolean;
+  terminal: boolean;
   mode: "send" | "queue" | "answer";
   blocked: boolean;
   hint?: string;
@@ -619,7 +632,7 @@ const ChatFoot = memo(function ChatFoot({
 }) {
   const attach = useMemo(() => ({ box, session }), [box, session]);
   return (
-    <ChatControls box={box} session={session} agent={agent} state={state} stateSince={stateSince} dir={dir} who={who} visible={visible} ended={ended} onShowTerminal={actions.showTerminal} onStartAgain={actions.again} onSend={actions.reply}>
+    <ChatControls box={box} session={session} agent={agent} state={state} stateSince={stateSince} dir={dir} who={who} visible={visible} ended={ended} onShowTerminal={terminal ? actions.showTerminal : undefined} onStartAgain={actions.again} onSend={actions.reply}>
       {ended ? (
         <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
           <StateGlyph state="exited" />

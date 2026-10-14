@@ -74,7 +74,8 @@ export interface ChatControlsProps {
   who: string;
   visible: boolean;
   ended: boolean;
-  onShowTerminal(): void;
+  // Absent when there is no terminal of the agent's own to show.
+  onShowTerminal?(): void;
   onStartAgain(): void;
   // Types text for the agent, as the reply box does (for "Try again").
   onSend(text: string): Promise<void>;
