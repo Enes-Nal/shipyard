@@ -5,7 +5,7 @@ import { serviceKeepsRunning } from "@/components/workspace/service-terminal";
 import { toastManager } from "@/components/ui/toast";
 import { usePrefs } from "@/lib/prefs";
 import { offerAgentHooks } from "@/lib/agent-hooks";
-import { type AgentPreset, boxApi, type Conversation, type Location, type Worktree } from "@/lib/api";
+import { type AgentPreset, boxApi, type Conversation, type Location, type Session, type Worktree } from "@/lib/api";
 import { agentLabel, agentOf } from "@/lib/derive";
 import { errorMessage } from "@/lib/format";
 import { plainError } from "@/lib/errors";
@@ -76,6 +76,17 @@ function place(content: PaneContent, target: Target, wt: string): { key: string;
   return { key, tab: target.tab, pane: target.pane };
 }
 
+// listSession puts a session the box just started into its list at once.
+// Until the next refresh its pane would find a session the box doesn't list,
+// which reads as one that has ended ("Claude Code has ended", for a moment).
+function listSession(box: string, s: Session) {
+  useStore.setState((st) => {
+    const b = st.boxes[box];
+    if (!b?.sessions || b.sessions.some((x) => x.name === s.name)) return st;
+    return { boxes: { ...st.boxes, [box]: { ...b, sessions: [...b.sessions, s] } } };
+  });
+}
+
 // startSession runs a command (an agent, or a shell when empty) in the
 // worktree you are acting in (or, beside a pane, that pane's; or the one
 // given) and shows it in a new tab, a split, or an existing pane. It resolves to the new
@@ -92,6 +103,7 @@ export async function startSession(command: string, target: Target = { kind: "ta
   if (!at) return;
   try {
     const s = await boxApi.startSession(client, box, ref ? { location: refLocation(ref), command: command || undefined } : { home: true, command: command || undefined });
+    listSession(box, s);
     setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box, session: s.name });
     scheduleRefresh(box, ["sessions"]);
     if (command) void offerAgentHooks(box, command, s.name);
@@ -111,6 +123,7 @@ export async function resumeConversation(box: string, conv: Conversation, worktr
   if (!at) return;
   try {
     const s = await boxApi.resumeConversation(client, box, conv.id);
+    listSession(box, s);
     setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box, session: s.name, agent: conv.agent });
     scheduleRefresh(box, ["sessions"]);
     return s.name;
@@ -145,6 +158,7 @@ export async function startAgent(p: AgentPreset, target: Target = { kind: "tab" 
   if (!at) return;
   try {
     const s = await boxApi.startSession(client, ref.box, { location: refLocation(ref), agent: p.id, ...structuredLaunch(ref.box, p.id, p) });
+    listSession(ref.box, s);
     setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box: ref.box, session: s.name, agent: p.id });
     scheduleRefresh(ref.box, ["sessions"]);
     void offerAgentHooks(ref.box, p.command, s.name);
