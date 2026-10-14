@@ -1,6 +1,7 @@
 import { CopyIcon } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
+import { InlineImages } from "@/components/conversation/inline-images";
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
 import { useFileLinks } from "@/components/conversation/file-links";
 import { useRepoRefs } from "@/components/conversation/repo-refs";
@@ -8,6 +9,7 @@ import { Tip } from "@/components/tip";
 import { copyText } from "@/lib/clipboard";
 import { CALLOUT, callout } from "@/lib/callouts";
 import { caretAfter } from "@/lib/draft-text";
+import { imageSlots } from "@/lib/chat-images";
 import { markdownHtml, type TexRender } from "@/lib/markdown-html";
 import { openUrl } from "@/lib/open-url";
 import { cn } from "@/lib/utils";
@@ -90,7 +92,8 @@ const shaped = (html: string) =>
     .replace(/<table>/g, '<div class="cv-table"><table>')
     .replace(/<\/table>/g, "</table></div>")
     .replace(/<pre><code((?: class="language-([^"]+)")?)>([\s\S]*?)<\/code><\/pre>/g, codeBlock)
-    .replace(CALLOUT, callout);
+    .replace(CALLOUT, callout)
+    .replace(/<img\b[^>]*>/g, (tag) => imageSlots(tag));
 
 // A draft's code blocks name no language: its screen doesn't say, and
 // a guess would change when the message lands.
@@ -160,6 +163,7 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
           if (/^https?:\/\//.test(href)) void openUrl(href);
         }}
       />
+      <InlineImages body={body} html={html} draft={draft} />
       {copy && (
         <div className={cn("mt-1 flex h-6 opacity-0 transition-opacity focus-within:opacity-100 group-hover/md:opacity-100", draft && "invisible")} aria-hidden={draft || undefined}>
           <Tip label="Copy as Markdown">

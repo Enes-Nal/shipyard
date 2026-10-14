@@ -167,10 +167,11 @@ export async function handleWebhook(event: PaymentEvent): Promise<Order> {
 Before I plan the release, a few questions.`;
 
 function releaseChat(): TranscriptItem[] {
+  const picture = new URLSearchParams(location.search).get("scene") === "chat-image" ? "\n\nThe checkout screenshot shows the confirmed order:\n\n![Checkout result](screenshots/checkout-result.png)" : "";
   return [
     { kind: "user", id: "rq-u1", text: "Plan the release of the checkout fix." },
     { kind: "tools", id: "rq-t1", verb: "Read", done: true, items: [{ verb: "Read", target: "webhook.ts", file: true, id: "mock-read-1" }, { verb: "Read", target: "createOrder.ts", file: true, id: "mock-read-2" }] },
-    { kind: "text", id: "rq-x1", text: RELEASE_PLAN },
+    { kind: "text", id: "rq-x1", text: RELEASE_PLAN + picture },
     { kind: "question", id: "rq-q1", tool: "mock-ask-release", questions: RELEASE_QUESTIONS },
   ];
 }

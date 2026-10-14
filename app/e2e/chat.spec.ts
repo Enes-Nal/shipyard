@@ -32,6 +32,27 @@ test("a reply's Markdown draws, with its code highlighted", async ({ app }) => {
   await expect(md.locator("pre code")).toContainText("orders.byIdempotencyKey(event.idempotencyKey)");
 });
 
+test("a reply shows a worktree picture and opens its file", async ({ app }) => {
+  mockOnly();
+  await app.open({ params: { view: "conversation", scene: "chat-image" } });
+  await app.openWorktree("gpu/shop");
+  const card = app.chat.getByTestId("chat-worktree-image");
+  await expect(card).toBeVisible();
+  await expect(card).toHaveAttribute("data-path", "screenshots/checkout-result.png");
+  const image = card.getByRole("img", { name: "Checkout result" });
+  await expect.poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(960);
+  if (process.env.BERTH_SHOTS) {
+    await card.scrollIntoViewIfNeeded();
+    await app.page.screenshot({ path: `${process.env.BERTH_SHOTS}/chat-worktree-image.png` });
+    await card.screenshot({ path: `${process.env.BERTH_SHOTS}/chat-worktree-image-detail.png` });
+  }
+  await card.getByRole("button", { name: "Source" }).click();
+  await expect(card).toContainText("![Checkout result](screenshots/checkout-result.png)");
+  await card.getByRole("button", { name: "Image" }).click();
+  await card.getByRole("button", { name: "Open Checkout result" }).click();
+  await expect(app.page.locator("[data-testid=file-pane][data-path='screenshots/checkout-result.png'] [data-testid=file-image] img")).toBeVisible();
+});
+
 test("an edit opens to its change, highlighted", async ({ app }) => {
   mockOnly();
   await app.openWorktree("devl/checkout-fix");
