@@ -1,0 +1,58 @@
+state: BERTH_HOME=/tmp/bdp.icLL/state TMUX_TMPDIR=/tmp/bdp.icLL/tmux HOME=/tmp/bdp.icLL/home (all temporary)
+berthd dev (build d04650c06f7f, darwin/arm64)
+berthd pid 59239 listening on 127.0.0.1:17461 and /tmp/bdp.icLL/state/box/berthd.sock
+
+$ berthd location add acme REPO
+  added
+
+$ GET /v1/info capabilities (agents.defaults?) and agent_defaults
+  agents.defaults advertised | agent_defaults = {'structured': False}
+
+$ GET /v1/agents/defaults   (nothing saved yet)
+{"structured":false}
+
+
+$ berth_task_new through `berthd mcp` (what another agent calls), default off
+{"jsonrpc":"2.0","id":2,"result":{"content":[{"text":"{\"branch\":\"proof-off\",\"notify\":false,\"path\":\"/private/tmp/bdp-acme-proof-off\",\"session\":\"acme-proof-off-claude-1yc3\"}","type":"text"}]}}
+
+$ berthd sessions --json (name, driver)
+  acme-proof-off-claude-1yc3 driver=terminal agent=claude
+
+$ PUT /v1/agents/defaults {"structured":true,"mode":"bypassPermissions"}   (what the app sends with Structured agents on)
+{"structured":true,"mode":"bypassPermissions"}
+
+
+$ cat $BERTH_HOME/box/agent-defaults.json
+{
+  "structured": true,
+  "mode": "bypassPermissions"
+}
+
+$ berth_task_new through `berthd mcp`, default on
+{"jsonrpc":"2.0","id":2,"result":{"content":[{"text":"{\"branch\":\"proof-on\",\"notify\":false,\"path\":\"/private/tmp/bdp-acme-proof-on\",\"session\":\"acme-proof-on-claude-1yc3\"}","type":"text"}]}}
+
+$ berthd sessions --json (name, driver)
+  acme-proof-off-claude-1yc3 driver=terminal agent=claude
+  acme-proof-on-claude-1yc3 driver=claude agent=claude
+
+$ GET /v1/sessions/acme-proof-on-claude-1yc3/transcript   (its reply, through the stream)
+  user: hello from the lead agent
+  text: echo: hello from the lead agent
+
+$ GET /v1/conversations   (its mode)
+  session=acme-proof-on-claude-1yc3 agent=claude mode=bypassPermissions
+
+$ restart berthd on the same state, then GET /v1/agents/defaults
+{"structured":true,"mode":"bypassPermissions"}
+
+
+$ PUT /v1/agents/defaults {"structured":false}, then berth_task_new again
+{"structured":false}
+
+{"jsonrpc":"2.0","id":2,"result":{"content":[{"text":"{\"branch\":\"proof-off-again\",\"notify\":false,\"path\":\"/private/tmp/bdp-acme-proof-off-again\",\"session\":\"acme-proof-off-again-claude-1yc5\"}","type":"text"}]}}
+
+$ berthd sessions --json (name, driver)
+  acme-proof-off-again-claude-1yc5 driver=terminal agent=claude
+  acme-proof-off-claude-1yc3 driver=terminal agent=claude
+  acme-proof-on-claude-1yc3 driver=claude agent=claude
+stopped berthd (pid 59454) and its own tmux server

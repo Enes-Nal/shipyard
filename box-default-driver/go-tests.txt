@@ -1,0 +1,36 @@
+=== RUN   TestStartDriverFollowsTheBoxDefault
+=== RUN   TestStartDriverFollowsTheBoxDefault/nothing_saved
+=== RUN   TestStartDriverFollowsTheBoxDefault/off
+=== RUN   TestStartDriverFollowsTheBoxDefault/on
+=== RUN   TestStartDriverFollowsTheBoxDefault/on,_ask
+=== RUN   TestStartDriverFollowsTheBoxDefault/on,_bypass
+=== RUN   TestStartDriverFollowsTheBoxDefault/the_request's_own_mode
+=== RUN   TestStartDriverFollowsTheBoxDefault/ACP,_ask:_its_own_modes
+=== RUN   TestStartDriverFollowsTheBoxDefault/ACP,_bypass
+=== RUN   TestStartDriverFollowsTheBoxDefault/an_agent_with_no_structured_driver
+=== RUN   TestStartDriverFollowsTheBoxDefault/a_box_keeping_no_conversations
+=== RUN   TestStartDriverFollowsTheBoxDefault/terminal_named
+=== RUN   TestStartDriverFollowsTheBoxDefault/claude_named,_default_off
+--- PASS: TestStartDriverFollowsTheBoxDefault (0.07s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/nothing_saved (0.00s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/off (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/on (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/on,_ask (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/on,_bypass (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/the_request's_own_mode (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/ACP,_ask:_its_own_modes (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/ACP,_bypass (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/an_agent_with_no_structured_driver (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/a_box_keeping_no_conversations (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/terminal_named (0.01s)
+    --- PASS: TestStartDriverFollowsTheBoxDefault/claude_named,_default_off (0.01s)
+=== RUN   TestAgentDefaultsAreKeptAndAdvertised
+--- PASS: TestAgentDefaultsAreKeptAndAdvertised (0.22s)
+=== RUN   TestAnAgentStartedWithNoDriverFollowsTheDefault
+--- PASS: TestAnAgentStartedWithNoDriverFollowsTheDefault (2.32s)
+=== RUN   TestARunsAgentFollowsTheDefault
+--- PASS: TestARunsAgentFollowsTheDefault (0.70s)
+=== RUN   TestAnAgentsTaskThroughTheBerthToolsFollowsTheDefault
+--- PASS: TestAnAgentsTaskThroughTheBerthToolsFollowsTheDefault (1.03s)
+PASS
+ok  	github.com/cosscom/shipyard/internal/box	5.895s
