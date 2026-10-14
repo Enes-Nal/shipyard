@@ -4,7 +4,7 @@
 // never with the app; load.ts is the way in. One copy and one worker pool
 // serve the whole app, the Diff plugin included (@berth/plugin/ui).
 import { type FileDiffMetadata, parseDiffFromFile, parsePatchFiles } from "@pierre/diffs";
-import { CodeView, type CodeViewHandle, type CodeViewItem, type DiffLineAnnotation, FileDiff, WorkerPoolContext } from "@pierre/diffs/react";
+import { CodeView, type CodeViewHandle, type CodeViewItem, type DiffLineAnnotation, File as FileView, FileDiff, WorkerPoolContext } from "@pierre/diffs/react";
 import { getOrCreateWorkerPoolSingleton, terminateWorkerPoolSingleton } from "@pierre/diffs/worker";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -350,6 +350,43 @@ export function Diff({ fileDiff, layout, dark, wrap = true, className, style, no
           return n ? renderNote(n) : null;
         } : undefined}
       />
+    </Pool>
+  );
+}
+
+// ---- A file's lines: a path named in a chat, on hover ----
+
+// The lines a reply points at, picked out as the selection is, in the
+// theme's own wash (the ring colour, faint), so it reads in every theme.
+const LINES_CSS = `${CHAT_CSS}
+:host { --diffs-bg-selection-override: var(--ring); }
+`;
+
+export interface FileLinesProps {
+  name: string;
+  text: string;
+  // The lines to pick out, numbered as the file numbers them.
+  from?: number;
+  to?: number;
+  dark: boolean;
+  className?: string;
+  style?: CSSProperties;
+}
+
+// FileLines draws a whole file as the chat's edits are drawn (the same
+// font, numbers and colours), its lines one row each (no wrapping), so the
+// card around it can scroll to a line by its number.
+export function FileLines({ name, text, from, to, dark, className, style }: FileLinesProps) {
+  const syntax = useSyntax();
+  const options = useMemo(
+    () => ({ theme: syntax, themeType: dark ? ("dark" as const) : ("light" as const), overflow: "scroll" as const, disableFileHeader: true, unsafeCSS: LINES_CSS }),
+    [dark, syntax],
+  );
+  const file = useMemo(() => ({ name, contents: text, cacheKey: `berth-file-${hash(text)}-${text.length}` }), [name, text]);
+  const selected = useMemo(() => (from ? { start: from, end: to ?? from } : null), [from, to]);
+  return (
+    <Pool>
+      <FileView file={file} options={options} selectedLines={selected} className={className} style={style} />
     </Pool>
   );
 }

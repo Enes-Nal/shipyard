@@ -2,6 +2,7 @@ import { CopyIcon } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
+import { useFileLinks } from "@/components/conversation/file-links";
 import { Tip } from "@/components/tip";
 import { copyText } from "@/lib/clipboard";
 import { caretAfter } from "@/lib/draft-text";
@@ -18,6 +19,8 @@ import { cn } from "@/lib/utils";
 // theme's syntax colours once they've drawn (code-highlight.ts), every
 // code block has its own Copy, and the reply's Copy takes the Markdown
 // itself, so tables and lists survive a paste into an issue or an editor.
+// In a chat, a file of its worktree named in inline code links to it, with
+// its lines on hover (file-links.tsx).
 
 // A code block's head: its language, and Copy (lucide's copy and check).
 const ICON = (d: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -112,6 +115,7 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
   }, [texWanted]);
   const body = useRef<HTMLDivElement>(null);
   useCodeHighlight(body, html);
+  const links = useFileLinks(body, html, draft);
   return (
     <div className="group/md relative cv-in" data-draft={draft ? "" : undefined} aria-busy={draft || undefined} aria-description={draft ? "Still being written: as the agent's screen shows it" : undefined}>
       {draft && clipped && (
@@ -125,7 +129,13 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
         data-selectable
         // biome-ignore lint/security/noDangerouslySetInnerHtml: micromark escapes HTML in the source.
         dangerouslySetInnerHTML={{ __html: html }}
+        onPointerOver={links?.onPointerOver}
+        onPointerOut={links?.onPointerOut}
+        onFocus={links?.onFocus}
+        onBlur={links?.onBlur}
+        onKeyDown={links?.onKeyDown}
         onClick={(e) => {
+          if (links?.click(e)) return;
           const el = e.target as HTMLElement;
           const code = el.closest<HTMLElement>("[data-copy-code]");
           if (code) {

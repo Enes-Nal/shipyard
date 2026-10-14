@@ -18,11 +18,18 @@ again.
 - **A new agent no longer flashes "has ended" as it opens.** For a moment
   after it started, its chat showed *Claude Code has ended* with *Start
   Claude Code again*, before the box had listed the new session.
+- **Files an agent names link to them.** A path of the worktree in a
+  reply's code, like `src/app.ts:14` or `src/app.ts:14-30`, gets a faint
+  dotted underline. Hovering it shows those lines, drawn like the chat's
+  edits; clicking opens the file at that line (⌥-click beside the chat,
+  ⌘-click in your editor). Commands and names that aren't files stay as
+  they were.
 - **Math in the chat.** Replies with LaTeX (`$$…$$`, `\(…\)` and `\[…\]`)
   show as typeset math, centred on its own lines for a display. A single
   `$` is left alone, so "costs $5 and $10" reads as it was written, and
   math in code stays as code. A formula that doesn't parse shows as its
   source, in red.
+
 
 ## v0.3.19
 

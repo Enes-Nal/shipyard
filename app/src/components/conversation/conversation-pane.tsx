@@ -10,6 +10,7 @@ import { Scene, type SceneName } from "@/components/art/scenes";
 import { ChatBackground } from "@/components/conversation/chat-background";
 import { ChatControls } from "@/components/conversation/chat-controls";
 import { ConversationView, type EditActions, QueuedBubble } from "@/components/conversation/conversation-view";
+import { FileLinks } from "@/components/conversation/file-links";
 import { ChatScope } from "@/components/conversation/notice-card";
 import { PixelLoader } from "@/components/pixel-loader";
 import { useComposerMenu } from "@/components/conversation/command-menu";
@@ -50,6 +51,7 @@ import { withDraft } from "@/lib/draft-text";
 import { FIRST_READ_TIMEOUT, useAsk, useQueued, useTranscriptFeed } from "@/lib/transcript-feed";
 import { ConfirmDialog } from "@/views/settings/confirm";
 import { cn } from "@/lib/utils";
+import { refOf } from "@/lib/workspaces";
 import { useReview } from "@/views/review/review-store";
 
 // The mock's scripted conversations (?mock), loaded only in mock mode.
@@ -136,6 +138,10 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   const wt = s ? worktreeOf(locations, s) : undefined;
   const reviewKey = wt ? `${box}|${wt.worktree.path}` : undefined;
   const comments = useComments((st) => (reviewKey ? st.byKey[reviewKey] : undefined)) ?? NO_COMMENTS;
+  // The files its replies name link to this worktree's (file-links.tsx).
+  const wtLocation = wt?.location;
+  const wtWorktree = wt?.worktree;
+  const worktreeRef = useMemo(() => (wtLocation && wtWorktree ? refOf(box, wtLocation, wtWorktree) : undefined), [box, wtLocation, wtWorktree]);
 
   // The demo makes up a conversation for an agent opened mid-way.
   useEffect(() => {
@@ -537,7 +543,9 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
         ) : (
           <ChatScope value={{ who, send: reply, showTerminal: onShowTerminal, startAgain: again }}>
             <QuestionsContext value={{ live: formAsk ? openQ?.tool : undefined, canAnswer: canAnswer && agent === "claude", stuck: stuckNow, submit: submitQuestions }}>
-              <ConversationView chat={{ box, session, agent, visible, idle: state !== "running" && state !== "waiting" }} items={shown} onAnswer={answer} edits={edits} who={who} tail={tail} tailSize={queue.items.length + (untaken ? 1 : 0)} />
+              <FileLinks worktree={worktreeRef}>
+                <ConversationView chat={{ box, session, agent, visible, idle: state !== "running" && state !== "waiting" }} items={shown} onAnswer={answer} edits={edits} who={who} tail={tail} tailSize={queue.items.length + (untaken ? 1 : 0)} />
+              </FileLinks>
             </QuestionsContext>
           </ChatScope>
         )}
