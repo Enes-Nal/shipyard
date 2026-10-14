@@ -1,6 +1,6 @@
 import { definePlugin, useBoxes, useCurrentWorktree, useEvent, useFleetSessions, useStorage, type CurrentWorktree, type ScreenProps, type Service, type Session } from "@berth/plugin";
 import { AgentIcon, BrowserSurface, Button, HelperSurface, Icon, SessionSurface, ViewHeader } from "@berth/plugin/ui";
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 1.5;
@@ -238,16 +238,22 @@ function CanvasScreen({ berth }: ScreenProps) {
     const g = panGesture.current;
     if (g) setPan({ x: g.startX + e.clientX - g.x, y: g.startY + e.clientY - g.y });
   };
-  const wheel = (e: ReactWheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoomTo(zoom * Math.exp(-e.deltaY * .004), e.clientX, e.clientY); return; }
-    if (e.target !== e.currentTarget) return;
-    e.preventDefault();
-    setPan((p) => ({ x: p.x - (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX), y: p.y - (e.shiftKey && !e.deltaX ? 0 : e.deltaY) }));
-  };
+  useEffect(() => {
+    const el = viewport.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoomTo(zoom * Math.exp(-e.deltaY * .004), e.clientX, e.clientY); return; }
+      if (e.target !== el) return;
+      e.preventDefault();
+      setPan((p) => ({ x: p.x - (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX), y: p.y - (e.shiftKey && !e.deltaX ? 0 : e.deltaY) }));
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  }, [zoom]);
 
   return <div className="flex h-full min-h-0 flex-col bg-background">
     <ViewHeader title="Canvas" description="Live work across your worktrees" actions={worktree && <span className="text-xs text-muted-foreground">{board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</span>} />
-    <div ref={viewport} data-testid="canvas-viewport" className={`relative min-h-0 flex-1 overflow-hidden bg-muted/20 ${spaceHeld ? "cursor-grab active:cursor-grabbing" : ""}`} style={{ backgroundImage: "radial-gradient(color-mix(in oklab, var(--foreground) 13%, transparent) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }} onPointerEnter={() => { pointerOver.current = true; }} onPointerLeave={() => { pointerOver.current = false; }} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => { panGesture.current = undefined; }} onPointerCancel={() => { panGesture.current = undefined; }} onWheel={wheel} onContextMenu={(e) => { if ((e.target as HTMLElement).closest("section")) return; e.preventDefault(); openPicker(e.clientX, e.clientY); }} onDoubleClick={(e) => { if (e.target === e.currentTarget) openPicker(e.clientX, e.clientY); }}>
+    <div ref={viewport} data-testid="canvas-viewport" className={`relative min-h-0 flex-1 overflow-hidden bg-muted/20 ${spaceHeld ? "cursor-grab active:cursor-grabbing" : ""}`} style={{ backgroundImage: "radial-gradient(color-mix(in oklab, var(--foreground) 13%, transparent) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }} onPointerEnter={() => { pointerOver.current = true; }} onPointerLeave={() => { pointerOver.current = false; }} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => { panGesture.current = undefined; }} onPointerCancel={() => { panGesture.current = undefined; }} onContextMenu={(e) => { if ((e.target as HTMLElement).closest("section")) return; e.preventDefault(); openPicker(e.clientX, e.clientY); }} onDoubleClick={(e) => { if (e.target === e.currentTarget) openPicker(e.clientX, e.clientY); }}>
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2 rounded-lg border bg-card/95 p-1.5 shadow-md">
         <span className="px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Board</span>
         <select aria-label="Canvas worktree" className="max-w-60 rounded-md bg-background px-2 py-1.5 text-xs font-medium text-foreground" value={boardKey} onChange={(e) => setSavedKey(e.target.value)}>
