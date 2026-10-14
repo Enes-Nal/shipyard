@@ -15,6 +15,7 @@ import { resolveBrowserInput } from "@/lib/browser-url";
 import { closeCompare } from "@/lib/compare-actions";
 import { currentSpace, focusSession, here, hereRef, homeBox, openTab, refFor, removePane, setPaneContent, showWorktree, splitPane, useWorkspaces, type WorktreeRef, wsKey } from "@/lib/workspaces";
 import { refuseHome } from "@/lib/box-home";
+import { structuredLaunch } from "@/lib/structured";
 
 // Agents offered when a box does not list its own.
 export const DEFAULT_AGENTS: AgentPreset[] = [
@@ -127,6 +128,29 @@ export async function resumeSession(box: string, session: string): Promise<void>
     scheduleRefresh(box, ["sessions"]);
   } catch (err) {
     toastManager.add({ type: "error", title: "Couldn't resume it", description: errorMessage(err) });
+  }
+}
+
+// startAgent starts preset p as an agent: through its structured driver
+// when Labs runs it so (lib/structured.ts), else in its terminal as
+// startSession would. A box's home has no worktree for an agent: there it
+// is the preset's command in a terminal.
+export async function startAgent(p: AgentPreset, target: Target = { kind: "tab" }, label = p.name, worktree?: string): Promise<string | undefined> {
+  const wt = worktree ?? targetWorktree(target);
+  const ref = refFor(wt);
+  const client = useStore.getState().client;
+  if (!ref) return startSession(p.command, target, label, worktree);
+  if (!wt || !client) return;
+  const at = place({ kind: "starting", label }, target, wt);
+  if (!at) return;
+  try {
+    const s = await boxApi.startSession(client, ref.box, { location: refLocation(ref), agent: p.id, ...structuredLaunch(ref.box, p.id, p) });
+    setPaneContent(at.key, at.tab, at.pane, { kind: "terminal", box: ref.box, session: s.name, agent: p.id });
+    scheduleRefresh(ref.box, ["sessions"]);
+    void offerAgentHooks(ref.box, p.command, s.name);
+    return s.name;
+  } catch (err) {
+    setPaneContent(at.key, at.tab, at.pane, { kind: "error", message: plainError(err) });
   }
 }
 

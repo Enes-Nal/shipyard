@@ -4,16 +4,16 @@ import { toastManager } from "@/components/ui/toast";
 import { isMock } from "@/hooks/use-berth-connection";
 import { agentPresets } from "@/lib/actions";
 import { offerAgentHooks } from "@/lib/agent-hooks";
-import type { AgentPreset, Session, TaskResult, Worktree } from "@/lib/api";
+import type { Session, TaskResult, Worktree } from "@/lib/api";
 import { ApiError, boxApi } from "@/lib/api";
 import { startBroadcast } from "@/lib/broadcast";
 import type { AgentPick, ComposerTarget } from "@/lib/composer";
 import { agentLabel } from "@/lib/derive";
 import { plainError } from "@/lib/errors";
 import { handoff, loop, review } from "@/lib/orchestrate";
-import { usePrefs } from "@/lib/prefs";
 import { worktreeSlug } from "@/lib/projects";
 import { usePrompts } from "@/lib/prompts";
+import { structuredLaunch } from "@/lib/structured";
 import { boxHasRuns, runs, scheduleRuns } from "@/lib/runs";
 import { save } from "@/lib/storage";
 import { useStore } from "@/lib/store";
@@ -96,21 +96,6 @@ const fail = (title: string, err: unknown, box?: string) => {
   return false;
 };
 
-// structured is how an agent starts when Labs runs it structured: Claude
-// Code through its stream ("driver.claude"), Codex through its app server
-// ("driver.codex"), and an agent whose preset speaks ACP through that
-// ("driver.acp").
-function structured(box: string, agent: string, preset?: AgentPreset): { driver?: "claude" | "codex" | "acp"; mode?: string } {
-  const p = usePrefs.getState();
-  const caps = useStore.getState().boxes[box]?.info?.capabilities ?? [];
-  if (!p.labs || !p.structuredClaude) return {};
-  const driver = agent === "claude" || agent === "codex" ? agent : preset?.acp ? "acp" : undefined;
-  if (!driver || !caps.includes(`driver.${driver}`)) return {};
-  // ACP agents have modes of their own: bypass, or theirs as they start.
-  const mode = p.approvals === "bypass" ? "bypassPermissions" : driver === "acp" ? undefined : "default";
-  return { driver, mode };
-}
-
 export async function startWork(d: StartDraft): Promise<boolean> {
   const client = useStore.getState().client;
   if (!client) return false;
@@ -136,7 +121,7 @@ export async function startWork(d: StartDraft): Promise<boolean> {
       toastManager.add({ type: "success", title: `Created ${wt.name}`, description: `${wt.branch ?? ""} on ${d.box}` });
       return true;
     }
-    const how = { agent: pick.agent, prompt: d.text || undefined, model: pick.model || undefined, effort: pick.effort || undefined, ...structured(d.box, pick.agent, presets.find((p) => p.id === pick.agent)) };
+    const how = { agent: pick.agent, prompt: d.text || undefined, model: pick.model || undefined, effort: pick.effort || undefined, ...structuredLaunch(d.box, pick.agent, presets.find((p) => p.id === pick.agent)) };
     if (d.where === "new") {
       const name = d.worktree?.name || freeName(d.box, d.location, d.text ? slug(d.text) : randomName());
       const res = await client.box<TaskResult>(d.box, "POST", "tasks", {

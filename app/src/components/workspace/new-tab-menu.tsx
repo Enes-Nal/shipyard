@@ -6,7 +6,7 @@ import { AgentIcon } from "@/components/agent-glyph";
 import { Command, CommandCollection, CommandEmpty, CommandGroup, CommandGroupLabel, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
-import { agentPresets, openBrowserAt, openPreviewAt, resolveUrl, startSession } from "@/lib/actions";
+import { agentPresets, openBrowserAt, openPreviewAt, resolveUrl, startAgent, startSession } from "@/lib/actions";
 import { guessSessionName, sessionName } from "@/lib/derive";
 import { focusNewPane } from "@/lib/focus-home";
 import { leaves } from "@/lib/layout";
@@ -78,7 +78,7 @@ export function NewTabMenu() {
         : []),
     ];
     const agents: Item[] = ws
-      ? agentPresets(ws.ref.box, ws.ref.location).map((p) => ({ value: `agent:${p.id}`, label: p.name, icon: <AgentIcon agent={p.id} />, run: done(() => void startSession(p.command, { kind: "tab" }, p.name)) }))
+      ? agentPresets(ws.ref.box, ws.ref.location).map((p) => ({ value: `agent:${p.id}`, label: p.name, icon: <AgentIcon agent={p.id} />, run: done(() => void startAgent(p, { kind: "tab" }, p.name)) }))
       : [];
     const panelItems: Item[] = ws
       ? panels.map(({ plugin, item }) => ({

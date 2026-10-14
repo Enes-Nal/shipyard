@@ -25,7 +25,7 @@ import { Tip } from "@/components/tip";
 import { Spinner } from "@/components/ui/spinner";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from "@/components/ui/sidebar";
-import { agentPresets, startSession } from "@/lib/actions";
+import { agentPresets, startAgent, startSession } from "@/lib/actions";
 import { type BoxStatus, type Location, type Session, type Worktree } from "@/lib/api";
 import { agentOf, type SessionState, sessionName, sessionState, worktreeSessions } from "@/lib/derive";
 import { load, save } from "@/lib/storage";
@@ -643,7 +643,7 @@ function RowActions({ box, loc, wt, project, onNewWorktree }: { box: string; loc
                   key={p.id}
                   onClick={() => {
                     select();
-                    void startSession(p.command, { kind: "tab" }, p.name, wsKey(box, wt.path));
+                    void startAgent(p, { kind: "tab" }, p.name, wsKey(box, wt.path));
                   }}
                 >
                   <span className="flex size-4 items-center justify-center">

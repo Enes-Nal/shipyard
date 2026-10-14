@@ -17,7 +17,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuSub, MenuSubPopup, MenuSubTrigger, MenuTrigger } from "@/components/ui/menu";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
-import { agentPresets, openBrowserAt, resumeConversation, startSession, stopSession } from "@/lib/actions";
+import { agentPresets, openBrowserAt, resumeConversation, startAgent, startSession, stopSession } from "@/lib/actions";
 import { boxApi, type BoxStatus, type Conversation, laptopApi, type Location, type Worktree, type WorktreeService } from "@/lib/api";
 import { portUrl } from "@/lib/browser-url";
 import { agentOf, worktreeSessions } from "@/lib/derive";
@@ -329,7 +329,7 @@ export function worktreeActions(box: string, loc: Location, wt: Worktree): Actio
       items: presets.map((p) =>
         item(p.name, slot(<AgentIcon agent={p.id} />), () => {
           select();
-          void startSession(p.command, { kind: "tab" }, p.name, key);
+          void startAgent(p, { kind: "tab" }, p.name, key);
         }),
       ),
     },
@@ -705,7 +705,7 @@ export function projectGroupActions(p: Project): Action[] {
       items: agentPresets(def.box.name, def.loc).map((pr) =>
         item(pr.name, slot(<AgentIcon agent={pr.id} />), () => {
           selectWorktree(refOf(def.box.name, def.loc, mm));
-          void startSession(pr.command, { kind: "tab" }, pr.name, wsKey(def.box.name, mm.path));
+          void startAgent(pr, { kind: "tab" }, pr.name, wsKey(def.box.name, mm.path));
         }),
       ),
     });
