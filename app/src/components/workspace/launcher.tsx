@@ -15,7 +15,7 @@ import { Tip } from "@/components/tip";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { agentPresets, openBrowserAt, startSession, usePendingStops } from "@/lib/actions";
+import { agentPresets, openBrowserAt, startAgent, startSession, usePendingStops } from "@/lib/actions";
 import { agentLabel, agentOf, type SessionState, sessionName, sessionState } from "@/lib/derive";
 import { ago } from "@/lib/format";
 import { useRemoval } from "@/lib/removing";
@@ -68,7 +68,7 @@ export function Launcher({ worktree: ref }: { worktree: WorktreeRef }) {
       key: `agent:${p.id}`,
       icon: <AgentIcon agent={p.id} className="size-4" />,
       label: `New ${p.name}`,
-      run: () => void startSession(p.command, { kind: "tab" }, p.name),
+      run: () => void startAgent(p, { kind: "tab" }, p.name),
     })),
     { key: "shell", icon: <SquareTerminalIcon />, label: "New shell", keys: "⌘T", run: () => void startSession("") },
     { key: "browser", icon: <GlobeIcon />, label: "New browser tab", keys: "⌘⇧B", run: () => openBrowserAt("") },

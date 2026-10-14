@@ -24,7 +24,7 @@ import { armDrag, useTabDrag } from "@/components/workspace/tab-drag";
 import { TerminalView } from "@/components/workspace/terminal-view";
 import { openWorktreePicker } from "@/components/workspace/worktree-picker";
 import { useLabel, useTone, WtChip } from "@/components/workspace/worktree-tone";
-import { agentPresets, closePane, openBrowserAt, openPreviewAt, resumeSession, startSession } from "@/lib/actions";
+import { agentPresets, closePane, openBrowserAt, openPreviewAt, resumeSession, startAgent, startSession } from "@/lib/actions";
 import { boxApi } from "@/lib/api";
 import { agentLabel, agentOf, restartCommand, sessionAgent, sessionName, sessionState } from "@/lib/derive";
 import { nameFromKey } from "@/lib/groups";
@@ -432,7 +432,7 @@ export function PaneActions({ wsKey, tab, pane, onClose, closable, focused = tru
             <MenuGroupLabel>Open beside</MenuGroupLabel>
             {ref &&
               agentPresets(ref.box, ref.location).map((p) => (
-                <MenuItem key={p.id} onClick={() => void startSession(p.command, beside("row"), p.name)}>
+                <MenuItem key={p.id} onClick={() => void startAgent(p, beside("row"), p.name)}>
                   <span className="flex size-4 items-center justify-center">
                     <AgentIcon agent={p.id} />
                   </span>

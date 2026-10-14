@@ -6,7 +6,7 @@ import { AgentIcon, StateGlyph } from "@/components/agent-glyph";
 import { Command, CommandCollection, CommandDialog, CommandDialogPopup, CommandEmpty, CommandFooter, CommandGroup, CommandGroupLabel, CommandInput, CommandItem, CommandList, CommandPanel } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import { useOnScreen, WtDot } from "@/components/workspace/worktree-tone";
-import { agentPresets, startSession } from "@/lib/actions";
+import { agentPresets, startAgent, startSession } from "@/lib/actions";
 import { type Location, type Worktree } from "@/lib/api";
 import { portUrl } from "@/lib/browser-url";
 import { agentOf, sessionAgent, sessionName, sessionState, sortedWorktrees, worktreeSessions } from "@/lib/derive";
@@ -183,7 +183,7 @@ export function WorktreePicker() {
     const fresh: Item[] = target
       ? [
           { value: "terminal", label: "New terminal", icon: slot(<SquareTerminalIcon />), run: done(() => void startSession("", target, "Terminal", key)) },
-          ...agentPresets(ref.box, ref.location).map((p) => ({ value: `agent:${p.id}`, label: `New ${p.name}`, icon: slot(<AgentIcon agent={p.id} />), run: done(() => void startSession(p.command, target, p.name, key)) })),
+          ...agentPresets(ref.box, ref.location).map((p) => ({ value: `agent:${p.id}`, label: `New ${p.name}`, icon: slot(<AgentIcon agent={p.id} />), run: done(() => void startAgent(p, target, p.name, key)) })),
         ]
       : [];
     return [
