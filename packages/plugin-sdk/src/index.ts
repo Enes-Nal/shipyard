@@ -184,6 +184,8 @@ export interface BerthApi {
   boxes(): Promise<BoxStatus[]>;
   locations(box: string): Promise<Location[]>;
   sessions(box: string): Promise<Session[]>;
+  // Start a shell (or command) in a worktree, returning its live session.
+  startSession(worktree: CurrentWorktree, command?: string): Promise<Session>;
   stats(box: string): Promise<Stats>;
   services(box: string): Promise<Service[]>;
   info(box: string): Promise<BoxInfo>;
