@@ -182,6 +182,9 @@ function CanvasScreen({ berth }: ScreenProps) {
   };
   const shown = board.nodes.map((n) => n.id === transient?.id ? { ...n, ...transient } as Node : n);
   const byId = new Map(shown.map((n) => [n.id, n]));
+  const autoLinks = shown.filter((n): n is HelperNode => n.kind === "helper").map((n) => ({ from: sessionId(n.box, n.session), to: n.id })).filter((l) => byId.has(l.from) && !board.links.some((saved) => saved.from === l.from && saved.to === l.to));
+  const links = [...board.links, ...autoLinks];
+  const worktreeCount = new Set(board.nodes.map((n) => n.source ? keyOf(n.source) : boardKey)).size;
   const zoomTo = (next: number) => {
     const value = clamp(Math.round(next * 100) / 100, MIN_ZOOM, MAX_ZOOM);
     const cx = (viewport.current?.clientWidth ?? 0) / 2;
@@ -201,9 +204,10 @@ function CanvasScreen({ berth }: ScreenProps) {
   };
 
   return <div className="flex h-full min-h-0 flex-col bg-background">
-    <ViewHeader title="Canvas" description={worktree ? `${worktree.location} / ${worktree.worktree} · live spatial workspace` : "Arrange live chats, terminals and previews."} actions={worktree && <span className="text-xs text-muted-foreground">{board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</span>} />
+    <ViewHeader title="Canvas" description="Live work across your worktrees" actions={worktree && <span className="text-xs text-muted-foreground">{board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</span>} />
     <div className="flex min-h-12 shrink-0 items-center gap-2 border-b bg-card/70 px-4">
       <Icon name="Workflow" className="size-4 text-primary" />
+      <span className="text-xs text-muted-foreground">Board</span>
       <select aria-label="Canvas worktree" className="max-w-64 min-w-36 rounded-md border bg-background px-2 py-1.5 text-xs font-medium text-foreground" value={boardKey} onChange={(e) => setSavedKey(e.target.value)}>
         {allWorktrees.map((w) => <option key={keyOf(w)} value={keyOf(w)}>{w.location} / {w.worktree} · {w.box}</option>)}
       </select>
@@ -226,11 +230,11 @@ function CanvasScreen({ berth }: ScreenProps) {
     </div>
     <div ref={viewport} className="relative min-h-0 flex-1 overflow-hidden bg-muted/20" style={{ backgroundImage: "radial-gradient(color-mix(in oklab, var(--foreground) 13%, transparent) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => { panGesture.current = undefined; }} onPointerCancel={() => { panGesture.current = undefined; }}>
       {worktree ? <div className="absolute top-0 left-0" style={{ width: 0, height: 0, overflow: "visible", pointerEvents: "none", transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}>
-        <div className="pointer-events-none absolute top-10 left-14 w-80"><div className="font-mono text-[10px] tracking-[.18em] text-primary">WORKTREE CANVAS</div><div className="mt-1 text-2xl font-semibold tracking-tight">{worktree.worktree}</div><div className="text-xs text-muted-foreground">{worktree.location} · {worktree.box}</div></div>
-        <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">{board.links.map((link) => {
+        <div className="pointer-events-none absolute top-10 left-14 w-80"><div className="font-mono text-[10px] tracking-[.18em] text-primary">CANVAS BOARD</div><div className="mt-1 text-2xl font-semibold tracking-tight">Live work</div><div className="text-xs text-muted-foreground">{worktreeCount} {worktreeCount === 1 ? "worktree" : "worktrees"} · {board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</div></div>
+        <svg data-testid="canvas-links" className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">{links.map((link) => {
           const from = byId.get(link.from), to = byId.get(link.to);
           if (!from || !to) return null;
-          return <path key={`${link.from}:${link.to}`} d={linkGeometry(from, to).path} fill="none" stroke="var(--primary)" strokeWidth="2" opacity=".65" />;
+          return <path key={`${link.from}:${link.to}`} d={linkGeometry(from, to).path} fill="none" stroke="var(--primary)" strokeWidth={autoLinks.some((a) => a.from === link.from && a.to === link.to) ? 2.5 : 2} opacity=".75" />;
         })}</svg>
         {board.links.map((link) => {
           const from = byId.get(link.from), to = byId.get(link.to);

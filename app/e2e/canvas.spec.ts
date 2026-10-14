@@ -120,6 +120,8 @@ test("canvas combines worktrees and gives subagents their own nodes", async ({ a
   await expect(helper).toContainText("subagent");
   await expect(helper.getByTestId("helper")).toHaveAttribute("data-state", "running");
   await expect(helper.getByText("Read-only", { exact: true })).toBeVisible();
+  await expect(app.page.getByTestId("canvas-links").locator("path")).toHaveCount(1);
+  await expect(app.page.getByRole("button", { name: "Remove visual link" })).toHaveCount(0);
 
   await app.page.reload();
   await app.page.getByRole("button", { name: "More", exact: true }).click();
@@ -127,5 +129,6 @@ test("canvas combines worktrees and gives subagents their own nodes", async ({ a
   await expect(otherAgent).toBeVisible();
   await expect(otherPreview).toBeVisible();
   await expect(helper).toBeVisible();
+  await expect(app.page.getByTestId("canvas-links").locator("path")).toHaveCount(1);
   await expect(board).toHaveValue("devl:/home/me/work/shop-checkout-fix");
 });
