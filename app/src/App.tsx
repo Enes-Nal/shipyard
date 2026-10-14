@@ -5,6 +5,7 @@ import { AddLocationDialog } from "@/components/add-location-dialog";
 import { Connecting } from "@/components/agent-offline";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
+import { Switchboard } from "@/components/switchboard";
 import { FilePicker } from "@/components/files/file-picker";
 import { TreeDockFrame } from "@/components/files/tree-dock";
 import { WorktreePicker } from "@/components/workspace/worktree-picker";
@@ -204,6 +205,7 @@ export default function App() {
         </div>
         <ErrorBoundary scope="a dialog">
           <CommandPalette />
+          <Switchboard />
           <FilePicker />
           <WorktreePicker />
           <BoxPicker />

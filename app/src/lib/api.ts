@@ -271,8 +271,12 @@ export const boxApi = {
   stopSession: (c: Client, box: string, name: string) => c.box(box, "DELETE", `sessions/${encodeURIComponent(name)}`),
   // A structured agent's conversations, those that worked in path
   // ("conversations" capability).
-  conversations: async (c: Client, box: string, path?: string) =>
-    (await c.box<Conversation[] | null>(box, "GET", `conversations${path ? `?path=${encodeURIComponent(path)}` : ""}`)) ?? [],
+  conversations: async (c: Client, box: string, path?: string, limit?: number) => {
+    const params = new URLSearchParams();
+    if (path) params.set("path", path);
+    if (limit) params.set("limit", String(limit));
+    return (await c.box<Conversation[] | null>(box, "GET", `conversations${params.size ? `?${params}` : ""}`)) ?? [];
+  },
   // Carries a conversation on: in its session, started again if it ended,
   // or in a new one when that is gone.
   resumeConversation: (c: Client, box: string, id: string) => c.box<Session>(box, "POST", `conversations/${encodeURIComponent(id)}/resume`),
