@@ -2,6 +2,7 @@ package box
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,6 +14,37 @@ import (
 	"github.com/cosscom/shipyard/internal/agenthost"
 	"github.com/cosscom/shipyard/internal/transcript"
 )
+
+// conversationsDir is a test box's folder of structured conversations. A
+// host writes its exit into its conversation's folder after the session it
+// ran in is stopped, so the folder goes only once no host listens for a
+// conversation in it: removed sooner, it races that last write.
+func conversationsDir(t *testing.T) string {
+	dir := t.TempDir()
+	t.Cleanup(func() {
+		entries, _ := os.ReadDir(dir)
+		deadline := time.Now().Add(15 * time.Second)
+		for _, e := range entries {
+			sock, err := hostSocket(e.Name())
+			if err != nil {
+				continue
+			}
+			for {
+				conn, err := net.DialTimeout("unix", sock, time.Second)
+				if err != nil {
+					break
+				}
+				conn.Close()
+				if time.Now().After(deadline) {
+					t.Errorf("the host for %s never went", e.Name())
+					return
+				}
+				time.Sleep(50 * time.Millisecond)
+			}
+		}
+	})
+	return dir
+}
 
 // fakeStreamClaude stands in for `claude -p` speaking stream-json, with the
 // lines the spike recorded (design/structured-agents): it echoes each
@@ -129,7 +161,7 @@ func TestAStructuredClaudeSessionIsDrivenThroughItsStream(t *testing.T) {
 	var box *Box
 	c, bus := servedBox(t, func(b *Box) {
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 		box = b
 	})
@@ -324,7 +356,7 @@ func TestAPermissionInAStructuredSessionsFirstTurnWaitsForThePerson(t *testing.T
 	var box *Box
 	c, bus := servedBox(t, func(b *Box) {
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 		box = b
 	})
@@ -366,7 +398,7 @@ func TestALiveClaudeSessionWorks(t *testing.T) {
 	states := &Turns{}
 	c, bus := servedBox(t, func(b *Box) {
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 	})
 	states.Attach(bus)
@@ -453,7 +485,7 @@ func TestAStructuredSessionGoesToItsTerminalAndBack(t *testing.T) {
 	states := &Turns{}
 	c, bus := servedBox(t, func(b *Box) {
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 	})
 	states.Attach(bus)
@@ -548,7 +580,7 @@ func TestAStructuredConversationIsResumedWhenItsAgentEndsAndWhenItsSessionIsGone
 	c, bus := servedBox(t, func(b *Box) {
 		bx = b
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 	})
 	states.Attach(bus)
