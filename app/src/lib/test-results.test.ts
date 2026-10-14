@@ -29,3 +29,8 @@ test("ordinary logs and fragments stay code", () => {
   assert.equal(parseTestResult("1 failed\n4 passed"), undefined);
   assert.equal(parseTestResult("FAIL\n    foo_test.go:42: nope"), undefined);
 });
+
+test("a long Playwright log keeps its summary without overflowing", () => {
+  const text = `1) [chromium] › e2e/checkout.spec.ts:27:5 › shows receipt${"\n".repeat(70_000)}1 failed\n4 passed`;
+  assert.equal(parseTestResult(text)?.failed, 1);
+});

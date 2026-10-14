@@ -50,8 +50,8 @@ export function parseTestResult(text: string): TestResult | undefined {
       const parts = m[1].split("›").map((x) => x.trim());
       return [{ name: parts.at(-1) || "Failed test", ...location(m[1]) }];
     });
-    const failed = Math.max(failures.length, ...lines.map((line) => /^\s*\d+ failed\b/.test(line) ? count(line, "failed") : 0));
-    const passed = Math.max(...lines.map((line) => /^\s*\d+ passed\b/.test(line) ? count(line, "passed") : 0));
+    const failed = lines.reduce((n, line) => /^\s*\d+ failed\b/.test(line) ? Math.max(n, count(line, "failed")) : n, failures.length);
+    const passed = lines.reduce((n, line) => /^\s*\d+ passed\b/.test(line) ? Math.max(n, count(line, "passed")) : n, 0);
     return { runner: "Playwright", failed, passed, failures: failures.slice(0, 20) };
   }
 
