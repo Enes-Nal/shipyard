@@ -18,7 +18,7 @@
    artifact's does: a chat's rows come back as it scrolls. */
 .cv-md .cv-pre-diagram { overflow-x: auto; padding: 0.5rem 0.75rem; }
 .cv-md .cv-pre-diagram > svg { display: block; margin: 0 auto; }
-.cv-md .cv-pre-diagram .art-node-g, .cv-md .cv-pre-diagram .art-edge { animation: none; }
+.cv-md .cv-pre-diagram .art-node-g, .cv-md .cv-pre-diagram .art-group-g, .cv-md .cv-pre-diagram .art-edge { animation: none; }
 
 /* A diff: on the card, as an edit's change is, its files one under another. */
 .cv-md .cv-pre[data-drawn="diff"] { background: var(--card); }

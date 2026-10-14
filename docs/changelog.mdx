@@ -28,6 +28,14 @@ again.
   drawn from, and *Copy* still copies that. Other Mermaid diagrams, such
   as sequence diagrams, show as written, and a reply still being written
   shows its blocks as text until it's done.
+- **Mermaid flowcharts draw as they were written.** Subgraphs show as
+  titled, tinted boxes around their nodes, nested where they nest, and a
+  `<br/>` in a label starts a new line. Labels lose their quotes, codes
+  such as `#quot;` and `&amp;` show as the characters they stand for, and
+  nodes keep their shapes: pills, cylinders, circles, hexagons and slanted
+  boxes. Every kind of arrow is read, labelled or not, as are chains like
+  `a --> b --> c` and `a & b --> c`. A loop back up the chart curves round
+  the side instead of stretching it. This goes for diagram artifacts too.
 - **Diffs in a reply look like the chat's edits.** A `diff` or `patch`
   code block draws with file names, line numbers and highlighting, as an
   agent's edits do. Plain lines of `+` and `-` show coloured, without
