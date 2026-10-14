@@ -1597,6 +1597,11 @@ func (b *Box) pollScreens(ctx context.Context) {
 			b.Turns.Exited(name)
 			continue
 		}
+		if structuredDriver(sess.Driver) {
+			// Its driver says what it does, from its stream; the screen
+			// is its host's, which shows none of it.
+			continue
+		}
 		if b.startingState(name) == startAsking {
 			// Its startup watch reads it: a question that sits still is
 			// not a turn that ended.

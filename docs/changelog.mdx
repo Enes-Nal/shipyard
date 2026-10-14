@@ -11,6 +11,12 @@ again.
 
 ## Unreleased
 
+- **Labs: a structured agent's first permission waits for you.** When a
+  structured agent asked for a permission in its very first turn, with
+  *Permissions: Ask*, the box read the session's screen, which shows nothing
+  of it, ended the wait a second later and then the turn: the chat had no
+  Allow / Deny, said the agent was done, and the agent waited forever. The
+  screen no longer settles structured sessions; their own stream does.
 - **Agents sharing a worktree each get a browser tab of their own.** When
   several agents check pages in one worktree at once, each passes
   `--tab NAME` to `berthd browser` and gets its own page, cookies and size,
