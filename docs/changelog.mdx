@@ -10,7 +10,6 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - **oh-my-pi is a built-in agent.** Start it from a project like any other
   (`omp`), with a model and thinking level. With *Structured agents* on, it runs
   through the Agent Client Protocol: its replies and tool calls fill the chat
@@ -19,8 +18,20 @@ again.
   says when it is working, needs you or is done, and adds Shipyard's MCP
   server to `~/.omp/agent/mcp.json` so omp can drive other sessions; a box
   that has omp gets both with the other agents' hooks.
+- **Settings › Boxes reads correctly to a screen reader.** A box with no
+  browsers running put its "No browsers running" note inside the browsers
+  list, so assistive tech announced an empty list with a stray line in it.
+  The note now stands on its own.
 
 ## v0.3.17
+
+- **Agents sharing a worktree each get a browser tab of their own.** When
+  several agents check pages in one worktree at once, each passes
+  `--tab NAME` to `berthd browser` and gets its own page, cookies and size,
+  so they no longer take the page from each other. Every tab keeps rendering
+  at full speed while nobody watches it. The agent's view in a browser pane
+  shows the tabs, stays on the one you pick, and no longer jumps from one
+  agent's page to the next. Needs the box upgraded.
 
 - **Labs: OpenCode, Gemini CLI and Cursor Agent run structured too.** With
   *Structured agents* on, they start through the Agent Client Protocol: their
@@ -35,13 +46,6 @@ again.
   chat, commands and file changes to approve come to it as Allow / Always
   allow / Deny (or, with Bypass, run without asking), its questions are
   answered there, and it can be stopped and resumed. Needs the box upgraded.
-
-- **Labs: a structured Claude agent's conversation can be resumed.** When
-  one ends, its pane offers *Resume the conversation* rather than a fresh
-  start, and once its session is closed a worktree's menu lists its
-  conversations under *Resume a conversation*: each carries on where it left
-  off, earlier turns and permission mode included. Needs the box upgraded.
-
 - **Labs: a structured Claude agent opens in Claude Code's own terminal and
   comes back.** The Terminal switch on a structured agent's pane stops it and
   opens the same conversation in Claude Code's screen, for `/login`,
@@ -58,7 +62,6 @@ again.
   as Allow / Always allow / Deny, or with *Permissions: Bypass* (the
   default) the box allows them for you; questions and plans always wait for
   you. They open as conversations. Needs the box upgraded.
-
 - **Doctor no longer says berthd runs "not as a service" when it does.**
   `berthd install` puts your login shell's PATH in the service, and doctor
   compared the service with one that had no PATH, so on a Mac it always

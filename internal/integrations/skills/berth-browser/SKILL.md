@@ -67,6 +67,34 @@ berthd browser open /cart --size 390x844 # set it and open in one step
   costs far more to read.
 - The user watching your browser live sees the size you set.
 
+## Several agents, one worktree: tabs
+
+Without `--tab`, every agent in a worktree drives the same page: another
+agent's `open` takes it from under you, your refs stop working, and your
+shot may be of their page. When you are one of several agents (a subagent or
+teammate) in the same worktree, use a tab of your own, named after you, on
+every command:
+
+```sh
+berthd browser open /signup --tab signup-a   # opens the tab on first use
+berthd browser click @e3 --tab signup-a
+berthd browser shot --tab signup-a
+berthd browser close --tab signup-a          # when you're done
+berthd browser tabs                          # every tab and what it shows
+```
+
+Or set it once for your shell: `export BERTH_BROWSER_TAB=signup-a`. A tab
+has its own page, refs, console, size and cookies (logging in with `--as` in
+one doesn't log the others in or out), and it renders whether or not anyone
+watches it. A tab closes after 5 idle minutes. The box caps how many tabs a
+worktree has (2 to 8, by its memory). If `open` says there are too many,
+close a tab you don't need or wait for one to go idle. Don't close other
+agents' tabs.
+
+When you hand browser work to other agents, give each one its tab's name in
+its brief, for example: "use `--tab onboarding-b` on every `berthd browser`
+command".
+
 ## Rules
 
 - Use `berthd browser` for this worktree's pages, not `agent-browser`,
