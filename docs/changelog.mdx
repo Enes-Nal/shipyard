@@ -18,6 +18,16 @@ again.
 - **A new agent no longer flashes "has ended" as it opens.** For a moment
   after it started, its chat showed *Claude Code has ended* with *Start
   Claude Code again*, before the box had listed the new session.
+- **Mermaid flowcharts in a reply draw as diagrams.** A `mermaid` code
+  block with a flowchart shows as the diagram, in the theme's colours, the
+  way a diagram artifact does; *Source* in its corner shows what it was
+  drawn from, and *Copy* still copies that. Other Mermaid diagrams, such
+  as sequence diagrams, show as written, and a reply still being written
+  shows its blocks as text until it's done.
+- **Diffs in a reply look like the chat's edits.** A `diff` or `patch`
+  code block draws with file names, line numbers and highlighting, as an
+  agent's edits do. Plain lines of `+` and `-` show coloured, without
+  numbers. A block that isn't really a diff stays as written.
 - **Callouts in a reply look like GitHub's.** A quote that starts with
   `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]` shows as
   a tinted box with its icon and name, in your theme's colours.

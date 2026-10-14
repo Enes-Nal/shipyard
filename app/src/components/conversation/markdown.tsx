@@ -1,6 +1,7 @@
 import { CopyIcon } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
+import { CodeBlocks } from "@/components/conversation/code-blocks";
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
 import { useFileLinks } from "@/components/conversation/file-links";
 import { useRepoRefs } from "@/components/conversation/repo-refs";
@@ -160,6 +161,8 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
           if (/^https?:\/\//.test(href)) void openUrl(href);
         }}
       />
+      {/* Mermaid flowcharts and diffs, drawn into their blocks. */}
+      <CodeBlocks body={body} html={html} draft={draft} />
       {copy && (
         <div className={cn("mt-1 flex h-6 opacity-0 transition-opacity focus-within:opacity-100 group-hover/md:opacity-100", draft && "invisible")} aria-hidden={draft || undefined}>
           <Tip label="Copy as Markdown">
