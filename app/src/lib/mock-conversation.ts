@@ -166,12 +166,31 @@ export async function handleWebhook(event: PaymentEvent): Promise<Order> {
 
 Before I plan the release, a few questions.`;
 
+const TABLE_REPORT = `The latest checks show the search and checkout paths improving:
+
+| Endpoint | Before (ms) | After (ms) |
+| --- | ---: | ---: |
+| Search | 1,240 | 410 |
+| Checkout | 880 | 520 |
+| Cart | 630 | 280 |
+
+The checks behind those numbers:
+
+| Check | Status | Time (ms) |
+| --- | --- | ---: |
+| Search index | pass | 18 |
+| Retry webhook | fail | 42 |
+| Checkout page | pass | 31 |
+| Duplicate order | fail | 27 |`;
+
 function releaseChat(): TranscriptItem[] {
   const picture = new URLSearchParams(location.search).get("scene") === "chat-image" ? "\n\nThe checkout screenshot shows the confirmed order:\n\n![Checkout result](screenshots/checkout-result.png)" : "";
+  const tables = new URLSearchParams(location.search).get("scene") === "chat-tables";
   return [
     { kind: "user", id: "rq-u1", text: "Plan the release of the checkout fix." },
     { kind: "tools", id: "rq-t1", verb: "Read", done: true, items: [{ verb: "Read", target: "webhook.ts", file: true, id: "mock-read-1" }, { verb: "Read", target: "createOrder.ts", file: true, id: "mock-read-2" }] },
     { kind: "text", id: "rq-x1", text: RELEASE_PLAN + picture },
+    ...(tables ? [{ kind: "text" as const, id: "rq-x2", text: TABLE_REPORT }] : []),
     { kind: "question", id: "rq-q1", tool: "mock-ask-release", questions: RELEASE_QUESTIONS },
   ];
 }
