@@ -54,6 +54,13 @@ type Driver interface {
 // but a structured one (DriverClaude).
 const DriverTerminal = "terminal"
 
+// structuredDriver says whether a session's agent is driven through its
+// own protocol (Claude Code's stream, Codex's app server, ACP) rather than
+// its terminal.
+func structuredDriver(kind string) bool {
+	return kind == DriverClaude || kind == DriverCodex || kind == DriverACP
+}
+
 // driverFor is the driver for a session's agent.
 func (b *Box) driverFor(sess Session) Driver {
 	kind := firstNonEmpty(sess.Driver, DriverTerminal)

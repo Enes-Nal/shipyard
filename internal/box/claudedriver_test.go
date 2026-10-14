@@ -304,6 +304,55 @@ func TestAStructuredClaudeSessionIsDrivenThroughItsStream(t *testing.T) {
 	}
 }
 
+// A structured session's first prompt is sent before its stream has said
+// anything, so its turn starts as one only the screen could end. The
+// screen of a structured session is its host's, which never shows the
+// question: read, it ended the wait for a permission and then the turn, and
+// the chat lost the person's Allow / Deny.
+func TestAPermissionInAStructuredSessionsFirstTurnWaitsForThePerson(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("the stand-in Claude needs python3")
+	}
+	bin := t.TempDir()
+	os.WriteFile(filepath.Join(bin, "claude"), []byte(fakeStreamClaude), 0o755)
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	states := &Turns{}
+	var box *Box
+	c, bus := servedBox(t, func(b *Box) {
+		b.Turns = states
+		b.ConversationsDir = t.TempDir()
+		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
+		box = b
+	})
+	states.Attach(bus)
+	repo := gitRepo(t)
+	call(t, c, "POST", "/v1/locations", "", map[string]string{"name": "acme", "path": repo}, nil)
+	var sess Session
+	if status := call(t, c, "POST", "/v1/sessions", "", map[string]any{"location": "acme", "agent": "claude", "driver": "claude", "prompt": "run the tests"}, &sess); status != 200 {
+		t.Fatalf("start: %d", status)
+	}
+	t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+sess.Name, "", nil, nil) })
+
+	deadline := time.Now().Add(10 * time.Second)
+	for st, _ := states.State(sess.Name); st.State != "waiting"; st, _ = states.State(sess.Name) {
+		if time.Now().After(deadline) {
+			t.Fatalf("the permission never waited: %+v", st)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	// More polls than it takes the screen to call a turn finished.
+	for range screenQuiet + 2 {
+		box.pollScreens(t.Context())
+	}
+	if st, _ := states.State(sess.Name); st.State != "waiting" || st.Ask == nil || st.Ask.Input != "pnpm test" {
+		t.Fatalf("the screen settled a structured session's permission: %+v", st)
+	}
+}
+
 // TestALiveClaudeSessionWorks drives the real Claude Code (haiku): run it
 // with BERTH_LIVE_CLAUDE=1 on a machine logged in to Claude.
 func TestALiveClaudeSessionWorks(t *testing.T) {
