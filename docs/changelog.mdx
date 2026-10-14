@@ -18,6 +18,13 @@ again.
 - **A new agent no longer flashes "has ended" as it opens.** For a moment
   after it started, its chat showed *Claude Code has ended* with *Start
   Claude Code again*, before the box had listed the new session.
+- **Callouts in a reply look like GitHub's.** A quote that starts with
+  `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]` shows as
+  a tinted box with its icon and name, in your theme's colours.
+- **Issues, pull requests and commits in a reply are links.** In a chat
+  whose repository is on GitHub, `#123`, `acme/shop#45` and a commit's hash
+  open on GitHub when you click them. Colours like `#fff`, line anchors like
+  `#L14`, code blocks and existing links stay as they are.
 - **Files an agent names link to them.** A path of the worktree in a
   reply's code, like `src/app.ts:14` or `src/app.ts:14-30`, gets a faint
   dotted underline. Hovering it shows those lines, drawn like the chat's
