@@ -281,7 +281,9 @@ export function Switchboard() {
       }}
     >
       <CommandDialogPopup aria-label="Switchboard" initialFocus={search} className="max-h-[min(34rem,calc(100vh-6rem))] max-w-2xl">
-        <div className="flex h-11 items-center gap-2 px-[calc(--spacing(5.5)-1px)] pt-1.5 sm:h-10">
+        {/* Positioned, like the palette's input, so the shell's tint
+            (the popup's ::before) is under it, not over it. */}
+        <div className="relative flex h-12 items-center gap-2 px-[calc(--spacing(5.5)-1px)] pt-1.5 pb-0.5 sm:h-11">
           <SearchIcon aria-hidden className="size-4 shrink-0 text-muted-foreground opacity-80" />
           <input
             ref={search}
@@ -333,18 +335,21 @@ export function Switchboard() {
             </div>
           </ScrollArea>
         </CommandPanel>
-        <CommandFooter className="text-[11px] text-muted-foreground">
+        <CommandFooter className="relative text-[11px] text-muted-foreground">
           {editing ? (
             <span className="flex items-center gap-1">
               <Kbd>↵</Kbd> to save the note
             </span>
           ) : (
             <span className="flex items-center gap-3">
-              {current && <Hint keys={["↑", "↓"]}>move</Hint>}
-              {current && <Hint keys={["↵"]}>open</Hint>}
-              {current && <Hint keys={["⌘S"]}>{starred ? "unstar" : "star"}</Hint>}
-              {current && <Hint keys={["⌘E"]}>note</Hint>}
-              <Hint keys={["⇥"]}>area</Hint>
+              {current && (
+                <>
+                  <Hint keys={["↑", "↓"]}>move</Hint>
+                  <Hint keys={["↵"]}>open</Hint>
+                  <Hint keys={["⌘S"]}>{starred ? "unstar" : "star"}</Hint>
+                  <Hint keys={["⇧F10"]}>more</Hint>
+                </>
+              )}
             </span>
           )}
           <span className="flex items-center gap-1">
@@ -398,7 +403,7 @@ function Empty({ query, area }: { query: string; area: string }) {
 
 function AreaStrip({ areas, area, adding, onPick, onAdd, onAdded, onCancel }: { areas: string[]; area: string; adding?: { assign?: string }; onPick(name: string): void; onAdd(): void; onAdded(name: string): void; onCancel(): void }) {
   return (
-    <div className="flex items-center gap-0.5 px-3.5 pt-0.5 pb-2">
+    <div className="relative flex items-center gap-0.5 px-3.5 pt-1 pb-2.5">
       <div role="tablist" aria-label="Areas" className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
         {areas.map((a) => (
           <button
@@ -423,6 +428,10 @@ function AreaStrip({ areas, area, adding, onPick, onAdd, onAdded, onCancel }: { 
           </button>
         </Tip>
       )}
+      {/* The strip's own key, where it applies, rather than in the footer. */}
+      <span aria-hidden className="ms-auto flex shrink-0 items-center gap-1 ps-2 text-[11px] text-muted-foreground">
+        <Kbd>⇥</Kbd> next area
+      </span>
     </div>
   );
 }
@@ -515,7 +524,7 @@ function Row({ listId, item, focus, note, showArea, areas, now, highlighted, edi
         data-row={item.id}
         data-highlighted={highlighted || undefined}
         onPointerMove={() => !highlighted && onHighlight()}
-        className="group/row scroll-my-2 rounded-lg data-highlighted:bg-accent data-popup-open:bg-accent"
+        className="group/row scroll-my-2 rounded-lg data-highlighted:bg-accent data-popup-open:bg-accent dark:data-highlighted:bg-foreground/9 dark:data-popup-open:bg-foreground/9"
       >
         <div className="relative">
           <div
@@ -548,7 +557,7 @@ function Row({ listId, item, focus, note, showArea, areas, now, highlighted, edi
             <div className="flex min-w-21 shrink-0 items-center justify-end gap-2 text-muted-foreground text-xs transition-opacity duration-100 group-hover/row:opacity-0 group-data-popup-open/row:opacity-0">
               {!twoLine && <span className="max-w-52 truncate">{item.place}</span>}
               {focus && showArea && item.area !== "Unsorted" && <span className="rounded-sm bg-muted px-1.5 py-px text-[11px] group-data-highlighted/row:bg-background/60">{item.area}</span>}
-              {item.agent && <AgentIcon agent={item.agent} className="size-3 opacity-80" />}
+              {item.agent && <AgentIcon agent={item.agent} muted className="size-3" />}
               <span className="w-7 text-right tabular-nums">{time}</span>
             </div>
           </div>
