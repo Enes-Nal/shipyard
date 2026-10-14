@@ -9,6 +9,13 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+
+## Unreleased
+- **Settings › Boxes reads correctly to a screen reader.** A box with no
+  browsers running put its "No browsers running" note inside the browsers
+  list, so assistive tech announced an empty list with a stray line in it.
+  The note now stands on its own.
+
 ## v0.3.17
 
 - **Agents sharing a worktree each get a browser tab of their own.** When
@@ -32,13 +39,6 @@ again.
   chat, commands and file changes to approve come to it as Allow / Always
   allow / Deny (or, with Bypass, run without asking), its questions are
   answered there, and it can be stopped and resumed. Needs the box upgraded.
-
-- **Labs: a structured Claude agent's conversation can be resumed.** When
-  one ends, its pane offers *Resume the conversation* rather than a fresh
-  start, and once its session is closed a worktree's menu lists its
-  conversations under *Resume a conversation*: each carries on where it left
-  off, earlier turns and permission mode included. Needs the box upgraded.
-
 - **Labs: a structured Claude agent opens in Claude Code's own terminal and
   comes back.** The Terminal switch on a structured agent's pane stops it and
   opens the same conversation in Claude Code's screen, for `/login`,
@@ -55,7 +55,6 @@ again.
   as Allow / Always allow / Deny, or with *Permissions: Bypass* (the
   default) the box allows them for you; questions and plans always wait for
   you. They open as conversations. Needs the box upgraded.
-
 - **Doctor no longer says berthd runs "not as a service" when it does.**
   `berthd install` puts your login shell's PATH in the service, and doctor
   compared the service with one that had no PATH, so on a Mac it always
