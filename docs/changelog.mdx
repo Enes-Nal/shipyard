@@ -9,7 +9,8 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
-## Unreleased
+## v0.3.18
+
 - **Labs: every way of starting an agent starts it structured.** With
   *Structured agents* on, only the composer started agents structured; the
   sidebar's and a worktree's *New agent*, the launcher, the new-tab and split
@@ -22,7 +23,15 @@ again.
   adds a small extension to `~/.omp/agent/extensions` so a terminal session
   says when it is working, needs you or is done, and adds Shipyard's MCP
   server to `~/.omp/agent/mcp.json` so omp can drive other sessions; a box
-  that has omp gets both with the other agents' hooks.
+  that has omp gets both with the other agents' hooks. Needs the box
+  upgraded.
+- **Labs: a structured agent's first permission waits for you.** When a
+  structured agent asked for a permission in its very first turn, with
+  *Permissions: Ask*, the box read the session's screen, which shows nothing
+  of it, ended the wait a second later and then the turn: the chat had no
+  Allow / Deny, said the agent was done, and the agent waited forever. The
+  screen no longer settles structured sessions; their own stream does.
+  Needs the box upgraded.
 - **Settings › Boxes reads correctly to a screen reader.** A box with no
   browsers running put its "No browsers running" note inside the browsers
   list, so assistive tech announced an empty list with a stray line in it.
@@ -30,12 +39,6 @@ again.
 
 ## v0.3.17
 
-- **Labs: a structured agent's first permission waits for you.** When a
-  structured agent asked for a permission in its very first turn, with
-  *Permissions: Ask*, the box read the session's screen, which shows nothing
-  of it, ended the wait a second later and then the turn: the chat had no
-  Allow / Deny, said the agent was done, and the agent waited forever. The
-  screen no longer settles structured sessions; their own stream does.
 - **Agents sharing a worktree each get a browser tab of their own.** When
   several agents check pages in one worktree at once, each passes
   `--tab NAME` to `berthd browser` and gets its own page, cookies and size,
