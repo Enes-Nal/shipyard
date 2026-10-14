@@ -12,6 +12,7 @@ import { ChatControls } from "@/components/conversation/chat-controls";
 import { ConversationView, type EditActions, QueuedBubble } from "@/components/conversation/conversation-view";
 import { FileLinks } from "@/components/conversation/file-links";
 import { ChatScope } from "@/components/conversation/notice-card";
+import { RepoRefs } from "@/components/conversation/repo-refs";
 import { PixelLoader } from "@/components/pixel-loader";
 import { useComposerMenu } from "@/components/conversation/command-menu";
 import { LiveScreen, useLiveScreen } from "@/components/conversation/live-screen";
@@ -39,6 +40,7 @@ import { errorMessage } from "@/lib/format";
 import { useNotifications } from "@/lib/notifications";
 import { updateBoxes } from "@/lib/outdated";
 import { addComment, type LineComment, pending, removeComment, sendComments, useComments } from "@/lib/review-comments";
+import { githubRepo } from "@/lib/repo-refs";
 import { answerQuestions, type QuestionAnswer } from "@/lib/questions";
 import { permissionChoices } from "@/lib/screen";
 import { NONE, useStore } from "@/lib/store";
@@ -142,6 +144,8 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   const wtLocation = wt?.location;
   const wtWorktree = wt?.worktree;
   const worktreeRef = useMemo(() => (wtLocation && wtWorktree ? refOf(box, wtLocation, wtWorktree) : undefined), [box, wtLocation, wtWorktree]);
+  // Its replies' #123 and commits link to its repository on GitHub (repo-refs.tsx).
+  const repo = githubRepo(wt?.location.remote);
 
   // The demo makes up a conversation for an agent opened mid-way.
   useEffect(() => {
@@ -544,7 +548,9 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
           <ChatScope value={{ who, send: reply, showTerminal: onShowTerminal, startAgain: again }}>
             <QuestionsContext value={{ live: formAsk ? openQ?.tool : undefined, canAnswer: canAnswer && agent === "claude", stuck: stuckNow, submit: submitQuestions }}>
               <FileLinks worktree={worktreeRef}>
-                <ConversationView chat={{ box, session, agent, visible, idle: state !== "running" && state !== "waiting" }} items={shown} onAnswer={answer} edits={edits} who={who} tail={tail} tailSize={queue.items.length + (untaken ? 1 : 0)} />
+                <RepoRefs repo={repo}>
+                  <ConversationView chat={{ box, session, agent, visible, idle: state !== "running" && state !== "waiting" }} items={shown} onAnswer={answer} edits={edits} who={who} tail={tail} tailSize={queue.items.length + (untaken ? 1 : 0)} />
+                </RepoRefs>
               </FileLinks>
             </QuestionsContext>
           </ChatScope>

@@ -3,8 +3,10 @@ import { memo, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
 import { useFileLinks } from "@/components/conversation/file-links";
+import { useRepoRefs } from "@/components/conversation/repo-refs";
 import { Tip } from "@/components/tip";
 import { copyText } from "@/lib/clipboard";
+import { CALLOUT, callout } from "@/lib/callouts";
 import { caretAfter } from "@/lib/draft-text";
 import { markdownHtml, type TexRender } from "@/lib/markdown-html";
 import { openUrl } from "@/lib/open-url";
@@ -20,7 +22,9 @@ import { cn } from "@/lib/utils";
 // code block has its own Copy, and the reply's Copy takes the Markdown
 // itself, so tables and lists survive a paste into an issue or an editor.
 // In a chat, a file of its worktree named in inline code links to it, with
-// its lines on hover (file-links.tsx).
+// its lines on hover (file-links.tsx). A > [!NOTE] quote draws as GitHub's
+// callouts do (lib/callouts.ts), and in a chat, #123 and a commit's hash
+// link to its repository (repo-refs.tsx).
 
 // A code block's head: its language, and Copy (lucide's copy and check).
 const ICON = (d: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -79,13 +83,14 @@ function loadTex() {
 const drawn = new Map<string, string>();
 const DRAWN_MAX = 300;
 
-// The code frames and wide tables micromark's HTML gets.
+// The code frames, wide tables and callouts micromark's HTML gets.
 const shaped = (html: string) =>
   html
     // Wide tables scroll on their own instead of widening the column.
     .replace(/<table>/g, '<div class="cv-table"><table>')
     .replace(/<\/table>/g, "</table></div>")
-    .replace(/<pre><code((?: class="language-([^"]+)")?)>([\s\S]*?)<\/code><\/pre>/g, codeBlock);
+    .replace(/<pre><code((?: class="language-([^"]+)")?)>([\s\S]*?)<\/code><\/pre>/g, codeBlock)
+    .replace(CALLOUT, callout);
 
 // A draft's code blocks name no language: its screen doesn't say, and
 // a guess would change when the message lands.
@@ -116,6 +121,7 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
   const body = useRef<HTMLDivElement>(null);
   useCodeHighlight(body, html);
   const links = useFileLinks(body, html, draft);
+  useRepoRefs(body, html, draft);
   return (
     <div className="group/md relative cv-in" data-draft={draft ? "" : undefined} aria-busy={draft || undefined} aria-description={draft ? "Still being written: as the agent's screen shows it" : undefined}>
       {draft && clipped && (
