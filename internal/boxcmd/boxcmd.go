@@ -80,7 +80,7 @@ var usageSections = []struct {
 		{"%[1]s run cancel %[2]sRUN", "Stop a run"},
 		{"%[1]s flow secret%[3]s FLOW [--scope S] [--json]", "Make a webhook flow's signing secret (shown once)"},
 	}},
-	{"Agent browser (a headless browser on the box, per worktree)", [][2]string{
+	{"Agent browser (a headless browser on the box, per worktree; --tab NAME on any of these\ngives an agent a tab of its own, so agents sharing a worktree don't share a page)", [][2]string{
 		{"%[1]s browser open %[2]s[LOC/WT] [PATH|URL] [--as EMAIL] [--path /x] [--size WxH|PRESET] [--scale N]", "Open the worktree's page ($BERTH_URL), logged in as EMAIL with --as;\nprints a compact snapshot with @refs"},
 		{"%[1]s browser resize %[2]s[LOC/WT] WxH|PRESET [--scale N]", "Set the page's size (default 1920x1080; phone 390x844, tablet, laptop); kept until changed"},
 		{"%[1]s browser snapshot %[2]s[LOC/WT] [--full] [--delta] [--selector SEL] [--depth N]", "The page's elements (interactive by default; capped)"},
@@ -92,7 +92,8 @@ var usageSections = []struct {
 		{"%[1]s browser console %[2]s[LOC/WT] [--all]", "New console errors and warnings since the last look"},
 		{"%[1]s browser network %[2]s[LOC/WT]", "Failed requests since the last look"},
 		{"%[1]s browser eval %[2]s[LOC/WT] JS", "Run JavaScript in the page (output capped at 2 KB)"},
-		{"%[1]s browser status|close %[2]s[LOC/WT]", "Whether it runs, or close it"},
+		{"%[1]s browser status|close %[2]s[LOC/WT] [--tab NAME]", "Whether it runs, or close it (with --tab, just that tab)"},
+		{"%[1]s browser tabs %[2]s[LOC/WT]", "Its tabs: each its own page, cookies and size ($BERTH_BROWSER_TAB is the default)"},
 		{"%[1]s browser list%[3]s [--json]", "Browsers running on the box"},
 		{"%[1]s browser allow%[3]s ORIGIN", "Let agents' browsers load a public origin (the box owner's)"},
 		{"%[1]s browser reap%[3]s [--dry-run] [--json]", "Close agent-browser (Vercel's CLI) sessions left by ended berth sessions"},
@@ -257,7 +258,7 @@ func Run(ctx context.Context, c *box.Client, args []string, out io.Writer) error
 	case "flow secret":
 		return flowSecret(ctx, c, rest, out)
 	case "browser open", "browser resize", "browser snapshot", "browser click", "browser fill", "browser press", "browser select", "browser hover", "browser check",
-		"browser wait", "browser shot", "browser console", "browser network", "browser status", "browser close", "browser eval", "browser allow", "browser list", "browser reap":
+		"browser wait", "browser shot", "browser console", "browser network", "browser status", "browser close", "browser tabs", "browser eval", "browser allow", "browser list", "browser reap":
 		return browserCmd(ctx, c, strings.TrimPrefix(cmd, "browser "), rest, out)
 	case "shots compare", "shots baseline", "shots accept":
 		return shotsCmd(ctx, c, strings.TrimPrefix(cmd, "shots "), rest, out)

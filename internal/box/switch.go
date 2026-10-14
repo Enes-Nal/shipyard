@@ -35,8 +35,9 @@ import (
 // back (Session.Switch "chat").
 
 // labelHandoff is where Claude Code's transcript stood when the session
-// went to its terminal: the file, then its size. What it says past that
-// was said in the terminal.
+// went to its terminal: its size, a space, then the file. What it says past
+// that was said in the terminal. (Printable only: tmux on Linux shows a
+// control character in an option escaped.)
 const labelHandoff = "@berth_handoff"
 
 // SwitchRequest moves a session to its terminal or back to its chat.
@@ -126,7 +127,7 @@ func (b *Box) toTerminal(r *http.Request, sess Session) error {
 	handoff := ""
 	if _, path, _ := b.transcriptFile(ctx, sess, nil); path != "" {
 		if st, err := os.Stat(path); err == nil {
-			handoff = path + "\x1f" + strconv.FormatInt(st.Size(), 10)
+			handoff = strconv.FormatInt(st.Size(), 10) + " " + path
 		}
 	}
 	stopCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -178,21 +179,7 @@ func (b *Box) toChat(r *http.Request, sess Session) error {
 	if err := b.importTerminalTurns(ctx, sess); err != nil {
 		return err
 	}
-	l, err := b.launchClaudeIn(b.claudePreset(ctx, sess), "", "", modeFor(sess), sid, sess.conv, sess.sock)
-	if err != nil {
-		return err
-	}
-	l.labels[labelHandoff] = ""
-	b.claude().forget(sess.Name)
-	if err := b.respawnAgent(ctx, sess, l.command, l.env, l.labels); err != nil {
-		return err
-	}
-	// Back when it listens, so what is sent next reaches it.
-	awaitHost(sess.sock, 15*time.Second)
-	if live, err := b.Sessions.Get(ctx, sess.Name); err == nil {
-		b.startStructured(origin(r), gateOrigin(r), live, "")
-	}
-	return nil
+	return b.resumeInPlace(r, sess, sid)
 }
 
 // modeFor is the mode a structured session goes back to: bypass when
@@ -212,7 +199,7 @@ func (b *Box) importTerminalTurns(ctx context.Context, sess Session) error {
 	if err != nil {
 		return nil
 	}
-	path, off, ok := strings.Cut(strings.TrimSpace(string(v)), "\x1f")
+	off, path, ok := strings.Cut(strings.TrimSpace(string(v)), " ")
 	from, perr := strconv.ParseInt(off, 10, 64)
 	if !ok || perr != nil || path == "" {
 		return nil
@@ -259,8 +246,10 @@ func lastSessionID(path string) string {
 
 // respawnAgent runs command in the session's pane in place of what ran
 // there, with env added to the session's own and labels set, as create
-// starts one (sessions.go).
+// starts one (sessions.go): with its agent's CLI on PATH, which a login
+// shell may otherwise lose (Debian's resets it).
 func (b *Box) respawnAgent(ctx context.Context, sess Session, command string, env []string, labels map[string]string) error {
+	agent := firstNonEmpty(agentFor(sess), "claude")
 	s := b.Sessions
 	extra, wrap := b.sessionEnv(ctx, sess.Dir)
 	file, err := s.writeCommand(sess.Name, command)
@@ -268,10 +257,10 @@ func (b *Box) respawnAgent(ctx context.Context, sess Session, command string, en
 		return err
 	}
 	shell := sessionShell()
-	argv := []string{shell, "-lc", withPATH(shell, launchPATH(command, "claude"), sourceCommand(shell, file))}
+	argv := []string{shell, "-lc", withPATH(shell, launchPATH(command, agent), sourceCommand(shell, file))}
 	target := "=" + sess.Name + ":"
 	args := []string{"respawn-pane", "-k", "-t", target, "-c", sess.Dir}
-	for _, kv := range append(append(withAgentBrowserIdle(extra), "BERTH_SESSION="+sess.Name, "BERTH_AGENT=claude"), env...) {
+	for _, kv := range append(append(withAgentBrowserIdle(extra), "BERTH_SESSION="+sess.Name, "BERTH_AGENT="+agent), env...) {
 		args = append(args, "-e", kv)
 	}
 	args = append(append(args, "--"), groups.Wrap(append(append([]string(nil), wrap...), argv...))...)

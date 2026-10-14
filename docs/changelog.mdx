@@ -9,11 +9,36 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+
 ## Unreleased
 - **Settings › Boxes reads correctly to a screen reader.** A box with no
   browsers running put its "No browsers running" note inside the browsers
   list, so assistive tech announced an empty list with a stray line in it.
   The note now stands on its own.
+
+## v0.3.17
+
+- **Agents sharing a worktree each get a browser tab of their own.** When
+  several agents check pages in one worktree at once, each passes
+  `--tab NAME` to `berthd browser` and gets its own page, cookies and size,
+  so they no longer take the page from each other. Every tab keeps rendering
+  at full speed while nobody watches it. The agent's view in a browser pane
+  shows the tabs, stays on the one you pick, and no longer jumps from one
+  agent's page to the next. Needs the box upgraded.
+
+- **Labs: OpenCode, Gemini CLI and Cursor Agent run structured too.** With
+  *Structured agents* on, they start through the Agent Client Protocol: their
+  replies stream into the chat, their permission requests come to it (or,
+  with Bypass, the box allows them), Stop cancels their turn, their own modes
+  are in the chat's mode menu, and they can be resumed. A repository's own
+  agent can join in by giving its preset an `acp`. Needs the box upgraded.
+
+- **Labs: Codex agents can run structured too.** With *Structured agents*
+  on (Settings › Labs), a new Codex agent
+  runs as Codex's app server, driven by the box: replies stream into the
+  chat, commands and file changes to approve come to it as Allow / Always
+  allow / Deny (or, with Bypass, run without asking), its questions are
+  answered there, and it can be stopped and resumed. Needs the box upgraded.
 - **Labs: a structured Claude agent opens in Claude Code's own terminal and
   comes back.** The Terminal switch on a structured agent's pane stops it and
   opens the same conversation in Claude Code's screen, for `/login`,
@@ -21,7 +46,7 @@ again.
   back to the chat, with what was said in the terminal in its place. Needs the
   box upgraded.
 
-- **Labs: structured Claude agents.** Turn on *Structured Claude agents*
+- **Labs: structured Claude agents.** Turn on *Structured agents*
   in Settings › Labs and new Claude Code agents run without their
   terminal: the box drives Claude Code through its stream and keeps its own
   record of the conversation, so replies stream in as they are written,
