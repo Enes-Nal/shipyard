@@ -144,10 +144,25 @@ func TestEveryAgentAdapterMapsItsTurn(t *testing.T) {
 		{"opencode", "session.busy", `{"cwd":"/w","session_id":"o"}`, "agent.started"},
 		{"opencode", "permission.updated", `{"cwd":"/w"}`, "agent.waiting"},
 		{"opencode", "session.idle", `{"cwd":"/w"}`, "agent.finished"},
+		{"omp", "session_start", `{"cwd":"/w","session_id":"p"}`, "agent.ready"},
+		{"omp", "agent_start", `{"cwd":"/w","session_id":"p"}`, "agent.started"},
+		{"omp", "tool_approval_requested", `{"cwd":"/w"}`, "agent.waiting"},
+		{"omp", "tool_approval_resolved", `{"cwd":"/w"}`, "agent.started"},
+		{"omp", "agent_end", `{"cwd":"/w"}`, "agent.finished"},
+		{"omp", "session_shutdown", `{"cwd":"/w"}`, "agent.exited"},
 	} {
 		e, ok := Translate(tc[0], tc[1], []byte(tc[2]))
 		if !ok || e.Type != tc[3] || e.Data["path"] != "/w" {
 			t.Errorf("%s %s = %+v %v, want %s", tc[0], tc[1], e, ok, tc[3])
 		}
+	}
+}
+
+func TestOmpAgentEndThatContinuesIsNotATurnEnd(t *testing.T) {
+	if _, ok := Translate("omp", "agent_end", []byte(`{"cwd":"/w","will_continue":true}`)); ok {
+		t.Fatal("agent_end with will_continue was announced as finished")
+	}
+	if _, ok := Translate("omp", "tool_execution_start", []byte(`{"cwd":"/w"}`)); ok {
+		t.Fatal("an event berth does not use was announced")
 	}
 }

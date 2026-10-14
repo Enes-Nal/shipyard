@@ -176,6 +176,7 @@ var agentInstalls = map[string]string{
 	"opencode": "npm install -g opencode-ai",
 	"gemini":   "npm install -g @google/gemini-cli",
 	"cursor":   "curl https://cursor.com/install -fsS | bash",
+	"omp":      "bun install -g @oh-my-pi/pi-coding-agent",
 }
 
 // tmuxRequirement is whether tmux is here and, when it isn't, how to get it.

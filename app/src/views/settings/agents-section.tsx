@@ -21,6 +21,7 @@ const INSTALL: Record<string, string> = {
   opencode: "npm install -g opencode-ai",
   gemini: "npm install -g @google/gemini-cli",
   cursor: "curl https://cursor.com/install -fsS | bash",
+  omp: "bun install -g @oh-my-pi/pi-coding-agent",
 };
 
 const BUILTIN: Pick<AgentPreset, "id" | "name">[] = [
@@ -29,6 +30,7 @@ const BUILTIN: Pick<AgentPreset, "id" | "name">[] = [
   { id: "opencode", name: "OpenCode" },
   { id: "gemini", name: "Gemini CLI" },
   { id: "cursor", name: "Cursor Agent" },
+  { id: "omp", name: "oh-my-pi" },
 ];
 
 export function AgentsSection() {

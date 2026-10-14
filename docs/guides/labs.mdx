@@ -271,8 +271,8 @@ own record of the conversation. The box drives it from there:
   chat. Its modes are default (asks to go past its workspace sandbox),
   untrusted (asks before untrusted commands), read only, and bypass (no
   sandbox, nothing asked). It has no terminal switch.
-- **OpenCode, Gemini CLI and Cursor Agent** speak the Agent Client Protocol
-  (`opencode acp`, `gemini --acp`, `cursor-agent acp`), and so does any agent
+- **OpenCode, Gemini CLI, Cursor Agent and oh-my-pi** speak the Agent Client
+  Protocol (`opencode acp`, `gemini --acp`, `cursor-agent acp`, `omp acp`), and so does any agent
   whose preset in a repository's config has an [`acp`](/reference/config):
   the box opens its session (with its own login, for Cursor Agent), streams
   its reply, cancels its turn, switches its own modes, and brings its

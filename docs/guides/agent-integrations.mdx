@@ -1,6 +1,6 @@
 ---
 title: Agent integrations
-description: Claude Code, Codex, Cursor, Gemini CLI and OpenCode hooks, the skills Shipyard teaches agents, and announcing events from any tool.
+description: Claude Code, Codex, Cursor, Gemini CLI, OpenCode and oh-my-pi hooks, the skills Shipyard teaches agents, and announcing events from any tool.
 ---
 
 Shipyard works with the tools around it in both directions: tools drive
@@ -44,6 +44,11 @@ with the command that installs them.
   `AfterAgent` / `SessionEnd` hooks in `~/.gemini/settings.json`.
 - **OpenCode**: a small plugin, `~/.config/opencode/plugin/berth.js`, that
   runs the hook when a session gets busy, asks for a permission, or goes idle.
+- **oh-my-pi**: a small extension, `~/.omp/agent/extensions/berth.ts`, that
+  runs the hook when a session starts, a turn starts or ends, or a tool asks
+  for approval. Subagents have no UI and report nothing. On a box it also
+  adds `berthd mcp` to `mcpServers` in `~/.omp/agent/mcp.json`, next to any
+  servers already there.
 
 ### Every account
 
