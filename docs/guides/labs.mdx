@@ -278,6 +278,12 @@ own record of the conversation. The box drives it from there:
   its reply, cancels its turn, switches its own modes, and brings its
   permission requests to the chat; *Bypass* has the box allow them.
 
+Agents started without the app follow the setting too: those another agent
+starts with the berth tools, those started with `berth task new` or
+`berth session new --agent`, and the agents of runs and automations. Shipyard gives each box the
+setting, with your *Permissions* choice, whenever it connects and whenever
+you change it; the box needs the `agents.defaults` capability (upgrade it).
+
 The agent keeps working while berthd restarts or upgrades, and the record
 keeps every streamed word even if the agent is killed. The box needs the
 `driver.claude` capability (`driver.codex` for Codex, `driver.acp` for ACP
