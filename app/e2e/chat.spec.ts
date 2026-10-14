@@ -87,6 +87,28 @@ test("Markdown tables can chart numbers and filter failed rows", async ({ app })
   await expect(checks.locator(":scope > table")).toContainText("Search index");
 });
 
+test("a test report shows failures and opens the failed file", async ({ app }) => {
+  mockOnly();
+  await app.open({ params: { view: "conversation", scene: "chat-tests" } });
+  await app.openWorktree("gpu/shop");
+  const card = app.chat.getByTestId("chat-test-results");
+  await expect(card).toBeVisible();
+  await expect(card).toContainText("1 failed");
+  await expect(card).toContainText("8 passed");
+  await expect(card).toContainText("reuses an order when a webhook retries");
+  const block = card.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' cv-pre ')]").first();
+  if (process.env.BERTH_SHOTS) {
+    await block.scrollIntoViewIfNeeded();
+    await app.page.screenshot({ path: `${process.env.BERTH_SHOTS}/chat-test-results.png` });
+    await block.screenshot({ path: `${process.env.BERTH_SHOTS}/chat-test-results-detail.png` });
+  }
+  await block.getByRole("button", { name: "Show test output" }).click();
+  await expect(block.locator("pre")).toBeVisible();
+  await block.getByRole("button", { name: "Show test results" }).click();
+  await card.getByRole("button", { name: /Open apps\/web\/lib\/checkout\/createOrder\.test\.ts line 42/ }).click();
+  await expect(app.page.locator("[data-testid=file-pane][data-path='apps/web/lib/checkout/createOrder.test.ts']")).toBeVisible();
+});
+
 test("an edit opens to its change, highlighted", async ({ app }) => {
   mockOnly();
   await app.openWorktree("devl/checkout-fix");
