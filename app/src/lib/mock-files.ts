@@ -45,6 +45,7 @@ const SHOP_FILES: string[] = [
   "apps/web/lib/email/order-confirmation.tsx",
   "apps/web/lib/log.ts",
   "apps/web/public/logo.png",
+  "screenshots/checkout-result.png",
   "apps/web/public/fonts/shop-sans.woff2",
   "apps/web/styles/globals.css",
   "data/exports/orders-2026-09.csv",
@@ -471,6 +472,10 @@ export function mockFilesCall(box: string, method: string, path: string, body?: 
 // mockFileBlob is a picture's bytes (?raw=1): a made-up logo.
 export function mockFileBlob(path: string): Blob | undefined {
   if (!/\/file\?.*raw=1/.test(path)) return undefined;
+  if (path.includes("checkout-result.png")) {
+    const shot = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560"><rect width="960" height="560" fill="#f3f0e8"/><rect x="58" y="45" width="844" height="470" rx="16" fill="#fff" stroke="#ddd8cb"/><rect x="58" y="45" width="844" height="60" rx="16" fill="#183d35"/><text x="90" y="83" fill="#fff" font-family="Arial,sans-serif" font-weight="700" font-size="22">acme shop</text><text x="825" y="82" fill="#d8e9df" font-family="Arial,sans-serif" font-size="15">Bag · 2</text><text x="104" y="164" fill="#223a32" font-family="Arial,sans-serif" font-weight="700" font-size="30">Checkout complete</text><text x="104" y="198" fill="#65716c" font-family="Arial,sans-serif" font-size="16">Your order is confirmed. A receipt is on its way.</text><rect x="104" y="236" width="500" height="198" rx="12" fill="#f2f7f3" stroke="#d4e7d8"/><circle cx="145" cy="278" r="18" fill="#27835d"/><path d="m136 278 7 7 13-15" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><text x="178" y="285" fill="#20543d" font-family="Arial,sans-serif" font-size="19" font-weight="700">Payment received</text><text x="130" y="341" fill="#65716c" font-family="Arial,sans-serif" font-size="16">Order AC-2048</text><text x="130" y="381" fill="#65716c" font-family="Arial,sans-serif" font-size="16">Delivery estimate</text><text x="454" y="381" fill="#20543d" font-family="Arial,sans-serif" font-size="16" font-weight="700">Friday</text><rect x="677" y="236" width="162" height="198" rx="12" fill="#f8f4e9"/><rect x="705" y="262" width="106" height="94" rx="10" fill="#e2bb83"/><path d="M714 285h88l-12 58h-64z" fill="#f9e6c5"/><text x="698" y="388" fill="#514d42" font-family="Arial,sans-serif" font-size="15">Linen tote</text><text x="698" y="412" fill="#514d42" font-family="Arial,sans-serif" font-size="15">£32.00</text></svg>`;
+    return new Blob([shot], { type: "image/svg+xml" });
+  }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#1f6f5c"/><path d="M160 196h192l-16 176a24 24 0 0 1-24 22H200a24 24 0 0 1-24-22z" fill="#f4efe6"/><path d="M208 196v-20a48 48 0 0 1 96 0v20" fill="none" stroke="#f4efe6" stroke-width="22" stroke-linecap="round"/></svg>`;
   return new Blob([svg], { type: "image/svg+xml" });
 }

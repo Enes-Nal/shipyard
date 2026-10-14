@@ -5,12 +5,19 @@ import { test } from "node:test";
 import katex from "katex";
 
 import { markdownHtml, type TexRender } from "./markdown-html.ts";
+import { imageSlots } from "./chat-images.ts";
 
 // As the app draws it (components/conversation/markdown.tsx).
 const tex: TexRender = (s, displayMode) => katex.renderToString(s, { displayMode, throwOnError: false });
 const html = (text: string) => markdownHtml(text, tex).html;
 // Each formula as [display or inline: its TeX], to see what was read as what.
 const read = (text: string) => markdownHtml(text, (s, display) => `[${display ? "display" : "inline"}:${s}]`).html;
+
+test("images become inert slots before the webview can fetch them", () => {
+  assert.equal(imageSlots(html("![Checkout](screenshots/checkout.png)")), '<p><span class="cv-image-slot" data-chat-image="screenshots/checkout.png" data-chat-image-alt="Checkout"></span></p>');
+  assert.match(imageSlots(html("![Remote](https://example.com/x.png)")), /data-chat-image="https:\/\/example.com\/x.png"/);
+  assert.doesNotMatch(imageSlots(html("![Remote](https://example.com/x.png)")), /<img\b/);
+});
 
 test("$$…$$ is math, a display on a line of its own", () => {
   const out = html("$$x^2$$");

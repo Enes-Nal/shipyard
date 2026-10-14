@@ -43,6 +43,10 @@ interface Scope {
 
 const Links = createContext<Scope | undefined>(undefined);
 
+export function useFileWorktree(): WorktreeRef | undefined {
+  return useContext(Links)?.worktree;
+}
+
 // The ref a marked code element carries (mark).
 function refOf(el: HTMLElement): FileRef {
   const line = Number(el.dataset.line) || undefined;
