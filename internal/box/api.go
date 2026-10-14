@@ -70,6 +70,9 @@ type Box struct {
 	codexDrv         *codexDriver
 	acpOnce          sync.Once
 	acpDrv           *acpDriver
+	// AgentDefaults is how agents start when what starts them names no
+	// driver (agentdefaults.go); nil is in their terminals.
+	AgentDefaults *AgentDefaultsStore
 	// Hooks, when set, may refuse actions through "before:" hooks.
 	Hooks *hooks.Runner
 	// Flows runs the box's and its repositories' automations.
@@ -259,6 +262,8 @@ func (b *Box) Mount(s *wire.Server) {
 	route("GET /v1/agents", b.listAgentCLIs)
 	route("POST /v1/agents/install", b.installAgentCLIs)
 	route("POST /v1/agents/refresh", b.lookAgainForAgents)
+	route("GET /v1/agents/defaults", b.getAgentDefaults)
+	route("PUT /v1/agents/defaults", b.putAgentDefaults)
 	route("POST /v1/upgrade", b.handleUpgrade)
 	route("GET /v1/events", b.streamEvents)
 	route("POST /v1/events", b.emit)
@@ -673,9 +678,11 @@ type SessionRequest struct {
 	// command or a shell, never an agent preset, and no location.
 	Home bool `json:"home,omitempty"`
 	// Driver, with an agent, is how berthd runs it: "terminal" (its own
-	// screen; the default) or "claude" (Claude Code structured,
-	// claudedriver.go). Mode is a structured agent's permission mode to
-	// start in: "bypassPermissions" has berthd allow what it asks.
+	// screen) or "claude" (Claude Code structured, claudedriver.go). None
+	// is the box's default (agentdefaults.go): the terminal, unless the
+	// person turned structured agents on. Mode is a structured agent's
+	// permission mode to start in: "bypassPermissions" has berthd allow
+	// what it asks.
 	Driver string `json:"driver,omitempty"`
 	Mode   string `json:"mode,omitempty"`
 }
@@ -711,10 +718,11 @@ func (b *Box) addSession(w http.ResponseWriter, r *http.Request) error {
 		if !ok {
 			return badRequest("unknown agent %q", req.Agent)
 		}
-		if kind, err := wantStructured(req.Driver); err != nil {
+		// No driver named (the berth tools, the CLI): the box's default.
+		if kind, mode, err := b.startDriver(p, req.Driver, req.Mode); err != nil {
 			return err
 		} else if kind != "" {
-			l, err := b.launchStructured(kind, p, req.Model, req.Effort, req.Mode)
+			l, err := b.launchStructured(kind, p, req.Model, req.Effort, mode)
 			if err != nil {
 				return err
 			}

@@ -256,6 +256,9 @@ export const boxApi = {
   stats: (c: Client, box: string) => c.box<Stats>(box, "GET", "stats"),
   services: async (c: Client, box: string) => (await c.box<Service[] | null>(box, "GET", "services")) ?? [],
   info: (c: Client, box: string) => c.box<BoxInfo>(box, "GET", "info"),
+  // How the box starts agents that name no driver (lib/box-defaults.ts;
+  // boxes with "agents.defaults").
+  putAgentDefaults: (c: Client, box: string, d: { structured: boolean; mode?: string }) => c.box<{ structured: boolean; mode?: string }>(box, "PUT", "agents/defaults", d),
   addLocation: (c: Client, box: string, name: string, path: string) => c.box<Location>(box, "POST", "locations", { name, path }),
   addWorktree: (c: Client, box: string, location: string, req: { name: string; branch?: string; base?: string }) =>
     c.box<Worktree>(box, "POST", `locations/${encodeURIComponent(location)}/worktrees`, req),
