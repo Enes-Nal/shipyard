@@ -100,7 +100,7 @@ func TestAStructuredACPSessionIsDrivenThroughItsProtocol(t *testing.T) {
 	c, bus := servedBox(t, func(b *Box) {
 		bx = b
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 	})
 	states.Attach(bus)
@@ -238,7 +238,7 @@ func TestALiveACPSessionWorks(t *testing.T) {
 	states := &Turns{}
 	c, bus := servedBox(t, func(b *Box) {
 		b.Turns = states
-		b.ConversationsDir = t.TempDir()
+		b.ConversationsDir = conversationsDir(t)
 		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
 	})
 	states.Attach(bus)

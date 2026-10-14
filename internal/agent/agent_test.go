@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -12,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -212,13 +212,36 @@ func startAgentWith(t testing.TB, dir string, nets Networks) *runningAgent {
 // such as its log or how long a health check waits.
 func startAgentConfig(t testing.TB, dir string, nets Networks, change func(*Config)) *runningAgent {
 	t.Helper()
+	// A free port is free only until someone takes it, and an agent whose
+	// app API port is taken goes on without it: one whose port went to
+	// another test's agent in between starts again on new ports.
+	for attempt := 1; ; attempt++ {
+		a := launchAgent(t, dir, nets, change)
+		if a.servesUI() {
+			t.Cleanup(a.stop)
+			return a
+		}
+		a.stop()
+		if attempt == 3 {
+			t.Fatalf("the agent's app API never had its own port (last %s)", a.ui)
+		}
+	}
+}
+
+func launchAgent(t testing.TB, dir string, nets Networks, change func(*Config)) *runningAgent {
+	t.Helper()
+	// Both held at once, so the proxy and the app API never get one port.
 	proxyLn, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	proxyAddr := proxyLn.Addr().String()
+	uiLn, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	proxyAddr, uiAddr := proxyLn.Addr().String(), uiLn.Addr().String()
 	proxyLn.Close()
-	uiAddr := fmt.Sprintf("127.0.0.1:%d", freePort(t))
+	uiLn.Close()
 	socket := shortSocket(t)
 	clk := &clock{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -257,8 +280,25 @@ func startAgentConfig(t testing.TB, dir string, nets Networks, change func(*Conf
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Cleanup(a.stop)
 	return a
+}
+
+// servesUI is whether the app API on a.ui is this agent's: it takes the
+// token this agent wrote.
+func (a *runningAgent) servesUI() bool {
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if tok, err := os.ReadFile(filepath.Join(a.dir, UITokenFile)); err == nil && len(tok) > 0 {
+			req, _ := http.NewRequest("GET", "http://"+a.ui+"/v1/status", nil)
+			req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(tok)))
+			if resp, err := http.DefaultClient.Do(req); err == nil {
+				resp.Body.Close()
+				return resp.StatusCode == http.StatusOK
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return false
 }
 
 func (a *runningAgent) stop() {
