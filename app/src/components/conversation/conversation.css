@@ -49,6 +49,11 @@
 .cv-md code { font-family: var(--font-mono); font-size: 0.88em; padding: 0.1em 0.35em; border-radius: 5px; background: var(--muted); }
 .cv-md pre { margin: 0 0 0.75em; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--muted) 60%, var(--background)); overflow-x: auto; font-size: 0.7812rem; line-height: 1.5; }
 .cv-md pre code { padding: 0; background: none; font-size: inherit; }
+/* A file the reply names (file-links.tsx): the code it was, a faint dotted
+   line beneath; hovered or focused, the line in the text's own colour. */
+.cv-md code[data-file-ref] { cursor: pointer; text-decoration: underline dotted; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1px; outline: none; }
+.cv-md code[data-file-ref]:hover, .cv-md code[data-file-ref]:focus-visible { text-decoration-color: var(--foreground); }
+.cv-md code[data-file-ref]:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
 /* Syntax colours (code-highlight.ts): each token carries its colour for
    the light and the dark theme; the app's appearance picks one. The block
    sits nearer the page than other muted surfaces, as the theme's editor

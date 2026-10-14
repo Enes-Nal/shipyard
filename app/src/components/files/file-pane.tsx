@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useActiveTheme } from "@/hooks/use-theme";
 import { agentMarks, conflictLines } from "@/lib/file-marks";
 import { fileName } from "@/lib/file-match";
-import { docKey, type Doc, edit, filesApi, isDirty, keepMine, openDoc, openFile, poll, reload, save, setComparing, setWrap, useFiles } from "@/lib/files";
+import { docKey, type Doc, edit, filesApi, type Goto, isDirty, keepMine, openDoc, openFile, poll, reload, save, setComparing, setWrap, useFiles } from "@/lib/files";
 import { ago } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -70,6 +70,16 @@ export function FilePane({ path, owner, visible, onClose }: Props) {
   const wrap = wrapPref ?? narrow;
   const [hunk, setHunk] = useState(0);
   const [reveal, setReveal] = useState(0);
+  // A line asked for (a path named in a chat) shows instead of the agent's
+  // first change, until you step through the changes.
+  const goto = useFiles((s) => (s.goto?.key === key ? s.goto : undefined));
+  const [jump, setJump] = useState<Goto>();
+  useEffect(() => {
+    if (!goto) return;
+    setJump(goto);
+    setReveal((r) => r + 1);
+    useFiles.setState({ goto: undefined });
+  }, [goto]);
 
   useEffect(() => {
     if (ref) void openDoc(owner, ref, path);
@@ -85,6 +95,7 @@ export function FilePane({ path, owner, visible, onClose }: Props) {
   const step = (d: number) => {
     if (!hunks.length) return;
     setHunk((at + d + hunks.length) % hunks.length);
+    setJump(undefined);
     setReveal((r) => r + 1);
   };
 
@@ -106,7 +117,7 @@ export function FilePane({ path, owner, visible, onClose }: Props) {
   else
     body = (
       <Suspense fallback={<div className="flex flex-1 items-center justify-center"><Spinner className="size-4 text-muted-foreground" /></div>}>
-        <CodeEditor path={path} text={doc.text} onChange={(t) => edit(key, t)} onSave={() => void save(key)} changes={marks} conflictLines={conflicted} revealLine={hunks[at]?.from} reveal={reveal} wrap={wrap} className="min-h-0 min-w-0 flex-1" />
+        <CodeEditor path={path} text={doc.text} onChange={(t) => edit(key, t)} onSave={() => void save(key)} changes={marks} conflictLines={conflicted} revealLine={jump?.line ?? hunks[at]?.from} revealEnd={jump?.end} reveal={reveal} wrap={wrap} className="min-h-0 min-w-0 flex-1" />
       </Suspense>
     );
 
