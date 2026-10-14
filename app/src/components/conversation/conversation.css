@@ -64,6 +64,14 @@
 .cv-md th, .cv-md td { padding: 6px 10px; text-align: left; vertical-align: top; border-top: 1px solid var(--border); }
 .cv-md thead th { border-top: 0; font-weight: 500; color: var(--muted-foreground); background: var(--muted); }
 .cv-md td:first-child, .cv-md th:first-child { white-space: nowrap; }
+/* Math (KaTeX; its stylesheet loads with it): in the text's colour, its
+   letters about the height of the text's. A display stands centred on its
+   own lines and, wider than the column, scrolls as a wide table does. */
+.cv-md .katex { font-size: 1.1em; overflow-wrap: normal; }
+.cv-md .cv-math-display { display: block; margin: 0.375em 0; padding: 0.25em 0; overflow-x: auto; overflow-y: hidden; }
+.cv-md .cv-math-block { margin: 0 0 0.75em; }
+.cv-md .cv-math-block > .cv-math-display { margin: 0; }
+.cv-md .katex-display { margin: 0; }
 
 /* A code block's frame: a head naming its language, with Copy, over the
    code. The frame is the block's surface (bordered, the composer's radius);
