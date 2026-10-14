@@ -143,6 +143,14 @@ func InstallTool(home, tool, bin string, out io.Writer) error {
 			return err
 		}
 		fmt.Fprintf(out, "oh-my-pi: extension %s at %s\n", verb(changed), ext)
+		if mcpBin(bin) {
+			mcp := filepath.Join(home, ".omp", "agent", "mcp.json")
+			changed, err := InstallMCP(mcp, bin, true)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(out, "oh-my-pi: MCP server %s in %s\n", verb(changed), mcp)
+		}
 	default:
 		return fmt.Errorf("unknown tool %q; use claude, cursor, codex, gemini, opencode, omp, or all", tool)
 	}

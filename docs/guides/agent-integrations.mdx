@@ -46,7 +46,9 @@ with the command that installs them.
   runs the hook when a session gets busy, asks for a permission, or goes idle.
 - **oh-my-pi**: a small extension, `~/.omp/agent/extensions/berth.ts`, that
   runs the hook when a session starts, a turn starts or ends, or a tool asks
-  for approval. Subagents have no UI and report nothing.
+  for approval. Subagents have no UI and report nothing. On a box it also
+  adds `berthd mcp` to `mcpServers` in `~/.omp/agent/mcp.json`, next to any
+  servers already there.
 
 ### Every account
 

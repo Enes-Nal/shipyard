@@ -31,7 +31,7 @@ flows, skills) can drive it directly. `berthd help` prints this list.
 | `berthd doctor [--json]` | Check this box's setup and how to fix it. It looks for the agent CLIs afresh, and names each one's version, path and how it was installed |
 | `berthd version` | Print this build's version |
 | `berthd session attach NAME` | Attach to a session in this terminal |
-| `berthd mcp` | A stdio MCP server of Shipyard's tools for agents on this box, talking to its socket; `integrations install` adds it to Claude Code, Codex and Gemini CLI ([runs](/guides/runs#from-an-agent-mcp)) |
+| `berthd mcp` | A stdio MCP server of Shipyard's tools for agents on this box, talking to its socket; `integrations install` adds it to Claude Code, Codex, Gemini CLI and oh-my-pi ([runs](/guides/runs#from-an-agent-mcp)) |
 | `berthd headless --agent A --out FILE.jsonl --prompt-file FILE [--read-only] [--add-dir D]` | One non-interactive agent turn, as runs start in tmux for judges and reviewers |
 
 `~/.berth/runs.json` on the box sets `max_concurrent_runs` (10),
@@ -236,7 +236,7 @@ refuse a helper, and a `before:helper.attach` gate a look in a worktree's
 | Command | What it does |
 | --- | --- |
 | `berthd integrations [status]` | Where Shipyard's hooks and skills are for each agent CLI on this box, per Claude Code and Codex account (`Claude Code: hooks and 7 skills in ~/.claude, ~/.berth/accounts/claude/personal`), and the command that adds them where they're missing |
-| `berthd integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all\|present` | Install Shipyard's skills and agent hooks for a tool (`present`: every agent CLI on this box, quietly skipping the rest), and `berthd mcp` as an MCP server for Claude Code, Codex and Gemini CLI. Claude Code and Codex get them in [every account folder](/guides/agent-integrations#every-account) |
+| `berthd integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all\|present` | Install Shipyard's skills and agent hooks for a tool (`present`: every agent CLI on this box, quietly skipping the rest), and `berthd mcp` as an MCP server for Claude Code, Codex, Gemini CLI and oh-my-pi. Claude Code and Codex get them in [every account folder](/guides/agent-integrations#every-account) |
 | `berthd hook TOOL EVENT [PAYLOAD]` | What those hooks run: turns a tool's hook into a Shipyard event (`agent.finished`, `agent.waiting`), naming the session from `$BERTH_SESSION`. While berthd is down it keeps the event in `~/.berth/box/spool/`, published when berthd starts |
 
 See [agent integrations](/guides/agent-integrations) for what the hooks and

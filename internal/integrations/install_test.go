@@ -161,6 +161,38 @@ func TestInstallOmpExtensionWritesBerthsFileOnce(t *testing.T) {
 	}
 }
 
+func TestInstallToolOmpAddsTheMCPServerAndKeepsOthers(t *testing.T) {
+	home := t.TempDir()
+	mcp := filepath.Join(home, ".omp", "agent", "mcp.json")
+	os.MkdirAll(filepath.Dir(mcp), 0o755)
+	os.WriteFile(mcp, []byte(`{"mcpServers":{"jev":{"type":"stdio","command":"jev"}},"disabledServers":["x"]}`), 0o600)
+	var out bytes.Buffer
+	if err := InstallTool(home, "omp", "/opt/berthd", &out); err != nil {
+		t.Fatal(err)
+	}
+	root := readJSON(t, mcp)
+	servers := root["mcpServers"].(map[string]any)
+	berth, _ := servers["berth"].(map[string]any)
+	if berth["command"] != "/opt/berthd" || berth["type"] != "stdio" || servers["jev"] == nil || root["disabledServers"] == nil {
+		t.Fatalf("mcp.json = %v", root)
+	}
+	out.Reset()
+	InstallTool(home, "omp", "/opt/berthd", &out)
+	if !strings.Contains(out.String(), "MCP server already present") {
+		t.Fatalf("second install changed the file: %s", out.String())
+	}
+}
+
+func TestInstallToolOmpSkipsTheMCPServerForTheLaptopBinary(t *testing.T) {
+	home := t.TempDir()
+	if err := InstallTool(home, "omp", "/opt/berth", &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(home, ".omp", "agent", "mcp.json")); err == nil {
+		t.Fatal("wrote an MCP server the laptop binary cannot serve")
+	}
+}
+
 func TestInstallToolOmpPutsTheExtensionInOmpsAgentFolder(t *testing.T) {
 	home := t.TempDir()
 	var out bytes.Buffer
