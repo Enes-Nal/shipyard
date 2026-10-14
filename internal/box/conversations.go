@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/agenthost"
@@ -68,8 +69,15 @@ func readConversation(dir string) (Conversation, bool) {
 	return c, true
 }
 
+// metaMu makes each change to a meta.json whole: two at once (a turn's
+// time, a mode set from the app) would each write back what the other
+// hadn't, and lose it.
+var metaMu sync.Mutex
+
 // noteConversation changes a conversation's meta.json.
 func noteConversation(dir string, change func(*Conversation)) {
+	metaMu.Lock()
+	defer metaMu.Unlock()
 	c, _ := readConversation(dir)
 	change(&c)
 	c.ID, c.Live = "", false
