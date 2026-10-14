@@ -10,7 +10,6 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - **Turn check: a turn that ends on a question needs you.** Off by
   default; turned on for a box in Settings → Agents, berthd asks a
   decision model you pick about each finished Claude Code or Codex turn:
@@ -27,6 +26,45 @@ again.
   looks like a secret taken out first. It is set only from a paired laptop,
   never from the box's own socket; each provider's key is kept apart and
   goes only to that provider.
+- **Switchboard:** Pick up focused and recent conversations and worktrees with ⌘⇧K or from Home. Type to find one, ↑ ↓ and ↵ to open it, ⌘S to star it into Focus, ⌘E to leave a pickup note, and Tab to step through your areas. Right-click a row (or ⇧F10) to move it to another area. Your focus, areas and notes stay on this computer.
+- **Choose the picture at the top of a new chat.** Settings › Appearance ›
+  Header picture picks the painting across the top of a new chat, an empty
+  worktree and Home: the harbour (still the default), one of six new
+  paintings (Alpine lake, Meadow, Desert mesa, Snowy fjord, Lavender fields,
+  Sea of clouds), a picture of your own, or none. Each new painting has its
+  own night version for dark themes, as the harbour does, and a picture of
+  your own is dimmed there.
+- **Six new chat backgrounds.** The same six paintings are scenes under
+  Settings › Appearance › Chat background, at night in a dark theme.
+- **Math in code blocks draws too.** A ` ```math ` block, as GitHub writes a
+  formula, and a ` ```latex ` or ` ```tex ` block of equations now show as
+  typeset math. A whole LaTeX document (with `\documentclass`, meant for
+  `pdflatex`) stays code, as does a block still being written.
+- **Agents started by other agents follow Structured agents too.** With
+  *Structured agents* on in Settings › Labs, an agent that another agent
+  starts with the berth tools, one started with `berth task new` or
+  `berth session new`, and the agents of runs and automations now run
+  structured, with your *Permissions* choice, instead of always in their
+  terminals. Update your boxes (`berth upgrade BOX`, or Update all) for it
+  to take effect.
+- **Mermaid flowcharts in a reply draw as diagrams.** A `mermaid` code
+  block with a flowchart shows as the diagram, in the theme's colours, the
+  way a diagram artifact does; *Source* in its corner shows what it was
+  drawn from, and *Copy* still copies that. Other Mermaid diagrams, such
+  as sequence diagrams, show as written, and a reply still being written
+  shows its blocks as text until it's done.
+- **Mermaid flowcharts draw as they were written.** Subgraphs show as
+  titled, tinted boxes around their nodes, nested where they nest, and a
+  `<br/>` in a label starts a new line. Labels lose their quotes, codes
+  such as `#quot;` and `&amp;` show as the characters they stand for, and
+  nodes keep their shapes: pills, cylinders, circles, hexagons and slanted
+  boxes. Every kind of arrow is read, labelled or not, as are chains like
+  `a --> b --> c` and `a & b --> c`. A loop back up the chart curves round
+  the side instead of stretching it. This goes for diagram artifacts too.
+- **Diffs in a reply look like the chat's edits.** A `diff` or `patch`
+  code block draws with file names, line numbers and highlighting, as an
+  agent's edits do. Plain lines of `+` and `-` show coloured, without
+  numbers. A block that isn't really a diff stays as written.
 
 ## v0.3.20
 
