@@ -166,7 +166,9 @@ function run(id: string, from: "key" | "menu", arg?: number | Dir): boolean {
       handOff("[data-testid=files-panel]", "[data-testid=files-panel]");
       return true;
     case "save-file": {
-      // ⌘S in a File tab, wherever in it the focus is.
+      // ⌘S in a File tab, wherever in it the focus is. Over the
+      // Switchboard, ⌘S stars its highlighted row instead.
+      if (useSwitchboardOpen.getState().open) return false;
       const leaf = inWorkspace && tab && wsKey ? findLeaf(tab.root, tab.focus) : undefined;
       if (!leaf || leaf.content.kind !== "file" || !wsKey) return false;
       void save(docKey(paneWorktree(wsKey, leaf), leaf.content.path));
