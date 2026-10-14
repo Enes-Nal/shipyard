@@ -1,19 +1,19 @@
 import { CopyIcon } from "lucide-react";
-import { micromark } from "micromark";
-import { gfm, gfmHtml } from "micromark-extension-gfm";
-import { memo, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
 import { useFileLinks } from "@/components/conversation/file-links";
 import { Tip } from "@/components/tip";
 import { copyText } from "@/lib/clipboard";
 import { caretAfter } from "@/lib/draft-text";
+import { markdownHtml, type TexRender } from "@/lib/markdown-html";
 import { openUrl } from "@/lib/open-url";
 import { cn } from "@/lib/utils";
 
 // Markdown draws an agent's reply as the agent wrote it: headings, lists,
-// tables, code, bold and links, as its terminal does. micromark escapes any
-// HTML in the text, so a reply can't inject markup; links open outside.
+// tables, code, bold, links and math, as its terminal does. micromark
+// escapes any HTML in the text, so a reply can't inject markup; links open
+// outside.
 //
 // The text is selectable (the app otherwise isn't), code blocks take the
 // theme's syntax colours once they've drawn (code-highlight.ts), every
@@ -44,35 +44,75 @@ const codeBlock = (_: string, attrs: string, lang: string | undefined, body: str
 // place: the same element, its words swapped (lib/draft-text).
 const CARET = '<span class="cv-caret" aria-hidden="true"></span>';
 
+// KaTeX, which draws the math, and its stylesheet and fonts load the first
+// time a reply has any: most chats have none, and the app starts without
+// them. Until then a formula shows as its source.
+let tex: TexRender | undefined;
+let texLoading: Promise<void> | undefined;
+const texWaiting = new Set<() => void>();
+const texNow = () => tex;
+function texSubscribe(f: () => void) {
+  texWaiting.add(f);
+  return () => void texWaiting.delete(f);
+}
+function loadTex() {
+  texLoading ??= Promise.all([import("katex"), import("katex/dist/katex.min.css")])
+    .then(([{ default: katex }]) => {
+      tex = (s, displayMode) =>
+        katex
+          // What KaTeX can't read shows as its source in the theme's red,
+          // without the native tooltip that names the error.
+          .renderToString(s, { displayMode, throwOnError: false, errorColor: "var(--destructive-foreground)" })
+          .replace(/(<span class="katex-error") title="[^"]*"/g, "$1");
+      for (const f of texWaiting) f();
+    })
+    .catch(() => {
+      // The math stays as its source; another reply with math tries again.
+      texLoading = undefined;
+    });
+}
+
 // Replies drawn before, by their words: a long chat's rows come and go as
 // it scrolls, and one scrolled back to draws without parsing again. Drafts
-// change with every read, so they aren't kept.
+// change with every read, so they aren't kept, nor is math drawn before
+// KaTeX was there.
 const drawn = new Map<string, string>();
 const DRAWN_MAX = 300;
 
-function toHtml(text: string, draft: boolean): string {
+// The code frames and wide tables micromark's HTML gets.
+const shaped = (html: string) =>
+  html
+    // Wide tables scroll on their own instead of widening the column.
+    .replace(/<table>/g, '<div class="cv-table"><table>')
+    .replace(/<\/table>/g, "</table></div>")
+    .replace(/<pre><code((?: class="language-([^"]+)")?)>([\s\S]*?)<\/code><\/pre>/g, codeBlock);
+
+// A draft's code blocks name no language: its screen doesn't say, and
+// a guess would change when the message lands.
+const shapedDraft = (html: string) => caretAfter(shaped(html).replace(/<span class="cv-pre-lang">[^<]*<\/span>/g, '<span class="cv-pre-lang"></span>'), CARET);
+
+function toHtml(text: string, draft: boolean, render: TexRender | undefined): { html: string; texWanted: boolean } {
   const kept = draft ? undefined : drawn.get(text);
   if (kept !== undefined) {
     // Most recently used last, so the oldest go first.
     drawn.delete(text);
     drawn.set(text, kept);
-    return kept;
+    return { html: kept, texWanted: false };
   }
-  const out = micromark(text, { extensions: [gfm()], htmlExtensions: [gfmHtml()] })
-    // Wide tables scroll on their own instead of widening the column.
-    .replace(/<table>/g, '<div class="cv-table"><table>')
-    .replace(/<\/table>/g, "</table></div>")
-    .replace(/<pre><code((?: class="language-([^"]+)")?)>([\s\S]*?)<\/code><\/pre>/g, codeBlock);
-  // A draft's code blocks name no language: its screen doesn't say, and
-  // a guess would change when the message lands.
-  if (draft) return caretAfter(out.replace(/<span class="cv-pre-lang">[^<]*<\/span>/g, '<span class="cv-pre-lang"></span>'), CARET);
-  drawn.set(text, out);
+  const out = markdownHtml(text, render, draft ? shapedDraft : shaped);
+  const texWanted = out.math && !render;
+  if (draft || texWanted) return { html: out.html, texWanted };
+  drawn.set(text, out.html);
   if (drawn.size > DRAWN_MAX) drawn.delete(drawn.keys().next().value as string);
-  return out;
+  return { html: out.html, texWanted };
 }
 
 export const Markdown = memo(function Markdown({ text, copy = true, draft = false, clipped = false }: { text: string; copy?: boolean; draft?: boolean; clipped?: boolean }) {
-  const html = useMemo(() => toHtml(text, draft), [text, draft]);
+  const render = useSyncExternalStore(texSubscribe, texNow);
+  const { html, texWanted } = useMemo(() => toHtml(text, draft, render), [text, draft, render]);
+  useEffect(() => {
+    if (texWanted) loadTex();
+  }, [texWanted]);
   const body = useRef<HTMLDivElement>(null);
   useCodeHighlight(body, html);
   const links = useFileLinks(body, html, draft);
