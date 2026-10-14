@@ -5,6 +5,7 @@ import { InlineImages } from "@/components/conversation/inline-images";
 import { guessLanguage, languageName, useCodeHighlight } from "@/components/conversation/code-highlight";
 import { useFileLinks } from "@/components/conversation/file-links";
 import { TableExplorers } from "@/components/conversation/table-explorers";
+import { TestBlocks } from "@/components/conversation/test-blocks";
 import { useRepoRefs } from "@/components/conversation/repo-refs";
 import { Tip } from "@/components/tip";
 import { copyText } from "@/lib/clipboard";
@@ -166,6 +167,7 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
       />
       <InlineImages body={body} html={html} draft={draft} />
       <TableExplorers body={body} html={html} draft={draft} />
+      <TestBlocks body={body} html={html} draft={draft} />
       {copy && (
         <div className={cn("mt-1 flex h-6 opacity-0 transition-opacity focus-within:opacity-100 group-hover/md:opacity-100", draft && "invisible")} aria-hidden={draft || undefined}>
           <Tip label="Copy as Markdown">

@@ -183,14 +183,27 @@ The checks behind those numbers:
 | Checkout page | pass | 31 |
 | Duplicate order | fail | 27 |`;
 
+const TEST_REPORT = `I ran the checkout tests. One retry case still needs attention:
+
+\`\`\`text
+ RUN  v3.2.1 /work/shop
+ ❯ apps/web/lib/checkout/createOrder.test.ts (5 tests | 1 failed) 18ms
+   × reuses an order when a webhook retries 8ms
+     apps/web/lib/checkout/createOrder.test.ts:42:11
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 8 passed (9)
+\`\`\``;
+
 function releaseChat(): TranscriptItem[] {
   const picture = new URLSearchParams(location.search).get("scene") === "chat-image" ? "\n\nThe checkout screenshot shows the confirmed order:\n\n![Checkout result](screenshots/checkout-result.png)" : "";
   const tables = new URLSearchParams(location.search).get("scene") === "chat-tables";
+  const testReport = new URLSearchParams(location.search).get("scene") === "chat-tests";
   return [
     { kind: "user", id: "rq-u1", text: "Plan the release of the checkout fix." },
     { kind: "tools", id: "rq-t1", verb: "Read", done: true, items: [{ verb: "Read", target: "webhook.ts", file: true, id: "mock-read-1" }, { verb: "Read", target: "createOrder.ts", file: true, id: "mock-read-2" }] },
     { kind: "text", id: "rq-x1", text: RELEASE_PLAN + picture },
     ...(tables ? [{ kind: "text" as const, id: "rq-x2", text: TABLE_REPORT }] : []),
+    ...(testReport ? [{ kind: "text" as const, id: "rq-x2", text: TEST_REPORT }] : []),
     { kind: "question", id: "rq-q1", tool: "mock-ask-release", questions: RELEASE_QUESTIONS },
   ];
 }
