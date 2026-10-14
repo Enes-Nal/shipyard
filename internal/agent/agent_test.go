@@ -549,10 +549,13 @@ func TestAForwardWhosePortIsBusyStaysSavedAndStartsOnceFree(t *testing.T) {
 	}
 	a.stop()
 
-	squatter, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(local)))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// The stopped agent lets go of the port a moment after it returns.
+	var squatter net.Listener
+	eventually(t, "the port let go", func() bool {
+		ln, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(local)))
+		squatter = ln
+		return err == nil
+	})
 	a = startAgent(t, dir)
 	eventually(t, "failed forward reported", func() bool {
 		s, err := a.client.Status(context.Background())
