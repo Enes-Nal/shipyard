@@ -1,6 +1,6 @@
 import { definePlugin, useBoxes, useCurrentWorktree, useEvent, useFleetSessions, useStorage, type CurrentWorktree, type ScreenProps, type Service, type Session } from "@berth/plugin";
-import { AgentIcon, BrowserSurface, Button, HelperSurface, Icon, Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger, SessionSurface, ViewHeader } from "@berth/plugin/ui";
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { AgentIcon, BrowserSurface, Button, HelperSurface, Icon, SessionSurface, ViewHeader } from "@berth/plugin/ui";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 
 const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 1.5;
@@ -14,6 +14,7 @@ type Link = { from: string; to: string };
 type Board = { nodes: Node[]; links: Link[] };
 type Worktree = CurrentWorktree;
 type Gesture = { id: string; kind: "move" | "resize"; x: number; y: number; node: Node };
+type Picker = { x: number; y: number; at?: { x: number; y: number } };
 
 const keyOf = (w: Worktree) => `${w.box}:${w.path}`;
 const sessionId = (box: string, session: string) => `session:${box}:${session}`;
@@ -50,6 +51,12 @@ function CanvasScreen({ berth }: ScreenProps) {
   const [stamp, setStamp] = useState(0);
   const [savedKey, setSavedKey] = useStorage("selected-worktree", "");
   const [sourceKey, setSourceKey] = useState("");
+  const [picker, setPicker] = useState<Picker>();
+  const [query, setQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
+  const spaceDown = useRef(false);
+  const pointerOver = useRef(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const [boards, setBoards] = useStorage<Record<string, Board>>("boards", {});
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -132,12 +139,14 @@ function CanvasScreen({ berth }: ScreenProps) {
     if (linkFrom === id) setLinkFrom(undefined);
   };
   const add = (node: Node) => {
-    if (boardRef.current.nodes.some((n) => n.id === node.id)) { setSelectedNode(node.id); return; }
+    if (boardRef.current.nodes.some((n) => n.id === node.id)) { setSelectedNode(node.id); setPicker(undefined); return; }
     const centerX = (viewport.current?.clientWidth ?? 1100) / 2;
     const centerY = (viewport.current?.clientHeight ?? 700) / 2;
     const offset = boardRef.current.nodes.length % 4 * 34;
-    save({ ...boardRef.current, nodes: [...boardRef.current.nodes, { ...node, x: Math.round((centerX - pan.x) / zoom - node.w / 2 + offset), y: Math.round((centerY - pan.y) / zoom - node.h / 2 + offset) }] });
+    const at = picker?.at;
+    save({ ...boardRef.current, nodes: [...boardRef.current.nodes, { ...node, x: Math.round(at ? at.x - node.w / 2 : (centerX - pan.x) / zoom - node.w / 2 + offset), y: Math.round(at ? at.y - 24 : (centerY - pan.y) / zoom - node.h / 2 + offset) }] });
     setSelectedNode(node.id);
+    setPicker(undefined);
   };
   const addSession = (s: Session, source: Worktree) => add({ id: sessionId(source.box, s.name), kind: "session", box: source.box, source, session: s.name, agent: s.agent, mode: s.agent ? "chat" : "terminal", x: 0, y: 0, w: 480, h: 460 });
   const addPreview = (svc: Service, source: Worktree) => add({ id: previewId(source.box, svc.port), kind: "preview", box: source.box, source, port: svc.port, x: 0, y: 0, w: 570, h: 385 });
@@ -151,9 +160,30 @@ function CanvasScreen({ berth }: ScreenProps) {
     finally { setCreating(false); }
   };
 
-  useEffect(() => { setLinkFrom(undefined); setSelectedNode(undefined); setPan({ x: 0, y: 0 }); setZoom(1); setSourceKey(boardKey); }, [boardKey]);
+  useEffect(() => { setLinkFrom(undefined); setSelectedNode(undefined); setPan({ x: 0, y: 0 }); setZoom(1); setSourceKey(boardKey); setPicker(undefined); }, [boardKey]);
+  useEffect(() => { if (picker) search.current?.focus(); }, [picker?.x, picker?.y]);
+  useEffect(() => {
+    const editable = (target: EventTarget | null) => target instanceof HTMLElement && !!target.closest("input, textarea, select, [contenteditable=true], [role=textbox]");
+    const down = (e: KeyboardEvent) => {
+      if (e.code === "Space" && pointerOver.current && !editable(e.target) && !e.repeat) { spaceDown.current = true; setSpaceHeld(true); e.preventDefault(); }
+      if (e.key === "Escape") { setPicker(undefined); setLinkFrom(undefined); }
+    };
+    const up = (e: KeyboardEvent) => { if (e.code === "Space") { spaceDown.current = false; setSpaceHeld(false); } };
+    const blur = () => { spaceDown.current = false; setSpaceHeld(false); };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
+  }, []);
+  const openPicker = (clientX?: number, clientY?: number) => {
+    const rect = viewport.current?.getBoundingClientRect();
+    const x = rect && clientX !== undefined ? clientX - rect.left : 24;
+    const y = rect && clientY !== undefined ? clientY - rect.top : (rect?.height ?? 700) - 56;
+    setQuery("");
+    setPicker({ x: clamp(x, 12, Math.max(12, (rect?.width ?? 1100) - 400)), y: clamp(y - 420, 12, Math.max(12, (rect?.height ?? 700) - 440)), at: rect && clientX !== undefined && clientY !== undefined ? { x: (x - pan.x) / zoom, y: (y - pan.y) / zoom } : undefined });
+  };
   const begin = (e: ReactPointerEvent<HTMLElement>, node: Node, kind: Gesture["kind"]) => {
-    if (e.button !== 0 || linkFrom || (e.target as HTMLElement).closest("button")) return;
+    if (e.button !== 0 || spaceDown.current || linkFrom || (e.target as HTMLElement).closest("button")) return;
     gesture.current = { id: node.id, kind, x: e.clientX, y: e.clientY, node };
     e.currentTarget.setPointerCapture(e.pointerId);
     setSelectedNode(node.id);
@@ -185,50 +215,46 @@ function CanvasScreen({ berth }: ScreenProps) {
   const autoLinks = shown.filter((n): n is HelperNode => n.kind === "helper").map((n) => ({ from: sessionId(n.box, n.session), to: n.id })).filter((l) => byId.has(l.from) && !board.links.some((saved) => saved.from === l.from && saved.to === l.to));
   const links = [...board.links, ...autoLinks];
   const worktreeCount = new Set(board.nodes.map((n) => n.source ? keyOf(n.source) : boardKey)).size;
-  const zoomTo = (next: number) => {
+  const matches = (value: string) => value.toLowerCase().includes(query.trim().toLowerCase());
+  const pickerSessions = sourceSessions.filter((s) => matches(`${s.title || s.name} ${s.name}`));
+  const pickerServices = sourceServices.filter((s) => matches(`preview ${s.port}`));
+  const pickerHelpers = sourceSessions.flatMap((s) => (helpers[s.name] ?? []).map((helper) => ({ s, helper }))).filter(({ helper }) => matches(`${helper.name} subagent`));
+  const zoomTo = (next: number, clientX?: number, clientY?: number) => {
     const value = clamp(Math.round(next * 100) / 100, MIN_ZOOM, MAX_ZOOM);
-    const cx = (viewport.current?.clientWidth ?? 0) / 2;
-    const cy = (viewport.current?.clientHeight ?? 0) / 2;
+    const rect = viewport.current?.getBoundingClientRect();
+    const cx = clientX !== undefined && rect ? clientX - rect.left : (viewport.current?.clientWidth ?? 0) / 2;
+    const cy = clientY !== undefined && rect ? clientY - rect.top : (viewport.current?.clientHeight ?? 0) / 2;
     setPan((p) => ({ x: cx - (cx - p.x) * value / zoom, y: cy - (cy - p.y) * value / zoom }));
     setZoom(value);
   };
   const startPan = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || e.target !== e.currentTarget) return;
+    if (picker || e.button !== 1 && !(spaceDown.current && e.button === 0) && !(e.button === 0 && e.target === e.currentTarget)) return;
     panGesture.current = { x: e.clientX, y: e.clientY, startX: pan.x, startY: pan.y };
     e.currentTarget.setPointerCapture(e.pointerId);
     setSelectedNode(undefined);
+    e.preventDefault();
   };
   const movePan = (e: ReactPointerEvent<HTMLDivElement>) => {
     const g = panGesture.current;
     if (g) setPan({ x: g.startX + e.clientX - g.x, y: g.startY + e.clientY - g.y });
   };
+  const wheel = (e: ReactWheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoomTo(zoom * Math.exp(-e.deltaY * .004), e.clientX, e.clientY); return; }
+    if (e.target !== e.currentTarget) return;
+    e.preventDefault();
+    setPan((p) => ({ x: p.x - (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX), y: p.y - (e.shiftKey && !e.deltaX ? 0 : e.deltaY) }));
+  };
 
   return <div className="flex h-full min-h-0 flex-col bg-background">
     <ViewHeader title="Canvas" description="Live work across your worktrees" actions={worktree && <span className="text-xs text-muted-foreground">{board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</span>} />
-    <div className="flex min-h-12 shrink-0 items-center gap-2 border-b bg-card/70 px-4">
-      <Icon name="Workflow" className="size-4 text-primary" />
-      <span className="text-xs text-muted-foreground">Board</span>
-      <select aria-label="Canvas worktree" className="max-w-64 min-w-36 rounded-md border bg-background px-2 py-1.5 text-xs font-medium text-foreground" value={boardKey} onChange={(e) => setSavedKey(e.target.value)}>
-        {allWorktrees.map((w) => <option key={keyOf(w)} value={keyOf(w)}>{w.location} / {w.worktree} · {w.box}</option>)}
-      </select>
-      {worktree && <><span className="text-xs text-muted-foreground">Add from</span><select aria-label="Source worktree" className="max-w-64 min-w-36 rounded-md border bg-background px-2 py-1.5 text-xs text-foreground" value={sourceWorktree ? keyOf(sourceWorktree) : ""} onChange={(e) => setSourceKey(e.target.value)}>
-        {allWorktrees.map((w) => <option key={keyOf(w)} value={keyOf(w)}>{w.location} / {w.worktree} · {w.box}</option>)}
-      </select></>}
-      <div className="flex-1" />
-      {createError && <span role="alert" className="max-w-60 truncate text-xs text-destructive">{createError}</span>}
-      {linkFrom && <span className="text-xs text-primary">Choose a node for a visual link · <button className="underline" onClick={() => setLinkFrom(undefined)}>Cancel</button></span>}
-      {sourceWorktree && <Menu><MenuTrigger render={<Button size="sm" variant="outline" />}><Icon name="Plus" className="size-3.5" /> Add node</MenuTrigger><MenuPopup align="end" className="max-h-80 min-w-64 overflow-y-auto">
-        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{sourceWorktree.location} / {sourceWorktree.worktree} · {sourceWorktree.box}</div>
-        <MenuItem disabled={creating} onClick={() => void createTerminal()}><Icon name="SquareTerminal" className="size-3.5" /> New terminal</MenuItem>
-        <MenuSeparator />
-        {sourceSessions.length ? sourceSessions.map((s) => <MenuItem key={s.name} onClick={() => addSession(s, sourceWorktree)}><Icon name={s.agent ? "Bot" : "SquareTerminal"} className="size-3.5" /> <span className="max-w-52 truncate">{s.title || s.name}</span></MenuItem>) : <MenuItem disabled>No sessions in this worktree</MenuItem>}
-        <MenuSeparator />
-        {sourceServices.length ? sourceServices.map((svc) => <MenuItem key={svc.port} onClick={() => addPreview(svc, sourceWorktree)}><Icon name="Globe" className="size-3.5" /> Preview · port {svc.port}</MenuItem>) : <MenuItem disabled>No running previews</MenuItem>}
-        {Object.values(helpers).some((list) => list.length) && <><MenuSeparator /><div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Subagents · read only</div>{sourceSessions.flatMap((s) => (helpers[s.name] ?? []).map((helper) => <MenuItem key={`${s.name}:${helper.id}`} onClick={() => addHelper(s, helper, sourceWorktree)}><Icon name="Bot" className="size-3.5" /> <span className="max-w-52 truncate">{helper.name}</span></MenuItem>))}</>}
-      </MenuPopup></Menu>}
-      <Button size="sm" variant="ghost" onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}><Icon name="Scan" className="size-3.5" /> Reset view</Button>
-    </div>
-    <div ref={viewport} className="relative min-h-0 flex-1 overflow-hidden bg-muted/20" style={{ backgroundImage: "radial-gradient(color-mix(in oklab, var(--foreground) 13%, transparent) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => { panGesture.current = undefined; }} onPointerCancel={() => { panGesture.current = undefined; }}>
+    <div ref={viewport} data-testid="canvas-viewport" className={`relative min-h-0 flex-1 overflow-hidden bg-muted/20 ${spaceHeld ? "cursor-grab active:cursor-grabbing" : ""}`} style={{ backgroundImage: "radial-gradient(color-mix(in oklab, var(--foreground) 13%, transparent) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }} onPointerEnter={() => { pointerOver.current = true; }} onPointerLeave={() => { pointerOver.current = false; }} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => { panGesture.current = undefined; }} onPointerCancel={() => { panGesture.current = undefined; }} onWheel={wheel} onContextMenu={(e) => { if ((e.target as HTMLElement).closest("section")) return; e.preventDefault(); openPicker(e.clientX, e.clientY); }} onDoubleClick={(e) => { if (e.target === e.currentTarget) openPicker(e.clientX, e.clientY); }}>
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 rounded-lg border bg-card/95 p-1.5 shadow-md">
+        <span className="px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Board</span>
+        <select aria-label="Canvas worktree" className="max-w-60 rounded-md bg-background px-2 py-1.5 text-xs font-medium text-foreground" value={boardKey} onChange={(e) => setSavedKey(e.target.value)}>
+          {allWorktrees.map((w) => <option key={keyOf(w)} value={keyOf(w)}>{w.location} / {w.worktree} · {w.box}</option>)}
+        </select>
+      </div>
+      {linkFrom && <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2 rounded-lg border bg-card px-3 py-2 text-xs text-primary shadow-md">Choose a node for a visual link · <button className="underline" onClick={() => setLinkFrom(undefined)}>Cancel</button></div>}
       {worktree ? <div className="absolute top-0 left-0" style={{ width: 0, height: 0, overflow: "visible", pointerEvents: "none", transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}>
         <div className="pointer-events-none absolute top-10 left-14 w-80"><div className="font-mono text-[10px] tracking-[.18em] text-primary">CANVAS BOARD</div><div className="mt-1 text-2xl font-semibold tracking-tight">Live work</div><div className="text-xs text-muted-foreground">{worktreeCount} {worktreeCount === 1 ? "worktree" : "worktrees"} · {board.nodes.length} {board.nodes.length === 1 ? "node" : "nodes"}</div></div>
         <svg data-testid="canvas-links" className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">{links.map((link) => {
@@ -272,7 +298,25 @@ function CanvasScreen({ berth }: ScreenProps) {
         })}
         {!shown.length && <div className="absolute top-52 left-60 flex w-96 flex-col items-center rounded-xl border bg-card/85 px-7 py-8 text-center shadow-lg"><Icon name="Workflow" className="mb-3 size-7 text-primary" /><h2 className="text-base font-semibold">Give this worktree some room</h2><p className="mt-2 text-sm text-muted-foreground">Add sessions, subagents, or previews from any worktree. Your layout stays on this computer.</p><Button size="sm" className="mt-4" onClick={() => void createTerminal()}>New terminal</Button></div>}
       </div> : <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Open a worktree to start its canvas.</div>}
-      <div className="absolute right-4 bottom-4 z-20 flex w-fit items-center overflow-hidden rounded-lg border bg-card shadow-lg"><button aria-label="Zoom out" className="px-3 py-2 text-sm hover:bg-accent" onClick={() => zoomTo(zoom - .1)}>−</button><span className="min-w-12 border-x px-2 py-2 text-center font-mono text-xs">{Math.round(zoom * 100)}%</span><button aria-label="Zoom in" className="px-3 py-2 text-sm hover:bg-accent" onClick={() => zoomTo(zoom + .1)}>+</button></div>
+      {worktree && <button aria-label="Add node" className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-medium shadow-lg hover:bg-accent" onClick={() => openPicker()}><Icon name="Plus" className="size-4" /> Add node</button>}
+      <div className="absolute right-4 bottom-4 z-20 flex w-fit items-center overflow-hidden rounded-lg border bg-card shadow-lg"><button aria-label="Zoom out" className="px-3 py-2 text-sm hover:bg-accent" onClick={() => zoomTo(zoom - .1)}>−</button><span className="min-w-12 border-x px-2 py-2 text-center font-mono text-xs">{Math.round(zoom * 100)}%</span><button aria-label="Zoom in" className="px-3 py-2 text-sm hover:bg-accent" onClick={() => zoomTo(zoom + .1)}>+</button><button aria-label="Reset view" className="border-l px-3 py-2 text-sm hover:bg-accent" onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}><Icon name="Scan" className="size-4" /></button></div>
+      {picker && sourceWorktree && <>
+        <div className="absolute inset-0 z-30" onClick={() => setPicker(undefined)} />
+        <div data-testid="canvas-picker" className="absolute z-40 flex max-h-[min(440px,calc(100%-24px))] w-[min(380px,calc(100%-24px))] flex-col overflow-hidden rounded-xl border bg-card shadow-2xl" style={{ left: picker.x, top: picker.y }} onPointerDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 border-b px-3 py-2.5"><Icon name="Plus" className="size-4 text-primary" /><span className="flex-1 text-sm font-semibold">Add to canvas</span><button aria-label="Close node picker" className="rounded p-1 text-muted-foreground hover:bg-accent" onClick={() => setPicker(undefined)}><Icon name="X" className="size-4" /></button></div>
+          <div className="border-b px-3 py-2"><label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" htmlFor="canvas-source">From worktree</label><select id="canvas-source" aria-label="Source worktree" className="w-full rounded-md border bg-background px-2 py-1.5 text-xs text-foreground" value={keyOf(sourceWorktree)} onChange={(e) => setSourceKey(e.target.value)}>{allWorktrees.map((w) => <option key={keyOf(w)} value={keyOf(w)}>{w.location} / {w.worktree} · {w.box}</option>)}</select></div>
+          <div className="flex items-center gap-2 border-b px-3 py-2"><Icon name="Search" className="size-3.5 text-muted-foreground" /><input ref={search} aria-label="Find canvas node" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find chats, terminals, previews…" className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground" /></div>
+          <div className="min-h-0 overflow-y-auto p-1.5">
+            {matches("new terminal") && <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-accent disabled:opacity-50" disabled={creating} onClick={() => void createTerminal()}><Icon name="SquareTerminal" className="size-4 text-primary" /><span className="flex-1">New terminal</span><span className="text-[10px] text-muted-foreground">Create</span></button>}
+            {pickerSessions.length > 0 && <><div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Chats and terminals</div>{pickerSessions.map((s) => <button key={s.name} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-accent" onClick={() => addSession(s, sourceWorktree)}><Icon name={s.agent ? "Bot" : "SquareTerminal"} className="size-4 shrink-0 text-primary" /><span className="min-w-0 flex-1 truncate">{s.title || s.name}</span></button>)}</>}
+            {pickerServices.length > 0 && <><div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Previews</div>{pickerServices.map((svc) => <button key={svc.port} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-accent" onClick={() => addPreview(svc, sourceWorktree)}><Icon name="Globe" className="size-4 text-primary" />Preview · port {svc.port}</button>)}</>}
+            {pickerHelpers.length > 0 && <><div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Subagents · read only</div>{pickerHelpers.map(({ s, helper }) => <button key={`${s.name}:${helper.id}`} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-accent" onClick={() => addHelper(s, helper, sourceWorktree)}><Icon name="Bot" className="size-4 text-primary" /><span className="min-w-0 flex-1 truncate">{helper.name}</span></button>)}</>}
+            {!matches("new terminal") && !pickerSessions.length && !pickerServices.length && !pickerHelpers.length && <p className="px-2 py-5 text-center text-xs text-muted-foreground">No matching nodes in this worktree</p>}
+          </div>
+          {createError && <div role="alert" className="border-t px-3 py-2 text-xs text-destructive">{createError}</div>}
+          <div className="border-t px-3 py-2 text-[10px] text-muted-foreground">Right click the canvas to add at a spot · Esc to close</div>
+        </div>
+      </>}
     </div>
   </div>;
 }

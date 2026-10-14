@@ -52,7 +52,7 @@ test("canvas arranges live work and remembers edits", async ({ app }) => {
   expect(Object.values(restored)[0].nodes.find((n) => n.id === "session:devl:checkout-fix-claude")?.x).toBeGreaterThan(150);
 
   await app.page.getByRole("button", { name: "Add node" }).click();
-  await app.page.getByRole("menuitem", { name: "Preview · port 5555" }).click();
+  await app.page.getByTestId("canvas-picker").getByRole("button", { name: "Preview · port 5555" }).click();
   const extra = app.page.locator('section[aria-label="Preview · 5555 canvas node"]');
   await expect(extra).toBeVisible();
   await extra.getByRole("button", { name: "Remove node" }).click();
@@ -64,18 +64,69 @@ test("canvas arranges live work and remembers edits", async ({ app }) => {
   await app.page.getByRole("button", { name: "Zoom in" }).click();
   await expect(app.page.getByText("110%", { exact: true })).toBeVisible();
   const position = await agent.boundingBox();
-  await app.page.mouse.move(300, 830);
+  await app.page.mouse.move(550, 800);
   await app.page.mouse.down();
-  await app.page.mouse.move(370, 860, { steps: 5 });
+  await app.page.mouse.move(620, 830, { steps: 5 });
   await app.page.mouse.up();
   await expect.poll(async () => (await agent.boundingBox())?.x ?? 0).toBeGreaterThan(position!.x + 55);
 
+  const afterDrag = await agent.boundingBox();
+  await app.page.mouse.move(550, 800);
+  await app.page.mouse.wheel(0, 100);
+  await expect.poll(async () => (await agent.boundingBox())?.y ?? 0).toBeLessThan(afterDrag!.y - 50);
+  await app.page.keyboard.down("Control");
+  await app.page.mouse.wheel(0, 100);
+  await app.page.keyboard.up("Control");
+  await expect(app.page.getByText("74%", { exact: true })).toBeVisible();
+  const beforeMiddle = await agent.boundingBox();
+  await app.page.mouse.move(beforeMiddle!.x + 80, beforeMiddle!.y + 15);
+  await app.page.mouse.down({ button: "middle" });
+  await app.page.mouse.move(beforeMiddle!.x + 140, beforeMiddle!.y + 45, { steps: 5 });
+  await app.page.mouse.up({ button: "middle" });
+  await expect.poll(async () => (await agent.boundingBox())?.x ?? 0).toBeGreaterThan(beforeMiddle!.x + 45);
+  const beforeSpace = await agent.boundingBox();
+  await app.page.keyboard.down("Space");
+  await app.page.mouse.move(beforeSpace!.x + 80, beforeSpace!.y + 15);
+  await app.page.mouse.down();
+  await app.page.mouse.move(beforeSpace!.x + 135, beforeSpace!.y + 15, { steps: 5 });
+  await app.page.mouse.up();
+  await app.page.keyboard.up("Space");
+  await expect.poll(async () => (await agent.boundingBox())?.x ?? 0).toBeGreaterThan(beforeSpace!.x + 40);
+
+  await app.page.mouse.click(620, 790, { button: "right" });
+  await expect(app.page.getByTestId("canvas-picker")).toBeVisible();
+  await app.page.getByRole("textbox", { name: "Find canvas node" }).fill("5555");
+  await expect(app.page.getByTestId("canvas-picker").getByRole("button", { name: "Preview · port 5555" })).toBeVisible();
+  await expect(app.page.getByTestId("canvas-picker").getByRole("button", { name: "New terminal" })).toHaveCount(0);
+  await app.page.keyboard.press("Escape");
+
   await app.page.getByRole("button", { name: "Add node" }).click();
-  await app.page.getByRole("menuitem", { name: "New terminal" }).click();
+  await app.page.getByTestId("canvas-picker").getByRole("button", { name: "New terminal" }).click();
   await expect.poll(async () => {
     const saved = await app.stored("berth.plugin.canvas.boards") as typeof restored;
     return Object.values(saved)[0].nodes.length;
   }).toBe(4);
+});
+
+test("resizing a zoomed canvas chat keeps long conversation rows in view", async ({ app }) => {
+  mockOnly();
+  await app.open({ params: { long: "5000" } });
+  await app.openWorktree("devl/checkout-fix");
+  await app.page.getByRole("button", { name: "More", exact: true }).click();
+  await app.page.getByRole("menuitem", { name: "Canvas" }).click();
+  const agent = app.page.locator('section[aria-label="Fix checkout webhook retries canvas node"]');
+  const rows = agent.locator('[role="listitem"][data-chat-row]');
+  await expect.poll(() => rows.count()).toBeGreaterThan(0);
+  for (let i = 0; i < 4; i++) await app.page.getByRole("button", { name: "Zoom out" }).click();
+  const handle = agent.getByRole("button", { name: "Resize Fix checkout webhook retries" });
+  const before = await handle.boundingBox();
+  expect(before).not.toBeNull();
+  await app.page.mouse.move(before!.x + before!.width / 2, before!.y + before!.height / 2);
+  await app.page.mouse.down();
+  await app.page.mouse.move(before!.x + 100, before!.y + 85, { steps: 8 });
+  await app.page.mouse.up();
+  await expect.poll(() => rows.count()).toBeGreaterThan(0);
+  await expect(rows.last()).toBeInViewport();
 });
 
 test("canvas combines worktrees and gives subagents their own nodes", async ({ app }) => {
@@ -88,9 +139,9 @@ test("canvas combines worktrees and gives subagents their own nodes", async ({ a
   const board = app.page.getByRole("combobox", { name: "Canvas worktree" });
   const source = app.page.getByRole("combobox", { name: "Source worktree" });
   await expect(board).toHaveValue("devl:/home/me/work/shop-checkout-fix");
-  await source.selectOption("devl:/home/me/work/shop-qa-deck");
   await app.page.getByRole("button", { name: "Add node" }).click();
-  await app.page.getByRole("menuitem", { name: "Build the QA deck for the release" }).click();
+  await source.selectOption("devl:/home/me/work/shop-qa-deck");
+  await app.page.getByTestId("canvas-picker").getByRole("button", { name: "Build the QA deck for the release" }).click();
   const otherAgent = app.page.locator('section[aria-label="Build the QA deck for the release canvas node"]');
   await expect(otherAgent).toBeVisible();
   await expect(otherAgent).toContainText("shop / qa-deck · devl");
@@ -98,7 +149,7 @@ test("canvas combines worktrees and gives subagents their own nodes", async ({ a
   await expect(app.page.locator('section[aria-label="Fix checkout webhook retries canvas node"]')).toContainText("shop / checkout-fix · devl");
 
   await app.page.getByRole("button", { name: "Add node" }).click();
-  await app.page.getByRole("menuitem", { name: "Preview · port 4789" }).click();
+  await app.page.getByTestId("canvas-picker").getByRole("button", { name: "Preview · port 4789" }).click();
   const otherPreview = app.page.locator('section[aria-label="Preview · 4789 canvas node"]');
   await expect(otherPreview).toContainText("shop / qa-deck · devl");
 
@@ -107,15 +158,17 @@ test("canvas combines worktrees and gives subagents their own nodes", async ({ a
       { id: "canvas-helper-1", name: "Explore: retry paths", state: "running", doing: "Reading retry.ts", ago: 25 },
     ]);
   });
+  await app.page.getByRole("button", { name: "Add node" }).click();
   await source.selectOption("devl:/home/me/work/shop-checkout-fix");
+  await app.page.keyboard.press("Escape");
   await expect.poll(async () => {
     await app.page.getByRole("button", { name: "Add node" }).click();
-    const found = await app.page.getByRole("menuitem", { name: "retry paths" }).count();
+    const found = await app.page.getByTestId("canvas-picker").getByRole("button", { name: "retry paths" }).count();
     await app.page.keyboard.press("Escape");
     return found;
   }, { timeout: 12_000 }).toBe(1);
   await app.page.getByRole("button", { name: "Add node" }).click();
-  await app.page.getByRole("menuitem", { name: "retry paths" }).click();
+  await app.page.getByTestId("canvas-picker").getByRole("button", { name: "retry paths" }).click();
   const helper = app.page.locator('section[aria-label="retry paths canvas node"]');
   await expect(helper).toContainText("subagent");
   await expect(helper.getByTestId("helper")).toHaveAttribute("data-state", "running");
