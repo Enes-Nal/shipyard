@@ -9,6 +9,17 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **Labs: a structured agent's chat no longer opens a terminal under it.**
+  When the agent was idle, *"Claude Code is showing its own screen — answer
+  it here"* opened with the log of the process running the agent, and
+  typing went into that log. Now it opens only for agents running in their
+  terminal. For a structured Claude Code, *Show terminal* opens Claude
+  Code's own terminal on the same conversation, as the pane's terminal
+  toggle does. Structured Codex and ACP agents have no terminal of their
+  own, so they don't offer one.
+
 ## v0.3.18
 
 - **Labs: every way of starting an agent starts it structured.** With

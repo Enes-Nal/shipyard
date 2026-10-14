@@ -31,6 +31,7 @@ import { nameFromKey } from "@/lib/groups";
 import { type Leaf, leaves, paneWorktree } from "@/lib/layout";
 import { PaneContext } from "@/lib/pane-context";
 import { usePrefs } from "@/lib/prefs";
+import { isStructured } from "@/lib/structured";
 import { useRemoval } from "@/lib/removing";
 import { useStore } from "@/lib/store";
 import { startRenaming } from "@/lib/session-title";
@@ -95,6 +96,7 @@ export function Pane({ wsKey, tab, pane, visible, focused, split, mixed, compare
   // once the session itself is gone.
   const agent = session ? agentOf(session) : undefined;
   const view = usePaneView(pane);
+  const terminal = useTerminalShown(pane);
   // Lifted: being dragged by its header, so it fades while it moves.
   const lifted = useTabDrag((s) => s.source?.kind === "pane" && s.source.pane === pane.id);
   useEffect(() => {
@@ -145,7 +147,7 @@ export function Pane({ wsKey, tab, pane, visible, focused, split, mixed, compare
                   useStore.getState().boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.switch
                     ? void resumeSession(c.box, c.session)
                     : void startSession(restartCommand(c.command) ?? c.agent ?? "", { kind: "replace", tab, pane: pane.id }, c.agent ? agentLabel(c.agent) : "Agent")
-                } onShowTerminal={() => setPaneContent(wsKey, tab, pane.id, { ...c, view: "terminal" })} />
+                } onShowTerminal={terminal ? () => showTerminal(wsKey, tab, pane) : undefined} />
             </div>
           )}
           {c.kind === "browser" && (
@@ -233,14 +235,44 @@ export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined
     const s = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session);
     return !!(s && agentOf(s));
   });
-  // A structured agent has no screen of its own to read: its conversation.
-  const structured = useStore((st) => {
-    if (c.kind !== "terminal") return false;
-    const d = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver;
-    return d === "claude" || d === "codex" || d === "acp";
-  });
+  // A structured agent has no screen of its own to read: its conversation,
+  // whatever the pane last showed. Claude Code's terminal is a move
+  // (showTerminal), after which the session isn't structured.
+  const structured = useStore((st) => c.kind === "terminal" && isStructured(st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver));
   if (c.kind !== "terminal" || !labs || !runsAgent) return undefined;
-  return c.view ?? (structured ? "conversation" : fallback);
+  return structured ? "conversation" : (c.view ?? fallback);
+}
+
+// showTerminal turns an agent's pane to its terminal. A structured Claude
+// session moves there (switch.go): Claude Code's own TUI on the same
+// conversation, not the host that runs its stream.
+function showTerminal(wsKey: string, tab: string, pane: Leaf) {
+  const c = pane.content;
+  if (c.kind !== "terminal") return;
+  if (useStore.getState().boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.switch !== "terminal") {
+    setPaneContent(wsKey, tab, pane.id, { ...c, view: "terminal" });
+    return;
+  }
+  const client = useStore.getState().client;
+  if (!client) return;
+  void boxApi
+    .switchSession(client, c.box, c.session, "terminal")
+    .then(() => {
+      setPaneContent(wsKey, tab, pane.id, { ...c, view: "terminal" });
+      void useStore.getState().refreshBox(c.box, ["sessions"]);
+    })
+    .catch((err) => toastError(err, { title: "Couldn't open Claude Code's terminal", box: c.box }));
+}
+
+// useTerminalShown is whether an agent's pane has a terminal to show: a
+// structured agent other than Claude (Codex, ACP) has none of its own.
+function useTerminalShown(pane: Leaf): boolean {
+  const c = pane.content;
+  return useStore((st) => {
+    if (c.kind !== "terminal") return false;
+    const s = st.boxes[c.box]?.sessions?.find((x) => x.name === c.session);
+    return !isStructured(s?.driver) || s?.switch === "terminal";
+  });
 }
 
 // ViewSwitch flips an agent's pane between its terminal and its
@@ -251,7 +283,8 @@ export function ViewSwitch({ wsKey, tab, pane }: { wsKey: string; tab: string; p
   // A structured session's terminal and chat are two ways of running it,
   // not two views of one: the switch moves it (switch.go).
   const moves = useStore((st) => (c.kind === "terminal" ? st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.switch : undefined));
-  if (!view || c.kind !== "terminal") return null;
+  const terminal = useTerminalShown(pane);
+  if (!view || c.kind !== "terminal" || !terminal) return null;
   return (
     <ToggleGroup
       size="sm"
@@ -260,17 +293,17 @@ export function ViewSwitch({ wsKey, tab, pane }: { wsKey: string; tab: string; p
       onValueChange={(v) => {
         const next = v[0] as "terminal" | "conversation" | undefined;
         if (!next) return;
-        if ((moves === "terminal" && next === "terminal") || (moves === "chat" && next === "conversation")) {
+        if (moves === "terminal" && next === "terminal") return showTerminal(wsKey, tab, pane);
+        if (moves === "chat" && next === "conversation") {
           const client = useStore.getState().client;
           if (!client) return;
-          const to = next === "terminal" ? "terminal" : "chat";
           void boxApi
-            .switchSession(client, c.box, c.session, to)
+            .switchSession(client, c.box, c.session, "chat")
             .then(() => {
               setPaneContent(wsKey, tab, pane.id, { ...c, view: next });
               void useStore.getState().refreshBox(c.box, ["sessions"]);
             })
-            .catch((err) => toastError(err, { title: to === "terminal" ? "Couldn't open Claude Code's terminal" : "Couldn't go back to the chat", box: c.box }));
+            .catch((err) => toastError(err, { title: "Couldn't go back to the chat", box: c.box }));
           return;
         }
         setPaneContent(wsKey, tab, pane.id, { ...c, view: next });

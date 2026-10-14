@@ -16,3 +16,10 @@ export function structuredLaunch(box: string, agent: string, preset?: AgentPrese
   const mode = p.approvals === "bypass" ? "bypassPermissions" : driver === "acp" ? undefined : "default";
   return { driver, mode };
 }
+
+// isStructured is whether a session's agent runs structured (Session.driver):
+// its chat is its stream, and the pane's terminal shows only the host that
+// runs it, never a screen of the agent's own to read or answer.
+export function isStructured(driver?: string): boolean {
+  return driver === "claude" || driver === "codex" || driver === "acp";
+}
