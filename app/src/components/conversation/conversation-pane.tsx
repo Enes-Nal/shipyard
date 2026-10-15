@@ -16,6 +16,7 @@ import { PixelLoader } from "@/components/pixel-loader";
 import { useComposerMenu } from "@/components/conversation/command-menu";
 import { LiveScreen, useLiveScreen } from "@/components/conversation/live-screen";
 import { QuestionsContext } from "@/components/conversation/question-form";
+import { ResumePicker } from "@/components/conversation/resume-picker";
 import { toastError } from "@/components/error-note";
 import { UpgradeBox } from "@/components/upgrade-box";
 import { RetryLine } from "@/components/workspace/pane-state";
@@ -32,6 +33,8 @@ import { ApiError, boxApi, type QueuedPrompt } from "@/lib/api";
 import { tryNow } from "@/lib/reconnect";
 import { type AttachTarget, withAttachments } from "@/lib/attachments";
 import { joinDraft, listenForQuotes, type QuoteFill } from "@/lib/chat-quote";
+import { canPickPast } from "@/lib/commands";
+import { resumeWords } from "@/lib/resume-words";
 import { keyOf, useConversations } from "@/lib/conversation-store";
 import { agentLabel, agentOf, firstPrompt, guessAgent, sessionState, worktreeOf } from "@/lib/derive";
 import type { NextStep } from "@/lib/errors";
@@ -393,7 +396,15 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
     }
   };
 
+  // A structured chat's /resume is the app's picker: its agent has no
+  // screen to show its own.
+  const [resuming, setResuming] = useState<string>();
   const reply = async (text: string) => {
+    const resumeQuery = structured && canPickPast(box) ? resumeWords(text) : undefined;
+    if (resumeQuery !== undefined) {
+      setResuming(resumeQuery);
+      return;
+    }
     if (mock && state !== "running") {
       useConversations.getState().push(key, { kind: "user", id: `u${Date.now()}`, text });
       void mockConversation().then((m) => m.finishTurn(box, session));
@@ -527,9 +538,15 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
       </PaneEmpty>
     );
   }
+  const picker = resuming !== undefined && <ResumePicker box={box} session={session} who={who} query={resuming} onClose={() => setResuming(undefined)} />;
   if (!shown.length && (mock || feed === "ready" || feed === "none") && state !== "running" && state !== "waiting" && !live.show) {
     const wt = s ? worktreeOf(locations, s) : undefined;
-    return <FirstPrompt box={box} session={session} agent={agent} name={wt ? (wt.worktree.main ? wt.location.name : wt.worktree.name) : session} branch={wt?.worktree.branch} onSend={reply} onFail={fail} />;
+    return (
+      <>
+        <FirstPrompt box={box} session={session} agent={agent} name={wt ? (wt.worktree.main ? wt.location.name : wt.worktree.name) : session} branch={wt?.worktree.branch} onSend={reply} onFail={fail} />
+        {picker}
+      </>
+    );
   }
 
   return (
@@ -589,6 +606,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
         confirm={s?.ask?.tool ? "Send anyway" : "Send as the answer"}
         onConfirm={() => (confirm ? sendNow(confirm, true) : undefined)}
       />
+      {picker}
     </div>
   );
 }

@@ -109,6 +109,7 @@ type acpConv struct {
 	modeConfig  string // its mode's config option id, when it has one
 	canResume   bool
 	canLoad     bool
+	canList     bool
 	authMethod  string
 	bypass      bool
 	busy        bool
@@ -367,6 +368,7 @@ func (c *acpConv) apply(e agenthost.Entry, live bool) {
 					LoadSession         bool `json:"loadSession"`
 					SessionCapabilities struct {
 						Resume json.RawMessage `json:"resume"`
+						List   json.RawMessage `json:"list"`
 					} `json:"sessionCapabilities"`
 				} `json:"agentCapabilities"`
 				AuthMethods []struct {
@@ -375,7 +377,8 @@ func (c *acpConv) apply(e agenthost.Entry, live bool) {
 			}
 			if json.Unmarshal(m.Result, &r) == nil {
 				c.canLoad = r.AgentCapabilities.LoadSession
-				c.canResume = len(r.AgentCapabilities.SessionCapabilities.Resume) > 0 && string(r.AgentCapabilities.SessionCapabilities.Resume) != "null"
+				c.canResume = offered(r.AgentCapabilities.SessionCapabilities.Resume)
+				c.canList = offered(r.AgentCapabilities.SessionCapabilities.List)
 				if len(r.AuthMethods) > 0 {
 					c.authMethod = r.AuthMethods[0].ID
 				}
@@ -676,8 +679,10 @@ func (c *acpConv) handshake() {
 	c.mu.Unlock()
 	opened := false
 	if sid != "" && (canResume || canLoad) {
+		// Loaded, it replays the conversation: what a log that has none
+		// of it yet (one picked from its past sessions) shows.
 		method := "session/load"
-		if canResume {
+		if canResume && (!canLoad || acpLogHasTurns(c.log)) {
 			method = "session/resume"
 		}
 		params := map[string]any{"sessionId": sid}
@@ -706,6 +711,27 @@ func (c *acpConv) handshake() {
 	if mode := meta.Mode; mode != "" && mode != "bypassPermissions" {
 		c.setMode(ctx, mode)
 	}
+}
+
+// offered says whether a capability is there: an object, not absent or null.
+func offered(v json.RawMessage) bool {
+	return len(v) > 0 && string(v) != "null"
+}
+
+// acpLogHasTurns says whether an ACP conversation's log has a prompt or a
+// replay in it already.
+func acpLogHasTurns(path string) bool {
+	found := errors.New("found")
+	err := agenthost.ReadLog(path, 0, func(e agenthost.Entry) error {
+		var m struct {
+			Method string `json:"method"`
+		}
+		if e.Dir == "in" && json.Unmarshal(e.Data, &m) == nil && (m.Method == "session/prompt" || m.Method == "session/load") {
+			return found
+		}
+		return nil
+	})
+	return errors.Is(err, found)
 }
 
 func (c *acpConv) awaitSession(ctx context.Context) (string, error) {

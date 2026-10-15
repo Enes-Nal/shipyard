@@ -287,6 +287,13 @@ export function seedTranscript(box: string, session: string, state: string, work
   if (state === "finished") items.push({ kind: "text", id: id(), text: pages ? `All green. ${pages.length === 1 ? "The page above has the coverage" : "The pages above have the numbers and screenshots"}; the branch is ready for review.` : "All green. The branch is ready for review." });
   // The search-perf agent then made artifacts here (components/art).
   if (box === ART_BOX && session === ART_SESSION) items.push(...artChat());
+  // ?structured: search-perf's Claude then loaded a skill; the chat shows
+  // the step, not the skill's instructions.
+  if (session === "search-perf-claude" && new URLSearchParams(location.search).has("structured")) {
+    items.push({ kind: "user", id: id(), text: "Check the change against our perf budget." });
+    items.push({ kind: "tools", id: id(), verb: "Skill", done: true, items: [{ verb: "Skill", target: "acme-perf-budget", id: "mock-skill-1" }] });
+    items.push({ kind: "text", id: id(), text: "Within budget: /search p95 is 410 ms against 500 ms." });
+  }
   // One finished session shows a notice card (chat-controls).
   const notice = mockNotice(session);
   if (notice) items.push(notice);

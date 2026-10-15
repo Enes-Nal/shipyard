@@ -1,4 +1,4 @@
-import { FileIcon, SlashIcon, SquareTerminalIcon, TerminalIcon } from "lucide-react";
+import { FileIcon, HistoryIcon, SlashIcon, SquareTerminalIcon, TerminalIcon } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -286,7 +286,10 @@ function PromptChip({ text, command, prefixes, who, side }: { text: string; comm
     words = prefixes?.["#"] ?? "Saves to memory";
     icon = <span className="font-mono text-[0.625rem]">#</span>;
   } else if (command) {
-    if (command.screen) {
+    if (command.app) {
+      icon = <HistoryIcon />;
+      words = `${command.name} opens a list of ${who}'s past conversations to carry on here`;
+    } else if (command.screen) {
       icon = <SquareTerminalIcon />;
       words = `${command.name} opens ${who}'s own screen: answer it in the terminal that opens below`;
     } else if (command.local) words = `${command.name} runs in ${who} itself: its output shows here`;

@@ -222,6 +222,13 @@ const stats: Record<string, Stats> = {
 
 // ?mock=1&crowd=1: many more agents, on more boxes (lib/mock-crowd.ts).
 if (new URLSearchParams(location.search).has("crowd")) crowd({ status, locations, sessions, stats });
+// ?structured: search-perf's Claude runs structured (Labs), its chat's
+// /resume the app's own picker of Claude's past conversations there.
+const structuredDemo = new URLSearchParams(location.search).has("structured");
+if (structuredDemo) {
+  const s = sessions.devl?.find((x) => x.name === "search-perf-claude");
+  if (s) s.driver = "claude";
+}
 // ?mock=1&bench=…: far more than the fixtures, for measuring (lib/mock-bench.ts).
 if (BENCH === "fleet") benchFleet({ status, locations, sessions, stats });
 if (BENCH === "chat") seedBenchChats();
@@ -754,7 +761,7 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
       home: HOME,
       // gpu runs an older berthd (mockBuilds): it can't keep worktree names,
       // and its agent browser has no tabs.
-      capabilities: ["diff", "turns", "queue", "ask", "answer", "journal", "runs", "exec.detach", "browser", "browser.devtools", "titles", "sample", "service.terminal", "session.home", "agents.install", "artifacts", "processes", ...(box === "gpu" ? [] : ["worktree.titles", "agents.paths", "browser.tabs"])],
+      capabilities: ["diff", "turns", "queue", "ask", "answer", "journal", "runs", "exec.detach", "browser", "browser.devtools", "titles", "sample", "service.terminal", "session.home", "agents.install", "artifacts", "processes", ...(box === "gpu" ? [] : ["worktree.titles", "agents.paths", "browser.tabs"]), ...(structuredDemo ? ["driver.claude", "conversations", "sessions.past"] : [])],
       // Claude Code from npm under nvm, as the person's shell finds it;
       // Codex from Shipyard's own installer.
       agent_paths: [
@@ -868,6 +875,24 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
     w.title = title && title !== w.name ? title : undefined;
     setTimeout(() => emit({ type: "worktree.renamed", box, data: { location: loc, name: wt, path: w.path } }), 30);
     return delay({ ...w });
+  }
+  // A structured chat's /resume: Claude's past conversations in its
+  // folder, and carrying one on in the session.
+  const past = /^sessions\/([^/]+)\/past$/.exec(path);
+  if (method === "GET" && past) {
+    const s = sessions[box]?.find((x) => x.name === decodeURIComponent(past[1]));
+    if (!s?.driver) return Promise.reject(new ApiError(`${s?.name ?? "it"} runs in its terminal: its agent's own /resume works there`, 409));
+    return delay({ agent: "claude", sessions: mockPast(s) });
+  }
+  const carry = /^sessions\/([^/]+)\/resume$/.exec(path);
+  if (method === "POST" && carry && (body as { agent_session_id?: string } | undefined)?.agent_session_id) {
+    const s = sessions[box]?.find((x) => x.name === decodeURIComponent(carry[1]));
+    const p = s && mockPast(s).find((x) => x.id === (body as { agent_session_id: string }).agent_session_id);
+    if (!s || !p) return Promise.reject(new ApiError("Claude has no such conversation in this folder", 404));
+    s.title = p.title;
+    mockCarried.set(s.name, p.id);
+    setTimeout(() => emit({ type: "session.renamed", box, data: { name: s.name } }), 30);
+    return delay({ ...s });
   }
   // Renaming a session: its title, or "" to clear it.
   if (method === "PATCH" && /^sessions\/[^/]+$/.test(path)) {
@@ -1630,3 +1655,20 @@ export function mockNotifications() {
 
 // ?notify=1 plays them on start.
 if (!fresh && new URLSearchParams(location.search).has("notify")) setTimeout(mockNotifications, 2500);
+
+// mockPast is what Claude has had in a structured session's folder, newest
+// first: the chat's own conversation, ones had in its terminal, and one
+// running in another session.
+const mockCarried = new Map<string, string>();
+function mockPast(s: Session): { id: string; title: string; updated: string; current?: boolean; session?: string }[] {
+  const minsAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+  const list = [
+    { id: "6f1c2a9e-4b7d-4e21-9a35-0c8d5e7f1a20", title: "Speed up product search", updated: minsAgo(23) },
+    { id: "b2d84f10-93ae-4c55-8e1b-7a6c0f3d2e91", title: "Cache facet counts in Redis", updated: minsAgo(140), session: "search-perf-claude-2" },
+    { id: "0e9a7c35-1f2b-4d68-b4c0-5e3a9d8f7b16", title: "Find why search is slow on mobile", updated: minsAgo(60 * 26) },
+    { id: "c7f05b2d-8e41-4a9c-9d3e-2b6f1a0c4e58", title: "Add a search-results skeleton", updated: minsAgo(60 * 24 * 3) },
+    { id: "4a6e9d13-2c5f-4b07-a8e2-9f1d3c7b5a64", title: "Try Postgres trigram search", updated: minsAgo(60 * 24 * 9) },
+  ];
+  const current = mockCarried.get(s.name) ?? list[0].id;
+  return list.map((p) => ({ ...p, current: p.id === current || undefined }));
+}

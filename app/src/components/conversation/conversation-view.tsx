@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronRightIcon, ClockIcon, CornerDownRightIcon, FileTextIcon, GitCompareArrowsIcon, PencilLineIcon, RotateCwIcon, SearchIcon, SendHorizontalIcon, TerminalIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, ClockIcon, CornerDownRightIcon, FileTextIcon, GitCompareArrowsIcon, PencilLineIcon, RotateCwIcon, SearchIcon, SendHorizontalIcon, SparklesIcon, TerminalIcon, XIcon } from "lucide-react";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { PixelGrid, PixelLoader } from "@/components/pixel-loader";
@@ -428,18 +428,19 @@ function foldTurns(items: TranscriptItem[], c: FoldCache = newFoldCache()): Bloc
 }
 
 function workSummary(steps: TranscriptItem[]): string {
-  let run = 0, read = 0, search = 0, other = 0, helpers = 0;
+  let run = 0, read = 0, search = 0, other = 0, helpers = 0, skills = 0;
   for (const s of steps) {
     if (s.kind === "tools") {
       const n = s.items?.length ?? 0;
       if (s.verb === "Run") run += n;
       else if (s.verb === "Read") read += n;
       else if (s.verb === "Search") search += n;
+      else if (s.verb === "Skill") skills += n;
       else other += n;
     } else if (s.kind === "crew") helpers += s.names?.length ?? 1;
   }
   const n = (k: number, one: string, many: string) => (k ? [`${k === 1 ? one.replace("#", "1") : many.replace("#", String(k))}`] : []);
-  const parts = [...n(run, "ran # command", "ran # commands"), ...n(read, "read # file", "read # files"), ...n(search, "searched # time", "searched # times"), ...n(helpers, "started # helper", "started # helpers"), ...n(other, "used # tool", "used # tools")];
+  const parts = [...n(run, "ran # command", "ran # commands"), ...n(read, "read # file", "read # files"), ...n(search, "searched # time", "searched # times"), ...n(helpers, "started # helper", "started # helpers"), ...n(skills, "used # skill", "used # skills"), ...n(other, "used # tool", "used # tools")];
   return parts.join(", ");
 }
 
@@ -777,8 +778,8 @@ function Tools({ it, edits }: { it: Extract<TranscriptItem, { kind: "tools" }>; 
     const t = window.setTimeout(() => setOpen(false), 1600);
     return () => window.clearTimeout(t);
   }, [it.done]);
-  const Icon = it.verb === "Search" ? SearchIcon : it.verb === "Run" ? TerminalIcon : FileTextIcon;
-  const doing = it.verb === "Read" ? "Reading" : it.verb === "Search" ? "Searching" : "Running";
+  const Icon = it.verb === "Search" ? SearchIcon : it.verb === "Run" ? TerminalIcon : it.verb === "Skill" ? SparklesIcon : FileTextIcon;
+  const doing = it.verb === "Read" ? "Reading" : it.verb === "Search" ? "Searching" : it.verb === "Skill" ? "Loading a skill" : "Running";
   return (
     <div className="cv-in -my-1">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="-ml-1 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
@@ -897,7 +898,7 @@ function Thinking({ since, label, elapsed, meta, step }: { since: number; label?
   }, []);
   const s = Math.max(0, Math.round((now - since) / 1000));
   const took = elapsed && !step ? elapsed : s >= 60 ? `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s` : `${s}s`;
-  const doing = step ? (step.verb === "Read" ? "Reading" : step.verb === "Search" ? "Searching" : step.verb === "Edit" ? "Editing" : "Running") : undefined;
+  const doing = step ? (step.verb === "Read" ? "Reading" : step.verb === "Search" ? "Searching" : step.verb === "Edit" ? "Editing" : step.verb === "Skill" ? "Loading skill" : "Running") : undefined;
   const word = label ?? `${HARBOUR_WORDS[Math.floor(now / 4000) % HARBOUR_WORDS.length]}…`;
   return (
     <div className="cv-in flex min-w-0 items-center gap-2">

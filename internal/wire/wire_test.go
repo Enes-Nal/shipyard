@@ -407,14 +407,22 @@ func testRevokeClosesOpenStreams(t *testing.T, every time.Duration, tell bool) {
 	if tell {
 		b.server.ClientsChanged()
 	}
-	conn.SetDeadline(time.Now().Add(5 * time.Second))
-	conn.Write([]byte("still here\n"))
-	got, err := io.ReadAll(conn)
-	if err == nil && strings.Contains(string(got), "still here") {
-		t.Fatalf("revoked laptop's stream still echoes: %q", got)
-	}
-	if ne, ok := err.(net.Error); ok && ne.Timeout() {
-		t.Fatal("revoked laptop's stream was left open")
+	// The daemon cuts the stream at its next look, or as soon as it is
+	// told: until then a line may still echo (on a slow runner it did), and
+	// once it is cut nothing does. It has to be cut well within a few
+	// seconds either way.
+	deadline := time.Now().Add(5 * time.Second)
+	line := make([]byte, 64)
+	for {
+		conn.SetDeadline(time.Now().Add(200 * time.Millisecond))
+		_, werr := conn.Write([]byte("still here\n"))
+		_, rerr := conn.Read(line)
+		if ne, ok := rerr.(net.Error); werr != nil || (rerr != nil && !(ok && ne.Timeout())) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("revoked laptop's stream was left open")
+		}
 	}
 }
 

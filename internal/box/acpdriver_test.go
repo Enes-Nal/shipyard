@@ -16,7 +16,8 @@ import (
 // spike recorded from opencode and Cursor Agent (design/structured-agents):
 // it wants authenticate before a session, streams its replies as chunks,
 // asks permission to "run the tests", works until cancelled on "work", has
-// build and plan modes, and resumes a session by its id.
+// build and plan modes, resumes a session by its id, and lists a past one
+// (ses_old) that it replays when loaded.
 const fakeACPAgent = `#!/usr/bin/env python3
 import json, sys
 state = {"authed": False, "session": None, "mode": "build", "cancelled": False}
@@ -32,7 +33,7 @@ modes = {"currentModeId": "build", "availableModes": [{"id": "build", "name": "B
 def handle(m):
     method, rid, p = m.get("method"), m.get("id"), m.get("params") or {}
     if method == "initialize":
-        out({"jsonrpc": "2.0", "id": rid, "result": {"protocolVersion": 1, "agentCapabilities": {"loadSession": True, "sessionCapabilities": {"resume": {}}}, "authMethods": [{"id": "fake_login", "name": "Login"}]}})
+        out({"jsonrpc": "2.0", "id": rid, "result": {"protocolVersion": 1, "agentCapabilities": {"loadSession": True, "sessionCapabilities": {"resume": {}, "list": {}}}, "authMethods": [{"id": "fake_login", "name": "Login"}]}})
     elif method == "authenticate":
         state["authed"] = True
         out({"jsonrpc": "2.0", "id": rid, "result": {}})
@@ -41,10 +42,18 @@ def handle(m):
             out({"jsonrpc": "2.0", "id": rid, "error": {"code": -32000, "message": "Authentication required"}})
             return
         state["session"] = p.get("sessionId") or "ses_fake1"
+        if method == "session/load" and state["session"] == "ses_old":
+            update({"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "earlier question"}})
+            chunks("earlier answer")
         res = {"modes": modes} if method == "session/new" else {}
         if method == "session/new":
             res["sessionId"] = state["session"]
         out({"jsonrpc": "2.0", "id": rid, "result": res})
+    elif method == "session/list":
+        out({"jsonrpc": "2.0", "id": rid, "result": {"sessions": [
+            {"sessionId": "ses_old", "cwd": p.get("cwd"), "title": "Old work", "updatedAt": "2026-10-01T09:00:00Z"},
+            {"sessionId": "ses_fake1", "cwd": p.get("cwd"), "title": "This one", "updatedAt": "2026-10-02T09:00:00Z"},
+            {"sessionId": "ses_away", "cwd": "/elsewhere", "title": "Another folder's"}]}})
     elif method == "session/set_mode":
         state["mode"] = p["modeId"]
         out({"jsonrpc": "2.0", "id": rid, "result": {}})

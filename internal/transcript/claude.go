@@ -20,6 +20,10 @@ type claudeLine struct {
 	Type    string `json:"type"`
 	Subtype string `json:"subtype"`
 	IsMeta  bool   `json:"isMeta"`
+	// IsSynthetic marks what Claude Code's stream writes as the person's
+	// and isn't: a skill's instructions, loaded for the model. Its
+	// transcript file marks the same lines isMeta.
+	IsSynthetic bool `json:"isSynthetic"`
 	// IsCompactSummary marks the summary a compacted conversation goes on
 	// from: written as the person's, but not what they said.
 	IsCompactSummary bool            `json:"isCompactSummary"`
@@ -117,7 +121,7 @@ func (claudeParser) line(c *conv, b []byte) {
 		msg = claudeMessage{}
 	}
 	c.lineUUID, c.lineParent = l.UUID, l.ParentUUID
-	if l.IsMeta {
+	if l.IsMeta || l.IsSynthetic {
 		// A message from another agent, Claude Code's notification or a
 		// note around the person's mid-turn message, marked meta: read for
 		// what it is (peer.go), not dropped.
@@ -382,6 +386,10 @@ func claudeTool(c *conv, bl claudeBlock, at int64) {
 			c.add(Item{Kind: "text", ID: c.id(), Text: clip(msg, maxText)})
 		}
 		c.byTool[bl.ID] = -1
+	case "Skill":
+		// Its instructions come back as a synthetic user line, not shown:
+		// the step says which skill it loaded.
+		c.call(bl.ID, ToolCall{Verb: "Skill", Target: clip(firstNonEmpty(str("skill"), str("command"), "a skill"), 80)})
 	case "ToolSearch":
 		// Bookkeeping, not work worth a line.
 	case "Artifact":

@@ -160,6 +160,7 @@ export function toolSummary(t: Extract<TranscriptItem, { kind: "tools" }>): stri
   if (t.verb === "Read") return `Read ${n} file${n === 1 ? "" : "s"}`;
   if (t.verb === "Search") return `Searched ${n} time${n === 1 ? "" : "s"}`;
   if (t.verb === "Run") return `Ran ${n} command${n === 1 ? "" : "s"}`;
+  if (t.verb === "Skill") return n === 1 && t.items?.[0] ? `Used the ${t.items[0].target} skill` : `Used ${n} skills`;
   return `${t.verb} ${n}`;
 }
 

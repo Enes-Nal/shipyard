@@ -249,7 +249,14 @@ agent_session_id?, mode?, title?, created, updated? }`); `POST
 conversations/{id}/resume` carries one on, in its session (started again if
 it ended) or a new one, answering the `Session`; `POST
 sessions/{name}/resume` starts an ended structured session again on its own
-record. Boxes that take them list `conversations`. `exited` is
+record. Boxes that take them list `conversations`. `GET
+sessions/{name}/past` lists the agent's own past conversations in a
+structured session's folder (`{ agent, sessions: [{ id, title?, updated?,
+current?, session? }], note? }`: `current` is the one it runs, `session`
+another live session running it, `note` why there are none); `POST
+sessions/{name}/resume` with `{ agent_session_id }` carries one on in the
+session, ended or not, in a conversation of its own. Boxes that take them
+list `sessions.past`. `exited` is
 true once the program has ended. `title` names the work: the first line of
 the prompt it started with, or of the first prompt it was sent or typed, cut
 to about 48 characters; `PATCH sessions/{name}` with `{ title }` renames it
