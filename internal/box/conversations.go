@@ -53,6 +53,7 @@ func (b *Box) mountConversations(route func(string, func(http.ResponseWriter, *h
 	route("GET /v1/conversations", b.listConversations)
 	route("POST /v1/conversations/{id}/resume", b.resumeConversation)
 	route("POST /v1/sessions/{name}/resume", b.resumeSession)
+	route("GET /v1/sessions/{name}/past", b.listPast)
 }
 
 // readConversation reads a conversation's meta.json.
@@ -158,10 +159,19 @@ func lastTime(c Conversation) time.Time {
 	return c.Created
 }
 
-// resumeSession answers POST /v1/sessions/{name}/resume: a structured
-// session whose agent ended starts again on its own log, carrying its
-// conversation on.
+// resumeSession answers POST /v1/sessions/{name}/resume {agent_session_id?}:
+// a structured session whose agent ended starts again on its own log,
+// carrying its conversation on; given agent_session_id, it carries that
+// one of its agent's conversations on instead, ended or not (pastsessions.go).
 func (b *Box) resumeSession(w http.ResponseWriter, r *http.Request) error {
+	var req struct {
+		AgentSessionID string `json:"agent_session_id,omitempty"`
+	}
+	if r.ContentLength > 0 {
+		if err := decode(r, &req); err != nil {
+			return err
+		}
+	}
 	name := r.PathValue("name")
 	sess, err := b.Sessions.Get(r.Context(), name)
 	if err != nil {
@@ -170,13 +180,15 @@ func (b *Box) resumeSession(w http.ResponseWriter, r *http.Request) error {
 	if sess.conv == "" {
 		return httpError{http.StatusConflict, name + " isn't a structured session: start its agent again instead"}
 	}
-	if !sess.Exited {
+	if !sess.Exited && req.AgentSessionID == "" {
 		return httpError{http.StatusConflict, name + " is still running"}
 	}
 	if err := b.before(r, "session.start", map[string]any{"name": name, "location": sess.Location, "path": sess.Dir, "resume": true}); err != nil {
 		return err
 	}
-	if sess.Driver == "" {
+	if req.AgentSessionID != "" {
+		err = b.carryOn(r, sess, req.AgentSessionID)
+	} else if sess.Driver == "" {
 		// Left in Claude Code's terminal: back to its chat, with what was
 		// said there.
 		err = b.toChat(r, sess)

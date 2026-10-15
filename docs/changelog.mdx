@@ -9,6 +9,18 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **`/resume` works in a structured agent's chat.** It opens a list of the
+  agent's past conversations in that folder, newest first, including the ones
+  you had in Claude Code's own terminal. Pick one and it carries on in the
+  same tab, with what was said before shown in the chat. The conversation you
+  leave stays under *Resume a conversation*. ACP agents that can list their
+  sessions (OpenCode, for one) get the same list; Codex's isn't there yet.
+- **A skill Claude loads shows as one step.** In a structured chat, the
+  skill's whole text used to show up as a message from you. Now the chat
+  says "Used the berth-orchestrate skill" among the agent's steps.
+
 ## v0.3.21
 
 - **The phone app pairs from a pasted link.** Its Pair and Boxes screens have

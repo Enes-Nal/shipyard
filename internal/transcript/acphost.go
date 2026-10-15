@@ -16,10 +16,15 @@ const SourceACPHost = "acp-host"
 type acpHostParser struct {
 	text    strings.Builder
 	textOff int64
+	// asked is a replayed prompt, gathered as its chunks come.
+	asked strings.Builder
 	// loading is the session/load being answered: what the agent replays
-	// for it is already in the log.
+	// for it is already in the log. A log that starts with a load (a
+	// session picked from the agent's past ones) shows the replay instead.
 	loading string
-	prompts map[string]bool
+	// replaying is a load whose replay is shown: its answer ends it.
+	replaying string
+	prompts   map[string]bool
 }
 
 type acpUpdate struct {
@@ -43,6 +48,10 @@ type acpUpdate struct {
 }
 
 func (p *acpHostParser) flush(c *conv) {
+	if t := strings.TrimSpace(p.asked.String()); t != "" {
+		userText(c, t)
+	}
+	p.asked.Reset()
 	if t := strings.TrimSpace(p.text.String()); t != "" {
 		off := c.lineOff
 		c.lineOff = p.textOff
@@ -91,7 +100,11 @@ func (p *acpHostParser) line(c *conv, b []byte) {
 			}
 			p.prompts[id] = true
 		case "session/load":
-			p.loading = id
+			if c.base > 0 || len(c.items) > 0 {
+				p.loading = id
+			} else {
+				p.replaying = id
+			}
 		}
 		return
 	case "out":
@@ -102,6 +115,10 @@ func (p *acpHostParser) line(c *conv, b []byte) {
 		// An answer: a prompt's is its turn's end; a load's ends its replay.
 		if id == p.loading {
 			p.loading = ""
+		}
+		if id == p.replaying {
+			p.replaying = ""
+			p.flush(c)
 		}
 		if p.prompts[id] {
 			delete(p.prompts, id)
@@ -120,7 +137,18 @@ func (p *acpHostParser) line(c *conv, b []byte) {
 	}
 	u := params.Update
 	switch u.SessionUpdate {
+	case "user_message_chunk":
+		// Replayed by a load: a prompt from before.
+		if p.text.Len() > 0 {
+			p.flush(c)
+		}
+		if p.asked.Len() < maxText {
+			p.asked.WriteString(u.Content.Text)
+		}
 	case "agent_message_chunk":
+		if p.asked.Len() > 0 {
+			p.flush(c)
+		}
 		if p.text.Len() == 0 {
 			p.textOff = c.lineOff
 		}

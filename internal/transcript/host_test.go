@@ -1,6 +1,8 @@
 package transcript
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -68,5 +70,43 @@ func TestOnlyTheConversationsOwnLinesAreUnwrapped(t *testing.T) {
 	line, _ := unwrapHost([]byte(`{"seq":1,"at":1791900000000,"dir":"out","data":{"type":"user","message":{"content":"x"}}}`))
 	if !strings.HasPrefix(string(line), `{"timestamp":"2026-`) {
 		t.Fatalf("no time: %s", line)
+	}
+}
+
+// A skill loaded in a structured session (as Claude Code 2.1's stream
+// writes it, recorded): its instructions come back as a user line marked
+// isSynthetic, which isn't the person's and isn't shown; the call says
+// which skill it was.
+func TestASkillsInstructionsAreNotShownAsThePersonsMessage(t *testing.T) {
+	lines := []string{
+		`{"type":"user","message":{"role":"user","content":"Use the acme-hello skill to greet acme."},"uuid":"u1","timestamp":"2026-10-15T12:00:00Z"}`,
+		`{"type":"assistant","message":{"id":"msg_1","role":"assistant","content":[{"type":"tool_use","id":"toolu_1","name":"Skill","input":{"skill":"acme-hello","args":"acme"}}]},"uuid":"a1","timestamp":"2026-10-15T12:00:01Z"}`,
+		`{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"Launching skill: acme-hello"}]},"uuid":"u2","timestamp":"2026-10-15T12:00:02Z"}`,
+		`{"type":"user","isSynthetic":true,"message":{"role":"user","content":[{"type":"text","text":"Base directory for this skill: /home/dev/acme/.claude/skills/acme-hello\n\n# Greeting acme\n\nReply with exactly: Hello from acme."}]},"uuid":"u3","timestamp":"2026-10-15T12:00:02Z"}`,
+		`{"type":"assistant","message":{"id":"msg_2","role":"assistant","content":[{"type":"text","text":"Hello from acme."}]},"uuid":"a2","timestamp":"2026-10-15T12:00:03Z"}`,
+	}
+	var log strings.Builder
+	for i, l := range lines {
+		fmt.Fprintf(&log, `{"seq":%d,"at":1791900001000,"dir":"out","data":%s}`+"\n", i+1, l)
+	}
+	path := filepath.Join(t.TempDir(), "log.jsonl")
+	if err := os.WriteFile(path, []byte(log.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	res, err := NewReader().Read(SourceClaudeHost, path, "/home/dev/acme", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, it := range res.Items {
+		s := it.Kind + ":" + it.Text
+		for _, c := range it.Items {
+			s += c.Verb + " " + c.Target
+		}
+		got = append(got, s)
+	}
+	want := "user:Use the acme-hello skill to greet acme.|tools:Skill acme-hello|text:Hello from acme."
+	if strings.Join(got, "|") != want {
+		t.Fatalf("items %q, want %q", strings.Join(got, "|"), want)
 	}
 }
