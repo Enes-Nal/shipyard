@@ -48,3 +48,20 @@ for (const renderer of ["ghostty", "xterm"] as const) {
     await expect.poll(() => sent(page)).toBe("\x1b[13;2u\x1bb\x1bf\x01\x05\x15\r");
   });
 }
+
+// ghostty-web makes the terminal's host contenteditable and focuses it, so
+// without caret-color the browser blinks its own caret, the canvas's height,
+// at the left edge beside the terminal's cursor.
+test("ghostty: a focused terminal shows no browser caret", async ({ app }) => {
+  mockOnly("the shell is on the mock's gpu box");
+  await app.open({ prefs: { terminal: { renderer: "ghostty" } } });
+  const page = app.page;
+  await openShell(page);
+  const caret = () =>
+    page.evaluate(() => {
+      const a = document.activeElement as HTMLElement | null;
+      const host = a?.closest<HTMLElement>("[contenteditable=true]");
+      return host ? getComputedStyle(host).caretColor : "no editable host";
+    });
+  await expect.poll(caret).toBe("rgba(0, 0, 0, 0)");
+});
