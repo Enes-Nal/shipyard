@@ -179,7 +179,9 @@ func (b *Box) Capabilities() []string {
 		// driver.codex: "driver": "codex", Codex's app server (codexdriver.go).
 		// driver.acp: "driver": "acp", an agent whose preset says how it
 		// speaks ACP (acpdriver.go).
-		caps = append(caps, "driver.claude", "driver.codex", "driver.acp", "driver.switch", "conversations")
+		// sessions.past: GET /v1/sessions/{name}/past, and .../resume
+		// {agent_session_id}: a structured chat's /resume (pastsessions.go).
+		caps = append(caps, "driver.claude", "driver.codex", "driver.acp", "driver.switch", "conversations", "sessions.past")
 		if b.AgentDefaults != nil {
 			// agents.defaults: GET and PUT /v1/agents/defaults, how agents
 			// start when what starts them names no driver

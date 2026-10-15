@@ -24,6 +24,8 @@ export interface AgentCommand {
   local?: boolean;
   // Opens the agent's own picker or dialog.
   screen?: boolean;
+  // Answered by the app itself, never sent: a structured chat's /resume.
+  app?: boolean;
   source?: string;
 }
 
@@ -55,7 +57,8 @@ export function useCommandCatalog(box: string | undefined, session: string | und
   useEffect(() => {
     if (!box || !session) return;
     if (mock) {
-      setCat(MOCK_CATALOG);
+      const structured = !!useStore.getState().boxes[box]?.sessions?.find((s) => s.name === session)?.driver;
+      setCat(structured ? withResumePicker(MOCK_CATALOG) : MOCK_CATALOG);
       return;
     }
     if (!client || !supported) {
@@ -109,6 +112,17 @@ export function commandIn(cat: CommandCatalog | undefined, text: string): AgentC
   if (!m || !cat) return undefined;
   const name = `/${m[1]}`;
   return cat.commands.find((c) => c.name === name || c.aliases?.includes(name));
+}
+
+// canPickPast says whether a box lists a structured session's past
+// conversations (berthd new enough).
+export const canPickPast = (box: string) => !!useStore.getState().boxes[box]?.info?.capabilities?.includes("sessions.past");
+
+// withResumePicker is a structured chat's catalogue, as the box gives it
+// (internal/box/commands.go): its /resume is the app's picker.
+function withResumePicker(cat: CommandCatalog): CommandCatalog {
+  const resume: AgentCommand = { name: "/resume", description: "Pick a past conversation and carry it on here", kind: "builtin", args: "[conversation]", local: true, app: true, aliases: ["/continue"] };
+  return { ...cat, commands: [resume, ...cat.commands.filter((c) => c.name !== "/resume")] };
 }
 
 export const KIND_LABEL: Record<CommandKind, string> = { builtin: "Built-in", custom: "Custom", skill: "Skill", plugin: "Plugin", mcp: "MCP" };

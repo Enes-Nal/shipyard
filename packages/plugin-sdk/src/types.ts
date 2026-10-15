@@ -259,6 +259,26 @@ export interface Conversation {
   updated?: string;
 }
 
+// One of a structured agent's own conversations in a session's folder,
+// which its chat's /resume can carry on (GET sessions/{name}/past,
+// "sessions.past" capability): Claude Code's, including those had in its
+// terminal, or what an ACP agent lists.
+export interface PastSession {
+  id: string;
+  title?: string;
+  updated?: string;
+  // The one the session runs now; or another live session that runs it.
+  current?: boolean;
+  session?: string;
+}
+
+export interface PastSessions {
+  agent: string;
+  sessions: PastSession[];
+  // Why the list is empty, when the agent can't give one.
+  note?: string;
+}
+
 export interface Ask {
   tool?: string;
   input?: string;

@@ -19,6 +19,7 @@ import type {
   WaitResult,
   WorktreeService,
   Location,
+  PastSessions,
   PluginInfo,
   Service,
   Session,
@@ -280,8 +281,13 @@ export const boxApi = {
   // Carries a conversation on: in its session, started again if it ended,
   // or in a new one when that is gone.
   resumeConversation: (c: Client, box: string, id: string) => c.box<Session>(box, "POST", `conversations/${encodeURIComponent(id)}/resume`),
-  // Starts a structured session whose agent ended again, on its own record.
-  resumeSession: (c: Client, box: string, name: string) => c.box<Session>(box, "POST", `sessions/${encodeURIComponent(name)}/resume`),
+  // Starts a structured session whose agent ended again, on its own record;
+  // given one of its agent's past conversations (pastSessions), carries
+  // that one on in the session instead.
+  resumeSession: (c: Client, box: string, name: string, agentSessionId?: string) =>
+    c.box<Session>(box, "POST", `sessions/${encodeURIComponent(name)}/resume`, agentSessionId ? { agent_session_id: agentSessionId } : undefined),
+  // The agent's own past conversations in a structured session's folder.
+  pastSessions: (c: Client, box: string, name: string) => c.box<PastSessions>(box, "GET", `sessions/${encodeURIComponent(name)}/past`),
   // Takes a structured session to Claude Code's own terminal, or back to its
   // chat (Session.switch).
   switchSession: (c: Client, box: string, name: string, to: "terminal" | "chat") =>

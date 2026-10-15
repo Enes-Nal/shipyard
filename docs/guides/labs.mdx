@@ -255,7 +255,7 @@ own record of the conversation. The box drives it from there:
 - **Claude Code's own terminal** is one click away: the pane's Terminal
   switch stops the structured agent and opens the same conversation in
   Claude Code's screen (`claude --resume`), for what only it does
-  (`/login`, `/resume`, `/memory`, `/permissions`, its menus). Conversation
+  (`/login`, `/memory`, `/permissions`, its menus). Conversation
   takes it back to the chat, with what you said in the terminal in its place.
   Either way needs the agent to be idle. In a folder Claude Code hasn't
   seen, its screen first asks whether you trust it.
@@ -265,6 +265,15 @@ own record of the conversation. The box drives it from there:
   aren't running under *Resume a conversation*: each carries on, with
   Claude Code's `--resume`, in its own record, so the chat shows its earlier
   turns.
+- **`/resume`** in the chat opens Shipyard's own list of the agent's past
+  conversations in the folder, newest first: Claude Code's, including those
+  had in its terminal, or what an ACP agent lists (ACP's `session/list`).
+  Picking one carries it on in the same tab, its earlier turns in the chat;
+  the conversation it leaves stays under *Resume a conversation*. One running
+  in another tab is shown but can't be picked. `/resume words` opens the list
+  filtered by them. Codex's threads aren't listed yet: use its terminal.
+- **Skills** the agent loads show as a step ("Used the … skill"), not as the
+  skill's text in a message of yours.
 
 - **Codex** runs as `codex app-server` under the same host: the box opens its
   thread, sends each prompt as a turn with the agent's mode, model and effort,
