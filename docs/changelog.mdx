@@ -9,9 +9,17 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
 
+- **A box newer than the app is no longer called outdated.** An older
+  Shipyard used to offer to update a box that already ran a newer release,
+  and *Update all* (or updating boxes automatically) would put its older
+  `berthd` on it. Now a newer box is left alone, and `berth upgrade` refuses
+  to downgrade one unless you pass `--force`. This works once both the app
+  and the box are on this release or later.
 
 ## v0.3.22
+
 - **Mac terminal keys work in terminals.** ⇧↵ starts a new line in Claude
   Code instead of sending, ⌥← and ⌥→ move a word, ⌘← and ⌘→ go to the
   start and end of the line, and ⌘⌫ deletes back to its start. ⇧↵ needs
