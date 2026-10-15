@@ -28,6 +28,9 @@ type Info struct {
 	OS    string `json:"os"`
 	Arch  string `json:"arch"`
 	Build string `json:"build"`
+	// Version is the release it is ("v0.3.22"), or "dev": a laptop on an
+	// older release must not take it for outdated (berth upgrade).
+	Version string `json:"version,omitempty"`
 	// User and Home are the account berthd runs as, which is the one to
 	// log in as over SSH, for editors.
 	User  string   `json:"user,omitempty"`
@@ -73,7 +76,7 @@ func (u *SelfUpdate) info() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	return Info{OS: runtime.GOOS, Arch: runtime.GOARCH, Build: BuildID(b), Tools: Tools()}, nil
+	return Info{OS: runtime.GOOS, Arch: runtime.GOARCH, Build: BuildID(b), Version: version.Version, Tools: Tools()}, nil
 }
 
 // Install verifies binary and swaps it in for the running executable. The old
