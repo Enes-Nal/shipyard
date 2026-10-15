@@ -183,6 +183,12 @@ const tmuxSocket = "berth"
 // the link's text with no address. Hyperlinks came in tmux 3.4; the %if
 // leaves the line out of an older one (3.0 has no terminal-features option
 // at all), and a fixed index keeps it one entry when the file is read again.
+//
+// Shift+Enter is a newline in Claude Code. The app sends it as CSI 13;2u,
+// and tmux passes a modified key on only with extended-keys on and only to
+// a program that asked for them (xterm's modifyOtherKeys, as Claude Code
+// does); a shell that didn't gets a plain Enter, as in a Mac terminal.
+// extended-keys came in tmux 3.2.
 const tmuxConfig = `set -g remain-on-exit on
 set -g history-limit 50000
 set -g mouse on
@@ -191,6 +197,9 @@ set -g status off
 set -g focus-events on
 %if "#{m/r:^(next-|[4-9]|3\.([4-9]|[1-9][0-9])),#{version}}"
 set -s terminal-features[90] "xterm*:hyperlinks"
+%endif
+%if "#{m/r:^(next-|[4-9]|3\.([2-9]|[1-9][0-9])),#{version}}"
+set -s extended-keys on
 %endif
 `
 

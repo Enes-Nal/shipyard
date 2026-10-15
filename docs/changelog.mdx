@@ -9,8 +9,15 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
-## v0.3.22
 
+
+## v0.3.22
+- **Mac terminal keys work in terminals.** ⇧↵ starts a new line in Claude
+  Code instead of sending, ⌥← and ⌥→ move a word, ⌘← and ⌘→ go to the
+  start and end of the line, and ⌘⌫ deletes back to its start. ⇧↵ needs
+  the box upgraded; a session's agent started before then picks it up
+  when it restarts.
+  [Terminals](/guides/terminals#keys)
 - **`/resume` works in a structured agent's chat.** It opens a list of the
   agent's past conversations in that folder, newest first, including the ones
   you had in Claude Code's own terminal. Pick one and it carries on in the
