@@ -10,7 +10,6 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - **`/resume` works in a structured agent's chat.** It opens a list of the
   agent's past conversations in that folder, newest first, including the ones
   you had in Claude Code's own terminal. Pick one and it carries on in the
@@ -20,6 +19,11 @@ again.
 - **A skill Claude loads shows as one step.** In a structured chat, the
   skill's whole text used to show up as a message from you. Now the chat
   says "Used the berth-orchestrate skill" among the agent's steps.
+- **New terminals no longer open with a systemd warning.** On boxes with
+  systemd 258 or later, every new tab started with *D-Bus property
+  CPUAccounting is deprecated*. Sessions still report their CPU use as
+  before. Needs the box upgraded.
+
 
 ## v0.3.21
 
