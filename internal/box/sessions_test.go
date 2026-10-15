@@ -231,6 +231,51 @@ func TestAttachPassesOSC8Hyperlinks(t *testing.T) {
 	}
 }
 
+// Shift+Enter, which the app sends as CSI 13;2u, reaches a program that
+// asked for modified keys (Claude Code, where it is a newline) as Shift and
+// Enter, not as the plain Enter tmux made of it before extended-keys.
+func TestAttachPassesShiftEnter(t *testing.T) {
+	out, err := exec.Command("tmux", "-V").Output()
+	if err != nil {
+		t.Skip("tmux not installed")
+	}
+	var major, minor int
+	if _, err := fmt.Sscanf(strings.TrimPrefix(strings.TrimSpace(string(out)), "tmux "), "%d.%d", &major, &minor); err == nil && (major < 3 || major == 3 && minor < 2) {
+		t.Skipf("%s has no extended keys", strings.TrimSpace(string(out)))
+	}
+	s := testSessions(t)
+	ctx := context.Background()
+	// Asks for modifyOtherKeys, then shows the first 7 bytes it reads in hex.
+	dump := `printf '\033[>4;2mready\n'; stty raw -echo; head -c 7 | od -An -tx1; sleep 30`
+	if _, err := s.Create(ctx, "keys", "", t.TempDir(), dump, nil); err != nil {
+		t.Fatal(err)
+	}
+	master, cmd, err := s.Attach(ctx, "keys", 100, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cmd.Process.Kill()
+	defer master.Close()
+	var screen syncBuffer
+	go io.Copy(&screen, master)
+	deadline := time.Now().Add(5 * time.Second)
+	for !strings.Contains(screen.String(), "ready") {
+		if time.Now().After(deadline) {
+			t.Fatalf("the program never started: %q", screen.String())
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	master.Write([]byte("\x1b[13;2u......."))
+	// tmux writes it in xterm's form (CSI 27;2;13~) or as CSI 13;2u.
+	xterm, csiu := "1b 5b 32 37 3b 32 3b", "1b 5b 31 33 3b 32 75"
+	for !strings.Contains(screen.String(), xterm) && !strings.Contains(screen.String(), csiu) {
+		if time.Now().After(deadline.Add(5 * time.Second)) {
+			t.Fatalf("Shift+Enter didn't reach the program as Shift+Enter: %q", screen.String())
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
 // syncBuffer is a bytes.Buffer safe to poll while another goroutine copies
 // terminal output into it.
 type syncBuffer struct {

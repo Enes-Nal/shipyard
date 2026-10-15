@@ -9,7 +9,7 @@ import { useActiveTheme } from "@/hooks/use-theme";
 import { ApiError, type TerminalConnection } from "@/lib/api";
 import { attachable, localPaths, named, onThisComputer, pastedFiles, shrinkImage, uploadAttachment, uploadLocalFile } from "@/lib/attachments";
 import { copyText } from "@/lib/clipboard";
-import { IS_LINUX, platformKeys } from "@/lib/platform";
+import { IS_LINUX, IS_MAC, platformKeys } from "@/lib/platform";
 import { usePrefs } from "@/lib/prefs";
 import { tryNow } from "@/lib/reconnect";
 import { useStore } from "@/lib/store";
@@ -18,6 +18,7 @@ import { findPaths, resolveIn } from "@/lib/editor-paths";
 import { OVERLAYS } from "@/lib/overlays";
 import { EchoPredictor } from "@/lib/predict-overlay";
 import { createTerminal, type TermHandle } from "@/lib/terminal";
+import { terminalKeyInput } from "@/lib/terminal-keys";
 import { cn } from "@/lib/utils";
 import { WheelBatcher, wheelPixels } from "@/lib/wheel";
 
@@ -117,9 +118,21 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
     let disposed = false;
     let t: TermHandle | undefined;
     let echo: EchoPredictor | undefined;
+    let input: ((d: string) => void) | undefined;
     const mount = document.createElement("div");
     mount.className = "relative h-full w-full";
-    host.current!.appendChild(mount);
+    const el = host.current!;
+    el.appendChild(mount);
+    // ⇧↵, and on a Mac ⌘←/→/⌫ and ⌥←/→, send what a Mac terminal sends
+    // (lib/terminal-keys), ahead of the renderer's own handling.
+    const onKey = (e: KeyboardEvent) => {
+      const d = input && terminalKeyInput(e, IS_MAC);
+      if (d === undefined) return;
+      e.preventDefault();
+      e.stopPropagation();
+      input?.(d);
+    };
+    el.addEventListener("keydown", onKey, true);
     void createTerminal(mount, themeRef.current.terminal, prefs).then((made) => {
       if (disposed) {
         made.dispose();
@@ -128,7 +141,7 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
       t = made;
       echo = new EchoPredictor(made, mount, themeRef.current.terminal, prefsRef.current);
       predictor.current = echo;
-      t.onData((d) => {
+      input = (d) => {
         if (!open.current) {
           const h = held.current;
           if (!h.data.length) h.at = Date.now();
@@ -141,7 +154,8 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
         echo?.typed(d);
         conn.current?.send(d);
         if (!typedAt.current || typedAt.current <= heardAt.current) typedAt.current = Date.now();
-      });
+      };
+      t.onData(input);
       t.onResize(({ cols, rows }) => conn.current?.resize(cols, rows));
       t.onLinkHint((at) => {
         const r = root.current?.getBoundingClientRect();
@@ -170,6 +184,7 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
     });
     return () => {
       disposed = true;
+      el.removeEventListener("keydown", onKey, true);
       echo?.dispose();
       if (predictor.current === echo) predictor.current = null;
       t?.dispose();

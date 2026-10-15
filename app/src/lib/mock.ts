@@ -945,6 +945,8 @@ function mockAttach(box: string, session: string, h: TerminalHandlers) {
   return {
     send(data: Uint8Array | string) {
       const text = typeof data === "string" ? data : new TextDecoder().decode(data);
+      // A test that sets window.__berthSent = [] gets what each terminal sent.
+      (window as { __berthSent?: string[] }).__berthSent?.push(text);
       const echo = text.replace(/\r/g, "\r\n\x1b[2m(mock: nothing runs here)\x1b[0m\r\n\x1b[1m❯\x1b[0m ").replace(/\x7f/g, "\b \b");
       if (!ECHO_DELAY) h.onData(echo);
       else timers.push(window.setTimeout(() => open && h.onData(echo), ECHO_DELAY));
