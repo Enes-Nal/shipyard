@@ -9,6 +9,13 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **New terminals no longer open with a systemd warning.** On boxes with
+  systemd 258 or later, every new tab started with *D-Bus property
+  CPUAccounting is deprecated*. Sessions still report their CPU use as
+  before. Needs the box upgraded.
+
 ## v0.3.21
 
 - **The phone app pairs from a pasted link.** Its Pair and Boxes screens have
