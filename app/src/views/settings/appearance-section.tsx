@@ -12,7 +12,7 @@ import { berthThemes } from "@/themes/builtin";
 import { ChatBackgroundSettings, ChatWidthSettings } from "@/views/settings/chat-background-section";
 import { Segmented } from "@/views/settings/controls";
 import { HeaderPictureSettings } from "@/views/settings/header-picture-section";
-import { Code, SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings/rows";
+import { SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings/rows";
 import { IS_LINUX } from "@/lib/platform";
 
 const BERTH = new Set(berthThemes.map((t) => t.id));
@@ -24,18 +24,29 @@ export function AppearanceSection() {
   const uiFontSize = usePrefs((p) => p.uiFontSize);
   const [query, setQuery] = useState("");
 
+  const [all, setAll] = useState(false);
+  const system = themeId === SYSTEM_THEME;
+  const active = useActiveTheme();
+  const selectedId = system ? active.id : themeId;
+
   // Shipyard's own, then every other theme (built-in ports, yours, plugins')
-  // by appearance; a search narrows them by name.
+  // by appearance, the best-known first; a search narrows them by name.
+  // Unsearched, each group shows a row of four, plus the chosen theme, until
+  // Show more.
   const q = query.trim().toLowerCase();
   const shown = q ? themes.filter((t) => t.name.toLowerCase().includes(q) || t.id.includes(q)) : themes;
   const groups = [
-    { title: "Shipyard", themes: shown.filter((t) => BERTH.has(t.id)) },
-    { title: "Light", themes: shown.filter((t) => !BERTH.has(t.id) && t.appearance !== "dark") },
-    { title: "Dark", themes: shown.filter((t) => !BERTH.has(t.id) && t.appearance === "dark") },
-  ].filter((g) => g.themes.length);
-
-  const system = themeId === SYSTEM_THEME;
-  const active = useActiveTheme();
+    { title: "Shipyard", themes: byFirst(shown.filter((t) => BERTH.has(t.id)), SHIPYARD_FIRST) },
+    { title: "Light", themes: byFirst(shown.filter((t) => !BERTH.has(t.id) && t.appearance !== "dark"), LIGHT_FIRST) },
+    { title: "Dark", themes: byFirst(shown.filter((t) => !BERTH.has(t.id) && t.appearance === "dark"), DARK_FIRST) },
+  ]
+    .filter((g) => g.themes.length)
+    .map((g) => {
+      if (q || all || g.title === "Shipyard") return { ...g, hidden: [] as Theme[] };
+      const keep = g.themes.filter((t, i) => i < ROW || t.id === selectedId);
+      return { ...g, themes: keep, hidden: g.themes.filter((t) => !keep.includes(t)) };
+    });
+  const hidden = groups.flatMap((g) => g.hidden);
   const picks = usePrefs((p) => p.systemThemes);
   const mode = system ? "system" : active.appearance === "dark" ? "dark" : "light";
   // Light or Dark keeps the theme when it already is one, else takes the one
@@ -53,10 +64,9 @@ export function AppearanceSection() {
       <SettingsGroup
         title="Theme"
         actions={
-          <div className="relative w-44 shrink-0">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input size="sm" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Find a theme" aria-label="Find a theme" className="[&_input]:pl-7.5" />
-          </div>
+          <span className="text-[13px] text-muted-foreground leading-4">
+            {themes.length} themes · add your own in <span className="font-mono text-xs">~/.berth/themes</span>
+          </span>
         }
       >
         <SettingsRow label="Light or dark" description={system ? <SystemNote themes={themes} /> : "Pick a theme below, or follow the computer."}>
@@ -72,22 +82,39 @@ export function AppearanceSection() {
         </SettingsRow>
         {system && <SystemPicks themes={themes} />}
       </SettingsGroup>
-      <section className="-mt-4">
-        {groups.map((g) => (
-          <div key={g.title} className="mt-6 first:mt-0">
-            <h3 className="mb-2.5 text-muted-foreground text-xs">{g.title}</h3>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
+      <section className="-mt-[27px]">
+        {groups.map((g, i) => (
+          <div key={g.title} className="mt-5 first:mt-0">
+            <div className="mb-1 flex h-6 items-center gap-3">
+              <h3 className="flex-1 text-[13px] text-muted-foreground">{g.title}</h3>
+              {i === 0 && (
+                <div className="relative w-44 shrink-0">
+                  <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input size="sm" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Find a theme" aria-label="Find a theme" className="[&_input]:h-6 [&_input]:pl-7.5 [&_input]:text-xs" />
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-x-3 gap-y-3.5 max-[1100px]:grid-cols-3 max-[800px]:grid-cols-2">
               {g.themes.map((t) => (
-                <ThemeCard key={t.id} theme={t} selected={system ? t.id === active.id : t.id === themeId} following={system} onSelect={() => useStore.getState().setTheme(t.id)} />
+                <ThemeCard key={t.id} theme={t} selected={t.id === selectedId} following={system} onSelect={() => useStore.getState().setTheme(t.id)} />
               ))}
             </div>
           </div>
         ))}
         {!groups.length && <p className="text-muted-foreground text-xs">No theme is called “{query.trim()}”.</p>}
-        <p className="mt-5 text-muted-foreground text-xs">
-          {themes.length} themes. Add your own as JSON in <Code>~/.berth/themes/</Code>, or install a plugin that ships one.
-        </p>
+        {(hidden.length > 0 || all) && !q && (
+          <button type="button" onClick={() => setAll((v) => !v)} className="mt-4 flex max-w-full items-baseline gap-2 text-left text-[13px]">
+            <span className="shrink-0 font-medium">{all ? "Show fewer" : `Show ${hidden.length} more`}</span>
+            {!all && <span className="truncate text-muted-foreground">{hidden.map((t) => t.name).join(", ")}</span>}
+          </button>
+        )}
       </section>
+
+      <HeaderPictureSettings />
+
+      <ChatWidthSettings />
+
+      <ChatBackgroundSettings />
 
       <SettingsGroup title="Interface">
         <SettingsRow label="Text size" description="Everything outside the terminal. ⌘+ and ⌘− step it from 11 to 20px.">
@@ -114,14 +141,22 @@ export function AppearanceSection() {
           />
         </SettingsRow>
       </SettingsGroup>
-
-      <ChatWidthSettings />
-
-      <ChatBackgroundSettings />
-
-      <HeaderPictureSettings />
     </SettingsPage>
   );
+}
+
+// The themes each group leads with, the rest after them in the list's order.
+const ROW = 4;
+const SHIPYARD_FIRST = ["berth-light", "berth-dark", "midnight", "paper"];
+const LIGHT_FIRST = ["github-light", "one-light", "catppuccin-latte", "solarized-light"];
+const DARK_FIRST = ["dracula", "tokyo-night", "catppuccin-mocha", "nord"];
+
+function byFirst(list: Theme[], first: string[]): Theme[] {
+  const rank = (t: Theme) => {
+    const i = first.indexOf(t.id);
+    return i < 0 ? first.length : i;
+  };
+  return [...list].sort((a, b) => rank(a) - rank(b));
 }
 
 // Match system follows the computer's appearance: one theme by day, another
@@ -171,7 +206,7 @@ function ThemeCard({ theme, selected, following, onSelect }: { theme: Theme; sel
         aria-hidden
         data-a11y-skip
         className={cn(
-          "relative h-[88px] w-full overflow-hidden rounded-xl border transition-[box-shadow,border-color] group-focus-visible:ring-2 group-focus-visible:ring-ring",
+          "relative h-[76px] w-full overflow-hidden rounded-xl border transition-[box-shadow,border-color] group-focus-visible:ring-2 group-focus-visible:ring-ring",
           selected ? "border-transparent ring-2 ring-offset-2 ring-offset-background" : "group-hover:border-foreground/25",
           selected && (following ? "ring-foreground/30" : "ring-foreground"),
         )}
@@ -193,7 +228,7 @@ function Preview({ theme }: { theme: Theme }) {
   const t = theme.terminal;
   return (
     <div className="flex h-full" style={{ background: c.background }}>
-      <div className="flex w-[38%] flex-col gap-1.5 border-r px-2.5 py-3" style={{ background: c.sidebar, borderColor: c.border }}>
+      <div className="flex w-[38%] flex-col gap-1.5 border-r px-2.5 py-2.5" style={{ background: c.sidebar, borderColor: c.border }}>
         <div className="h-1.5 w-4/5 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.55 }} />
         <div className="h-1.5 w-3/5 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.3 }} />
         <div className="flex items-center gap-1">
@@ -202,7 +237,7 @@ function Preview({ theme }: { theme: Theme }) {
         </div>
         <div className="h-1.5 w-2/3 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.3 }} />
       </div>
-      <div className="flex-1 px-2.5 py-2.5 font-mono text-[10px] leading-[1.5]" style={{ background: t.background, color: t.foreground }}>
+      <div className="flex-1 px-2.5 py-2 font-mono text-[10px] leading-[1.35]" style={{ background: t.background, color: t.foreground }}>
         <div>
           <span style={{ color: t.green }}>●</span> tests pass
         </div>

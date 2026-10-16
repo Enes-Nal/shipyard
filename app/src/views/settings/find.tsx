@@ -63,8 +63,8 @@ export function SettingsFind() {
   };
 
   return (
-    <div className="relative mt-0.5 w-52 shrink-0 max-[900px]:hidden">
-      <label className="flex h-8 items-center gap-2 rounded-lg bg-muted/70 px-2.5 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/40">
+    <div className="relative w-50 shrink-0 max-[900px]:hidden">
+      <label className="flex h-8 items-center gap-2 rounded-lg bg-muted px-2.5 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/40">
         <SearchIcon className="size-3.5 shrink-0" />
         <input
           ref={input}

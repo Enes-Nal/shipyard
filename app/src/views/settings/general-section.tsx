@@ -19,7 +19,7 @@ export function GeneralSection() {
   const port = proxy?.url_port ?? 1377;
 
   return (
-    <SettingsPage title="General" description="How Shipyard behaves on this computer. Box settings are under Machines.">
+    <SettingsPage title="General" description="How Shipyard behaves here. Box settings live under Machines.">
       <SettingsGroup title="Closing tabs">
         <SettingsRow
           label="When you close an agent's tab"

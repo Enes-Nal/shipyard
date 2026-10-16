@@ -13,7 +13,7 @@ import { SettingsFind } from "@/views/settings/find";
 export function SettingsPage({ title, badge, description, actions, children }: { title: string; badge?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-[728px] px-6 pt-14 pb-20 max-[1200px]:pt-10">
-      <header data-tauri-drag-region className="mb-10 flex items-start gap-4">
+      <header data-tauri-drag-region className="mb-10 flex items-end gap-4">
         <div data-tauri-drag-region className="min-w-0 flex-1">
           <h1 className="flex items-center gap-2 font-semibold text-[28px] leading-[34px] tracking-[-0.02em]">
             {title}
@@ -21,7 +21,7 @@ export function SettingsPage({ title, badge, description, actions, children }: {
           </h1>
           {description && <p className="mt-1.5 text-muted-foreground text-sm leading-5">{typeof description === "string" ? platformKeys(description) : description}</p>}
         </div>
-        {actions && <div className="mt-0.5 flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         <SettingsFind />
       </header>
       <div className="space-y-10">{children}</div>
@@ -35,7 +35,7 @@ export function SettingsGroup({ title, description, actions, children }: { title
       {(title || actions) && (
         <div className="mb-1.5 flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            {title && <h2 className="font-semibold text-[13px] text-foreground">{title}</h2>}
+            {title && <h2 className="font-semibold text-[13px] text-foreground leading-4">{title}</h2>}
             {description && <p className="mt-0.5 text-muted-foreground text-[13px] leading-[19px]">{description}</p>}
           </div>
           {actions}
@@ -76,13 +76,13 @@ export function SettingsRow({ label, description, children, className }: { label
   const labelledBy = `${id}-label`;
   const describedBy = description ? `${id}-description` : undefined;
   return (
-    <div className={cn("flex min-h-14 items-center gap-8 py-3.5", className)}>
+    <div className={cn("flex min-h-14 items-center gap-8 py-4", className)}>
       <div className="min-w-0 flex-1">
-        <div id={labelledBy} className="font-medium text-sm">
+        <div id={labelledBy} className="font-medium text-sm leading-[18px]">
           {label}
         </div>
         {description && (
-          <div id={describedBy} className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">
+          <div id={describedBy} className="mt-[3px] text-[13px] text-muted-foreground leading-[19px]">
             {typeof description === "string" ? platformKeys(description) : description}
           </div>
         )}
