@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { type ChatBackground, DEFAULT_CHAT_BACKGROUND, normalizeChatBackground } from "@/lib/chat-background";
 import { DEFAULT_HEADER_PICTURE, type HeaderPicture, normalizeHeaderPicture } from "@/lib/header-picture";
 import type { HomeLayout } from "@/lib/home-layout";
-import { clampWidth, SIDEBAR_DEFAULT } from "@/lib/sidebar-width";
+import { clampWidth, defaultWidth, SIDEBAR_DEFAULT, SIDEBAR_NARROW_DEFAULT } from "@/lib/sidebar-width";
 import { load, save } from "@/lib/storage";
 import { DEFAULT_TERMINAL_PREFS, type TerminalPrefs } from "@/lib/terminal";
 
@@ -161,7 +161,9 @@ export const usePrefs = create<Prefs>()(() => ({
   systemThemes: { ...DEFAULTS.systemThemes, ...saved.systemThemes },
   chatBackground: normalizeChatBackground(saved.chatBackground),
   headerPicture: normalizeHeaderPicture(saved.headerPicture),
-  sidebarWidth: clampWidth(saved.sidebarWidth ?? SIDEBAR_DEFAULT),
+  // 240px was the default before the task sidebar: a saved 240 is a sidebar
+  // never dragged, so it starts at today's default for this window.
+  sidebarWidth: saved.sidebarWidth === undefined || saved.sidebarWidth === SIDEBAR_NARROW_DEFAULT ? defaultWidth(typeof window === "undefined" ? Infinity : window.innerWidth) : clampWidth(saved.sidebarWidth),
 }));
 
 usePrefs.subscribe((p) => save("berth.prefs", { ...p, version: PREFS_VERSION }));
