@@ -6,13 +6,13 @@
 // leading icon and trailing glyphs take about 100px, leaving the name some
 // 13 characters ("Fix the cart b…"), enough to tell worktrees apart, and
 // room for the actions that fade in over a row's end without covering all
-// of it. 240px is the width it always had. 420px fits a long display name
+// of it. 304px, the default, leaves a task's title room beside its status and time. 420px fits a long display name
 // with its worktree's own name beside it (about 50 characters); wider only
 // adds empty space and takes it from the terminals. The widest is also held
 // to 40% of the window, so a small window keeps its room for work.
 
 export const SIDEBAR_MIN = 200;
-export const SIDEBAR_DEFAULT = 240;
+export const SIDEBAR_DEFAULT = 304;
 export const SIDEBAR_MAX = 420;
 // The folded rail's width (app-sidebar.tsx Rail, w-19).
 export const RAIL_WIDTH = 76;

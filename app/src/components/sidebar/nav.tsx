@@ -2,26 +2,27 @@ import type { SidebarItem } from "@berth/plugin";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ClockIcon,
   EllipsisIcon,
   EyeIcon,
   EyeOffIcon,
   GitBranchIcon,
   GripVerticalIcon,
-  HouseIcon,
   InboxIcon,
   LayoutDashboardIcon,
   ListIcon,
   PackageIcon,
+  PenLineIcon,
   PinIcon,
   PinOffIcon,
   RotateCcwIcon,
   SlidersHorizontalIcon,
-  WorkflowIcon,
 } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode, useEffect, useMemo, useRef } from "react";
+import { Component, Fragment, type ErrorInfo, type ReactNode, useEffect, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { type Action, ContextRow } from "@/components/sidebar/actions";
+import { selectedRow } from "@/components/sidebar/task-parts";
 import { Tip } from "@/components/tip";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
@@ -30,6 +31,7 @@ import { SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } fro
 import { useAgentCounts } from "@/hooks/use-agent-counts";
 import { arrange, type NavList, navActions, useNav } from "@/lib/nav";
 import { type NavBadge, readNavBadge } from "@/lib/nav-badge";
+import { platformKeys } from "@/lib/platform";
 import { usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -53,13 +55,15 @@ export interface NavItem {
   // go opens the place. Every way in (a row, the rail, zen, ⌘K) calls it.
   go(): void;
   badge?: NavBadge;
+  // A shortcut, said at the row's end in the sidebar.
+  keys?: string;
 }
 
 // useNavItems is every place there is, in its default order.
 //
 // Home is where you start work and see your agents. With Labs that is the
-// harbour home (a composer and your agents), and the Agent Dashboard is a
-// place of its own under More. Without Labs there is no harbour, so the
+// harbour home (a composer and your agents), so its row is "New task"; the
+// Agent Dashboard is a place of its own under More. Without Labs there is no harbour, so the
 // first place is the Agent Dashboard itself, under its own name.
 export function useNavItems(): NavItem[] {
   const view = useStore((s) => s.view);
@@ -78,11 +82,11 @@ export function useNavItems(): NavItem[] {
     const dashboard = { label: "Agent Dashboard", icon: <LayoutDashboardIcon />, go: open({ kind: "dashboard" }), active: view.kind === "dashboard" };
     const items: NavItem[] = [
       labs
-        ? { id: "home", label: "Home", icon: <HouseIcon />, go: goHome, active: view.kind === "workspace" && noWorktree, badge: waiting }
+        ? { id: "home", label: "New task", icon: <PenLineIcon />, go: goHome, active: view.kind === "workspace" && noWorktree, badge: waiting, keys: "⌘N" }
         : { id: "home", ...dashboard, badge: waiting },
       { id: "review", label: "Review", icon: <InboxIcon />, go: open({ kind: "review" }), active: view.kind === "review", badge: toReview ? { count: toReview, title: `${toReview} to review` } : undefined },
       { id: "worktrees", label: "Worktrees", icon: <GitBranchIcon />, go: open({ kind: "worktrees" }), active: view.kind === "worktrees" },
-      { id: "automations", label: "Automations", icon: <WorkflowIcon />, go: open({ kind: "automations" }), active: view.kind === "automations" },
+      { id: "automations", label: "Automations", icon: <ClockIcon />, go: open({ kind: "automations" }), active: view.kind === "automations" },
       ...(labs ? [{ id: "dashboard", ...dashboard }] : []),
       { id: "kits", label: "Kits", icon: <PackageIcon />, go: open({ kind: "kits" }), active: view.kind === "kits" },
       ...plugins.map(({ plugin, item }) => ({
@@ -248,14 +252,21 @@ function dragProps(id: string) {
 function RowBadge({ badge }: { badge: NonNullable<NavItem["badge"]> }) {
   return (
     <Tip label={badge.title} side="right">
-      <SidebarMenuBadge data-testid="nav-badge" className={cn("top-1/2 h-4.5 min-w-4.5 -translate-y-1/2 peer-data-[size=sm]/menu-button:top-1/2 rounded-full px-1 text-[10px] leading-none", badge.loud ? "bg-warning/15 text-warning-foreground" : "bg-sidebar-accent text-sidebar-foreground")}>
+      <SidebarMenuBadge data-testid="nav-badge" className={cn("top-1/2 right-1.5 h-5 min-w-5 -translate-y-1/2 peer-data-[size=sm]/menu-button:top-1/2 rounded-full px-1 text-label leading-none tabular-nums", badge.loud ? "bg-warning/15 text-warning-foreground" : "text-muted-foreground")}>
         {badge.count}
       </SidebarMenuBadge>
     </Tip>
   );
 }
 
-const rowClass = "h-side-row text-[13px] data-[active=true]:font-normal [&>svg]:size-3.5 [&>svg]:text-muted-foreground";
+// RowKeys is a place's shortcut at its row's end, where a count would be.
+export function RowKeys({ keys }: { keys: string }) {
+  return <span aria-hidden className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-meta text-muted-foreground peer-data-[active=true]/menu-button:text-sidebar-foreground">{platformKeys(keys)}</span>;
+}
+
+// A place's row: 34px at the default density, a 16px icon and its name at
+// 14px; the one you are on sits on the selected tint.
+export const rowClass = cn("h-[calc(var(--side-row)+6px)] gap-2.5 px-2.5 text-row font-normal text-foreground [&>svg]:size-4 [&>svg]:text-foreground", selectedRow, "data-[active=true]:font-normal");
 
 function NavRow({ item, list, index, ids }: { item: NavItem; list: NavList; index: number; ids: string[] }) {
   const over = useDrag((s) => s.over);
@@ -265,11 +276,13 @@ function NavRow({ item, list, index, ids }: { item: NavItem; list: NavList; inde
     <SidebarMenuItem {...dropProps(list, index, ids)} className="relative">
       {before && <span className="pointer-events-none absolute inset-x-2 -top-px h-0.5 rounded-full bg-ring" />}
       <ContextRow items={() => navItemActions(item.id, list, ids)}>
-        <SidebarMenuButton size="sm" data-testid={`nav-${item.id}`} isActive={item.active} aria-current={item.active ? "page" : undefined} onClick={item.go} {...dragProps(item.id)} className={cn(rowClass, dragging && "opacity-40")}>
+        <SidebarMenuButton size="sm" data-testid={`nav-${item.id}`} isActive={item.active} aria-current={item.active ? "page" : undefined} onClick={item.go} {...dragProps(item.id)} className={cn(rowClass, item.keys && "font-medium data-[active=true]:font-medium", dragging && "opacity-40")}>
           {item.icon}
           <span>{item.label}</span>
         </SidebarMenuButton>
-        {item.badge && <RowBadge badge={item.badge} />}
+        {/* A shortcut wins over a count here: the rows below already show
+            who needs you, and the rail keeps the count. */}
+        {item.keys ? <RowKeys keys={item.keys} /> : item.badge ? <RowBadge badge={item.badge} /> : null}
       </ContextRow>
     </SidebarMenuItem>
   );
@@ -299,17 +312,26 @@ export function MoreItems({ more }: { more: NavItem[] }) {
 // Nav is the top of the sidebar: the pinned places, then More, a menu of
 // the rest. More stays one row however many plugins there are; while you
 // are on one of its places it is highlighted and names it.
-export function Nav() {
+//
+// lead are the sidebar's own rows (New task without Labs, Search): they
+// follow Home when it comes first as New task, and otherwise lead. extra
+// goes at the foot of More's menu.
+export function Nav({ lead, extra }: { lead?: ReactNode; extra?: ReactNode } = {}) {
   const { pinned, more, ids } = useArrangedNav();
   const dragging = useDrag((s) => !!s.id);
   const over = useDrag((s) => s.over);
   const here = more.find((n) => n.active);
   const loud = more.find((n) => n.badge?.loud);
+  const afterHome = pinned[0]?.id === "home" && !!pinned[0].keys;
   return (
     <div>
-      <SidebarMenu className="gap-px" {...dropProps("pinned", pinned.length, ids)}>
+      <SidebarMenu className="gap-0.5" {...dropProps("pinned", pinned.length, ids)}>
+        {!afterHome && lead}
         {pinned.map((item, i) => (
-          <NavRow key={item.id} item={item} list="pinned" index={i} ids={ids} />
+          <Fragment key={item.id}>
+            <NavRow item={item} list="pinned" index={i} ids={ids} />
+            {afterHome && i === 0 && lead}
+          </Fragment>
         ))}
         {pinned.length === 0 && <li className="px-2 py-1 text-muted-foreground text-xs">Drag places here to pin them.</li>}
         <SidebarMenuItem {...dropProps("more", more.length, ids)} className="relative">
@@ -329,10 +351,11 @@ export function Nav() {
             </MenuTrigger>
             <MenuPopup side="right" align="start" className="min-w-52">
               <MoreItems more={more} />
+              {extra}
             </MenuPopup>
           </Menu>
           {here ? (
-            <span className="pointer-events-none absolute top-1/2 right-2 max-w-24 -translate-y-1/2 truncate text-muted-foreground text-xs">{here.label}</span>
+            <span className="pointer-events-none absolute top-1/2 right-2.5 max-w-28 -translate-y-1/2 truncate text-meta text-sidebar-foreground">{here.label}</span>
           ) : loud?.badge ? (
             <RowBadge badge={loud.badge} />
           ) : null}
