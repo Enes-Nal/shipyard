@@ -162,7 +162,7 @@ export const test = base.extend<{ app: App }>({
       // the sidebar back. Nothing happens when Settings isn't open.
       async leaveSettings() {
         const back = page.getByRole("button", { name: "Back to app" });
-        if ((await page.getByTestId("sidebar").count()) === 0 && (await back.isVisible())) {
+        if (await back.isVisible()) {
           await back.click();
           await expect(page.getByTestId("nav-home")).toBeVisible();
         }

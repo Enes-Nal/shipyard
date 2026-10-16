@@ -117,7 +117,7 @@ export function PluginsSection() {
         description={
           market.list ? (
             <>
-              Listed at <Code>{market.list.host}</Code>. Installing one puts it under Installed, off until you allow it.
+              Plugins listed at <Code>{market.list.host}</Code>. Installing one puts it under Installed, off until you allow it.
             </>
           ) : (
             "Installing one puts it under Installed, off until you allow it."
@@ -191,7 +191,7 @@ function MarketRow({ plugin: p, was, onChanged, onStale }: { plugin: MarketPlugi
           <span className="text-muted-foreground text-xs">{p.version}</span>
         </div>
         {p.description && <div className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">{p.description}</div>}
-        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
+        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
           {p.id}
           {p.author && ` · by ${p.author}`}
           {` · ${bytes(p.size)}`}
@@ -308,7 +308,7 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
         </div>
         {p.description && <div className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">{p.description}</div>}
         <Contributions plugin={p.id} />
-        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
+        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
           {p.id}
           {hooks > 0 && ` · ${hooks} hook${hooks === 1 ? "" : "s"}`}
           {p.source === "marketplace" && " · from the listing"}

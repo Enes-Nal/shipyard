@@ -178,8 +178,10 @@ export default function App() {
         <div className="flex h-svh flex-col overflow-hidden bg-background text-foreground">
           {fakeTrafficLights() && <FakeTrafficLights />}
           <div className="flex min-h-0 flex-1">
-            {!zen && !settings && (
-              <Disconnectable>
+            {/* Hidden, not taken away, while Settings is open, so it comes
+                back as it was: folds, scroll and notices. */}
+            {!zen && (
+              <Disconnectable className={cn(settings && "hidden")}>
                 <AppSidebar />
               </Disconnectable>
             )}
@@ -206,7 +208,11 @@ export default function App() {
               </main>
             </div>
           </div>
-          {!zen && !settings && <StatusBar />}
+          {!zen && (
+            <div className={cn("contents", settings && "hidden")}>
+              <StatusBar />
+            </div>
+          )}
         </div>
         <ErrorBoundary scope="a dialog">
           <CommandPalette />
