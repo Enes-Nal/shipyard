@@ -223,7 +223,10 @@ export default function App() {
           <ComposerDialog />
           <AddLocationDialog />
           <PromptDialogs />
-          <LoopsPanel />
+          {/* Loops float over the workspace, not over Settings' page. */}
+          <div className={cn("contents", settings && "hidden")}>
+            <LoopsPanel />
+          </div>
           <AddBoxDialog />
           <ConfirmHost />
           <ErrorDetailsHost />
