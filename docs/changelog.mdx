@@ -17,6 +17,10 @@ again.
   `berthd` on it. Now a newer box is left alone, and `berth upgrade` refuses
   to downgrade one unless you pass `--force`. This works once both the app
   and the box are on this release or later.
+- **A kit link pinned to a commit works.** A GitHub link copied from a
+  commit's page (`…/tree/308bc75…/kits/web`) used to fail with "Git
+  couldn't do that", because git can't clone a commit by its hash as if it
+  were a branch. Shipyard now fetches the kit at that commit.
 
 ## v0.3.22
 
