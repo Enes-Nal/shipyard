@@ -12,7 +12,9 @@ export type StepWhen = "success" | "failure" | "always";
 
 export interface Step {
   id?: string;
-  kind: StepKind;
+  // A run step kind (loop, gate, pr, …) the editor shows but does not edit
+  // is any other string.
+  kind: StepKind | (string & {});
   when?: StepWhen;
   command?: string;
   text?: string;
@@ -96,7 +98,9 @@ export const overrides = (f: ScopedFlow, all: ScopedFlow[]) => all.some((o) => s
 
 export interface StepRun {
   id: string;
-  kind: StepKind;
+  // A run step kind (loop, gate, pr, …) the editor shows but does not edit
+  // is any other string.
+  kind: StepKind | (string & {});
   status: "succeeded" | "failed" | "skipped";
   started?: string;
   duration?: string;

@@ -57,6 +57,14 @@ const shopKit: KitInfo = {
           { kind: "prompt", when: "failure", text: "Lint failed:\n\n{{prev.output}}\n\nFix it." },
         ],
       },
+      // A run step (pr) the flow editor shows but does not edit.
+      {
+        id: "pr-when-green",
+        name: "Open a PR when the checks pass",
+        enabled: true,
+        trigger: { event: "agent.finished", where: { agent: "claude" } },
+        steps: [{ kind: "run", command: "pnpm test" }, { kind: "pr" }],
+      },
     ],
     hooks: [{ on: "before:worktree.create", run: "test \"$BERTH_BRANCH\" != main || { echo 'Make a branch, not main'; exit 1; }" }],
 
