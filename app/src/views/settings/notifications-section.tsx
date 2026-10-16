@@ -71,7 +71,7 @@ export function NotificationsSection() {
   return (
     <SettingsPage
       title="Notifications"
-      description="Choose where each kind of notification shows. Everything goes through the notification centre (⌘⇧N); toasts and system notifications are on top of that."
+      description="Where each kind shows. Everything lands in the centre (⌘⇧N)."
       actions={
         <Button size="sm" variant="outline" onClick={() => setNotificationsOpen(true)}>
           <BellIcon />
@@ -80,7 +80,7 @@ export function NotificationsSection() {
       }
     >
       <SettingsGroup title="What to show">
-        <div className="flex items-center gap-6 px-4 pt-2.5 pb-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-6 pt-1 pb-1 text-[11px] text-muted-foreground">
           <span className="min-w-0 flex-1">Kind</span>
           {columns.map(([key, label, tip]) => (
             <Tip key={key} label={tip}>

@@ -108,8 +108,8 @@ export function ChatBackgroundSettings() {
     >
       <div className="mb-2 flex items-end gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="font-medium text-[13px] text-muted-foreground">Chat background</h2>
-          <p className="mt-0.5 text-muted-foreground text-xs">Behind conversations, in zen too, in your theme's colours and quiet enough to read over.</p>
+          <h2 className="font-semibold text-[13px] text-foreground">Chat background</h2>
+          <p className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">Behind conversations, in your theme's colours. Quiet enough to read over.</p>
         </div>
         {bg.source !== "none" && (
           <Button size="xs" variant="ghost" onClick={() => setChatBackground({ ...DEFAULT_CHAT_BACKGROUND })}>

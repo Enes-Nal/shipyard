@@ -2,6 +2,7 @@ import { BugIcon, ClipboardListIcon } from "lucide-react";
 import { useState } from "react";
 
 import { AlphaBadge } from "@/components/alpha-badge";
+import { HeaderBand, useHeaderPicture } from "@/components/art/header-band";
 import { Button } from "@/components/ui/button";
 import { copyDiagnostics } from "@/lib/diagnostics";
 import { ago, bytes } from "@/lib/format";
@@ -9,6 +10,7 @@ import { openDocs, openUrl } from "@/lib/open-url";
 import { LINUX_ALPHA, LINUX_BUGS } from "@/lib/platform";
 import { NONE, useStore } from "@/lib/store";
 import { checkForUpdate, restartToUpdate, updatesSupported, useUpdater } from "@/lib/updater";
+import { cn } from "@/lib/utils";
 import { useAppVersion } from "@/views/settings/app-version";
 import { hasWhatsNew, openWhatsNew } from "@/lib/whats-new";
 import { SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings/rows";
@@ -26,6 +28,25 @@ const DOCS: [path: string, title: string, what: string][] = [
   ["/reference/app-api", "App API", "The API this app uses"],
 ];
 
+// Hero is the header picture you chose, with the mark and the version on it:
+// the one warm thing in Settings. None shows just the mark and version.
+function Hero({ version }: { version: string }) {
+  const picture = useHeaderPicture();
+  const shown = version === "dev" || version === "unknown" || version === "…" ? version : `v${version}`;
+  return (
+    <div className={cn("relative overflow-hidden rounded-xl border", picture ? "h-40" : "h-auto")}>
+      {picture && <HeaderBand picture={picture} position={0.4} fade={0.55} className="absolute inset-0" />}
+      <div className={cn("flex items-center gap-3 p-4", picture && "absolute inset-x-0 bottom-0")}>
+        <img src={`${import.meta.env.BASE_URL}berth-mark.svg`} alt="" className="size-9 shrink-0 rounded-[9px] shadow-sm" />
+        <div className="min-w-0">
+          <div className="font-semibold text-base leading-5">Shipyard</div>
+          <div className="font-mono text-muted-foreground text-xs">{shown}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AboutSection() {
   const version = useAppVersion();
   const boxes = useStore((s) => s.status?.boxes ?? NONE);
@@ -33,7 +54,8 @@ export function AboutSection() {
   const proxy = useStore((s) => s.status?.proxy);
 
   return (
-    <SettingsPage badge={LINUX_ALPHA && <AlphaBadge />} title="About Shipyard" description="Agents on your own boxes, watched from here. Closing this window never stops one.">
+    <SettingsPage badge={LINUX_ALPHA && <AlphaBadge />} title="About Shipyard" description="Agents on your own boxes, watched from here.">
+      <Hero version={version} />
       <SettingsGroup title="Versions">
         <SettingsRow label="App">
           <span className="font-mono text-muted-foreground text-xs">{version}</span>
@@ -58,7 +80,7 @@ export function AboutSection() {
       <UpdatesGroup />
       <HelpGroup />
       <SettingsGroup title="Documentation" description="docs.berthd.app, opened in your browser.">
-        <div className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 px-4 py-3 text-xs">
+        <div className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 py-3.5 text-xs">
           {DOCS.map(([path, title, what]) => (
             <div key={path} className="contents">
               <button type="button" onClick={() => void openDocs(path)} className="text-left text-foreground/90 underline-offset-2 hover:underline">

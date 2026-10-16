@@ -72,7 +72,7 @@ export function PluginsSection() {
       title="Plugins"
       description={
         <>
-          Plugins live in <Code>~/.berth/plugins/&lt;id&gt;/</Code> beside a <Code>berth-plugin.json</Code>. They aren't sandboxed: a plugin runs with the app's access to every box, and its hooks run on this computer. Each stays off until you allow it, and Shipyard asks again whenever its code changes.
+          Plugins aren't sandboxed, so each stays off until you allow it, and again when its code changes.
         </>
       }
     >
@@ -131,9 +131,9 @@ export function PluginsSection() {
         }
       >
         {market.old ? (
-          <p className="px-4 py-3 text-muted-foreground text-sm">The Shipyard agent on this computer is older than this app, so it can't read the listing yet.</p>
+          <p className="py-3.5 text-muted-foreground text-sm">The Shipyard agent on this computer is older than this app, so it can't read the listing yet.</p>
         ) : market.error ? (
-          <div className="flex items-center gap-4 px-4 py-3" data-testid="market-error">
+          <div className="flex items-center gap-4 py-3.5" data-testid="market-error">
             <ErrorText className="min-w-0 flex-1 text-destructive-foreground text-sm" text={market.error} />
             <Button size="xs" variant="outline" className="min-w-24" loading={market.reading} onClick={() => void browse(true)}>
               Try again
@@ -182,14 +182,14 @@ function MarketRow({ plugin: p, was, onChanged, onStale }: { plugin: MarketPlugi
   };
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3" data-testid="market-plugin" data-plugin={p.id}>
+    <div className="flex items-center gap-4 py-3.5" data-testid="market-plugin" data-plugin={p.id}>
       <span className="size-2 shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 text-sm">
+        <div className="flex items-baseline gap-2 font-medium text-sm">
           <span>{p.name}</span>
           <span className="text-muted-foreground text-xs">{p.version}</span>
         </div>
-        {p.description && <div className="mt-0.5 text-muted-foreground text-xs">{p.description}</div>}
+        {p.description && <div className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">{p.description}</div>}
         <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
           {p.id}
           {p.author && ` · by ${p.author}`}
@@ -298,14 +298,14 @@ function PluginRow({ plugin: p, status, onChanged }: { plugin: PluginInfo; statu
   };
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3" data-testid="plugin-row" data-plugin={p.id}>
+    <div className="flex items-center gap-4 py-3.5" data-testid="plugin-row" data-plugin={p.id}>
       <StatusDot state={state} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 text-sm">
+        <div className="flex items-baseline gap-2 font-medium text-sm">
           <span>{p.name}</span>
           <span className="text-muted-foreground text-xs">{p.version}</span>
         </div>
-        {p.description && <div className="mt-0.5 text-muted-foreground text-xs">{p.description}</div>}
+        {p.description && <div className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">{p.description}</div>}
         <Contributions plugin={p.id} />
         <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
           {p.id}
@@ -399,15 +399,14 @@ function BuiltinRow({ plugin: p, status, replaced, onChanged }: { plugin: Plugin
   const off = usePrefs((s) => !builtinOn(p, s));
   const state = replaced || off ? "off" : status?.error ? "failed" : (status?.state ?? "loading");
   return (
-    <div className="flex items-center gap-4 px-4 py-3">
+    <div className="flex items-center gap-4 py-3.5">
       <StatusDot state={state} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-baseline gap-2 font-medium text-sm">
           <span>{p.name}</span>
-          <Badge variant="outline" size="sm">Built-in</Badge>
-          <span className="text-muted-foreground text-xs">{p.version}</span>
+          <span className="font-normal text-muted-foreground text-xs">{p.version}</span>
         </div>
-        {p.description && <div className="mt-0.5 text-muted-foreground text-xs">{p.description}</div>}
+        {p.description && <div className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">{p.description}</div>}
         <Contributions plugin={p.id} />
         {p.defaultEnabled === false && off && !replaced && <div className="mt-0.5 text-muted-foreground text-xs">Off until you turn it on.</div>}
         {replaced && <div className="mt-0.5 text-muted-foreground text-xs">Replaced by your plugin with the same id.</div>}

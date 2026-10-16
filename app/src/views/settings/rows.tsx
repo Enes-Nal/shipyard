@@ -2,30 +2,29 @@ import { Children, cloneElement, createContext, Fragment, isValidElement, type R
 
 import { platformKeys } from "@/lib/platform";
 import { cn } from "@/lib/utils";
-import { ViewHeader } from "@/views/view-header";
+import { SettingsFind } from "@/views/settings/find";
 
 // The pieces every settings section is made of: a titled page, groups of
-// rows, and rows of label, description and control.
+// rows, and rows of label, description and control. Rows sit on the page,
+// split by hairlines, with every control in one lane along the right.
 
-// badge sits beside the title (the Linux app's Alpha, in About).
+// badge sits beside the title (the Linux app's Alpha, in About); actions sit
+// beside "Find a setting".
 export function SettingsPage({ title, badge, description, actions, children }: { title: string; badge?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-2xl px-8 pt-6 pb-16 max-[1200px]:px-6">
-      {/* The section names itself in the view's strip, after "Settings". */}
-      <ViewHeader
-        title={
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-muted-foreground">Settings</span>
-            <span className="text-muted-foreground/60">/</span>
+    <div className="mx-auto w-full max-w-[728px] px-6 pt-14 pb-20 max-[1200px]:pt-10">
+      <header data-tauri-drag-region className="mb-10 flex items-start gap-4">
+        <div data-tauri-drag-region className="min-w-0 flex-1">
+          <h1 className="flex items-center gap-2 font-semibold text-[28px] leading-[34px] tracking-[-0.02em]">
             {title}
-            {badge && <span className="self-center">{badge}</span>}
-          </span>
-        }
-        actions={actions}
-      />
-      {/* Section descriptions run long, so they stay with the page. */}
-      {description && <p className="mb-6 text-muted-foreground text-sm">{description}</p>}
-      <div className="space-y-8">{children}</div>
+            {badge}
+          </h1>
+          {description && <p className="mt-1.5 text-muted-foreground text-sm leading-5">{typeof description === "string" ? platformKeys(description) : description}</p>}
+        </div>
+        {actions && <div className="mt-0.5 flex shrink-0 items-center gap-2">{actions}</div>}
+        <SettingsFind />
+      </header>
+      <div className="space-y-10">{children}</div>
     </div>
   );
 }
@@ -34,15 +33,15 @@ export function SettingsGroup({ title, description, actions, children }: { title
   return (
     <section>
       {(title || actions) && (
-        <div className="mb-2 flex items-end gap-3">
+        <div className="mb-1.5 flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            {title && <h2 className="font-medium text-[13px] text-muted-foreground">{title}</h2>}
-            {description && <p className="mt-0.5 text-muted-foreground text-xs">{description}</p>}
+            {title && <h2 className="font-semibold text-[13px] text-foreground">{title}</h2>}
+            {description && <p className="mt-0.5 text-muted-foreground text-[13px] leading-[19px]">{description}</p>}
           </div>
           {actions}
         </div>
       )}
-      <div className="divide-y divide-border/70 overflow-hidden rounded-xl border bg-card/40">{children}</div>
+      <div className="divide-y divide-border/60 border-border/60 border-b">{children}</div>
     </section>
   );
 }
@@ -77,13 +76,13 @@ export function SettingsRow({ label, description, children, className }: { label
   const labelledBy = `${id}-label`;
   const describedBy = description ? `${id}-description` : undefined;
   return (
-    <div className={cn("flex min-h-12 items-center gap-6 px-4 py-2.5", className)}>
+    <div className={cn("flex min-h-14 items-center gap-8 py-3.5", className)}>
       <div className="min-w-0 flex-1">
-        <div id={labelledBy} className="text-sm">
+        <div id={labelledBy} className="font-medium text-sm">
           {label}
         </div>
         {description && (
-          <div id={describedBy} className="mt-0.5 text-muted-foreground text-xs leading-relaxed">
+          <div id={describedBy} className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">
             {typeof description === "string" ? platformKeys(description) : description}
           </div>
         )}

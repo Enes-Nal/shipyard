@@ -64,7 +64,7 @@ export function PhoneSection() {
   return (
     <SettingsPage
       title="Phone"
-      description="See which agents need you and answer them from your phone, across your boxes. Each box serves the phone app on its tailnet address, so it works while this computer sleeps."
+      description="Answer agents from your phone. Boxes serve it, so it works while this computer sleeps."
     >
       <SettingsGroup title="Boxes" description="Phone access is off until you turn it on. Only devices on your tailnet can reach it, and only with the code below.">
         {online.length === 0 && <p className="px-4 py-6 text-center text-muted-foreground text-sm">No boxes are online.</p>}
@@ -137,14 +137,14 @@ function PairCode({ link, count }: { link?: string; count: number }) {
   }, [link]);
   if (!link) {
     return (
-      <div className="flex items-center gap-3 px-4 py-5 text-muted-foreground text-sm">
+      <div className="flex items-center gap-3 py-5 text-muted-foreground text-sm">
         <SmartphoneIcon className="size-5 shrink-0" />
         Turn on phone access for a box to get a pairing code.
       </div>
     );
   }
   return (
-    <div className="flex gap-5 px-4 py-4 max-sm:flex-col">
+    <div className="flex gap-5 py-4 max-sm:flex-col">
       {/* The code holds the tokens, so it is shown here and nowhere else. */}
       <div className="size-44 shrink-0 overflow-hidden rounded-lg bg-white p-1.5 [&_svg]:size-full" dangerouslySetInnerHTML={{ __html: svg }} />
       <div className="flex min-w-0 flex-col gap-2.5 text-sm">
@@ -207,9 +207,9 @@ function Notifications({ boxes, phone, onChange }: { boxes: string[]; phone: Rec
       }
     >
       {boxes.length === 0 ? (
-        <p className="px-4 py-5 text-muted-foreground text-sm">Turn on phone access for a box first.</p>
+        <p className="py-5 text-muted-foreground text-sm">Turn on phone access for a box first.</p>
       ) : (
-        <div className="flex flex-col gap-3 px-4 py-4">
+        <div className="flex flex-col gap-3 py-4">
           <div className="flex gap-2">
             <Input value={url} onChange={(e) => setUrl(e.currentTarget.value)} placeholder="https://ntfy.sh/your-private-topic" className="font-mono text-xs" aria-label="ntfy topic URL" />
             <Button size="sm" variant="outline" onClick={() => setUrl(newNtfyTopic())}>

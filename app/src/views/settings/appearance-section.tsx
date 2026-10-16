@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { SimpleSelect } from "@/components/simple-select";
 import { Input } from "@/components/ui/input";
-import { SYSTEM_THEME, useThemes } from "@/hooks/use-theme";
+import { SYSTEM_THEME, useActiveTheme, useThemes } from "@/hooks/use-theme";
 import type { Theme } from "@/lib/api";
 import { setPrefs, usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
@@ -30,37 +30,63 @@ export function AppearanceSection() {
   const shown = q ? themes.filter((t) => t.name.toLowerCase().includes(q) || t.id.includes(q)) : themes;
   const groups = [
     { title: "Shipyard", themes: shown.filter((t) => BERTH.has(t.id)) },
-    { title: "Dark", themes: shown.filter((t) => !BERTH.has(t.id) && t.appearance === "dark") },
     { title: "Light", themes: shown.filter((t) => !BERTH.has(t.id) && t.appearance !== "dark") },
+    { title: "Dark", themes: shown.filter((t) => !BERTH.has(t.id) && t.appearance === "dark") },
   ].filter((g) => g.themes.length);
 
+  const system = themeId === SYSTEM_THEME;
+  const active = useActiveTheme();
+  const picks = usePrefs((p) => p.systemThemes);
+  const mode = system ? "system" : active.appearance === "dark" ? "dark" : "light";
+  // Light or Dark keeps the theme when it already is one, else takes the one
+  // Match system would use for it.
+  const pickMode = (m: "light" | "dark" | "system") => {
+    const set = useStore.getState().setTheme;
+    if (m === "system") return set(SYSTEM_THEME);
+    if (!system && (active.appearance === "dark") === (m === "dark")) return;
+    const want = m === "dark" ? picks.dark : picks.light;
+    set(themes.some((t) => t.id === want) ? want : m === "dark" ? "berth-dark" : "berth-light");
+  };
+
   return (
-    <SettingsPage title="Appearance">
-      <section>
-        <div className="mb-2 flex items-end gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className="font-medium text-[13px] text-muted-foreground">Theme</h2>
-            <p className="mt-0.5 text-muted-foreground text-xs">
-              Add your own as JSON in <Code>~/.berth/themes/</Code>, or install a plugin that ships one.
-            </p>
-          </div>
-          <div className="relative w-48 shrink-0">
+    <SettingsPage title="Appearance" description="How Shipyard looks. A theme colours the terminal too.">
+      <SettingsGroup
+        title="Theme"
+        actions={
+          <div className="relative w-44 shrink-0">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input size="sm" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Find a theme" aria-label="Find a theme" className="[&_input]:pl-7.5" />
           </div>
-        </div>
-        {!q && <SystemCard selected={themeId === SYSTEM_THEME} themes={themes} />}
+        }
+      >
+        <SettingsRow label="Light or dark" description={system ? <SystemNote themes={themes} /> : "Pick a theme below, or follow the computer."}>
+          <Segmented
+            value={mode}
+            options={[
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+              { value: "system", label: "Match system" },
+            ]}
+            onChange={pickMode}
+          />
+        </SettingsRow>
+        {system && <SystemPicks themes={themes} />}
+      </SettingsGroup>
+      <section className="-mt-4">
         {groups.map((g) => (
-          <div key={g.title} className="mt-4">
-            <h3 className="mb-2 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">{g.title}</h3>
-            <div className="grid grid-cols-3 gap-3 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
+          <div key={g.title} className="mt-6 first:mt-0">
+            <h3 className="mb-2.5 text-muted-foreground text-xs">{g.title}</h3>
+            <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
               {g.themes.map((t) => (
-                <ThemeCard key={t.id} theme={t} selected={t.id === themeId} onSelect={() => useStore.getState().setTheme(t.id)} />
+                <ThemeCard key={t.id} theme={t} selected={system ? t.id === active.id : t.id === themeId} following={system} onSelect={() => useStore.getState().setTheme(t.id)} />
               ))}
             </div>
           </div>
         ))}
-        {!groups.length && <p className="mt-4 text-muted-foreground text-xs">No theme is called “{query.trim()}”.</p>}
+        {!groups.length && <p className="text-muted-foreground text-xs">No theme is called “{query.trim()}”.</p>}
+        <p className="mt-5 text-muted-foreground text-xs">
+          {themes.length} themes. Add your own as JSON in <Code>~/.berth/themes/</Code>, or install a plugin that ships one.
+        </p>
       </section>
 
       <SettingsGroup title="Interface">
@@ -98,13 +124,27 @@ export function AppearanceSection() {
   );
 }
 
-// SystemCard follows the computer's appearance: one theme by day, another
-// when macOS is dark (Shipyard Light and Shipyard Dark unless picked here). Its
-// preview is half of each.
-function SystemCard({ selected, themes }: { selected: boolean; themes: Theme[] }) {
+// Match system follows the computer's appearance: one theme by day, another
+// when macOS is dark (Shipyard Light and Shipyard Dark unless picked here).
+function useSystemPair(themes: Theme[]) {
   const picks = usePrefs((p) => p.systemThemes);
   const light = themes.find((t) => t.id === picks.light) ?? themes.find((t) => t.id === "berth-light");
   const dark = themes.find((t) => t.id === picks.dark) ?? themes.find((t) => t.id === "berth-dark");
+  return { picks, light, dark };
+}
+
+function SystemNote({ themes }: { themes: Theme[] }) {
+  const { light, dark } = useSystemPair(themes);
+  return (
+    <>
+      {light?.name ?? "A light theme"} by day, {dark?.name ?? "a dark one"} when {IS_LINUX ? "your desktop" : "macOS"} is dark.
+    </>
+  );
+}
+
+// SystemPicks chooses the pair Match system switches between.
+function SystemPicks({ themes }: { themes: Theme[] }) {
+  const { picks, light, dark } = useSystemPair(themes);
   if (!light || !dark) return null;
   const pick = (side: "light" | "dark", id: string) => {
     setPrefs({ systemThemes: { ...picks, [side]: id } });
@@ -112,56 +152,36 @@ function SystemCard({ selected, themes }: { selected: boolean; themes: Theme[] }
   };
   const options = (appearance: "light" | "dark") => themes.filter((t) => (t.appearance === "dark") === (appearance === "dark")).map((t) => ({ value: t.id, label: t.name }));
   return (
-    <div className={cn("flex items-center overflow-hidden rounded-xl border transition-[box-shadow,border-color]", selected ? "border-ring ring-1 ring-ring" : "hover:border-foreground/25")}>
-      <button
-        type="button"
-        onClick={() => useStore.getState().setTheme(SYSTEM_THEME)}
-        aria-pressed={selected}
-        className="flex min-w-0 flex-1 items-center self-stretch text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-      >
-        <div className="relative h-14 w-28 shrink-0 border-r">
-          <Swatch theme={light} />
-          <div className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]">
-            <Swatch theme={dark} />
-          </div>
-        </div>
-        <span className="flex min-w-0 flex-1 items-center gap-2 px-3.5 text-[13px]">
-          <span className="min-w-0 flex-1">
-            <span className="block">Match system</span>
-            <span className="block truncate text-[11px] text-muted-foreground">{IS_LINUX ? "Follows your desktop" : "Follows macOS"}</span>
-          </span>
-          {selected && <CheckIcon className="size-3.5" />}
-        </span>
-      </button>
-      <div className="flex shrink-0 items-center gap-2 px-3 max-[800px]:hidden">
-        <SimpleSelect size="sm" className="w-40" aria-label="Theme by day" value={light.id} options={options("light")} onChange={(id) => id && pick("light", id)} />
-        <SimpleSelect size="sm" className="w-40" aria-label={IS_LINUX ? "Theme when your desktop is dark" : "Theme when macOS is dark"} value={dark.id} options={options("dark")} onChange={(id) => id && pick("dark", id)} />
-      </div>
-    </div>
+    <SettingsRow label="By day, and when it's dark" description={IS_LINUX ? "Follows your desktop." : "Follows macOS."}>
+      <SimpleSelect size="sm" className="w-40" aria-label="Theme by day" value={light.id} options={options("light")} onChange={(id) => id && pick("light", id)} />
+      <SimpleSelect size="sm" className="w-40" aria-label={IS_LINUX ? "Theme when your desktop is dark" : "Theme when macOS is dark"} value={dark.id} options={options("dark")} onChange={(id) => id && pick("dark", id)} />
+    </SettingsRow>
   );
 }
 
 // ThemeCard previews a theme with its own colors: a sidebar beside a
-// terminal, whatever theme the app itself is in.
-function ThemeCard({ theme, selected, onSelect }: { theme: Theme; selected: boolean; onSelect(): void }) {
+// terminal, whatever theme the app itself is in. Under Match system the
+// theme showing now is ringed more quietly, since it isn't picked itself.
+function ThemeCard({ theme, selected, following, onSelect }: { theme: Theme; selected: boolean; following?: boolean; onSelect(): void }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      data-testid="theme-option"
-      data-theme-id={theme.id}
-      className={cn("group overflow-hidden rounded-xl border text-left outline-none transition-[box-shadow,border-color] focus-visible:ring-2 focus-visible:ring-ring", selected ? "border-ring ring-1 ring-ring" : "hover:border-foreground/25")}
-    >
+    <button type="button" onClick={onSelect} aria-pressed={selected && !following} data-testid="theme-option" data-theme-id={theme.id} className="group flex flex-col gap-2 text-left outline-none">
       {/* A picture of the theme (its name says which): its sample text is in
           the theme's terminal colours, which the axe spec leaves out. */}
-      <div aria-hidden data-a11y-skip className="relative h-[88px]">
+      <div
+        aria-hidden
+        data-a11y-skip
+        className={cn(
+          "relative h-[88px] w-full overflow-hidden rounded-xl border transition-[box-shadow,border-color] group-focus-visible:ring-2 group-focus-visible:ring-ring",
+          selected ? "border-transparent ring-2 ring-offset-2 ring-offset-background" : "group-hover:border-foreground/25",
+          selected && (following ? "ring-foreground/30" : "ring-foreground"),
+        )}
+      >
         <Preview theme={theme} />
         <Dots theme={theme} />
       </div>
-      <div className="flex items-center gap-2 border-t bg-card px-3 py-2 text-[13px]">
-        <span className="min-w-0 flex-1 truncate">{theme.name}</span>
-        {selected && <CheckIcon className="size-3.5 shrink-0" />}
+      <div className="flex items-center gap-2 px-0.5 text-[13px]">
+        <span className={cn("min-w-0 flex-1 truncate", selected && "font-medium")}>{theme.name}</span>
+        {selected && (following ? <span className="shrink-0 text-muted-foreground text-xs">Now</span> : <CheckIcon className="size-3.5 shrink-0" />)}
       </div>
     </button>
   );
@@ -193,25 +213,6 @@ function Preview({ theme }: { theme: Theme }) {
           <span style={{ color: t.magenta }}>❯</span> <span style={{ color: t.cyan }}>berth</span>
           <span className="ml-0.5 inline-block h-2.5 w-1 align-middle" style={{ background: t.cursor }} />
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Swatch is a theme's colours without text, for a thumbnail too small to
-// read: sidebar, terminal, and an accent and a cursor.
-function Swatch({ theme }: { theme: Theme }) {
-  const c = theme.colors;
-  const t = theme.terminal;
-  return (
-    <div className="flex h-full">
-      <div className="flex w-2/5 flex-col gap-1 px-1.5 py-2" style={{ background: c.sidebar }}>
-        <div className="h-1 w-4/5 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.5 }} />
-        <div className="h-1 w-3/5 rounded-full" style={{ background: c.accent }} />
-      </div>
-      <div className="flex-1 px-1.5 py-2" style={{ background: t.background }}>
-        <div className="h-1 w-3/4 rounded-full" style={{ background: t.green }} />
-        <div className="mt-1 h-1.5 w-1 rounded-[1px]" style={{ background: t.cursor }} />
       </div>
     </div>
   );

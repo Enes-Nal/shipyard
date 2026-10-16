@@ -57,8 +57,8 @@ export function HeaderPictureSettings() {
     >
       <div className="mb-2 flex items-end gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="font-medium text-[13px] text-muted-foreground">Header picture</h2>
-          <p className="mt-0.5 text-muted-foreground text-xs">Across the top of a new chat, an empty worktree and Home. In a dark theme the paintings show their night.</p>
+          <h2 className="font-semibold text-[13px] text-foreground">Header picture</h2>
+          <p className="mt-0.5 text-[13px] text-muted-foreground leading-[19px]">The painting above Home, a new chat and an empty worktree. Dark themes show its night.</p>
         </div>
         {custom && (
           <Button size="xs" variant="ghost" onClick={() => setHeaderPicture({ ...DEFAULT_HEADER_PICTURE, image: undefined })}>

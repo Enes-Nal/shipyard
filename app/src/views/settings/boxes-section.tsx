@@ -42,7 +42,7 @@ export function BoxesSection() {
       title="Boxes"
       description={
         <>
-          The machines your agents run on. Each runs berthd; this computer only connects to them. <Code>berth boxes</Code> shows the same.
+          The machines your agents run on. This computer only connects to them.
         </>
       }
     >
@@ -111,7 +111,7 @@ function BoxRow({ box }: { box: BoxStatus }) {
   const details = [box.address, box.network && `via ${box.network}`, build, info?.os && info.arch && `${info.os}/${info.arch}`].filter(Boolean);
 
   return (
-    <div className="px-4 py-3">
+    <div className="py-3.5">
       <div className="flex items-center gap-3">
         <Tip label={boxWhy(box.name, box, state)}>
           <StatusDot state={state} className="size-2" />
