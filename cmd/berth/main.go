@@ -58,7 +58,9 @@ Boxes
                                          Machines on the tailnet that could be boxes
   berth boxes [--json]                   List paired boxes and whether they are online
   berth ping BOX [-c N]                  Check a box answers and still trusts you, and its latency
-  berth upgrade BOX [--check] [--json]   Upgrade the box's daemon over berth (no SSH); --check only reports
+  berth upgrade BOX [--check] [--json] [--force]
+                                         Upgrade the box's daemon over berth (no SSH); --check only reports.
+                                         A box on a newer release is left alone; --force downgrades it
   berth kit add|apply|list|save …        Set projects up the same way on every box; see berth kit help
   berth team show|setup|status|retry …   Set a box up the way your team's are, from <org>/.berth
                                          on GitHub (read with gh); see berth team help
