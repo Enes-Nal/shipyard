@@ -11,6 +11,15 @@ again.
 
 ## Unreleased
 
+- **Codex sessions get their own status again with Codex's shared daemon.**
+  Codex can run every session from one background daemon, which runs hooks
+  with the first session's environment: with two Codex sessions on a box,
+  the second one's prompts, tools and turn ends showed on the first (which
+  was even renamed after them), and the second only ever read off its
+  screen. Shipyard now starts Codex with `--no-daemon` when the installed
+  Codex knows the flag, and a Codex hook from another session's folder, or
+  about a conversation another session holds, goes to that session.
+
 - **A box with a full hostname is named by its first label.** A cloud VM
   whose hostname is `devbox.europe-north1-a.c.example.internal` called itself
   by all of it: the phone and notifications showed the whole name, and it
