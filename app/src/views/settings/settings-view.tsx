@@ -83,7 +83,7 @@ export function SettingsView() {
           <button type="button" onClick={back} aria-label="Back to app" className="flex h-8.5 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-muted-foreground text-sm transition-colors hover:bg-accent/60 hover:text-foreground max-[1200px]:justify-center max-[1200px]:px-0">
             <ArrowLeftIcon className="size-4 shrink-0" />
             <span className="flex-1 max-[1200px]:hidden">Back to app</span>
-            <kbd className="font-sans text-muted-foreground/80 text-xs max-[1200px]:hidden">esc</kbd>
+            <kbd className="font-sans text-muted-foreground text-xs max-[1200px]:hidden">esc</kbd>
           </button>
         </Tip>
         {GROUPS.map((g) => (
