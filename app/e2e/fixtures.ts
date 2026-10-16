@@ -65,6 +65,8 @@ export interface App {
   openSettings(section: string): Promise<Locator>;
   // What the app has saved, as JSON.
   stored(key: string): Promise<unknown>;
+  // Back from Settings to the sidebar, when Settings is open.
+  leaveSettings(): Promise<void>;
   // Requests that tried to reach the laptop agent from a mock test.
   agentCalls: string[];
 }
@@ -131,6 +133,7 @@ export const test = base.extend<{ app: App }>({
       },
       worktree: (w) => page.locator(`[data-testid=worktree-row][data-worktree="${w}"]`),
       async openWorktree(w) {
+        await app.leaveSettings();
         const row = app.worktree(w);
         // A real fleet folds worktrees with nothing going on under
         // "N more worktrees" (smoke:live): unfold them to find this one.
@@ -147,13 +150,23 @@ export const test = base.extend<{ app: App }>({
       chat: page.locator("[data-testid=pane]:visible [data-testid=chat]"),
       composer: page.locator("[data-testid=pane]:visible [data-testid=composer]"),
       async openSettings(section) {
-        await page.getByTestId("nav-settings").click();
+        // Already in Settings, its own nav has the section.
+        if (await page.getByTestId("nav-settings").isVisible()) await page.getByTestId("nav-settings").click();
         await page.getByTestId(`settings-nav-${section}`).click();
         const body = page.getByTestId(`settings-${section}`);
         await expect(body).toBeVisible();
         return body;
       },
       stored: (key) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? "null"), key),
+      // Settings draws its own nav where the sidebar is; Back to app brings
+      // the sidebar back. Nothing happens when Settings isn't open.
+      async leaveSettings() {
+        const back = page.getByRole("button", { name: "Back to app" });
+        if ((await page.getByTestId("sidebar").count()) === 0 && (await back.isVisible())) {
+          await back.click();
+          await expect(page.getByTestId("nav-home")).toBeVisible();
+        }
+      },
     };
 
     await use(app);
