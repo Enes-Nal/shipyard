@@ -6,7 +6,7 @@ import { useEventLog } from "@/lib/events";
 import { flowsApi, isOverridden, overrides, type ScopedFlow } from "@/lib/flows";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { STEP_KINDS, summary } from "@/views/automations/flows/model";
+import { kindMeta, summary } from "@/views/automations/flows/model";
 import { Section, SourceBadge } from "@/views/project/parts";
 
 // FlowsSection lists this repo's flows on this box; they open in the flow
@@ -52,7 +52,7 @@ export function FlowsSection({ box, location }: { box: string; location: string 
             <button key={`${f.source}:${f.flow.id}`} type="button" onClick={() => open(f.flow.id)} className={cn("flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-accent/40", !f.flow.enabled && "opacity-60")}>
               <span className="flex shrink-0 -space-x-1">
                 {[...new Set(f.flow.steps.map((s) => s.kind))].slice(0, 3).map((k) => {
-                  const m = STEP_KINDS[k];
+                  const m = kindMeta(k);
                   return (
                     <span key={k} className={cn("inline-flex size-6 items-center justify-center rounded-md border-2 border-card bg-muted", m.tone)}>
                       <m.Icon className="size-3.5" />

@@ -10,6 +10,10 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Project settings opens for a project with a kit's flows.** A kit whose
+  flow used a step the flow editor doesn't edit (a PR, a loop, a gate) made
+  Project settings show "Something broke" every time. That flow now shows
+  in Automations with a plain icon.
 - **A long Codex turn stays working until it ends.** Codex's `notify` comes
   at the end of each of its messages, not only the turn's, so a turn read as
   finished after its first message. Once a session's Codex hooks have said a
