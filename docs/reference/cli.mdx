@@ -31,7 +31,7 @@ the `BOX/` prefix.
 | `berth discover [--network NET] [--json]` | Machines on the tailnet that could be boxes |
 | `berth boxes [--json]` | Paired boxes, whether they are online, and the [route](/concepts/laptop-agent#routes-to-a-box) each is reached by |
 | `berth ping BOX [-c N]` | Check a box answers and still trusts you: how long connecting took, then N−1 round trips on the open connection (its latency) |
-| `berth upgrade BOX [--check] [--json]` | Upgrade the box's daemon over Shipyard's own connection (no SSH); `--check` only reports whether it is older |
+| `berth upgrade BOX [--check] [--json] [--force]` | Upgrade the box's daemon over Shipyard's own connection (no SSH); `--check` only reports whether it is older. A box on a newer release than this Shipyard isn't outdated and is left alone (update the app instead); `--force` puts the older daemon on it anyway |
 | `berth edit BOX/PROJECT[/WT] [FILE[:LINE[:COL]]] [--in cursor\|vscode\|windsurf\|zed]` | Open a worktree, or a file at a line, in your editor (default: the first installed) |
 | `berth ssh-config [--write] [--json]` | Show (then write) the SSH hosts editors use: `berth-<box>` |
 | `berth forget BOX` | Remove a box from this laptop |
