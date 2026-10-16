@@ -20,11 +20,21 @@ again.
   `berthd` on it. Now a newer box is left alone, and `berth upgrade` refuses
   to downgrade one unless you pass `--force`. This works once both the app
   and the box are on this release or later.
+- **Keep a project off the Agent Dashboard.** In **Settings → Agents →
+  Agent Dashboard**, pick projects whose agents you follow somewhere else,
+  such as on a plugin's own board. Their agents leave the dashboard and the
+  waiting and working counts in the sidebar and status bar, and the
+  dashboard's header says how many projects are kept off. They still show
+  in the sidebar, on Home and in notifications. **Show** brings a project
+  back.
+- **Project changes made quickly all stick.** Renaming a project, moving it
+  between sections or keeping it off the dashboard twice in a row could
+  lose the first change, because both saves read the same version of your
+  projects. They now save one after the other.
 - **A kit link pinned to a commit works.** A GitHub link copied from a
   commit's page (`…/tree/308bc75…/kits/web`) used to fail with "Git
   couldn't do that", because git can't clone a commit by its hash as if it
   were a branch. Shipyard now fetches the kit at that commit.
-
 
 ## v0.3.22
 
