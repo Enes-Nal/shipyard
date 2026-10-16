@@ -104,7 +104,7 @@ export function ProjectTeamKeys({ box, location, env, onAdd }: { box: string; lo
             {deferred.length > 0 && (
               <>
                 <UseOnePassword run={run} />
-                <span className="text-muted-foreground text-xs">reads {deferred.length === 1 ? "it" : `all ${deferred.length}`} with the team's 1Password references; op signs in once on {box}</span>
+                <span className="text-meta text-muted-foreground">reads {deferred.length === 1 ? "it" : `all ${deferred.length}`} with the team's 1Password references; op signs in once on {box}</span>
               </>
             )}
           </div>

@@ -92,7 +92,7 @@ function Note({ tone, children }: { tone: "ok" | "error" | "warning"; children: 
       <p
         aria-live="polite"
         className={cn(
-          "mt-1 line-clamp-2 text-[11px] leading-4",
+          "mt-1 line-clamp-2 text-meta",
           tone === "ok" && "text-success-foreground dark:text-success",
           tone === "error" && "text-destructive-foreground",
           tone === "warning" && "text-warning-foreground",
@@ -166,7 +166,7 @@ function CommittedRef({ value, box }: { value: string; box: string }) {
     <div className="min-w-0 pl-2.5">
       <div className="flex min-w-0 items-center gap-1">
         {problem ? <ProblemMark broken /> : <RefMark />}
-        <code className="min-w-0 flex-1 truncate font-mono text-muted-foreground text-xs" title={value}>
+        <code className="min-w-0 flex-1 truncate font-mono text-muted-foreground text-mono" title={value}>
           {value}
         </code>
         {!problem && <SecretTestButton box={box} t={t} />}
@@ -223,7 +223,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
             const source = mine ? (inRepo ? "override" : "box") : "repo";
             return (
               <div key={k} className="group grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto_3.5rem] items-center gap-3 px-4 py-2 max-[1200px]:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto_3rem] max-[1200px]:gap-2">
-                <code className="truncate font-mono text-xs" title={k}>
+                <code className="truncate font-mono text-mono" title={k}>
                   {k}
                 </code>
                 {mine ? (
@@ -231,7 +231,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
                 ) : isSecretRef(committed[k]) ? (
                   <CommittedRef value={committed[k]} box={box} />
                 ) : (
-                  <code className="truncate px-2.5 font-mono text-muted-foreground text-xs" title={committed[k]}>
+                  <code className="truncate px-2.5 font-mono text-muted-foreground text-mono" title={committed[k]}>
                     {committed[k]}
                   </code>
                 )}
@@ -274,7 +274,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
         >
           <div>
             <Input autoFocus value={adding.key} onChange={(e) => setAdding({ ...adding, key: e.target.value.toUpperCase().replace(/\s/g, "_") })} placeholder="NAME" size="sm" className="font-mono text-xs" aria-label="Name" aria-invalid={!!keyError} />
-            {keyError && <p className="mt-1 text-destructive-foreground text-[11px]">{keyError}</p>}
+            {keyError && <p className="mt-1 text-destructive-foreground text-meta">{keyError}</p>}
           </div>
           <div className="min-w-0">
             <Input
@@ -288,7 +288,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
               spellCheck={false}
               autoComplete="off"
             />
-            {valueProblem && <p className={cn("mt-1 text-[11px]", valueBroken ? "text-destructive-foreground" : "text-warning-foreground")}>{valueProblem}</p>}
+            {valueProblem && <p className={cn("mt-1 text-meta", valueBroken ? "text-destructive-foreground" : "text-warning-foreground")}>{valueProblem}</p>}
           </div>
           <span className="flex gap-1">
             <Button size="sm" type="submit" disabled={!adding.key || !!keyError || valueBroken}>

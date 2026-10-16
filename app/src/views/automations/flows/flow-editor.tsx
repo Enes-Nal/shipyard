@@ -207,8 +207,8 @@ export function FlowEditor({
 
           <section className="mt-10 flex items-center gap-4 rounded-xl border bg-card/40 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <div className="text-sm">At most</div>
-              <div className="text-muted-foreground text-xs">Stops a flow that triggers itself, or a busy repo, from running away. Empty means {DEFAULT_MAX_RUNS_PER_HOUR}, the default.</div>
+              <div className="text-row">At most</div>
+              <div className="text-desc text-muted-foreground">Stops a flow that triggers itself, or a busy repo, from running away. Empty means {DEFAULT_MAX_RUNS_PER_HOUR}, the default.</div>
             </div>
             <Input
               type="number"
@@ -269,15 +269,15 @@ function TriggerCard({
         <span className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/12 text-primary">
           <ZapIcon className="size-4" />
         </span>
-        <h3 className="font-medium text-sm">{kind === "schedule" ? "When it runs" : kind === "github" ? "When this happens on GitHub" : "When this happens"}</h3>
+        <h3 className="text-section">{kind === "schedule" ? "When it runs" : kind === "github" ? "When this happens on GitHub" : "When this happens"}</h3>
       </header>
       <div className="grid grid-cols-2 gap-3 px-3.5 py-3">
         <div className="col-span-2">
-          <span className="mb-1 block font-medium text-muted-foreground text-xs">Runs for</span>
+          <span className="mb-1 block text-label text-muted-foreground">Runs for</span>
           <RunsFor value={where} options={scopes} disabled={readOnly} onChange={setWhere} />
-          <p className="mt-1.5 text-muted-foreground text-xs">{savedWhere(where.box, where.scope, readOnly ? (source === "kit" ? "kit" : "repo") : undefined)}</p>
+          <p className="mt-1.5 text-desc text-muted-foreground">{savedWhere(where.box, where.scope, readOnly ? (source === "kit" ? "kit" : "repo") : undefined)}</p>
           {where.scope === "box" && w.location && (
-            <p className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
+            <p className="mt-1 flex items-center gap-1.5 text-desc text-muted-foreground">
               Only events from {w.location}.
               {!readOnly && (
                 <button type="button" className="underline-offset-2 hover:underline" onClick={() => setW({ location: undefined })}>
@@ -288,7 +288,7 @@ function TriggerCard({
           )}
         </div>
         <div className="col-span-2 flex flex-col gap-2">
-          <span className="block font-medium text-muted-foreground text-xs">Starts</span>
+          <span className="block text-label text-muted-foreground">Starts</span>
           {!readOnly && (
             <PickOne<TriggerKind>
               label="What starts it"
@@ -324,12 +324,12 @@ function TriggerCard({
                 onChange={(poll) => setFlow({ ...flow, trigger: { ...flow.trigger, github: { on: flow.trigger.github?.on ?? "review_comment", poll } } })}
                 options={["1m", "2m", "5m", "15m"].map((p) => ({ value: p, label: `Check every ${p.replace("m", " min")}` }))}
               />
-              <p className="col-span-2 text-muted-foreground text-xs">
+              <p className="col-span-2 text-desc text-muted-foreground">
                 The box checks each worktree's pull request with <code className="font-mono">gh</code>. Only what's new after the flow is turned on starts it.
               </p>
               {(flow.trigger.github?.on ?? "review_comment") !== "check_failed" && (flow.trigger.github?.on ?? "review_comment") !== "pr_merged" && (
                 <label className="col-span-2 block">
-                  <span className="mb-1 block font-medium text-muted-foreground text-xs">From</span>
+                  <span className="mb-1 block text-label text-muted-foreground">From</span>
                   <Input
                     value={(w.author ?? []).join(", ")}
                     readOnly={readOnly}
@@ -337,14 +337,14 @@ function TriggerCard({
                     placeholder="collaborators · or logins, or * for anyone"
                     className="font-mono text-xs"
                   />
-                  <span className="mt-1 block text-muted-foreground text-xs">Comments reach the agent's prompt, marked as someone else's words. Anyone can comment on a public repository, so only collaborators count unless you list people.</span>
+                  <span className="mt-1 block text-desc text-muted-foreground">Comments reach the agent's prompt, marked as someone else's words. Anyone can comment on a public repository, so only collaborators count unless you list people.</span>
                 </label>
               )}
             </div>
           )}
         </div>
         <div className={cn(kind !== "event" && "hidden")}>
-          <span className="mb-1 block font-medium text-muted-foreground text-xs">From agent</span>
+          <span className="mb-1 block text-label text-muted-foreground">From agent</span>
           <SimpleSelect
             value={w.agent ?? ""}
             disabled={readOnly}
@@ -353,7 +353,7 @@ function TriggerCard({
           />
         </div>
         <label className={cn("block", kind !== "event" && "col-span-2")}>
-          <span className="mb-1 block font-medium text-muted-foreground text-xs">On branch</span>
+          <span className="mb-1 block text-label text-muted-foreground">On branch</span>
           <Input value={w.branch ?? ""} readOnly={readOnly} onChange={(e) => setW({ branch: e.target.value })} placeholder="Any · fix/* for a prefix" className="font-mono text-xs" />
         </label>
       </div>
@@ -376,7 +376,7 @@ function ScheduleFields({ flow, setFlow, readOnly }: { flow: Flow; setFlow(f: Fl
         options={[...SCHEDULE_PRESETS, { value: "custom", label: "Custom…" }]}
       />
       <Input value={expr} readOnly={readOnly} onChange={(e) => set({ schedule: e.target.value })} placeholder="0 2 * * *" className="font-mono text-xs" aria-label="Cron expression" />
-      <p className="col-span-2 flex items-center gap-1.5 text-muted-foreground text-xs">
+      <p className="col-span-2 flex items-center gap-1.5 text-desc text-muted-foreground">
         <ClockIcon className="size-3.5" />
         {describeCron(expr)} · the box's local time
       </p>

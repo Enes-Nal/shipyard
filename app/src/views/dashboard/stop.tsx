@@ -273,7 +273,7 @@ function Body({ req, onRunning, onClose }: { req: StopRequest; onRunning(r: bool
           const group = rows.filter((r) => r.entry.box === box);
           return (
             <div key={box}>
-              <div className="sticky top-0 z-1 flex items-center gap-2 border-b bg-muted/80 px-3 py-1 font-mono text-[11px] text-muted-foreground backdrop-blur-sm">
+              <div className="sticky top-0 z-1 flex items-center gap-2 border-b bg-muted/80 px-3 py-1 font-mono text-meta text-muted-foreground backdrop-blur-sm">
                 <span className="flex-1">{box}</span>
                 <span className="tabular-nums">
                   {group.filter((r) => ticked.has(r.key)).length}/{group.length}
@@ -340,19 +340,19 @@ function StopRow({ row, ticked, progress, locked, cleanup, onToggle }: { row: Ro
           {progress?.state === "failed" ? (
             <span className="block whitespace-normal break-words text-destructive-foreground text-xs">{progress.message}</span>
           ) : (
-            <span className="block truncate text-[11px] text-muted-foreground">
+            <span className="block truncate text-meta text-muted-foreground">
               {[entry.session.parked && "parked", names.where?.location.name, names.crowded && `started ${startedAt(entry.session.created)}`, names.where?.worktree.branch].filter(Boolean).join(" · ")}
             </span>
           )}
         </span>
         {busy(state) && !cleanup ? (
-          <span className="flex shrink-0 items-center gap-1 text-[11px] text-warning-foreground">
+          <span className="flex shrink-0 items-center gap-1 text-meta text-warning-foreground">
             <AlertTriangleIcon className="size-3" />
             {state === "waiting" ? "needs you" : "working"}
           </span>
         ) : (
           <Tip label={`${sessionWord(state)} for ${duration(row.idle)}`}>
-            <span className="flex shrink-0 items-center gap-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+            <span className="flex shrink-0 items-center gap-1.5 font-mono text-meta text-muted-foreground tabular-nums">
               <StateGlyph state={state} />
               {duration(row.idle)}
             </span>

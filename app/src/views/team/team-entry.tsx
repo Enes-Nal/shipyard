@@ -29,10 +29,10 @@ export function JoinTeamCard() {
   const ref = teamRef(v);
   return (
     <section aria-label="Joining a team?" className="mt-2 rounded-xl border bg-card/40 px-4 py-3.5">
-      <h2 className="flex items-center gap-2 font-medium text-sm">
+      <h2 className="flex items-center gap-2 text-section">
         <GitHubMark className="size-3.5" /> Joining a team?
       </h2>
-      <p className="mt-0.5 text-muted-foreground text-xs leading-relaxed">Type your company's GitHub org, or paste a link to a team setup. Shipyard sets your box up the way the team's are: tools, services and repos.</p>
+      <p className="mt-0.5 text-desc text-muted-foreground">Type your company's GitHub org, or paste a link to a team setup. Shipyard sets your box up the way the team's are: tools, services and repos.</p>
       <form
         className="mt-3 flex gap-2"
         onSubmit={(e) => {
@@ -58,8 +58,8 @@ export function TeamBoxEntry({ onPick }: { onPick(): void }) {
         <GitHubMark />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-medium text-sm">Set this box up for a team</span>
-        <span className="block text-muted-foreground text-xs">Your company's team setup from GitHub: its tools, services and repos, in one go.</span>
+        <span className="block text-row">Set this box up for a team</span>
+        <span className="block text-desc text-muted-foreground">Your company's team setup from GitHub: its tools, services and repos, in one go.</span>
       </span>
       <ArrowRightIcon className="size-4 text-muted-foreground" />
     </button>

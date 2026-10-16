@@ -61,10 +61,10 @@ export function FlowsSection({ box, location }: { box: string; location: string 
                 })}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-sm">{f.flow.name}</span>
-                <span className="block truncate text-muted-foreground text-xs">{summary(f.flow)}</span>
+                <span className="block truncate text-row">{f.flow.name}</span>
+                <span className="block truncate text-desc text-muted-foreground">{summary(f.flow)}</span>
               </span>
-              {!f.flow.enabled && <span className="text-muted-foreground text-xs">Off</span>}
+              {!f.flow.enabled && <span className="text-meta text-muted-foreground">Off</span>}
               <SourceBadge source={f.source === "local" ? (overrides(f, flows!) ? "override" : "box") : f.source === "box" ? "box" : f.source} box={box} />
               <ChevronRightIcon className="size-3.5 text-muted-foreground" />
             </button>

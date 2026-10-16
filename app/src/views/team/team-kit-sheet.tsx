@@ -197,8 +197,8 @@ export function KitChoices({ view, box }: { view: TeamView; box?: string }) {
   if (!rows.length) return null;
   return (
     <section aria-label="Everything, or just the kit" data-testid="team-kit-choices" className="mb-6 rounded-xl border bg-card/40 px-4 py-3">
-      <h2 className="font-medium text-sm">{rows.length === 1 ? `You have ${rows[0].loc} on ${box} already` : `You have ${list(rows.map((r) => r.loc))} on ${box} already`}</h2>
-      <p className="mt-0.5 text-muted-foreground text-xs leading-relaxed">Set up everything below, or take just a project's kit: its per-worktree setup, without the box steps, sudo or clone.</p>
+      <h2 className="text-section">{rows.length === 1 ? `You have ${rows[0].loc} on ${box} already` : `You have ${list(rows.map((r) => r.loc))} on ${box} already`}</h2>
+      <p className="mt-0.5 text-desc text-muted-foreground">Set up everything below, or take just a project's kit: its per-worktree setup, without the box steps, sudo or clone.</p>
       <div className="mt-2.5 space-y-1.5">
         {rows.map(({ p, loc }) => (
           <div key={p.id} data-testid={`kit-choice-${p.id}`} className="flex flex-wrap items-center gap-1.5">

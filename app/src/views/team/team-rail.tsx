@@ -34,8 +34,8 @@ function Check({ n, title, state, value, children, compact }: { n: number; title
         >
           {state === "done" ? <CheckIcon className="size-3" strokeWidth={3} /> : state === "warn" ? "!" : n}
         </span>
-        <span className={cn("shrink-0 font-medium text-[13px]", state === "todo" && "text-muted-foreground")}>{title}</span>
-        {value && <span className="ml-auto flex min-w-0 items-center justify-end gap-1.5 truncate text-right text-xs">{value}</span>}
+        <span className={cn("shrink-0 text-row", state === "todo" && "text-muted-foreground")}>{title}</span>
+        {value && <span className="ml-auto flex min-w-0 items-center justify-end gap-1.5 truncate text-right text-meta">{value}</span>}
       </div>
       {children && <div className={cn("mt-2 ml-7.5", compact && "mt-1.5")}>{children}</div>}
     </div>
@@ -83,11 +83,11 @@ export function Checklist(p: ChecklistProps) {
   const accessLine =
     view.state === "found" && view.access.total > 0 ? (
       missing.length === 0 ? (
-        <p className="flex items-center gap-1.5 text-success-foreground text-xs">
+        <p className="flex items-center gap-1.5 text-meta text-success-foreground">
           <CheckIcon className="size-3.5" /> You have access to {view.access.total === 1 ? "the repo" : `all ${view.access.total} repos`}
         </p>
       ) : (
-        <p data-testid="access-partial" className="flex items-start gap-1.5 text-warning-foreground text-xs leading-relaxed">
+        <p data-testid="access-partial" className="flex items-start gap-1.5 text-warning-foreground text-meta">
           <LockIcon className="mt-0.5 size-3 shrink-0" />
           <span>
             You can't read <span className="whitespace-nowrap font-mono">{missing.join(", ")}</span>: ask an admin{view.setup?.contact ? ` (${view.setup.contact})` : ""} · Set up the other {view.access.readable}
@@ -142,7 +142,7 @@ export function Checklist(p: ChecklistProps) {
           </button>
         ))}
       </div>
-      <p data-testid="op-note" className="mt-1.5 text-[11.5px] text-muted-foreground leading-relaxed">
+      <p data-testid="op-note" className="mt-1.5 text-desc text-muted-foreground">
         {opRequired
           ? `${view.setup?.name ?? "The team"} requires 1Password for its ${plural(opKeys.length, "shared key")}: op signs in once, in ${p.box ?? "the box"}'s terminal.`
           : p.skipOP
@@ -182,8 +182,8 @@ export function Checklist(p: ChecklistProps) {
         {p.busy && <Spinner className="size-3.5" />}
         {p.action}
       </Button>
-      {p.blocked && <p className={cn("mt-2 text-center text-[11.5px] text-muted-foreground", compact && "mt-0 text-left")}>{p.blocked}</p>}
-      <p className={cn("mt-2.5 flex items-start gap-1.5 text-[11.5px] text-muted-foreground leading-relaxed", compact && "mt-0 min-w-0 flex-1")}>
+      {p.blocked && <p className={cn("mt-2 text-center text-desc text-muted-foreground", compact && "mt-0 text-left")}>{p.blocked}</p>}
+      <p className={cn("mt-2.5 flex items-start gap-1.5 text-desc text-muted-foreground", compact && "mt-0 min-w-0 flex-1")}>
         <KeyRoundIcon className="mt-0.5 size-3 shrink-0 text-warning-foreground" />
         {p.sudo > 0 ? (
           <span>
@@ -207,7 +207,7 @@ export function Checklist(p: ChecklistProps) {
             <Check compact n={2} title="Box" state={p.noTmux ? "warn" : p.box ? "done" : "active"} value={<span id="team-box-label" className="sr-only">Box</span>}>
               {boxPick}
               {p.noTmux && p.box && (
-                <p data-testid="box-no-tmux" className="mt-1.5 flex items-start gap-1.5 text-[11.5px] text-warning-foreground leading-relaxed">
+                <p data-testid="box-no-tmux" className="mt-1.5 flex items-start gap-1.5 text-desc text-warning-foreground">
                   <CircleAlertIcon className="mt-0.5 size-3 shrink-0" /> tmux isn't installed on {p.box}: the steps run in it.
                 </p>
               )}
@@ -236,7 +236,7 @@ export function Checklist(p: ChecklistProps) {
           {p.noTmux && p.box ? (
             <RequirementsCard box={p.box} team className="mt-2.5 -ml-7.5" />
           ) : (
-            <p className="mt-1.5 text-[11.5px] text-muted-foreground leading-relaxed">
+            <p className="mt-1.5 text-desc text-muted-foreground">
               It signs in to GitHub itself{p.onePassword ? ", and to 1Password," : ""} in its own terminal: this computer's sign-in is never copied there.
             </p>
           )}
@@ -245,7 +245,7 @@ export function Checklist(p: ChecklistProps) {
           <Check n={3} title="Keys" state={asks.length && asks.some((k) => !p.keys[`${k.project}/${k.key}`]) ? "active" : "done"} value={keysValue}>
             {opChoice}
             {keyInputs}
-            {asks.length > 0 && <p className="mt-1.5 text-[11px] text-muted-foreground">Kept on {p.box ?? "the box"} only, never in git. Leave one empty to skip it: it is listed as missing.</p>}
+            {asks.length > 0 && <p className="mt-1.5 text-desc text-muted-foreground">Kept on {p.box ?? "the box"} only, never in git. Leave one empty to skip it: it is listed as missing.</p>}
           </Check>
         )}
       </div>
@@ -308,11 +308,11 @@ export function RunCard({ run, github, os, onOpenTerminal, onRetry, onBackground
       <div data-testid="team-runcard" data-phase={run.phase} data-compact className="overflow-hidden rounded-xl border bg-card px-4 py-3 shadow-xs/5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-64">
-            <p className="flex items-center gap-2 font-medium text-sm">
+            <p className="flex items-center gap-2 text-row">
               {icon}
               {title}
             </p>
-            <div className="mt-0.5 text-muted-foreground text-xs leading-relaxed">{detail}</div>
+            <div className="mt-0.5 text-desc text-muted-foreground">{detail}</div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {primary}
@@ -326,11 +326,11 @@ export function RunCard({ run, github, os, onOpenTerminal, onRetry, onBackground
   return (
     <div data-testid="team-runcard" data-phase={run.phase} className="overflow-hidden rounded-xl border bg-card shadow-xs/5">
       <div className="p-4">
-        <p className="flex items-center gap-2 font-medium text-sm">
+        <p className="flex items-center gap-2 text-row">
           {icon}
           {title}
         </p>
-        <div className="mt-1 text-muted-foreground text-xs leading-relaxed">{detail}</div>
+        <div className="mt-1 text-desc text-muted-foreground">{detail}</div>
         <div className="mt-3">{bar}</div>
       </div>
       <div className="space-y-1.5 border-t px-4 py-3 text-xs">

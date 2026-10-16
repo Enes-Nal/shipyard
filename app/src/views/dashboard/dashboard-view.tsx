@@ -172,13 +172,13 @@ export function DashboardView() {
                 <section key={c.state} aria-label={c.title} className="min-w-0">
                   <header className="mb-2 flex min-h-5 items-center gap-2 px-0.5">
                     <StateGlyph state={c.state} />
-                    <h2 className="font-medium text-xs">{c.title}</h2>
+                    <h2 className="text-section">{c.title}</h2>
                     {picked && items.length > 0 && (
                       <button type="button" className="ml-auto text-muted-foreground text-xs hover:text-foreground" onClick={() => pick(items.map(keyOf), !items.every((e) => picked.has(keyOf(e))))}>
                         {items.every((e) => picked.has(keyOf(e))) ? "None" : "All"}
                       </button>
                     )}
-                    <span className={cn("font-mono text-[11px] tabular-nums", !(picked && items.length) && "ml-auto", items.length && c.state === "waiting" ? "text-warning-foreground" : "text-muted-foreground")}>{items.length}</span>
+                    <span className={cn("font-mono text-meta tabular-nums", !(picked && items.length) && "ml-auto", items.length && c.state === "waiting" ? "text-warning-foreground" : "text-muted-foreground")}>{items.length}</span>
                     {items.length > 0 && (
                       <ColumnMenu
                         title={c.title}
@@ -192,7 +192,7 @@ export function DashboardView() {
                   </header>
                   <div className="flex flex-col gap-row-gap">
                     {items.length === 0 ? (
-                      <p className="rounded-lg border border-dashed px-3 py-4 text-center text-muted-foreground text-xs">{c.empty}</p>
+                      <p className="rounded-lg border border-dashed px-3 py-4 text-center text-meta text-muted-foreground">{c.empty}</p>
                     ) : (
                       items.map((e) => (
                         <AgentCard

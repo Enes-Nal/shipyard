@@ -51,13 +51,13 @@ function BoxRow({ b }: { b: BoxStatus }) {
     <div className="flex min-w-0 flex-col gap-1 rounded-md px-2 py-1.5">
       <span className="flex min-w-0 items-center gap-2 text-sm">
         <StatusDot state={state} />
-        <span className="truncate font-medium">{b.name}</span>
-        <span className="min-w-0 flex-1 truncate text-muted-foreground text-xs">
+        <span className="truncate text-row">{b.name}</span>
+        <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
           {online ? (st ? `${st.cpus} CPU · ${bytes(st.memory.total)}` : "") : `offline${b.since ? ` · ${shortAgo(b.since)}` : ""}`}
         </span>
         {waiting > 0 && <StateGlyph state="waiting" className="size-3" />}
         {working > 0 && (
-          <span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs tabular-nums">
+          <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground tabular-nums">
             <StateGlyph state="running" className="size-3" />
             {working}
           </span>
@@ -82,9 +82,9 @@ function BoxRow({ b }: { b: BoxStatus }) {
           ))}
         </span>
       ) : online ? (
-        <span className="h-[22px] pl-3.5 text-[11px] text-muted-foreground">Reading stats…</span>
+        <span className="h-[22px] pl-3.5 text-meta text-muted-foreground">Reading stats…</span>
       ) : (
-        <span className="truncate pl-3.5 text-[11px] text-muted-foreground">{b.error ? "Can't reach it" : "Not connected"}</span>
+        <span className="truncate pl-3.5 text-meta text-muted-foreground">{b.error ? "Can't reach it" : "Not connected"}</span>
       )}
     </div>
   );
@@ -132,9 +132,9 @@ export function ServicesWidget() {
           }}
         >
           <span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
-          <span className="w-11 shrink-0 font-mono text-[11px] tabular-nums">:{s.port}</span>
+          <span className="w-11 shrink-0 font-mono text-meta tabular-nums">:{s.port}</span>
           <span className="min-w-0 flex-1 truncate">{placeLabel(s, boxes)}</span>
-          {span.c > 1 && <span className="shrink-0 truncate text-muted-foreground text-xs @max-[260px]:hidden">{s.name}</span>}
+          {span.c > 1 && <span className="shrink-0 truncate text-meta text-muted-foreground @max-[260px]:hidden">{s.name}</span>}
           <ArrowUpRightIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover/row:opacity-100 group-focus-visible/row:opacity-100" />
         </WidgetRow>
       ))}

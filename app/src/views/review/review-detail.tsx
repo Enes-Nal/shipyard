@@ -60,12 +60,12 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
                   Waiting for you
                 </Badge>
               ) : (
-                <span className="shrink-0 text-muted-foreground text-xs">
+                <span className="shrink-0 text-meta text-muted-foreground">
                   {agentLabel(entry.agent)} finished {ago(entry.state_since)}
                 </span>
               )}
             </div>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs">
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
               <span>
                 {work && `${name} · `}
                 {entry.box} · {entry.location}
@@ -171,10 +171,10 @@ function AgentBrowserArtifacts({ entry }: { entry: ReviewEntry }) {
   return (
     <Frame>
       <FrameHeader>
-        <FrameTitle className="flex items-center gap-2">
+        <FrameTitle className="flex items-center gap-2 text-section">
           <GlobeIcon className="size-3.5 text-muted-foreground" />
           The agent's browser
-          {b.url && <span className="truncate font-mono font-normal text-[11px] text-muted-foreground">{b.url}</span>}
+          {b.url && <span className="truncate font-mono font-normal text-meta text-muted-foreground">{b.url}</span>}
         </FrameTitle>
       </FrameHeader>
       <FramePanel className="flex flex-col gap-2">
@@ -186,7 +186,7 @@ function AgentBrowserArtifacts({ entry }: { entry: ReviewEntry }) {
           </div>
         )}
         {(b.errors?.length ?? 0) > 0 && (
-          <pre className="max-h-32 overflow-auto rounded-lg bg-muted/60 p-2 font-mono text-[11px] text-destructive-foreground">{b.errors!.join("\n")}</pre>
+          <pre className="max-h-32 overflow-auto rounded-lg bg-muted/60 p-2 font-mono text-mono text-destructive-foreground">{b.errors!.join("\n")}</pre>
         )}
       </FramePanel>
     </Frame>
@@ -223,7 +223,7 @@ function LastWords({ entry }: { entry: ReviewEntry }) {
     <Frame variant="card">
       <FrameHeader className="flex-row items-center gap-2 px-4 py-2.5">
         <AgentIcon agent={entry.agent} />
-        <FrameTitle className="font-medium text-[13px]">{agentLabel(entry.agent)}'s last message</FrameTitle>
+        <FrameTitle className="text-section">{agentLabel(entry.agent)}'s last message</FrameTitle>
       </FrameHeader>
       <FramePanel className="px-4 py-3">
         {lines === undefined ? (
@@ -259,15 +259,15 @@ function LastCheck({ run, loop }: { run?: ReturnType<typeof useReview.getState>[
         <span className={cn("inline-flex size-4 items-center justify-center rounded-full", pending ? "bg-muted" : passed ? "bg-success/15 text-success-foreground" : "bg-destructive/15 text-destructive-foreground")}>
           {pending ? <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground" /> : passed ? <CheckIcon className="size-3" /> : <XIcon className="size-3" />}
         </span>
-        <FrameTitle className="min-w-0 truncate font-medium text-[13px]">
+        <FrameTitle className="min-w-0 truncate text-section">
           Last check {pending ? "running" : passed ? "passed" : "failed"}
         </FrameTitle>
-        <span className="min-w-0 truncate font-mono text-muted-foreground text-xs">{what}</span>
-        <span className="ml-auto shrink-0 text-muted-foreground text-xs">{when}</span>
+        <span className="min-w-0 truncate font-mono text-meta text-muted-foreground">{what}</span>
+        <span className="ml-auto shrink-0 text-meta text-muted-foreground">{when}</span>
       </FrameHeader>
       {!passed && output && (
         <FramePanel className="px-4 py-3">
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-muted-foreground">{output.trim()}</pre>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-mono text-mono text-muted-foreground">{output.trim()}</pre>
         </FramePanel>
       )}
     </Frame>
@@ -339,10 +339,10 @@ function Changes({ entry }: { entry: ReviewEntry }) {
             className={cn("rounded-md px-2.5 py-1 text-[13px] text-foreground/80 hover:bg-background/60", g.id === current.id && "bg-background font-medium text-foreground shadow-xs/5")}
           >
             {g.label}
-            <span className="ml-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">{g.files.length}</span>
+            <span className="ml-1.5 font-mono text-meta text-muted-foreground tabular-nums">{g.files.length}</span>
           </button>
         ))}
-        <span className="ml-auto pr-2 font-mono text-[11px] tabular-nums">
+        <span className="ml-auto pr-2 font-mono text-meta tabular-nums">
           <span className="text-success-foreground">+{added}</span> <span className="text-destructive-foreground">−{removed}</span>
         </span>
       </FrameHeader>
@@ -390,7 +390,7 @@ function CommentsBar({ entry }: { entry: ReviewEntry }) {
   if (!todo.length) {
     const last = Math.max(...sent.map((c) => c.sent ?? 0));
     return (
-      <div className="flex items-center gap-2 rounded-xl border bg-muted/40 px-4 py-2.5 text-[13px]">
+      <div className="flex items-center gap-2 rounded-xl border bg-muted/40 px-4 py-2.5 text-desc">
         <CheckIcon className="size-3.5 text-success-foreground" />
         <span className="min-w-0 flex-1 truncate">
           Sent {sent.length} comment{sent.length === 1 ? "" : "s"} to {who} {ago(new Date(last).toISOString())}
@@ -405,7 +405,7 @@ function CommentsBar({ entry }: { entry: ReviewEntry }) {
     <Frame variant="card">
       <FrameHeader className="flex-row items-center gap-2 px-4 py-2.5">
         <MessageSquareTextIcon className="size-3.5 text-muted-foreground" />
-        <FrameTitle className="min-w-0 flex-1 truncate font-medium text-[13px]">
+        <FrameTitle className="min-w-0 flex-1 truncate text-section">
           {todo.length} comment{todo.length === 1 ? "" : "s"} for {who}
         </FrameTitle>
         <Button size="xs" variant="ghost" onClick={() => dismissComments(entry.key, false)}>
@@ -417,19 +417,19 @@ function CommentsBar({ entry }: { entry: ReviewEntry }) {
         </Button>
       </FrameHeader>
       <FramePanel className="px-4 py-2.5">
-        <ul className="flex flex-col gap-1 text-[13px]">
+        <ul className="flex flex-col gap-1 text-desc">
           {todo.slice(0, 5).map((c) => (
             <li key={c.id} className="flex min-w-0 gap-2">
-              <span className="shrink-0 font-mono text-[12px] text-muted-foreground">
+              <span className="shrink-0 font-mono text-meta text-muted-foreground">
                 {c.file.split("/").pop()}:{c.line}
                 {c.side === "old" && " (removed)"}
               </span>
               <span className="min-w-0 truncate">{c.text}</span>
             </li>
           ))}
-          {todo.length > 5 && <li className="text-muted-foreground text-xs">and {todo.length - 5} more</li>}
+          {todo.length > 5 && <li className="text-meta text-muted-foreground">and {todo.length - 5} more</li>}
         </ul>
-        <p className="mt-2 text-muted-foreground text-xs">
+        <p className="mt-2 text-meta text-muted-foreground">
           {fit < todo.length
             ? `The first ${fit} fit in one message (2 KB); send again for the rest.`
             : `${who} gets each file and line with your note, not the code: it reads the file itself. It waits until ${who} is idle.`}
@@ -444,23 +444,23 @@ function Commits({ entry }: { entry: ReviewEntry }) {
     <Frame variant="card">
       <FrameHeader className="flex-row items-center gap-2 px-4 py-2.5">
         <GitCommitHorizontalIcon className="size-3.5 text-muted-foreground" />
-        <FrameTitle className="font-medium text-[13px]">
+        <FrameTitle className="text-section">
           {entry.base_ahead} commit{entry.base_ahead === 1 ? "" : "s"} not on {(entry.base ?? "base").replace(/^origin\//, "")}
         </FrameTitle>
       </FrameHeader>
       <FramePanel className="p-0">
         <ul className="divide-y">
           {entry.commits.map((c) => (
-            <li key={c.sha} className="flex items-center gap-3 px-4 py-2 text-[13px]">
-              <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{c.sha.slice(0, 7)}</span>
+            <li key={c.sha} className="flex items-center gap-3 px-4 py-2 text-desc">
+              <span className="shrink-0 font-mono text-meta text-muted-foreground">{c.sha.slice(0, 7)}</span>
               <span className="min-w-0 flex-1 truncate">{c.subject}</span>
-              <span className="shrink-0 text-muted-foreground text-xs">
+              <span className="shrink-0 text-meta text-muted-foreground">
                 {c.author} · {ago(c.when)}
               </span>
             </li>
           ))}
         </ul>
-        {entry.base_ahead > entry.commits.length && <p className="border-t px-4 py-2 text-muted-foreground text-xs">and {entry.base_ahead - entry.commits.length} older</p>}
+        {entry.base_ahead > entry.commits.length && <p className="border-t px-4 py-2 text-meta text-muted-foreground">and {entry.base_ahead - entry.commits.length} older</p>}
       </FramePanel>
     </Frame>
   );

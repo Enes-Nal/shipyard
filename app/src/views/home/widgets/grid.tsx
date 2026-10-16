@@ -167,8 +167,8 @@ export function HomeGrid({ className }: { className?: string }) {
         {edit ? (
           <>
             <div className="flex min-w-0 flex-1 flex-col">
-              <h2 className="font-medium text-sm">Customize Home</h2>
-              <p id="home-grid-hint" className="text-muted-foreground text-xs">
+              <h2 className="text-section">Customize Home</h2>
+              <p id="home-grid-hint" className="text-desc text-muted-foreground">
                 Drag a heading to move a widget, or focus it and use the arrow keys. <kbd className="font-mono">[</kbd> <kbd className="font-mono">]</kbd> resize, Delete removes. Saved as you go.
               </p>
             </div>
@@ -354,7 +354,7 @@ function Cell({ def, size, cols, edit, dragging, refresh, handleRef, onKeyDown, 
                 className="flex h-7 min-w-0 flex-1 cursor-grab touch-none items-center gap-1.5 rounded-md px-1.5 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
               >
                 <GripVerticalIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span id={headingId} className="truncate font-medium text-[13px]">
+                <span id={headingId} className="truncate text-section">
                   {def.title}
                 </span>
               </button>
@@ -451,7 +451,7 @@ function EmptyGrid({ onAdd, onReset }: { onAdd(): void; onReset(): void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 py-12 text-center">
       <Scene name="dock" width={150} className="text-muted-foreground" />
-      <h3 className="mt-1 font-medium text-sm">No widgets on Home</h3>
+      <h3 className="mt-1 text-row">No widgets on Home</h3>
       <p className="max-w-sm text-balance text-muted-foreground text-sm">Put what you check first here: agents that need you, pull requests, how your boxes are doing.</p>
       <div className="mt-2 flex gap-2">
         <Button size="sm" onClick={onAdd}>

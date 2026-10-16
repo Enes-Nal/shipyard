@@ -93,7 +93,7 @@ export function BulkBar({
             )}
           </div>
           {details && !running && (
-            <ul className="max-h-56 divide-y overflow-y-auto border-t text-xs">
+            <ul className="max-h-56 divide-y overflow-y-auto border-t text-meta">
               {problems.map((r) => {
                 const p = progress[r.key]!;
                 const agents = (boxes[r.box]?.sessions ?? []).filter((x) => x.dir === r.path && !x.exited && agentOf(x));
@@ -103,7 +103,7 @@ export function BulkBar({
                     <div className="min-w-0 flex-1">
                       <span className="font-medium">{r.name}</span>
                       <span className={cn("ml-2", p.state === "conflict" ? "text-warning-foreground" : "text-destructive-foreground")}>{p.state === "conflict" ? "conflicts, left as it was" : p.message}</span>
-                      {p.conflicts && <div className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">{p.conflicts.join(", ")}</div>}
+                      {p.conflicts && <div className="mt-0.5 truncate font-mono text-meta text-muted-foreground">{p.conflicts.join(", ")}</div>}
                     </div>
                     {/* What to do about it, without leaving the table. */}
                     <div className="flex shrink-0 items-center gap-1">

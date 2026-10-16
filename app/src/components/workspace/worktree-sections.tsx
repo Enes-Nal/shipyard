@@ -62,7 +62,7 @@ export function SessionWorktreeSections({ box, session, className }: { box: stri
 }
 
 function Heading({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-1 px-2 font-medium text-muted-foreground text-xs">{children}</h2>;
+  return <h2 className="mb-1 px-2 text-label text-muted-foreground">{children}</h2>;
 }
 
 const ICONS = { dev: MonitorIcon, web: GlobeIcon, data: DatabaseIcon, other: CableIcon };
@@ -99,12 +99,12 @@ function LiveServices({ worktree: ref }: { worktree: WorktreeRef }) {
           ))}
         </ul>
       ) : (
-        <p className="px-2 text-muted-foreground text-xs leading-relaxed">
+        <p className="px-2 text-desc text-muted-foreground">
           Nothing to open yet.{" "}
           {devPort ? (
             <>
-              A dev server on <code className="font-mono text-[11px] text-foreground/80">$BERTH_PORT</code> ({devPort}) opens at{" "}
-              {host ? <code className="break-all font-mono text-[11px] text-foreground/80">{`http://${host}${hostSuffix(urlPort)}/`}</code> : "its private URL"}.
+              A dev server on <code className="font-mono text-mono text-foreground/80">$BERTH_PORT</code> ({devPort}) opens at{" "}
+              {host ? <code className="break-all font-mono text-mono text-foreground/80">{`http://${host}${hostSuffix(urlPort)}/`}</code> : "its private URL"}.
             </>
           ) : (
             "Start a dev server here and its private URL shows up."
@@ -166,13 +166,13 @@ function TerminalServices({ worktree: ref, own: { services, reload } }: { worktr
               <ServiceIcon className="size-4" />
             </span>
             <span className="flex min-w-0 max-w-[45%] shrink-0 items-baseline gap-1.5">
-              <span className="truncate font-medium">{svc.title || svc.name}</span>
-              {svc.title && svc.title !== svc.name && <span className="truncate font-mono text-[11px] text-muted-foreground">{svc.name}</span>}
+              <span className="truncate text-row">{svc.title || svc.name}</span>
+              {svc.title && svc.title !== svc.name && <span className="truncate font-mono text-meta text-muted-foreground">{svc.name}</span>}
             </span>
             <Tip label={<span className="block max-w-sm break-all font-mono text-[11px]">{svc.run}</span>}>
-              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">{svc.run}</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground">{svc.run}</span>
             </Tip>
-            <span className={cn("flex shrink-0 items-center gap-1.5 text-xs", running ? "text-foreground/80" : "text-muted-foreground")}>
+            <span className={cn("flex shrink-0 items-center gap-1.5 text-meta", running ? "text-foreground/80" : "text-muted-foreground")}>
               <span className={cn("size-1.5 rounded-full", running ? "bg-success" : "bg-muted-foreground/40")} />
               {running ? "Running" : "Stopped"}
             </span>
@@ -206,12 +206,12 @@ function ServiceRow({ row: r }: { row: LiveService }) {
       </span>
       <Tip label={r.command ? <span className="block max-w-sm break-all font-mono text-[11px]">{r.command}</span> : undefined}>
         <span className="flex min-w-0 max-w-[45%] shrink-0 items-baseline gap-1.5">
-          <span className={cn("truncate font-medium", r.kind === "other" && "font-normal text-muted-foreground")}>{r.label}</span>
-          {r.detail && <span className="truncate text-muted-foreground text-xs">{r.detail}</span>}
+          <span className={cn("truncate text-row", r.kind === "other" && "font-normal text-muted-foreground")}>{r.label}</span>
+          {r.detail && <span className="truncate text-meta text-muted-foreground">{r.detail}</span>}
         </span>
       </Tip>
       <Tip label={<span className="break-all font-mono">{r.url}</span>}>
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">{r.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+        <span className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground">{r.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
       </Tip>
       <span className="shrink-0 rounded bg-accent px-1.5 py-px font-mono text-[11px] text-muted-foreground tabular-nums">:{r.port}</span>
       <Tip label={web ? "Copy URL" : "Copy address"}>

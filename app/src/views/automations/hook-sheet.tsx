@@ -85,7 +85,7 @@ export function HookSheet({ editing, onSave, onClose }: { editing?: Editing; onS
             <EventPicker machine={machine} value={hook.on} onChange={(on) => setHook({ ...hook, on })} />
             {hook.on && !onValid && <p className="mt-1.5 text-destructive-foreground text-xs">Use an event like agent.finished, a prefix like worktree.*, *, or before: one of those.</p>}
             {d.gate && onValid && (
-              <p className="mt-1.5 flex items-start gap-1.5 text-muted-foreground text-xs">
+              <p className="mt-1.5 flex items-start gap-1.5 text-desc text-muted-foreground">
                 <ShieldIcon className="mt-0.5 size-3 shrink-0 text-warning" />A gate: it runs first, and exiting non-zero stops the action. What it prints is the reason shown.
               </p>
             )}
@@ -102,7 +102,7 @@ export function HookSheet({ editing, onSave, onClose }: { editing?: Editing; onS
               className="font-mono text-xs [&_textarea]:max-h-48 [&_textarea]:min-h-13"
               spellCheck={false}
             />
-            <p className="mt-2 text-muted-foreground text-xs">Through /bin/sh, with the event as JSON on stdin. Click to insert:</p>
+            <p className="mt-2 text-desc text-muted-foreground">Through /bin/sh, with the event as JSON on stdin. Click to insert:</p>
             <div className="mt-1.5 flex flex-wrap gap-1">
               {[...d.fields.map(envName), ...ALWAYS_ENV].map((v) => (
                 <button key={v} type="button" onClick={() => insert(`"$${v}"`)} className="rounded-md border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground hover:border-ring/40 hover:text-foreground">
@@ -120,7 +120,7 @@ export function HookSheet({ editing, onSave, onClose }: { editing?: Editing; onS
             <div>
               <Label>Integration (optional)</Label>
               <Input value={hook.tool ?? ""} onChange={(e) => setHook({ ...hook, tool: e.target.value })} placeholder="e.g. slack" className="font-mono text-xs" />
-              <p className="mt-1 text-muted-foreground text-xs">Skips events this integration caused, so two integrations can't loop.</p>
+              <p className="mt-1 text-desc text-muted-foreground">Skips events this integration caused, so two integrations can't loop.</p>
             </div>
           </section>
 
@@ -140,7 +140,7 @@ export function HookSheet({ editing, onSave, onClose }: { editing?: Editing; onS
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="mb-1.5 font-medium text-xs">{children}</div>;
+  return <div className="mb-1.5 text-label">{children}</div>;
 }
 
 // EventPicker is a filterable list of what this machine can follow. Typing
@@ -162,7 +162,7 @@ function EventPicker({ machine, value, onChange }: { machine: string; value: str
         {d.gate ? <ShieldIcon className="size-3.5 shrink-0 text-warning" /> : <ZapIcon className="size-3.5 shrink-0 text-muted-foreground" />}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm">{d.label}</span>
-          <code className="block truncate font-mono text-[11px] text-muted-foreground">{value}</code>
+          <code className="block truncate font-mono text-meta text-muted-foreground">{value}</code>
         </span>
         <Button size="xs" variant="outline" onClick={() => setPicking(true)}>
           Change

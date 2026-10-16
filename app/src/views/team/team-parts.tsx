@@ -98,7 +98,7 @@ export function StateIcon({ state, className }: { state: StepState | RepoState; 
 // Cmds is what a row runs, exactly: commands with a prompt, comments dim.
 export function Cmds({ lines, className }: { lines: string[]; className?: string }) {
   return (
-    <pre className={cn("overflow-x-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-[11.5px] text-foreground/85 leading-relaxed", className)}>
+    <pre className={cn("overflow-x-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-mono text-foreground/85", className)}>
       {lines.map((l, i) => (
         <div key={i} className={l.startsWith("#") ? "text-muted-foreground" : undefined}>
           {l.startsWith("#") || l.startsWith(" ") ? l : `$ ${l}`}
@@ -161,10 +161,10 @@ export function Section({ title, aside, children, className, id }: { title: Reac
   return (
     <section aria-labelledby={id} className={cn("mb-6", className)}>
       <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <h2 id={id} className="font-semibold text-sm">
+        <h2 id={id} className="text-section">
           {title}
         </h2>
-        {aside && <span className="text-muted-foreground text-xs">{aside}</span>}
+        {aside && <span className="text-meta text-muted-foreground">{aside}</span>}
       </div>
       {children}
     </section>
@@ -221,8 +221,8 @@ export function OrgHeader({ view, compact, badge, from }: { view: TeamView; comp
                 {repo && <span className="ml-1 rounded-full border px-1.5 py-px font-sans text-[10.5px]">{repo.private ? "Private" : "Public"}</span>}
               </p>
             )}
-            <h1 className="mt-1 font-semibold text-2xl tracking-tight @max-[819px]:text-xl">{name} team setup</h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs">
+            <h1 className="mt-1 text-title">{name} team setup</h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-meta">
               {link ? (
                 <span data-testid="team-provenance">
                   A team setup for {name}, loaded from {org.login}'s repo, not from <span className="font-mono">{view.setup?.org ?? "its org"}/.berth</span>

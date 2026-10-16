@@ -92,7 +92,7 @@ export const useFinishedCount = () => ({ n: byState(useAgentRows(), "finished").
 
 function OfflineNote({ boxes }: { boxes: string[] }) {
   if (!boxes.length) return null;
-  return <p className="truncate px-2 pt-1 text-[11px] text-muted-foreground">{boxes.length === 1 ? `${boxes[0]} is offline: its agents aren't listed` : `${boxes.length} boxes offline: their agents aren't listed`}</p>;
+  return <p className="truncate px-2 pt-1 text-meta text-muted-foreground">{boxes.length === 1 ? `${boxes[0]} is offline: its agents aren't listed` : `${boxes.length} boxes offline: their agents aren't listed`}</p>;
 }
 
 // ---------- Needs you ----------
@@ -156,13 +156,13 @@ function WaitingRow({ r }: { r: AgentRow }) {
     <div className="group/row flex min-w-0 flex-col gap-1 rounded-md px-2 py-1.5 hover:bg-accent/60">
       <button type="button" onClick={open} className="flex w-full min-w-0 items-center gap-2.5 rounded-sm text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <StateGlyph state="waiting" />
-        <span className="min-w-0 flex-1 truncate font-medium">{r.title}</span>
-        <span className="shrink-0 text-muted-foreground text-xs tabular-nums">{shortAgo(r.since)}</span>
+        <span className="min-w-0 flex-1 truncate text-row">{r.title}</span>
+        <span className="shrink-0 text-meta text-muted-foreground tabular-nums">{shortAgo(r.since)}</span>
       </button>
-      <span className="flex min-w-0 items-center gap-2 pl-6 text-muted-foreground text-xs">
-        <span className={cn("min-w-0 flex-1 truncate", tool && !question && "font-mono text-[11px]")}>{detail}</span>
+      <span className="flex min-w-0 items-center gap-2 pl-6 text-meta text-muted-foreground">
+        <span className={cn("min-w-0 flex-1 truncate", tool && !question && "font-mono")}>{detail}</span>
         {answered ? (
-          <span className="shrink-0 text-[11px]">{answered === "Deny" ? "Denied" : "Allowed"} · resuming</span>
+          <span className="shrink-0">{answered === "Deny" ? "Denied" : "Allowed"} · resuming</span>
         ) : allow && deny ? (
           <span className="flex shrink-0 items-center gap-1">
             <Button size="xs" variant="outline" className="h-5 rounded-[5px] px-1.5 text-[11px]" onClick={() => answer(deny.key, "Deny")} aria-label={`Deny: ${r.title}`}>
@@ -262,13 +262,13 @@ function WorkingRow({ r }: { r: AgentRow }) {
     >
       <span className="flex w-full min-w-0 items-center gap-2.5 text-sm">
         <StateGlyph state="running" />
-        <span className="min-w-0 flex-1 truncate font-medium">{r.title}</span>
+        <span className="min-w-0 flex-1 truncate text-row">{r.title}</span>
         <AgentIcon agent={r.agent} className="size-3 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 text-muted-foreground text-xs tabular-nums">{step?.elapsed ?? shortAgo(r.since)}</span>
+        <span className="shrink-0 text-meta text-muted-foreground tabular-nums">{step?.elapsed ?? shortAgo(r.since)}</span>
       </span>
-      <span className="flex min-w-0 items-center gap-1.5 pl-6 text-muted-foreground text-xs">
-        <span className="min-w-0 truncate font-mono text-[11px]">{step?.now ?? `${agentLabel(r.agent)} · ${r.where}`}</span>
-        {step?.sub && <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground @max-[300px]:hidden">· {step.sub}</span>}
+      <span className="flex min-w-0 items-center gap-1.5 pl-6 text-meta text-muted-foreground">
+        <span className="min-w-0 truncate font-mono">{step?.now ?? `${agentLabel(r.agent)} · ${r.where}`}</span>
+        {step?.sub && <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground @max-[300px]:hidden">· {step.sub}</span>}
       </span>
     </button>
   );
@@ -292,8 +292,8 @@ export function FinishedWidget() {
           <WidgetRow key={r.key} onClick={() => void focusSession(r.box, r.session.name)}>
             <StateGlyph state="finished" />
             <span className="min-w-0 flex-1 truncate">{r.title}</span>
-            {e && (e.added || e.removed) ? <DiffStat add={e.added} del={e.removed} className="@max-[280px]:hidden" /> : <span className="min-w-0 truncate text-muted-foreground text-xs @max-[340px]:hidden">{r.where}</span>}
-            <span className="w-8 shrink-0 text-right text-muted-foreground text-xs tabular-nums">{shortAgo(r.since)}</span>
+            {e && (e.added || e.removed) ? <DiffStat add={e.added} del={e.removed} className="@max-[280px]:hidden" /> : <span className="min-w-0 truncate text-meta text-muted-foreground @max-[340px]:hidden">{r.where}</span>}
+            <span className="w-8 shrink-0 text-right text-meta text-muted-foreground tabular-nums">{shortAgo(r.since)}</span>
           </WidgetRow>
         );
       })}
@@ -358,8 +358,8 @@ export function AreasWidget() {
               {waiting > 0 && <StateGlyph state="waiting" className="size-3" />}
               {running > 0 && <StateGlyph state="running" className="size-3" />}
             </span>
-            {span.c > 1 && <span className="shrink-0 font-mono text-[11px] text-muted-foreground @max-[260px]:hidden">{a.ref.box}</span>}
-            <span className="w-7 shrink-0 text-right text-muted-foreground text-xs tabular-nums">{shortAgo(a.at)}</span>
+            {span.c > 1 && <span className="shrink-0 font-mono text-meta text-muted-foreground @max-[260px]:hidden">{a.ref.box}</span>}
+            <span className="w-7 shrink-0 text-right text-meta text-muted-foreground tabular-nums">{shortAgo(a.at)}</span>
           </WidgetRow>
         );
       })}

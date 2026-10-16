@@ -127,10 +127,10 @@ export function Launcher({ worktree: ref }: { worktree: WorktreeRef }) {
             </div>
           )}
           <header className={cn("mb-4 px-2", band && "[text-shadow:0_0_6px_var(--background),0_0_14px_var(--background)]")}>
-            <h1 className="truncate font-semibold text-lg tracking-tight" title={name}>
+            <h1 className="truncate text-title" title={name}>
               {name}
             </h1>
-            <div className="mt-1 flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
+            <div className="mt-1 flex min-w-0 items-center gap-1.5 text-meta text-muted-foreground">
               {branch && (
                 <Tip label={middle(branch) !== branch ? branch : undefined}>
                   <span className="shrink-0 rounded bg-accent px-1.5 py-px font-mono text-[11px]">{middle(branch)}</span>
@@ -153,7 +153,7 @@ export function Launcher({ worktree: ref }: { worktree: WorktreeRef }) {
                     toastManager.add({ title: "Copied the path", description: ref.path, type: "success" });
                   }}
                   // Truncated from the left, so the end of the path stays visible.
-                  className="min-w-0 truncate text-left font-mono text-[11px] hover:text-foreground [direction:rtl]"
+                  className="min-w-0 truncate text-left font-mono text-meta hover:text-foreground [direction:rtl]"
                 >
                   <bdi>{ref.path}</bdi>
                 </button>
@@ -204,7 +204,7 @@ export function Launcher({ worktree: ref }: { worktree: WorktreeRef }) {
 
           {closed.length > 0 && (
             <section className="mt-6">
-              <h2 className="mb-1 px-2 font-medium text-muted-foreground text-xs">Pick up where you left off</h2>
+              <h2 className="mb-1 px-2 text-label text-muted-foreground">Pick up where you left off</h2>
               {shown.map((s) => {
                 const state = sessionState(s, stats);
                 return (
@@ -221,8 +221,8 @@ export function Launcher({ worktree: ref }: { worktree: WorktreeRef }) {
                     <Tip label={<span className="font-mono">{s.name}</span>}>
                       <span className="min-w-0 max-w-[60%] shrink truncate">{sessionName(s, { sessions })}</span>
                     </Tip>
-                    {s.title && <span className="shrink-0 text-muted-foreground text-xs">{agentLabel(agentOf(s)!)}</span>}
-                    <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-muted-foreground text-xs">
+                    {s.title && <span className="shrink-0 text-meta text-muted-foreground">{agentLabel(agentOf(s)!)}</span>}
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-meta text-muted-foreground">
                       <StateGlyph state={state} className="size-3" />
                       <span className="truncate">
                         {stateWords(state)} {ago(s.state_since ?? s.created)}

@@ -36,8 +36,8 @@ export function WidgetEmpty({ scene = "calm", title, hint, action, onAction, com
   return (
     <div className="flex h-full min-h-0 flex-col items-center justify-center gap-1 px-4 pb-1 text-center">
       {art && <Scene name={scene} width={104} className="mb-0.5 text-muted-foreground @max-[220px]:hidden" />}
-      <p className="font-medium text-sm">{title}</p>
-      {hint && <p className="line-clamp-2 max-w-72 text-balance text-muted-foreground text-xs">{hint}</p>}
+      <p className="text-row">{title}</p>
+      {hint && <p className="line-clamp-2 max-w-72 text-balance text-desc text-muted-foreground">{hint}</p>}
       {action && onAction && (
         <Button size="xs" variant="outline" className="mt-1.5" onClick={onAction}>
           {action}
@@ -72,7 +72,7 @@ export function More({ n, label, onClick }: { n: number; label: string; onClick?
       {text}
     </button>
   ) : (
-    <p className="px-2 pt-0.5 text-muted-foreground text-xs">{text}</p>
+    <p className="px-2 pt-0.5 text-meta text-muted-foreground">{text}</p>
   );
 }
 

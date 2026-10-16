@@ -45,7 +45,7 @@ export function TemplateField({
   return (
     <div>
       <span className="mb-1 flex items-center gap-2">
-        <span className="font-medium text-muted-foreground text-xs">{label}</span>
+        <span className="text-label text-muted-foreground">{label}</span>
         {!readOnly && variables.length > 0 && (
           <Menu>
             <MenuTrigger render={<button type="button" className="ml-auto inline-flex items-center gap-1 rounded px-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground" />}>
