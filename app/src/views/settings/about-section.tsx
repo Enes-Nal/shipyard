@@ -34,9 +34,9 @@ function Hero({ version }: { version: string }) {
   const picture = useHeaderPicture();
   const shown = version === "dev" || version === "unknown" || version === "…" ? version : `v${version}`;
   return (
-    <div className={cn("relative overflow-hidden rounded-xl border", picture ? "h-40" : "h-auto")}>
-      {picture && <HeaderBand picture={picture} position={0.4} fade={0.55} className="absolute inset-0" />}
-      <div className={cn("flex items-center gap-3 p-4", picture && "absolute inset-x-0 bottom-0")}>
+    <div className="overflow-hidden rounded-xl border">
+      {picture && <HeaderBand picture={picture} position={0.4} fade={0.25} className="h-28" />}
+      <div className={cn("flex items-center gap-3 bg-background p-4", picture && "border-t")}>
         <img src={`${import.meta.env.BASE_URL}berth-mark.svg`} alt="" className="size-9 shrink-0 rounded-[9px] shadow-sm" />
         <div className="min-w-0">
           <div className="font-semibold text-base leading-5">Shipyard</div>
