@@ -10,7 +10,10 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
+- **No more tall blinking bar at a terminal's left edge.** With the Ghostty
+  renderer, a focused terminal showed the browser's own text cursor down its
+  whole height, next to the terminal's real cursor. Only the real one shows
+  now.
 - **A box newer than the app is no longer called outdated.** An older
   Shipyard used to offer to update a box that already ran a newer release,
   and *Update all* (or updating boxes automatically) would put its older
@@ -28,6 +31,10 @@ again.
   between sections or keeping it off the dashboard twice in a row could
   lose the first change, because both saves read the same version of your
   projects. They now save one after the other.
+- **A kit link pinned to a commit works.** A GitHub link copied from a
+  commit's page (`…/tree/308bc75…/kits/web`) used to fail with "Git
+  couldn't do that", because git can't clone a commit by its hash as if it
+  were a branch. Shipyard now fetches the kit at that commit.
 
 ## v0.3.22
 
