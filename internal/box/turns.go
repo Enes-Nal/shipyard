@@ -60,6 +60,9 @@ type Span struct {
 	Start  time.Time `json:"start"`
 	End    time.Time `json:"end,omitzero"`
 	Reason string    `json:"reason,omitempty"`
+	// Hooked is set when the agent's own hooks reported it: only they end
+	// it, as the screen may not show the question (see screenEvent).
+	Hooked bool `json:"hooked,omitempty"`
 	// Ask is what the agent asked for, from its own hooks, when it said.
 	Ask *Ask `json:"ask,omitempty"`
 }
@@ -169,6 +172,9 @@ type sessTrack struct {
 	// they said a prompt started, so its sends can wait for that.
 	Hooked   bool `json:"hooked,omitempty"`
 	SawStart bool `json:"saw_start,omitempty"`
+	// AsyncAsk is set while the session waits on Codex's async question
+	// box, which a turn can end before anyone answers.
+	AsyncAsk bool `json:"async_ask,omitempty"`
 	// Prompted is set once the ledger has seen a prompt for the session,
 	// sent or typed: the first one may name it (see Box.nameAfter).
 	Prompted bool `json:"prompted,omitempty"`
@@ -629,6 +635,14 @@ func sameDir(a, b string) bool {
 
 var stateOf = map[string]string{adapters.Ready: "idle", adapters.Started: "running", adapters.Waiting: "waiting", adapters.Finished: "finished", adapters.Exited: "exited"}
 
+// notifyAfterHooks says whether a finished event is Codex's notify for a
+// session whose hooks have said a prompt started. Notify comes at the end
+// of each of Codex's messages, not only the turn's, so there its Stop hook
+// ends the turn. A Codex without hooks still ends turns with notify.
+func notifyAfterHooks(s *sessTrack, typ string, data map[string]any) bool {
+	return typ == adapters.Finished && str(data, "via") == "notify" && s.SawStart
+}
+
 func (t *Turns) agentEvent(e events.Event) {
 	s, ambiguous := t.resolve(e)
 	if s == nil {
@@ -644,6 +658,9 @@ func (t *Turns) agentEvent(e events.Event) {
 		}
 		return
 	}
+	if notifyAfterHooks(s, e.Type, e.Data) {
+		return
+	}
 	source := str(e.Data, "source")
 	if source == "" {
 		s.Hooked = true
@@ -655,6 +672,13 @@ func (t *Turns) agentEvent(e events.Event) {
 		s.Agent = str(e.Data, "agent")
 	}
 	cur := s.current()
+	if source == "" && cur != nil && cur.Fidelity == "screen" && adapters.CapsFor(s.Agent).Finished &&
+		(e.Type == adapters.Started || e.Type == adapters.Waiting) {
+		// Sent before its hooks said anything (its first prompt, given as
+		// it started), the turn was left for the screen to end. They speak
+		// for it now: its Stop ends it, not a quiet screen.
+		cur.Fidelity = "partial"
+	}
 	switch e.Type {
 	case adapters.Ready:
 		// Turn check's "unfinished, not yours": still running (working) or
@@ -672,6 +696,12 @@ func (t *Turns) agentEvent(e events.Event) {
 			s.set("idle", e)
 		}
 	case adapters.Started:
+		// A question the agent's own hook reported is answered when the
+		// agent says so (a tool, a prompt), not when its screen changes.
+		if source == "screen" && cur != nil && cur.State == "waiting" && lastWait(cur) == "question" {
+			return
+		}
+		s.AsyncAsk = false
 		signal := str(e.Data, "signal")
 		switch {
 		case source == "send":
@@ -728,15 +758,24 @@ func (t *Turns) agentEvent(e events.Event) {
 		}
 		if cur != nil {
 			if cur.State != "waiting" {
-				cur.Waits = append(cur.Waits, Span{Start: e.Time, Reason: str(e.Data, "reason")})
+				cur.Waits = append(cur.Waits, Span{Start: e.Time, Reason: str(e.Data, "reason"), Hooked: source == ""})
 				if len(cur.Waits) > 20 {
 					cur.Waits = cur.Waits[len(cur.Waits)-20:]
 				}
+			} else if n := len(cur.Waits); source == "" && n > 0 && cur.Waits[n-1].End.IsZero() {
+				cur.Waits[n-1].Hooked = true // the screen saw it first
 			}
 			cur.State = "waiting"
 		}
+		s.AsyncAsk = str(e.Data, "question_box") == "async"
 		s.set("waiting", e)
 	case adapters.Finished:
+		// A turn that ends on its own async question (Codex's question box
+		// returns at once, then the turn stops) still waits for the answer.
+		// A question answered within the turn (a structured driver's) ends
+		// with it.
+		asked := cur != nil && cur.State == "waiting" && source == "" && s.AsyncAsk
+		s.AsyncAsk = asked
 		if cur != nil {
 			if source == "screen" || source == "reconcile" {
 				cur.Fidelity = "screen" // its end was read off the screen
@@ -748,6 +787,10 @@ func (t *Turns) agentEvent(e events.Event) {
 			}
 		}
 		s.Reconcile = false
+		if asked {
+			s.set("waiting", e)
+			break
+		}
 		s.set("finished", e)
 		t.kickInbox()
 	case adapters.Exited:
@@ -831,10 +874,12 @@ func (t *Turns) kickInbox() {
 }
 
 // Redundant says whether an agent event would change nothing: a tool use
-// while the agent is already working. Those are frequent, so the box does
-// not publish them.
+// while the agent is already working, which is frequent, or Codex's notify
+// once its hooks are heard (notifyAfterHooks). The box does not publish
+// them.
 func (t *Turns) Redundant(typ string, data map[string]any) bool {
-	if typ != adapters.Started || str(data, "signal") != "tool" {
+	tool := typ == adapters.Started && str(data, "signal") == "tool"
+	if !tool && typ != adapters.Finished {
 		return false
 	}
 	t.mu.Lock()
@@ -844,6 +889,9 @@ func (t *Turns) Redundant(typ string, data map[string]any) bool {
 	s := t.sess[name]
 	if s == nil {
 		return false
+	}
+	if !tool {
+		return notifyAfterHooks(s, typ, data)
 	}
 	return s.State == "running"
 }
@@ -1384,33 +1432,48 @@ func (t *Turns) openForScreen() []string {
 	return out
 }
 
-// screenSeen records a capture and says how many polls it has been the
-// same.
-func (t *Turns) screenSeen(name, screen string) (same int, state string, fidelity string, reconcile bool) {
+// screenEvent records a capture of a session's screen and says what it
+// reports, if anything: the event the screen adapter publishes for it, and
+// its data (pollScreens adds the path).
+func (t *Turns) screenEvent(name, screen string) (string, map[string]any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	s := t.sess[name]
 	if s == nil {
-		return 0, "", "", false
+		return "", nil
 	}
 	if screen == s.lastScreen {
 		s.sameFor++
 	} else {
 		s.lastScreen, s.sameFor = screen, 0
 	}
-	fid := ""
+	fidelity, hookedWait := "", false
 	if tr := s.current(); tr != nil {
-		fid = tr.Fidelity
+		fidelity = tr.Fidelity
+		n := len(tr.Waits)
+		hookedWait = tr.State == "waiting" && n > 0 && tr.Waits[n-1].End.IsZero() && tr.Waits[n-1].Hooked
 	}
-	return s.sameFor, s.State, fid, s.Reconcile
-}
-
-func (t *Turns) forgetScreen(name string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if s := t.sess[name]; s != nil {
+	data := map[string]any{"session": name, "source": "screen"}
+	typ := ""
+	switch seen := adapters.ScreenState(screen); {
+	case seen == "waiting" && s.State != "waiting":
+		typ, data["reason"] = adapters.Waiting, "screen"
+	case hookedWait:
+		// A wait the agent's hooks reported is theirs to end: a screen
+		// that shows no question, or stops changing, may be one it cannot
+		// read (Claude Code's question form, a plan to approve).
+	case seen != "waiting" && s.State == "waiting" && s.sameFor == 0 && fidelity == "screen":
+		typ, data["signal"] = adapters.Started, "tool"
+	case s.sameFor >= screenQuiet && (fidelity == "screen" || s.Reconcile):
+		typ = adapters.Finished
+		if s.Reconcile {
+			data["source"] = "reconcile"
+		}
+	}
+	if typ != "" {
 		s.lastScreen, s.sameFor = "", 0
 	}
+	return typ, data
 }
 
 // save writes the ledger, the inbox, the legacy states and the archive.
@@ -1670,24 +1733,9 @@ func (b *Box) pollScreens(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		same, state, fidelity, reconcile := b.Turns.screenSeen(name, screen)
-		data := map[string]any{"session": name, "path": sess.Dir, "source": "screen"}
-		publish := func(typ string) {
-			b.Turns.forgetScreen(name)
+		if typ, data := b.Turns.screenEvent(name, screen); typ != "" {
+			data["path"] = sess.Dir
 			b.Events.Publish(events.Event{Type: typ, Box: b.Name, Origin: "screen", Data: data})
-		}
-		switch seen := adapters.ScreenState(screen); {
-		case seen == "waiting" && state != "waiting":
-			data["reason"] = "screen"
-			publish(adapters.Waiting)
-		case seen != "waiting" && state == "waiting" && same == 0 && fidelity == "screen":
-			data["signal"] = "tool"
-			publish(adapters.Started)
-		case same >= screenQuiet && (fidelity == "screen" || reconcile):
-			if reconcile {
-				data["source"] = "reconcile"
-			}
-			publish(adapters.Finished)
 		}
 	}
 }
@@ -1716,4 +1764,12 @@ func (t *Turns) waitSessionState(ctx context.Context, name string, want map[stri
 		case <-ch:
 		}
 	}
+}
+
+// lastWait is the reason of the turn's latest wait, or "".
+func lastWait(tr *Turn) string {
+	if n := len(tr.Waits); n > 0 {
+		return tr.Waits[n-1].Reason
+	}
+	return ""
 }
