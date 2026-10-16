@@ -230,7 +230,11 @@ berth session turns devl/SESSION                            # the last ten
 said when it started and ended), `partial` (the agent cannot say when it
 starts, so its turn starts when Shipyard sends the prompt) or `screen` (no hooks
 reported: Shipyard reads the terminal every two seconds, and a screen that stops
-changing ends the turn).
+changing ends the turn). A prompt sent before the agent's hooks said anything,
+such as the first prompt of a task, starts a `screen` turn; once its hooks
+report a start or a wait for it, it becomes `partial` and its own Stop ends
+it. A wait the agent's hooks reported is ended only by them, whatever the
+screen shows.
 
 | Agent | Ready | Started | Waiting | Finished | Through |
 | --- | --- | --- | --- | --- | --- |
@@ -259,7 +263,11 @@ the agent that called it.
 ### In the app
 
 - **Agent Dashboard** (⌘J): every agent on every box, by what it needs:
-  **Needs you**, **Working**, **Done**, **Ready**.
+  **Needs you**, **Working**, **Done**, **Ready**. A project whose work you
+  follow elsewhere, such as on a plugin's own board, can be kept off it in
+  **Settings → Agents → Agent Dashboard**. Its agents then leave the board
+  and its counts, but still show in the sidebar, on Home and in
+  notifications.
 - **Review**: agents' finished work on every box, to approve, send back or
   discard.
 - **Notifications**: when an agent waits for you, on this laptop, and on your
