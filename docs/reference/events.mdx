@@ -42,8 +42,8 @@ and dashes.
 | Event | Data |
 | --- | --- |
 | `agent.ready` | `path`, `agent`, `session` (when the hook knows it) and the tool's own id (below): a new agent at its prompt. After a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged unfinished but not waiting on you, with `source: "turncheck"`, `choice` and `seq`: the session stays `finished`, with `unfinished: true` for `choice: "working"` (something still runs) or `parked: true` for `choice: "parked"` (it waits on a reply or a later time); neither notifies |
-| `agent.started` | the same, with `signal`: `prompt` (working on a prompt) or `tool` (working again after an approval). For an agent that cannot say it started, Shipyard sends it at the send, with `source: "send"` and `turn` |
-| `agent.waiting` | the same, with `reason` (`permission`, `question`): needs you. At a startup question Shipyard sends it itself, with `reason: "startup question"`; after a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged to need you, with `reason: "turn check"`, `source: "turncheck"` and the model's `choice` (`needs_input` or `blocked`) |
+| `agent.started` | the same, with `signal`: `prompt` (working on a prompt) or `tool` (working again after an approval or an answer). For an agent that cannot say it started, Shipyard sends it at the send, with `source: "send"` and `turn` |
+| `agent.waiting` | the same, with `reason` (`permission`, `question`): needs you. Codex's async question box adds `question_box: "async"`: its turn can end before the answer, and the session keeps waiting until you prompt again. At a startup question Shipyard sends it itself, with `reason: "startup question"`; after a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged to need you, with `reason: "turn check"`, `source: "turncheck"` and the model's `choice` (`needs_input` or `blocked`) |
 | `agent.finished` | the same: done with its turn; `status: "error"` when it ended on a failure |
 | `agent.exited` | the same: the agent itself quit |
 | `task.created` | `location`, `name`, `path`, `branch`, `session`, `agent`, `from_session` |
@@ -64,9 +64,12 @@ Cursor `conversation_id` and `status`). A hook names the Shipyard session it
 runs in as `session`, from `$BERTH_SESSION`. Hooks spooled while berthd was
 down carry `spooled: true` and the time they ran. Shipyard does not publish a
 tool use (`agent.started` with `signal: "tool"`) for an agent that is
-already working: it would change nothing. When an agent's hooks cannot tell,
-Shipyard reads the terminal and sends these itself with `origin: "screen"` and
-`source: "screen"`. See [turns](/concepts/sessions-and-agents#turns).
+already working: it would change nothing. Nor does it publish Codex's
+`notify` (`agent.finished` with `via: "notify"`) once the session's hooks
+have said a prompt started: notify comes at the end of each of Codex's
+messages, and its `Stop` hook ends the turn. When an agent's hooks cannot
+tell, Shipyard reads the terminal and sends these itself with
+`origin: "screen"` and `source: "screen"`. See [turns](/concepts/sessions-and-agents#turns).
 
 ### Locations and worktrees
 

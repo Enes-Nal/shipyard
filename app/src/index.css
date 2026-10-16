@@ -69,6 +69,37 @@
     --spacing-row-pad: var(--row-pad);
     --spacing-row-gap: var(--row-gap);
     --spacing-side-row: var(--side-row);
+    /* The type scale, Settings' and every page's: text-page-title, text-title,
+       text-subtitle, text-section, text-row, text-desc, text-label, text-meta, text-mono.
+       Colour stays with the caller (text-muted-foreground for the quiet ones);
+       a font-* class beside one still wins over its weight. lib/utils.ts
+       tells cn() these are sizes, so they merge with colours. */
+    --text-page-title: 28px;
+    --text-page-title--line-height: 34px;
+    --text-page-title--letter-spacing: -0.02em;
+    --text-page-title--font-weight: 600;
+    /* A dialog's, sheet's or empty state's title: a step under the page's. */
+    --text-title: 20px;
+    --text-title--line-height: 26px;
+    --text-title--letter-spacing: -0.015em;
+    --text-title--font-weight: 600;
+    --text-subtitle: 14px;
+    --text-subtitle--line-height: 20px;
+    --text-section: 13px;
+    --text-section--line-height: 16px;
+    --text-section--font-weight: 600;
+    --text-row: 14px;
+    --text-row--line-height: 18px;
+    --text-row--font-weight: 500;
+    --text-desc: 13px;
+    --text-desc--line-height: 19px;
+    --text-label: 12px;
+    --text-label--line-height: 16px;
+    --text-label--font-weight: 500;
+    --text-meta: 12px;
+    --text-meta--line-height: 16px;
+    --text-mono: 12.5px;
+    --text-mono--line-height: 18px;
   @keyframes skeleton {
   to {
     background-position: -200% 0;

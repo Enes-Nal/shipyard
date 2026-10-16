@@ -41,10 +41,10 @@ export interface PlanProps {
 function StepHead({ s }: { s: PlanStep }) {
   return (
     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-      <span className="shrink-0 font-medium text-[13px]">{s.title}</span>
+      <span className="shrink-0 text-row">{s.title}</span>
       {s.sudo && <SudoTag className="self-center" />}
       {s.berth && <span className="self-center"><BerthTag /></span>}
-      {s.detail && <span className="min-w-0 truncate text-muted-foreground text-xs">{s.detail}</span>}
+      {s.detail && <span className="min-w-0 truncate text-desc text-muted-foreground">{s.detail}</span>}
     </div>
   );
 }
@@ -60,7 +60,7 @@ function ProjectHead({ p, view }: { p: ProjectView; view: TeamView }) {
         {p.private && <PrivateTag />}
         <SourceTag source={p.source} />
       </div>
-      {facts.length > 0 && <p className="mt-0.5 text-muted-foreground text-xs">{facts.join(" · ")}</p>}
+      {facts.length > 0 && <p className="mt-0.5 text-meta text-muted-foreground">{facts.join(" · ")}</p>}
     </div>
   );
 }
@@ -155,7 +155,7 @@ export function Plan(p: PlanProps) {
   return (
     <div data-testid="team-plan">
       {p.update && <UpdateDiff update={p.update} />}
-      {!run && view.setup?.description && <p className="mb-5 max-w-[68ch] text-muted-foreground text-sm leading-relaxed @max-[819px]:hidden">{view.setup.description} Open any line for its exact commands.</p>}
+      {!run && view.setup?.description && <p className="mb-5 max-w-[68ch] text-muted-foreground text-subtitle @max-[819px]:hidden">{view.setup.description} Open any line for its exact commands.</p>}
 
       <Section id="plan-box" title="On your box, once" aside={boxDone ? `${plural(steps.length, "step")} done${secs ? ` in ${durationOf(secs)}` : ""}` : `${plural(steps.length, "step")}${sudo ? ` · ${sudo} ask for your password` : ""}`}>
         <div className={card}>
@@ -183,7 +183,7 @@ export function Plan(p: PlanProps) {
                   open={!!open[s.id]}
                   onToggle={() => toggle(s.id)}
                   detail={<Cmds lines={s.commands} />}
-                  trailing={state === "done" && st?.secs !== undefined ? <span className="text-muted-foreground text-xs tabular-nums">{durationOf(st.secs)}</span> : state === "skipped" ? <span className="text-muted-foreground text-xs">already done</span> : undefined}
+                  trailing={state === "done" && st?.secs !== undefined ? <span className="text-meta text-muted-foreground tabular-nums">{durationOf(st.secs)}</span> : state === "skipped" ? <span className="text-muted-foreground text-xs">already done</span> : undefined}
                 >
                   {run && state === "waiting" && s.id === "github" && st?.code && <DeviceCode code={st.code} url={st.url} />}
                   {run && state === "waiting" && s.id !== "github" && (
@@ -199,8 +199,8 @@ export function Plan(p: PlanProps) {
                   )}
                   {run && state === "failed" && (
                     <div className="space-y-2.5">
-                      {st?.error && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-destructive/25 bg-background px-3 py-2 font-mono text-[11.5px] text-destructive-foreground leading-relaxed">{st.error}</pre>}
-                      <p className="text-muted-foreground text-xs">Fix it on {run.box}, then retry: the steps above are kept, and this one checks first.</p>
+                      {st?.error && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-destructive/25 bg-background px-3 py-2 font-mono text-mono text-destructive-foreground">{st.error}</pre>}
+                      <p className="text-desc text-muted-foreground">Fix it on {run.box}, then retry: the steps above are kept, and this one checks first.</p>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" onClick={() => p.onRetry(s.id)}>
                           <RotateCwIcon /> Retry from {shortTitle(s.title)}
@@ -238,7 +238,7 @@ export function Plan(p: PlanProps) {
                         <span className="font-medium font-mono text-[13px]">{x.repo}</span>
                         <LockIcon className="size-3 text-muted-foreground" />
                       </div>
-                      <p className="mt-0.5 text-muted-foreground text-xs">You can't read it, so it's left out. Ask an admin{view.setup?.contact ? ` in ${view.setup.contact}` : ""}, then check again.</p>
+                      <p className="mt-0.5 text-desc text-muted-foreground">You can't read it, so it's left out. Ask an admin{view.setup?.contact ? ` in ${view.setup.contact}` : ""}, then check again.</p>
                     </div>
                   }
                 />
@@ -265,7 +265,7 @@ export function Plan(p: PlanProps) {
                       // its last line here, and the terminal a click away,
                       // in front when it asks something.
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className={cn("max-w-48 truncate text-xs", r.waiting ? "text-warning-foreground" : "text-muted-foreground")} data-testid={`repo-line-${x.id}`}>
+                        <span className={cn("max-w-48 truncate text-meta", r.waiting ? "text-warning-foreground" : "text-muted-foreground")} data-testid={`repo-line-${x.id}`}>
                           {r.waiting ? "waiting for you" : (r.line ?? "setting up")}
                         </span>
                         <Button size="xs" variant={r.waiting ? "default" : "ghost"} onClick={() => p.onOpenSession?.(r.session!)} data-testid={`repo-terminal-${x.id}`}>
@@ -273,9 +273,9 @@ export function Plan(p: PlanProps) {
                         </Button>
                       </span>
                     ) : r?.state === "cloning" || r?.state === "setting-up" ? (
-                      <span className="max-w-48 truncate text-muted-foreground text-xs">{r.line ?? (r.state === "cloning" ? "cloning" : "setting up")}</span>
+                      <span className="max-w-48 truncate text-meta text-muted-foreground">{r.line ?? (r.state === "cloning" ? "cloning" : "setting up")}</span>
                     ) : r?.state === "queued" ? (
-                      <span className="text-muted-foreground text-xs">queued</span>
+                      <span className="text-meta text-muted-foreground">queued</span>
                     ) : undefined
                   ) : !x.required ? (
                     <Checkbox className="not-dark:border-foreground/25" aria-label={`Set up ${x.repo}`} checked={p.picked.has(x.id)} onCheckedChange={(v) => p.onPick(x.id, !!v)} />
@@ -286,13 +286,13 @@ export function Plan(p: PlanProps) {
                   <FoundClones id={x.id} repo={x.repo} clones={x.existing} use={p.use?.[x.id] ?? ""} onUse={(path) => p.onUse?.(x.id, path)} note={x.existing_note} initDetail={x.init_detail} onPull={p.onPull ? (c) => p.onPull!(x, c) : undefined} />
                 )}
                 {run && r && adoptedLine(r) && (
-                  <p data-testid={`adopted-${x.id}`} className="text-muted-foreground text-xs">
+                  <p data-testid={`adopted-${x.id}`} className="text-muted-foreground text-meta">
                     {adoptedLine(r)}
                   </p>
                 )}
                 {r?.state === "failed" && (
                   <div className="space-y-2">
-                    {r.error && <pre className="whitespace-pre-wrap rounded-md border border-destructive/25 bg-background px-3 py-2 font-mono text-[11.5px] text-destructive-foreground">{r.error}</pre>}
+                    {r.error && <pre className="whitespace-pre-wrap rounded-md border border-destructive/25 bg-background px-3 py-2 font-mono text-mono text-destructive-foreground">{r.error}</pre>}
                     <Button size="sm" onClick={() => p.onRetry(x.id)}>
                       <RotateCwIcon /> Retry {x.id}
                     </Button>
@@ -307,11 +307,11 @@ export function Plan(p: PlanProps) {
               testId={`repo-${r.id}`}
               state={r.state === "queued" ? "todo" : r.state}
               head={<span className="font-medium font-mono text-[13px]">{r.repo}</span>}
-              trailing={r.state === "ready" && run?.phase !== "done" ? <Button size="xs" onClick={() => p.onStartOn(r.id)}>Start on {r.id}</Button> : r.line ? <span className="text-muted-foreground text-xs">{r.line}</span> : undefined}
+              trailing={r.state === "ready" && run?.phase !== "done" ? <Button size="xs" onClick={() => p.onStartOn(r.id)}>Start on {r.id}</Button> : r.line ? <span className="text-meta text-muted-foreground">{r.line}</span> : undefined}
             />
           ))}
           {run && unreadable.length > 0 && (
-            <p className="flex items-center gap-1.5 px-4 py-2 text-muted-foreground text-xs">
+            <p className="flex items-center gap-1.5 px-4 py-2 text-meta text-muted-foreground">
               <LockIcon className="size-3" /> Left out: {unreadable.map((u) => u.repo).join(", ")} (you can't read {unreadable.length === 1 ? "it" : "them"} yet)
             </p>
           )}
@@ -336,7 +336,7 @@ export function Plan(p: PlanProps) {
                 )}
               </>
             )}
-            <span className="ml-auto text-muted-foreground text-xs">Values stay on your box, never in git</span>
+            <span className="ml-auto text-meta text-muted-foreground">Values stay on your box, never in git</span>
           </div>
         </Section>
       )}
@@ -382,7 +382,7 @@ export function UpdateDiff({ update }: { update: TeamUpdate }) {
                 <span className="text-[10.5px] text-muted-foreground uppercase tracking-wide">{c.area === "project" ? "repo" : c.area}</span>
                 {c.sudo && <SudoTag />}
               </p>
-              {c.detail && <p className="text-muted-foreground text-xs">{c.detail}</p>}
+              {c.detail && <p className="text-desc text-muted-foreground">{c.detail}</p>}
             </div>
           </li>
         ))}

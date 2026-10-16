@@ -80,10 +80,10 @@ export function ProjectView({ box, location }: { box: string; location: string }
     <div className="flex h-full flex-col">
       <ViewHeader
         title={
-          <span className="flex items-center gap-2">
-            <FolderGitIcon className="size-3.5 text-muted-foreground" />
+          <span className="flex items-baseline gap-2">
+            <FolderGitIcon className="size-5 self-center text-muted-foreground" />
             {location}
-            <span className="font-normal text-muted-foreground">on</span>
+            <span className="font-normal text-muted-foreground text-subtitle">on</span>
             <MemberSwitcher box={box} location={location} />
           </span>
         }
@@ -91,7 +91,7 @@ export function ProjectView({ box, location }: { box: string; location: string }
           repo ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <GitCommitHorizontalIcon className="size-3 shrink-0" />
-              <code className="truncate font-mono">{config?.repo_path}</code>
+              <code className="truncate font-mono text-mono">{config?.repo_path}</code>
               <span className="shrink-0 rounded-md border px-1.5 text-[11px]">committed in the repo</span>
               {trustPending(trust) ? (
                 <span className="shrink-0 rounded-md border border-warning/30 px-1.5 text-[11px] text-warning-foreground">not trusted on {box}</span>
@@ -216,7 +216,7 @@ function PortsSection({ repo, draft, setDraft, box }: { repo: RepoConfig | null;
     <Section id="ports" title="Ports" description="Each worktree gets its own block of ports, so every worktree's servers can run at once.">
       <div className="flex items-center gap-6 px-4 py-3.5">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-row">
             Ports per worktree
             {source && <SourceBadge source={source} box={box} field="ports" />}
           </div>
@@ -244,7 +244,7 @@ function PortsSection({ repo, draft, setDraft, box }: { repo: RepoConfig | null;
 function MemberSwitcher({ box, location }: { box: string; location: string }) {
   const { projects } = useProjects();
   const p = projects.find((x) => x.members.some((m) => m.box.name === box && m.loc.name === location));
-  if (!p || p.members.length < 2) return <span className="font-normal text-muted-foreground">{box}</span>;
+  if (!p || p.members.length < 2) return <span className="font-normal text-muted-foreground text-subtitle">{box}</span>;
   return (
     <span className="inline-flex items-center gap-0.5 rounded-md border p-0.5 font-normal text-xs" role="group" aria-label="Box">
       {p.members.map((m) => (

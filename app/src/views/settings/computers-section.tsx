@@ -33,7 +33,7 @@ export function ComputersSection() {
       title="Computers"
       description={
         <>
-          Use Shipyard on more than one computer, a MacBook and a Mac mini say. Each pairs with your boxes with its own key, and they all work at once. <Code>berth invite</Code> and <Code>berth join</Code> do the same.
+          Use Shipyard on more than one computer. Each pairs with your boxes with its own key.
         </>
       }
     >
@@ -109,11 +109,11 @@ function BoxComputers({ box }: { box: BoxStatus }) {
       }
     >
       {!online ? (
-        <p className="px-4 py-3 text-muted-foreground text-sm">{box.name} is {box.state}, so its list can't be read.</p>
+        <p className="py-3.5 text-muted-foreground text-sm">{box.name} is {box.state}, so its list can't be read.</p>
       ) : error ? (
         <BoxError className="mx-4 my-3" box={box.name} error={error} what="its paired computers" />
       ) : !list ? (
-        <div className="flex items-center gap-2 px-4 py-3 text-muted-foreground text-sm">
+        <div className="flex items-center gap-2 py-3.5 text-muted-foreground text-sm">
           <Spinner className="size-4" /> Loading…
         </div>
       ) : (
@@ -127,7 +127,7 @@ function ComputerRow({ box, computer, onRemoved }: { box: string; computer: Trus
   const [removing, setRemoving] = useState(false);
   const Icon = computer.you ? LaptopIcon : MonitorIcon;
   return (
-    <div className="flex min-h-12 items-center gap-3 px-4 py-2.5">
+    <div className="flex min-h-12 items-center gap-3 py-3">
       <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">

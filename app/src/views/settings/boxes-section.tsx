@@ -42,7 +42,7 @@ export function BoxesSection() {
       title="Boxes"
       description={
         <>
-          The machines your agents run on. Each runs berthd; this computer only connects to them. <Code>berth boxes</Code> shows the same.
+          The machines your agents run on. This one only connects.
         </>
       }
     >
@@ -111,24 +111,24 @@ function BoxRow({ box }: { box: BoxStatus }) {
   const details = [box.address, box.network && `via ${box.network}`, build, info?.os && info.arch && `${info.os}/${info.arch}`].filter(Boolean);
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center gap-3">
+    <div className="py-4">
+      <div className="flex items-start gap-3">
         <Tip label={boxWhy(box.name, box, state)}>
-          <StatusDot state={state} className="size-2" />
+          <StatusDot state={state} className="mt-[7px] size-2" />
         </Tip>
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 text-sm">
-            <span>{box.name}</span>
+          <div className="flex items-baseline gap-2 text-[13px]">
+            <span className="font-semibold text-base leading-5">{box.name}</span>
             {box.local && <span className="rounded border px-1 text-[10px] text-muted-foreground uppercase tracking-wide">This Mac</span>}
-            <span className={cn("text-xs", state === "online" ? "text-muted-foreground" : state === "outdated" ? "text-info-foreground" : state === "unreachable" ? "text-destructive-foreground" : "text-muted-foreground")}>
+            <span className={cn("text-[13px]", state === "online" ? "text-muted-foreground" : state === "outdated" ? "text-info-foreground" : state === "unreachable" ? "text-destructive-foreground" : "text-muted-foreground")}>
               {state === "online" && box.latency_ms != null ? latencyText(box.latency_ms, box.link) : BOX_WORDS[state].word}
             </span>
           </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground">{details.join(" · ")}</div>
+          <div className="mt-0.5 truncate font-mono text-muted-foreground text-xs">{details.join(" · ")}</div>
           <BoxRoutes box={box} open={routesOpen} onOpenChange={setRoutesOpen} />
           {online && <LinkNotes box={box} />}
           {problem && (
-            <div className="mt-0.5 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-[13px] text-muted-foreground leading-[19px]">
               {problem.message}
               <ErrorDetails text={problem.details} className="text-[11px]" />
             </div>
@@ -195,8 +195,8 @@ function BoxRow({ box }: { box: BoxStatus }) {
       </div>
       {routesOpen && !box.local && <BoxRouteList box={box} />}
       {/* The agent's browser can't start here (Chromium's sandbox), or runs without it. */}
-      {online && <BrowserSandboxCard box={box.name} full className="mt-3" />}
-      {online && <BoxProcessesCard box={box.name} className="mt-3" />}
+      {online && <BrowserSandboxCard box={box.name} full className="mt-3 ml-5" />}
+      {online && <BoxProcessesCard box={box.name} className="mt-3 ml-5" />}
       {online && <BoxAgents box={box.name} />}
       {online && <BoxOnePasswordNote box={box.name} />}
       {update && update.state !== "queued" && <CommandLog className="mt-3" lines={update.lines ?? []} done={update.state === "done"} error={update.error} />}
@@ -239,7 +239,7 @@ function LinkNotes({ box }: { box: BoxStatus }) {
   if (!slow && !relay) return null;
   const latency = box.link?.slow ? latencyText(box.latency_ms, box.link) : undefined;
   return (
-    <div className="mt-0.5 space-y-0.5 text-[11px] text-muted-foreground" data-testid="box-link">
+    <div className="mt-1 space-y-0.5 text-[13px] text-muted-foreground leading-[19px]" data-testid="box-link">
       {slow && (
         <div>
           {slow}
@@ -281,8 +281,8 @@ function BoxAgents({ box }: { box: string }) {
     }
   };
   return (
-    <div className="mt-2 flex items-start gap-3" data-testid="box-agents">
-      <div className="min-w-0 flex-1 space-y-0.5 text-[11px]">
+    <div className="mt-2 ml-5 flex items-start gap-3" data-testid="box-agents">
+      <div className="min-w-0 flex-1 space-y-0.5 text-xs">
         {paths.length ? (
           paths.map((a) => (
             <div key={a.id} className="flex min-w-0 items-baseline gap-1.5">

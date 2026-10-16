@@ -170,12 +170,14 @@ notifications follow; it still takes prompts as if done, so held prompts
 and other agents' reports are delivered. Unfinished work that needs
 nothing from you is one of two kinds, and neither notifies. **Working**:
 something it started is still running and it acts when that ends (a
-delegated task, a build, a deploy, a test run, or a watcher it started);
-the session stays `finished` with `unfinished: true`. **Parked**: nothing
-runs for it, and it waits on someone else (a reply, another team, a
-vendor) or a later time ("check again in 24 hours", "continue on
-Thursday"); the session stays `finished` with `parked: true` and shows as
-**Idle**. Both are `agent.ready` with `source: "turncheck"` and the
+delegated task, a build, a deploy, a test run, or a watcher or background
+task it started); the session stays `finished` with `unfinished: true`.
+**Parked**: nothing runs for it, and it waits on someone else (a reply, a
+review, another team, a vendor) or a later time, such as a check-in it
+scheduled for itself ("tomorrow morning I'll check the numbers", "check
+again in 24 hours", "continue on Thursday"), even with the machine kept
+awake for it; the session stays `finished` with `parked: true` and shows
+as **Idle**. Both are `agent.ready` with `source: "turncheck"` and the
 model's `choice` (`working` or `parked`); both take prompts and end waits
 as done, and stay out of Review, so Done holds only work that is done. A
 dev server or shell left running after the agent is done is not work in
@@ -230,7 +232,11 @@ berth session turns devl/SESSION                            # the last ten
 said when it started and ended), `partial` (the agent cannot say when it
 starts, so its turn starts when Shipyard sends the prompt) or `screen` (no hooks
 reported: Shipyard reads the terminal every two seconds, and a screen that stops
-changing ends the turn).
+changing ends the turn). A prompt sent before the agent's hooks said anything,
+such as the first prompt of a task, starts a `screen` turn; once its hooks
+report a start or a wait for it, it becomes `partial` and its own Stop ends
+it. A wait the agent's hooks reported is ended only by them, whatever the
+screen shows.
 
 | Agent | Ready | Started | Waiting | Finished | Through |
 | --- | --- | --- | --- | --- | --- |
@@ -259,7 +265,11 @@ the agent that called it.
 ### In the app
 
 - **Agent Dashboard** (⌘J): every agent on every box, by what it needs:
-  **Needs you**, **Working**, **Done**, **Ready**.
+  **Needs you**, **Working**, **Done**, **Ready**. A project whose work you
+  follow elsewhere, such as on a plugin's own board, can be kept off it in
+  **Settings → Agents → Agent Dashboard**. Its agents then leave the board
+  and its counts, but still show in the sidebar, on Home and in
+  notifications.
 - **Review**: agents' finished work on every box, to approve, send back or
   discard.
 - **Notifications**: when an agent waits for you, on this laptop, and on your

@@ -62,11 +62,11 @@ export function StepCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs tabular-nums">{index + 1}.</span>
-            <h3 className="truncate font-medium text-sm">{meta.label}</h3>
+            <span className="text-meta text-muted-foreground tabular-nums">{index + 1}.</span>
+            <h3 className="truncate text-section">{meta.label}</h3>
             {result && <ResultBadge result={result} />}
           </div>
-          <p className="truncate text-muted-foreground text-xs">{meta.hint}</p>
+          <p className="truncate text-desc text-muted-foreground">{meta.hint}</p>
         </div>
         {!readOnly && (
           <Menu>
@@ -133,7 +133,7 @@ export function StepCard({
 function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p: Partial<Step>): void; variables: Variable[]; agents: AgentPreset[]; readOnly?: boolean }) {
   const timeout = (placeholder: string) => (
     <label className="block w-32">
-      <span className="mb-1 block font-medium text-muted-foreground text-xs">Timeout</span>
+      <span className="mb-1 block text-label text-muted-foreground">Timeout</span>
       <Input value={step.timeout ?? ""} readOnly={readOnly} onChange={(e) => set({ timeout: e.target.value || undefined })} placeholder={placeholder} className="font-mono text-xs" />
     </label>
   );
@@ -142,7 +142,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
       return (
         <>
           <TemplateField label="Command" mono value={step.command ?? ""} onChange={(command) => set({ command })} variables={variables} placeholder="pnpm test" readOnly={readOnly} />
-          <p className="text-muted-foreground text-xs">Variables reach the command as quoted environment variables ($BERTH_FLOW_…), so a PR comment or branch name is always text, never run.</p>
+          <p className="text-desc text-muted-foreground">Variables reach the command as quoted environment variables ($BERTH_FLOW_…), so a PR comment or branch name is always text, never run.</p>
           {timeout("10m")}
         </>
       );
@@ -151,7 +151,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
         <>
           <TemplateField label="Prompt" multiline value={step.text ?? ""} onChange={(text) => set({ text })} variables={variables} placeholder="The tests failed: {{prev.output}} — fix them." readOnly={readOnly} />
           <label className="block">
-            <span className="mb-1 block font-medium text-muted-foreground text-xs">Session</span>
+            <span className="mb-1 block text-label text-muted-foreground">Session</span>
             <Input value={step.session ?? ""} readOnly={readOnly} onChange={(e) => set({ session: e.target.value || undefined })} placeholder="The agent that triggered this flow" className="font-mono text-xs" />
           </label>
         </>
@@ -160,7 +160,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
       return (
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <span className="mb-1 block font-medium text-muted-foreground text-xs">Until the agent is</span>
+            <span className="mb-1 block text-label text-muted-foreground">Until the agent is</span>
             <div className="flex items-center gap-1">
               {WAIT_STATES.map((s) => {
                 const on = (step.for ?? ["finished", "waiting"]).includes(s.value);
@@ -192,7 +192,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
         <>
           <div className="flex flex-wrap items-end gap-4">
             <div className="w-48">
-              <span className="mb-1 block font-medium text-muted-foreground text-xs">Agent</span>
+              <span className="mb-1 block text-label text-muted-foreground">Agent</span>
               <SimpleSelect
                 value={step.agent ?? ""}
                 disabled={readOnly}
@@ -206,7 +206,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
             </label>
             {step.new_worktree && (
               <label className="block w-44">
-                <span className="mb-1 block font-medium text-muted-foreground text-xs">Worktree name</span>
+                <span className="mb-1 block text-label text-muted-foreground">Worktree name</span>
                 <Input value={step.name ?? ""} readOnly={readOnly} onChange={(e) => set({ name: e.target.value || undefined })} placeholder="{{worktree.name}}-review" className="font-mono text-xs" />
               </label>
             )}
@@ -230,7 +230,7 @@ function Fields({ step, set, variables, agents, readOnly }: { step: Step; set(p:
         <>
           <TemplateField label="URL" mono value={step.url ?? ""} onChange={(url) => set({ url })} variables={variables} placeholder="https://hooks.slack.com/services/…" readOnly={readOnly} />
           <TemplateField label="JSON body" mono multiline value={step.text ?? ""} onChange={(text) => set({ text: text || undefined })} variables={variables} placeholder="Empty sends the run's context" readOnly={readOnly} />
-          <p className="text-muted-foreground text-xs">Public addresses only; private ones must be allowed in ~/.berth/network.json on the box.</p>
+          <p className="text-desc text-muted-foreground">Public addresses only; private ones must be allowed in ~/.berth/network.json on the box.</p>
         </>
       );
   }
@@ -257,7 +257,7 @@ function ResultOutput({ result }: { result: StepRun }) {
         {result.error ? "Error" : "Output"}
       </button>
       {open && (
-        <pre className="mx-3.5 mb-3 max-h-56 overflow-auto rounded-md bg-muted/60 p-2 font-mono text-[11px] text-muted-foreground leading-snug">
+        <pre className="mx-3.5 mb-3 max-h-56 overflow-auto rounded-md bg-muted/60 p-2 font-mono text-mono text-muted-foreground">
           {[result.error, result.output].filter(Boolean).join("\n")}
         </pre>
       )}

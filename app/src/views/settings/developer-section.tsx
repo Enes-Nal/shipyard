@@ -85,7 +85,7 @@ export function DeveloperSection() {
   return (
     <SettingsPage
       title="Developer"
-      description="Tools for working on Shipyard itself. Resets only clear this window's own memory of tabs and preferences; your agent, ~/.berth and every box stay exactly as they are. Shift-click Settings in the sidebar to come straight here."
+      description="For working on Shipyard itself. Resets clear only this window's memory; your boxes stay as they are."
     >
       <SettingsGroup title="Reset">
         <SettingsRow label="Reset workspaces" description="Forget open tabs, splits and each worktree's layout. Sessions keep running on their boxes.">
@@ -187,7 +187,7 @@ export function DeveloperSection() {
             </Button>
           </SettingsRow>
         )}
-        <Collapsible className="px-4 py-3">
+        <Collapsible className="py-3.5">
           <CollapsibleTrigger className="group flex w-full items-center gap-1.5 text-left text-sm">
             <ChevronRightIcon className="size-3.5 text-muted-foreground transition-transform group-data-panel-open:rotate-90" />
             Agent status

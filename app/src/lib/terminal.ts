@@ -531,6 +531,10 @@ async function createGhostty(host: HTMLElement, colors: TerminalColors, prefs: T
   // both renderers.
   const sm = (t as unknown as { selectionManager?: { copyToClipboard?: (text: string) => Promise<void> } }).selectionManager;
   if (sm?.copyToClipboard) sm.copyToClipboard = async () => {};
+  // open() makes the host contenteditable and focus() focuses the host, so
+  // the browser blinked its own text caret there, as tall as the canvas, at
+  // the terminal's left edge. The terminal draws its own cursor.
+  host.style.caretColor = "transparent";
   keepLastColumn(t);
   oneReadPerFrame(t);
   const frames = drawOnDemand(t, host, prefs.cursorBlink);

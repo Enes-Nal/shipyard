@@ -40,8 +40,12 @@ test("Labs can be turned off and on in Settings", async ({ app }) => {
   await expect(toggle).toBeChecked();
   await toggle.click();
   await expect.poll(() => app.stored("berth.prefs")).toMatchObject({ labs: false, labsChosen: true });
+  // Settings has the window; the sidebar is back once it closes.
+  await app.leaveSettings();
   await expect(app.page.getByTestId("nav-home")).toHaveText(/Agent Dashboard/);
+  await app.openSettings("labs");
   await toggle.click();
+  await app.leaveSettings();
   await expect(app.page.getByTestId("nav-home")).toHaveText(/Home/);
 });
 
