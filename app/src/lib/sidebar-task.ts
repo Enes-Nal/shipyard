@@ -18,11 +18,12 @@ export function shortAgo(iso: string | undefined, now: number): string {
 }
 
 // boxesLine is the sidebar foot's words for the boxes: the ones online by
-// name ("devl, gpu online"), or how many when there are more than three.
+// name ("devl, gpu online"), or how many when more than two are up, so the
+// line never runs past the sidebar ("3 of 4 boxes online").
 export function boxesLine(boxes: { name: string; online: boolean }[]): string {
   if (!boxes.length) return "No boxes yet";
   const up = boxes.filter((b) => b.online).map((b) => b.name);
   if (!up.length) return boxes.length === 1 ? `${boxes[0].name} is offline` : "No boxes online";
-  if (up.length > 3) return `${up.length} of ${boxes.length} boxes online`;
+  if (up.length > 2) return `${up.length} of ${boxes.length} boxes online`;
   return `${up.join(", ")} online`;
 }

@@ -40,5 +40,6 @@ test("the foot names the boxes that are online", () => {
     "No boxes online",
   );
   assert.equal(boxesLine([]), "No boxes yet");
+  assert.equal(boxesLine(["cal", "devl", "omarchy", "mac-test"].map((name) => ({ name, online: name !== "mac-test" }))), "3 of 4 boxes online");
   assert.equal(boxesLine(["a", "b", "c", "d", "e"].map((name) => ({ name, online: name !== "e" }))), "4 of 5 boxes online");
 });
