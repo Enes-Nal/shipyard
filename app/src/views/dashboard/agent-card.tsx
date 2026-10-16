@@ -93,19 +93,19 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
           {selecting && <Checkbox checked={!!selected} tabIndex={-1} aria-hidden className="pointer-events-none" />}
           <AgentIcon agent={agentOf(session)} />
           <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-            <span className="min-w-0 truncate font-medium text-[13px]">{title}</span>
+            <span className="min-w-0 truncate text-row">{title}</span>
             {/* Several agents in one worktree: which one this is. */}
             {!work && crowded && (
               <Tip label={`Session ${session.name}`}>
-                <span className="shrink-0 text-[11px] text-muted-foreground">{name}</span>
+                <span className="shrink-0 text-meta text-muted-foreground">{name}</span>
               </Tip>
             )}
           </span>
           <Tip label={`Since ${new Date(since).toLocaleString()}`}>
-            <span className={cn("shrink-0 font-mono text-[11px] tabular-nums", state === "waiting" ? "text-warning-foreground" : "text-muted-foreground")}>{duration(now - new Date(since).getTime())}</span>
+            <span className={cn("shrink-0 font-mono text-meta tabular-nums", state === "waiting" ? "text-warning-foreground" : "text-muted-foreground")}>{duration(now - new Date(since).getTime())}</span>
           </Tip>
         </div>
-        <div className="mt-0.5 truncate pl-5.5 text-[11px] text-muted-foreground">
+        <div className="mt-0.5 truncate pl-5.5 text-meta text-muted-foreground">
           {work && `${agent} · ${place} · `}
           {box}
           {where && !(work && where.worktree.main) && ` · ${where.location.name}`}
@@ -115,7 +115,7 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
         {/* Its turn ended, but turn check read the work as still going on. */}
         {state === "running" && session.unfinished && (
           <Tip label="Its turn ended while its work runs on: a delegated task, a build, a deploy or a watcher. It picks up by itself.">
-            <div className="mt-1 flex w-fit items-center gap-1 pl-5.5 text-[11px] text-muted-foreground">
+            <div className="mt-1 flex w-fit items-center gap-1 pl-5.5 text-meta text-muted-foreground">
               <HourglassIcon className="size-3" aria-hidden />
               Waiting on its work
             </div>
@@ -124,14 +124,14 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
         {/* Turn check read the work as parked: nothing runs, nothing needs you. */}
         {state === "ready" && session.parked && (
           <Tip label="Its work is paused until someone else replies or a later time. Nothing runs and nothing needs you; it picks up by itself.">
-            <div className="mt-1 flex w-fit items-center gap-1 pl-5.5 text-[11px] text-muted-foreground">
+            <div className="mt-1 flex w-fit items-center gap-1 pl-5.5 text-meta text-muted-foreground">
               <HourglassIcon className="size-3" aria-hidden />
               Parked: waiting on a reply or a later time
             </div>
           </Tip>
         )}
         {prompt && (!work || !prompt.startsWith(work.replace(/…$/, ""))) && (
-          <div className="mt-1 truncate pl-5.5 text-[11px] text-foreground/70 italic" title={prompt}>
+          <div className="mt-1 truncate pl-5.5 text-meta text-foreground/70 italic" title={prompt}>
             “{prompt}”
           </div>
         )}

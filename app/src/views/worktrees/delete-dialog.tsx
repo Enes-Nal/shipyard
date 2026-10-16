@@ -75,15 +75,15 @@ export function DeleteDialog({ rows, progress, running, onRun, onClose, archive 
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{r.name}</span>
                   {p?.state === "failed" ? (
-                    <span className="block whitespace-normal break-words text-destructive-foreground text-xs">
+                    <span className="block whitespace-normal break-words text-meta text-destructive-foreground">
                       {p.message}
                     </span>
                   ) : (
-                    <span className="block truncate font-mono text-[11px] text-muted-foreground">{r.branch}</span>
+                    <span className="block truncate font-mono text-meta text-muted-foreground">{r.branch}</span>
                   )}
                 </span>
                 {(r.changed > 0 || r.untracked > 0) && !p && (
-                  <span className="shrink-0 text-[11px] text-warning-foreground tabular-nums">{[r.changed && `${r.changed} changed`, r.untracked && `${r.untracked} untracked`].filter(Boolean).join(", ")}</span>
+                  <span className="shrink-0 text-meta text-warning-foreground tabular-nums">{[r.changed && `${r.changed} changed`, r.untracked && `${r.untracked} untracked`].filter(Boolean).join(", ")}</span>
                 )}
                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{r.box}</span>
               </li>
@@ -101,7 +101,7 @@ export function DeleteDialog({ rows, progress, running, onRun, onClose, archive 
               <Checkbox checked={force} onCheckedChange={(v) => setForce(!!v)} className="mt-0.5" />
               <span>
                 Even with uncommitted changes
-                <span className={cn("block text-muted-foreground text-xs", dirty && !force && "text-warning-foreground")}>
+                <span className={cn("block text-meta text-muted-foreground", dirty && !force && "text-warning-foreground")}>
                   {dirty ? `${dirty} ${dirty === 1 ? "has" : "have"} work git would lose; without this, ${dirty === 1 ? "it is" : "they are"} kept.` : "Without this, git refuses when there is work it would lose."}
                 </span>
               </span>

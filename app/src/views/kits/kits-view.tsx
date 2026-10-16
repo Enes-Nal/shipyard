@@ -132,10 +132,10 @@ function KitCard({ kit, installed }: { kit: KitInfo; installed: InstalledKitOn[]
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
-              <span className="truncate font-medium text-sm">{kit.name}</span>
-              {kit.version && <span className="shrink-0 font-mono text-[11px] text-muted-foreground">v{kit.version}</span>}
+              <span className="truncate text-row">{kit.name}</span>
+              {kit.version && <span className="shrink-0 font-mono text-meta text-muted-foreground">v{kit.version}</span>}
             </div>
-            <p className="line-clamp-2 text-muted-foreground text-xs leading-relaxed">{kit.description || kitCounts(kit)}</p>
+            <p className="line-clamp-3 text-desc text-muted-foreground">{kit.description || kitCounts(kit)}</p>
           </div>
         </div>
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -147,13 +147,13 @@ function KitCard({ kit, installed }: { kit: KitInfo; installed: InstalledKitOn[]
             </span>
           </Tip>
         </div>
-        {kit.description && <p className="mt-2 text-[11px] text-muted-foreground/80">{kitCounts(kit)}</p>}
+        {kit.description && <p className="mt-2 text-meta text-muted-foreground/80">{kitCounts(kit)}</p>}
       </button>
 
       <div className="flex items-center gap-2 border-t bg-muted/20 px-3 py-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
           {installed.length === 0 ? (
-            <span className="text-[11px] text-muted-foreground">Not applied yet</span>
+            <span className="text-meta text-muted-foreground">Not applied yet</span>
           ) : (
             installed.map((i) => (
               <Tip key={`${i.box}/${i.location}`} label={`${i.outdated ? "Has an older version of this kit" : "Has this kit"}. Open its project settings`}>
@@ -256,7 +256,7 @@ function AddFromLinkDialog({ open, onOpenChange }: { open: boolean; onOpenChange
             placeholder="berth://kit?src=…  or  https://github.com/acme/kits/tree/main/shop"
             className="font-mono text-xs"
           />
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-desc text-muted-foreground">
             A Shipyard kit link, a git repository (a folder in it with <code className="font-mono">…/tree/main/dir</code> or <code className="font-mono">URL#dir</code>), a gist, a URL to a{" "}
             <code className="font-mono">kit.json</code>, or a folder on this laptop.
           </p>

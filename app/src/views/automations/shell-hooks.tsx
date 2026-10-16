@@ -60,7 +60,7 @@ export function ShellHooks() {
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-3 pb-10">
           <section>
-            <h2 className="mb-2 font-medium text-muted-foreground text-xs">Start from</h2>
+            <h2 className="mb-2 text-section">Start from</h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">
               {STARTERS.map((s) => {
                 const Icon = starterIcons[s.id] ?? PlusIcon;
@@ -68,8 +68,8 @@ export function ShellHooks() {
                   <>
                     <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <span className="min-w-0">
-                      <span className="block font-medium text-sm">{s.title}</span>
-                      <span className="block text-muted-foreground text-xs">
+                      <span className="block text-row">{s.title}</span>
+                      <span className="block text-desc text-muted-foreground">
                         {s.description} {s.where === "laptop" ? "On this laptop." : "On a box."}
                       </span>
                     </span>
