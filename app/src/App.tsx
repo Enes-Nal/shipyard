@@ -60,6 +60,8 @@ import { usePrefs } from "@/lib/prefs";
 import { lazyView, preloadViews } from "@/lib/lazy-view";
 import { placeLabel } from "@/lib/worktree-names";
 import { useRescueRemovedFocus } from "@/lib/focus-home";
+// Loaded with the app, not with Settings, so it knows where Settings was opened from.
+import "@/views/settings/open";
 
 // The pages other than the workspace load on first use (lib/lazy-view.tsx).
 const AutomationsView = lazyView(() => import("@/views/automations").then((m) => m.AutomationsView));
@@ -113,9 +115,12 @@ export default function App() {
   const workspace = view.kind === "workspace";
   // Labs: zen (⌘.) puts away the sidebar, the tab strip and the status bar.
   const zen = usePrefs((p) => p.labs && p.zen);
+  // Settings is a page of its own: its nav takes the sidebar's place, and
+  // the status bar goes until it closes.
+  const settings = view.kind === "settings";
   // Without the status bar, what floats over its corner (toasts, the loops
   // panel) comes down to the window's edge.
-  useEffect(() => document.documentElement.style.setProperty("--berth-status-h", zen ? "0px" : "26px"), [zen]);
+  useEffect(() => document.documentElement.style.setProperty("--berth-status-h", zen || settings ? "0px" : "26px"), [zen, settings]);
   // The keyboard is never dropped on <body> by what had it going away.
   useRescueRemovedFocus();
   // Onboarding has no tabs yet, so it gets the plain strip, not the tab strip.
@@ -173,7 +178,7 @@ export default function App() {
         <div className="flex h-svh flex-col overflow-hidden bg-background text-foreground">
           {fakeTrafficLights() && <FakeTrafficLights />}
           <div className="flex min-h-0 flex-1">
-            {!zen && (
+            {!zen && !settings && (
               <Disconnectable>
                 <AppSidebar />
               </Disconnectable>
@@ -201,7 +206,7 @@ export default function App() {
               </main>
             </div>
           </div>
-          {!zen && <StatusBar />}
+          {!zen && !settings && <StatusBar />}
         </div>
         <ErrorBoundary scope="a dialog">
           <CommandPalette />

@@ -1,7 +1,7 @@
 import { ArrowLeftIcon, BellIcon, BotIcon, CableIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
 import { type ComponentType, useEffect } from "react";
 
-import { Tip } from "@/components/tip";
+import { SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN } from "@/lib/sidebar-width";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { AboutSection } from "@/views/settings/about-section";
@@ -20,7 +20,7 @@ import { PluginsSection } from "@/views/settings/plugins-section";
 import { ShortcutsSection } from "@/views/settings/shortcuts-section";
 import { TerminalSection } from "@/views/settings/terminal-section";
 
-import { openSettings, type SettingsSectionId } from "@/views/settings/open";
+import { closeSettings, openSettings, type SettingsSectionId } from "@/views/settings/open";
 
 export { openSettings, type SettingsSectionId };
 
@@ -52,11 +52,12 @@ const BOTTOM: SettingsSectionId[] = ["labs", "developer", "about"];
 // Longer names where the nav has room for them.
 const NAV_TITLES: Partial<Record<SettingsSectionId, string>> = { agents: "Agents and models" };
 
-const back = () => useStore.getState().setView({ kind: "workspace" });
+const back = closeSettings;
 
-// Settings takes the window with its own nav: Back to app at the top, then
-// the sections in groups. Below 1200px of window the nav shrinks to its
-// icons, so the settings themselves keep their width.
+// Settings is a page of its own: while it's open its nav takes the
+// sidebar's place (App.tsx hides the sidebar and the status bar), as wide
+// as the sidebar and drawn like it, with Back to app at the top and the
+// sections in groups beneath.
 export function SettingsView() {
   const view = useStore((s) => s.view);
   const id = (view.kind === "settings" && SECTIONS.some((s) => s.id === view.section) ? view.section : "general") as SettingsSectionId;
@@ -78,27 +79,33 @@ export function SettingsView() {
 
   return (
     <div className="flex h-full min-h-0">
-      <nav aria-label="Settings sections" data-tauri-drag-region className="flex w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r bg-sidebar px-3 pt-3 pb-3 max-[1200px]:w-14 max-[1200px]:px-2">
-        <Tip label="Back to app" side="right" className="min-[1201px]:hidden">
-          <button type="button" onClick={back} aria-label="Back to app" className="flex h-8.5 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-muted-foreground text-sm transition-colors hover:bg-accent/60 hover:text-foreground max-[1200px]:justify-center max-[1200px]:px-0">
-            <ArrowLeftIcon className="size-4 shrink-0" />
-            <span className="flex-1 max-[1200px]:hidden">Back to app</span>
-            <kbd className="font-sans text-muted-foreground text-xs max-[1200px]:hidden">esc</kbd>
+      <nav
+        aria-label="Settings sections"
+        style={{ width: `clamp(${SIDEBAR_MIN}px, var(--sidebar-w, ${SIDEBAR_DEFAULT}px), max(${SIDEBAR_DEFAULT}px, min(${SIDEBAR_MAX}px, 40vw)))` }}
+        className="flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground"
+      >
+        {/* Room for the macOS traffic lights; the strip drags the window. */}
+        <div data-tauri-drag-region className="h-10 shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+          <button type="button" onClick={back} className={cn(ROW, "text-muted-foreground")}>
+            <ArrowLeftIcon />
+            <span className="flex-1">Back to app</span>
+            <kbd className="font-sans text-[11px] text-muted-foreground">esc</kbd>
           </button>
-        </Tip>
-        {GROUPS.map((g) => (
-          <div key={g.title} className="flex flex-col gap-px">
-            <div className="flex h-7 items-center px-2.5 font-medium text-muted-foreground text-xs max-[1200px]:hidden">{g.title}</div>
-            {g.ids.map((sid) => (
+          {GROUPS.map((g) => (
+            <div key={g.title} className="flex flex-col gap-px">
+              <div className="px-1 pt-4 pb-1 font-medium text-[11px] text-muted-foreground">{g.title}</div>
+              {g.ids.map((sid) => (
+                <NavItem key={sid} id={sid} current={id} />
+              ))}
+            </div>
+          ))}
+          <div className="min-h-4 flex-1" />
+          <div className="flex flex-col gap-px">
+            {BOTTOM.map((sid) => (
               <NavItem key={sid} id={sid} current={id} />
             ))}
           </div>
-        ))}
-        <div className="flex-1" />
-        <div className="flex flex-col gap-px">
-          {BOTTOM.map((sid) => (
-            <NavItem key={sid} id={sid} current={id} quiet />
-          ))}
         </div>
       </nav>
       <div data-testid={`settings-${id}`} className="min-w-0 flex-1 overflow-y-auto bg-background">
@@ -108,29 +115,26 @@ export function SettingsView() {
   );
 }
 
-function NavItem({ id, current, quiet }: { id: SettingsSectionId; current: SettingsSectionId; quiet?: boolean }) {
+// A nav row, drawn as the sidebar's places are (components/sidebar/nav.tsx).
+const ROW = "flex h-side-row w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-muted-foreground";
+
+function NavItem({ id, current }: { id: SettingsSectionId; current: SettingsSectionId }) {
   const s = SECTIONS.find((x) => x.id === id)!;
   const title = NAV_TITLES[id] ?? s.title;
   const active = id === current;
   return (
-    // The tooltip is for the narrow window, where only icons show.
-    <Tip label={title} side="right" className="min-[1201px]:hidden">
-      <button
-        type="button"
-        onClick={() => openSettings(s.id)}
-        data-testid={`settings-nav-${s.id}`}
-        aria-current={active ? "page" : undefined}
-        aria-label={s.title}
-        className={cn(
-          "flex h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm transition-colors max-[1200px]:justify-center max-[1200px]:px-0",
-          active ? "bg-accent font-medium text-foreground" : quiet ? "text-muted-foreground hover:bg-accent/60 hover:text-foreground" : "text-foreground/85 hover:bg-accent/60 hover:text-foreground",
-        )}
-      >
-        <s.icon className="size-4 shrink-0 min-[1201px]:hidden" />
-        <span className="flex-1 truncate max-[1200px]:hidden">{title}</span>
-        <NavNote id={id} />
-      </button>
-    </Tip>
+    <button
+      type="button"
+      onClick={() => openSettings(s.id)}
+      data-testid={`settings-nav-${s.id}`}
+      aria-current={active ? "page" : undefined}
+      aria-label={s.title}
+      className={cn(ROW, active && "bg-sidebar-accent text-sidebar-accent-foreground")}
+    >
+      <s.icon />
+      <span className="min-w-0 flex-1 truncate">{title}</span>
+      <NavNote id={id} />
+    </button>
   );
 }
 
@@ -143,5 +147,5 @@ function NavNote({ id }: { id: SettingsSectionId }) {
   if (id === "boxes" && status?.boxes.length) note = `${status.boxes.filter((b) => b.state === "online").length} of ${status.boxes.length} online`;
   if (id === "about" && version && version !== "…") note = version === "dev" || version === "unknown" ? version : `v${version}`;
   if (!note) return null;
-  return <span className="shrink-0 font-normal text-muted-foreground text-xs tabular-nums max-[1200px]:hidden">{note}</span>;
+  return <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{note}</span>;
 }
