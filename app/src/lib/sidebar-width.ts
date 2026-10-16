@@ -25,6 +25,16 @@ export const UNFOLD_AT = 170;
 export const STEP = 16;
 export const BIG_STEP = 64;
 
+// A window narrower than ROOMY_AT starts the sidebar at its old 240px, so
+// the panes beside it keep their room; a roomier one at the default.
+export const SIDEBAR_NARROW_DEFAULT = 240;
+export const ROOMY_AT = 1200;
+
+// defaultWidth is where the sidebar starts in a window this wide.
+export function defaultWidth(windowWidth = Infinity): number {
+  return windowWidth < ROOMY_AT ? SIDEBAR_NARROW_DEFAULT : SIDEBAR_DEFAULT;
+}
+
 // sidebarMax is the widest the sidebar may be in a window this wide: 420px,
 // or 40% of the window when that is less, but never under the default.
 export function sidebarMax(windowWidth = Infinity): number {

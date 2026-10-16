@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { BIG_STEP, clampWidth, dragged, FOLD_AT, SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN, sidebarMax, STEP, stepped, UNFOLD_AT } from "./sidebar-width.ts";
+import { BIG_STEP, clampWidth, defaultWidth, dragged, FOLD_AT, SIDEBAR_DEFAULT, SIDEBAR_NARROW_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN, sidebarMax, STEP, stepped, UNFOLD_AT } from "./sidebar-width.ts";
 
 test("a width is held between the narrowest and the widest", () => {
   assert.equal(clampWidth(300), 300);
@@ -42,4 +42,11 @@ test("arrow keys step it, Shift further, Home and End go to the ends", () => {
   assert.equal(stepped(300, "Home", false), SIDEBAR_MIN);
   assert.equal(stepped(300, "End", false, 900), 360);
   assert.equal(stepped(300, "a", false), undefined);
+});
+
+test("a narrow window starts the sidebar at 240px, a roomy one at the default", () => {
+  assert.equal(defaultWidth(900), SIDEBAR_NARROW_DEFAULT);
+  assert.equal(defaultWidth(1199), SIDEBAR_NARROW_DEFAULT);
+  assert.equal(defaultWidth(1200), SIDEBAR_DEFAULT);
+  assert.equal(defaultWidth(), SIDEBAR_DEFAULT);
 });
