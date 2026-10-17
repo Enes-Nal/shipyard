@@ -15,11 +15,11 @@ export function SettingsPage({ title, badge, description, actions, children }: {
     <div className="mx-auto w-full max-w-[728px] px-6 pt-14 pb-20 max-[1200px]:pt-10">
       <header data-tauri-drag-region className="mb-10 flex items-end gap-4">
         <div data-tauri-drag-region className="min-w-0 flex-1">
-          <h1 className="flex items-center gap-2 font-semibold text-[28px] leading-[34px] tracking-[-0.02em]">
+          <h1 className="flex items-center gap-2 text-page-title">
             {title}
             {badge}
           </h1>
-          {description && <p className="mt-1.5 text-muted-foreground text-sm leading-5">{typeof description === "string" ? platformKeys(description) : description}</p>}
+          {description && <p className="mt-1.5 text-muted-foreground text-subtitle">{typeof description === "string" ? platformKeys(description) : description}</p>}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         <SettingsFind />
@@ -35,8 +35,8 @@ export function SettingsGroup({ title, description, actions, children }: { title
       {(title || actions) && (
         <div className="mb-1.5 flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            {title && <h2 className="font-semibold text-[13px] text-foreground leading-4">{title}</h2>}
-            {description && <p className="mt-0.5 text-muted-foreground text-[13px] leading-[19px]">{description}</p>}
+            {title && <h2 className="text-section text-foreground">{title}</h2>}
+            {description && <p className="mt-0.5 text-muted-foreground text-desc">{description}</p>}
           </div>
           {actions}
         </div>
@@ -78,11 +78,11 @@ export function SettingsRow({ label, description, children, className }: { label
   return (
     <div className={cn("flex min-h-14 items-center gap-8 py-4", className)}>
       <div className="min-w-0 flex-1">
-        <div id={labelledBy} className="font-medium text-sm leading-[18px]">
+        <div id={labelledBy} className="text-row">
           {label}
         </div>
         {description && (
-          <div id={describedBy} className="mt-[3px] text-[13px] text-muted-foreground leading-[19px]">
+          <div id={describedBy} className="mt-[3px] text-desc text-muted-foreground">
             {typeof description === "string" ? platformKeys(description) : description}
           </div>
         )}
@@ -98,10 +98,10 @@ export function SettingsRow({ label, description, children, className }: { label
 
 // Code is a path or a command inside a description.
 export function Code({ children }: { children: ReactNode }) {
-  return <code className="rounded bg-muted px-1 py-px font-mono text-[11px] text-foreground">{children}</code>;
+  return <code className="rounded bg-muted px-1 py-px font-mono text-tag text-foreground">{children}</code>;
 }
 
 // Value shows a setting that is read, not edited here, as a quiet chip.
 export function Value({ children }: { children: ReactNode }) {
-  return <span className="rounded-md border bg-muted/40 px-2 py-0.5 font-mono text-muted-foreground text-xs tabular-nums">{children}</span>;
+  return <span className="rounded-md border bg-muted/40 px-2 py-0.5 font-mono text-muted-foreground text-mono tabular-nums">{children}</span>;
 }

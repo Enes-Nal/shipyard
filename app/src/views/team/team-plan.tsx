@@ -56,7 +56,7 @@ function ProjectHead({ p, view }: { p: ProjectView; view: TeamView }) {
   return (
     <div className="min-w-0">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="font-medium font-mono text-[13px]">{p.repo}</span>
+        <span className="font-medium font-mono text-desc">{p.repo}</span>
         {p.private && <PrivateTag />}
         <SourceTag source={p.source} />
       </div>
@@ -68,7 +68,7 @@ function ProjectHead({ p, view }: { p: ProjectView; view: TeamView }) {
 function ProjectDetail({ p, use }: { p: ProjectView; use?: ExistingClone }) {
   const commands = use ? [`# uses your existing checkout ${use.display}, as it is: no clone, checkout, stash, reset or pull`, ...p.commands.filter((c) => !c.startsWith("git clone "))] : p.commands;
   return (
-    <div className="space-y-2 text-xs">
+    <div className="space-y-2 text-meta">
       <p className="text-muted-foreground">
         {use ? (
           <>
@@ -102,9 +102,9 @@ function DeviceCode({ code, url }: { code: string; url?: string }) {
   const link = url ?? "https://github.com/login/device";
   return (
     <div data-testid="device-code" className="space-y-2">
-      <p className="text-xs">The box is signing in to GitHub with its own credential. Enter this code at <span className="font-mono">github.com/login/device</span>:</p>
+      <p className="text-meta">The box is signing in to GitHub with its own credential. Enter this code at <span className="font-mono">github.com/login/device</span>:</p>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-lg border bg-background px-3 py-1.5 font-mono font-semibold text-lg tracking-[0.18em]">{code}</span>
+        <span className="rounded-lg border bg-background px-3 py-1.5 font-mono text-heading tracking-[0.18em]">{code}</span>
         <Button
           size="icon-sm"
           variant="ghost"
@@ -117,7 +117,7 @@ function DeviceCode({ code, url }: { code: string; url?: string }) {
           Open github.com/login/device <ExternalLinkIcon />
         </Button>
       </div>
-      <p className="text-[11.5px] text-muted-foreground">GitHub asks you to authorize GitHub CLI for the box. You can revoke it any time in GitHub's settings.</p>
+      <p className="text-meta text-muted-foreground">GitHub asks you to authorize GitHub CLI for the box. You can revoke it any time in GitHub's settings.</p>
     </div>
   );
 }
@@ -162,7 +162,7 @@ export function Plan(p: PlanProps) {
           {boxDone && !showSteps ? (
             <Row
               state="done"
-              head={<span className="text-[13px]">{steps.map((s) => s.title.replace(/ (with|in) .*/, "")).join(", ")}</span>}
+              head={<span className="text-desc">{steps.map((s) => s.title.replace(/ (with|in) .*/, "")).join(", ")}</span>}
               trailing={
                 <Button size="xs" variant="ghost" onClick={() => setShowSteps(true)}>
                   Show
@@ -183,12 +183,12 @@ export function Plan(p: PlanProps) {
                   open={!!open[s.id]}
                   onToggle={() => toggle(s.id)}
                   detail={<Cmds lines={s.commands} />}
-                  trailing={state === "done" && st?.secs !== undefined ? <span className="text-meta text-muted-foreground tabular-nums">{durationOf(st.secs)}</span> : state === "skipped" ? <span className="text-muted-foreground text-xs">already done</span> : undefined}
+                  trailing={state === "done" && st?.secs !== undefined ? <span className="text-meta text-muted-foreground tabular-nums">{durationOf(st.secs)}</span> : state === "skipped" ? <span className="text-muted-foreground text-meta">already done</span> : undefined}
                 >
                   {run && state === "waiting" && s.id === "github" && st?.code && <DeviceCode code={st.code} url={st.url} />}
                   {run && state === "waiting" && s.id !== "github" && (
                     <div className="space-y-2">
-                      <p className="flex items-start gap-1.5 font-medium text-warning-foreground text-xs">
+                      <p className="flex items-start gap-1.5 text-warning-foreground text-label">
                         <KeyRoundIcon className="mt-0.5 size-3.5 shrink-0" />
                         {s.id === "1password"
                           ? `op on ${run.box} is asking you to sign in to 1Password. Answer it in the terminal below: what you type stays on the box, and Shipyard keeps only op's session there, for the team's shared keys.`
@@ -235,7 +235,7 @@ export function Plan(p: PlanProps) {
                   head={
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2">
-                        <span className="font-medium font-mono text-[13px]">{x.repo}</span>
+                        <span className="font-medium font-mono text-desc">{x.repo}</span>
                         <LockIcon className="size-3 text-muted-foreground" />
                       </div>
                       <p className="mt-0.5 text-desc text-muted-foreground">You can't read it, so it's left out. Ask an admin{view.setup?.contact ? ` in ${view.setup.contact}` : ""}, then check again.</p>
@@ -306,7 +306,7 @@ export function Plan(p: PlanProps) {
               key={r.id}
               testId={`repo-${r.id}`}
               state={r.state === "queued" ? "todo" : r.state}
-              head={<span className="font-medium font-mono text-[13px]">{r.repo}</span>}
+              head={<span className="font-medium font-mono text-desc">{r.repo}</span>}
               trailing={r.state === "ready" && run?.phase !== "done" ? <Button size="xs" onClick={() => p.onStartOn(r.id)}>Start on {r.id}</Button> : r.line ? <span className="text-meta text-muted-foreground">{r.line}</span> : undefined}
             />
           ))}
@@ -320,7 +320,7 @@ export function Plan(p: PlanProps) {
 
       {anyKeys && (
         <Section id="plan-keys" title="Keys" aside="what the repos' .env.example asks for; ports, URLs and databases are the kits' job">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border bg-card px-4 py-3 text-[13px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border bg-card px-4 py-3 text-desc">
             {run ? <StateIcon state={run.phase === "steps" ? "todo" : "done"} /> : <KeyRoundIcon className="size-4 text-muted-foreground" />}
             {p.skipOP ? (
               <span data-testid="plan-keys-skip">
@@ -341,7 +341,7 @@ export function Plan(p: PlanProps) {
         </Section>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta">
         <button type="button" data-testid="read-every-command" onClick={p.onFiles} className="inline-flex items-center gap-1.5 rounded text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
           <FileCodeIcon className="size-3.5 text-muted-foreground" /> Read every command
           <span className="text-muted-foreground">· the {view.files?.length ?? 0} files in {whereFrom(view)}</span>
@@ -368,7 +368,7 @@ export function UpdateDiff({ update }: { update: TeamUpdate }) {
             <span
               aria-label={c.kind === "add" ? "added" : c.kind === "remove" ? "removed" : "changed"}
               className={cn(
-                "mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded font-bold text-[11px]",
+                "mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded font-bold text-tag",
                 c.kind === "add" && "bg-success/15 text-success-foreground",
                 c.kind === "change" && "bg-info/15 text-info-foreground",
                 c.kind === "remove" && "bg-destructive/12 text-destructive-foreground",
@@ -378,8 +378,8 @@ export function UpdateDiff({ update }: { update: TeamUpdate }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2">
-                <span className={cn("font-medium text-[13px]", (c.area === "project" || c.area === "key" || c.area === "file" || c.area === "setting") && "font-mono")}>{c.text}</span>
-                <span className="text-[10.5px] text-muted-foreground uppercase tracking-wide">{c.area === "project" ? "repo" : c.area}</span>
+                <span className={cn("font-medium text-desc", (c.area === "project" || c.area === "key" || c.area === "file" || c.area === "setting") && "font-mono")}>{c.text}</span>
+                <span className="text-tag text-muted-foreground uppercase tracking-wide">{c.area === "project" ? "repo" : c.area}</span>
                 {c.sudo && <SudoTag />}
               </p>
               {c.detail && <p className="text-desc text-muted-foreground">{c.detail}</p>}
@@ -387,7 +387,7 @@ export function UpdateDiff({ update }: { update: TeamUpdate }) {
           </li>
         ))}
       </ul>
-      <p className={cn("mt-2 flex items-start gap-1.5 text-xs", update.sudo.length ? "text-warning-foreground" : "text-muted-foreground")}>
+      <p className={cn("mt-2 flex items-start gap-1.5 text-meta", update.sudo.length ? "text-warning-foreground" : "text-muted-foreground")}>
         <KeyRoundIcon className="mt-0.5 size-3.5 shrink-0" />
         {update.sudo.length ? `${update.sudo.join(", ")} ${update.sudo.length === 1 ? "is a new step that asks" : "ask"} for your password on the box. You type it there; Shipyard doesn't keep it.` : "Nothing here asks for your password."} Nothing runs until you press Update; steps you already have are skipped.
       </p>

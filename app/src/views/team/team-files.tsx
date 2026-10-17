@@ -33,7 +33,7 @@ export function TeamFiles({ view, open, onOpenChange }: { view: TeamView; open: 
                 role="tab"
                 aria-selected={f.path === file?.path}
                 onClick={() => setAt(f.path)}
-                className={cn("inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-xs outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring", f.path === file?.path ? "border-foreground/30 bg-accent text-foreground" : "text-muted-foreground")}
+                className={cn("inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-mono outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring", f.path === file?.path ? "border-foreground/30 bg-accent text-foreground" : "text-muted-foreground")}
               >
                 <FileIcon className="size-3" />
                 {f.path}
@@ -52,7 +52,7 @@ export function TeamFiles({ view, open, onOpenChange }: { view: TeamView; open: 
                 )}
               </div>
               {file.text === undefined ? (
-                <p className="px-3 py-6 text-center text-muted-foreground text-sm">Not text, or too large to show here. It's on GitHub.</p>
+                <p className="px-3 py-6 text-center text-muted-foreground text-body">Not text, or too large to show here. It's on GitHub.</p>
               ) : (
                 <pre data-testid="team-file" className="overflow-x-auto py-2 font-mono text-mono">
                   {file.text.split("\n").map((l, i) => {

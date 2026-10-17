@@ -57,8 +57,8 @@ export function HeaderPictureSettings() {
     >
       <div className="mb-3.5 flex items-end gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-[13px] text-foreground leading-4">Header picture</h2>
-          <p className="mt-[5px] text-[13px] text-muted-foreground leading-4">The painting across the top of Home and a new chat. It dims itself in dark themes.</p>
+          <h2 className="text-section text-foreground">Header picture</h2>
+          <p className="mt-[5px] text-desc text-muted-foreground">The painting across the top of Home and a new chat. It dims itself in dark themes.</p>
         </div>
         {custom && (
           <Button size="xs" variant="ghost" onClick={() => setHeaderPicture({ ...DEFAULT_HEADER_PICTURE, image: undefined })}>
@@ -155,7 +155,7 @@ function PictureTile({ label, name, selected, dashed, onClick, extra, children }
         >
           {children}
         </span>
-        <span className="flex items-center gap-2 px-0.5 text-[13px]">
+        <span className="flex items-center gap-2 px-0.5 text-desc">
           <span className={cn("min-w-0 flex-1 truncate", selected && "font-medium")}>{name ?? label}</span>
           {selected && <CheckIcon className="size-3.5 shrink-0" />}
         </span>

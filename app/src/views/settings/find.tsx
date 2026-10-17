@@ -89,14 +89,14 @@ export function SettingsFind() {
           }}
           placeholder="Find a setting"
           aria-label="Find a setting"
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent text-desc text-foreground outline-none placeholder:text-muted-foreground"
         />
-        {!q && <kbd className="font-sans text-xs">{platformKeys("⌘F")}</kbd>}
+        {!q && <kbd className="font-sans text-meta">{platformKeys("⌘F")}</kbd>}
       </label>
       {open && q.trim() && (
         <div role="listbox" aria-label="Settings found" className="absolute top-9 right-0 z-20 w-64 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg">
           {found.length === 0 ? (
-            <div className="px-2.5 py-2 text-muted-foreground text-xs">Nothing matches “{q.trim()}”.</div>
+            <div className="px-2.5 py-2 text-muted-foreground text-meta">Nothing matches “{q.trim()}”.</div>
           ) : (
             found.map((s, i) => (
               <button
@@ -107,7 +107,7 @@ export function SettingsFind() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => go(s.id)}
                 onMouseEnter={() => setAt(i)}
-                className={cn("flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-[13px]", i === at && "bg-accent")}
+                className={cn("flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-desc", i === at && "bg-accent")}
               >
                 {s.title}
               </button>
