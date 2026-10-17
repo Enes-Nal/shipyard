@@ -11,6 +11,7 @@ import { installSkills, setRemind, type ShownNotice, snoozeSkillsNotice, useSkil
 import { actionLabel, noticeDetail, noticeText, SNOOZE_CHOICES } from "@/lib/skills-notice-model";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { ink } from "@/components/sidebar/ink";
 
 // The sidebar's quiet word that a box's Shipyard skills aren't installed or
 // are out of date (lib/skills-notice.ts), with two ways out: Install now,
@@ -43,11 +44,11 @@ function Notice({ n, onLeave, className, line }: { n: ShownNotice; onLeave?: () 
       // end; the rail's popover has room for it to wrap.
       className={cn(line ? "flex flex-wrap items-center min-h-7 gap-x-1 gap-y-0.5 pr-[11px] pl-6" : "flex flex-col gap-2 px-2.5 py-row-pad", className)}
     >
-      <div className={cn("flex flex-col gap-0.5 text-xs leading-snug", line && "min-w-0 flex-1")}>
+      <div className={cn("flex flex-col gap-0.5 text-meta", line && "min-w-0 flex-1")}>
         <Tip label={line ? `${n.box}: ${said(n, !!f)}` : undefined} side="top" align="start">
-          <p id={`${id}-text`} className={cn("text-muted-foreground", line ? "truncate text-meta" : "text-pretty")}>
-            <BookOpenIcon aria-hidden className="-mt-0.5 mr-1.5 inline size-3.5" />
-            <span className="font-medium text-foreground/80">{n.box}</span>: {said(n, !!f)}
+          <p id={`${id}-text`} className={cn(line ? cn("truncate text-meta", ink.faint) : "text-pretty text-muted-foreground")}>
+            <BookOpenIcon aria-hidden className={cn("-mt-0.5 mr-1.5 inline size-3.5", line && ink.glyph)} />
+            <span className={cn("font-medium", line ? ink.row : "text-foreground/80")}>{n.box}</span>: {said(n, !!f)}
           </p>
         </Tip>
         {f && (
@@ -58,7 +59,7 @@ function Notice({ n, onLeave, className, line }: { n: ShownNotice; onLeave?: () 
       </div>
       <div className={cn("flex flex-wrap items-center gap-1", line && "shrink-0 gap-0")}>
         <Tip label={noticeDetail(n)} side="top" align="start" className="max-w-64">
-          <Button size="xs" variant={line ? "ghost" : "outline"} disabled={n.installing} onClick={() => void installSkills(n)} className={cn(line && "px-1.5 font-medium text-foreground")}>
+          <Button size="xs" variant={line ? "ghost" : "outline"} disabled={n.installing} onClick={() => void installSkills(n)} className={cn(line && cn("px-1.5 font-medium hover:text-foreground", ink.row))}>
             {n.installing && <Spinner aria-hidden className="size-3" />}
             {n.installing ? (n.kind === "outdated" ? "Updating…" : "Installing…") : f ? "Retry" : actionLabel(n)}
           </Button>
@@ -79,7 +80,7 @@ function Notice({ n, onLeave, className, line }: { n: ShownNotice; onLeave?: () 
           </Tip>
         )}
         <Menu>
-          <MenuTrigger render={<Button size="xs" variant="ghost" disabled={n.installing} aria-label={`Snooze the reminder for ${n.box}`} className="px-1.5 text-muted-foreground" />}>
+          <MenuTrigger render={<Button size="xs" variant="ghost" disabled={n.installing} aria-label={`Snooze the reminder for ${n.box}`} className={cn("px-1.5", line ? ink.glyph : "text-muted-foreground")} />}>
             {!line && "Snooze"}
             {line ? <AlarmClockOffIcon /> : <ChevronDownIcon />}
           </MenuTrigger>
@@ -121,7 +122,7 @@ export function SkillsNotices() {
           aria-expanded={open}
           data-testid="skills-notices-more"
           onClick={() => setOpen(!open)}
-          className="ml-[42px] flex h-6 w-max shrink-0 items-center gap-1 rounded-md px-1 text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn("ml-[42px] flex h-6 w-max shrink-0 items-center gap-1 rounded-md px-1 text-tag outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", ink.faint)}
         >
           <ChevronDownIcon aria-hidden className={cn("size-3 transition-transform", open && "rotate-180")} />
           {open ? "Show fewer" : `${rest.length} more ${rest.length === 1 ? "box" : "boxes"}`}

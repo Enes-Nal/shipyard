@@ -9,6 +9,7 @@ import { RailAgents } from "@/components/sidebar/rail";
 import { SidebarResizeHandle } from "@/components/sidebar/resize-handle";
 import { RowLayer } from "@/components/sidebar/row-layer";
 import { RailSkillsNotices, SkillsNotices } from "@/components/sidebar/skills-notice";
+import { ink, inkScale } from "@/components/sidebar/ink";
 import { BoxesFoot } from "@/components/sidebar/task-parts";
 import { Tip } from "@/components/tip";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
@@ -59,7 +60,7 @@ export function AppSidebar() {
         aria-label="Sidebar"
         data-testid="sidebar"
         style={{ width: `clamp(${SIDEBAR_MIN}px, var(--sidebar-live, var(--sidebar-w, ${SIDEBAR_DEFAULT}px)), max(${SIDEBAR_DEFAULT}px, min(${SIDEBAR_MAX}px, 40vw)))` }}
-        className="@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pt-1.5 pb-2 text-sidebar-foreground"
+        className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pt-1.5 pb-2 text-sidebar-foreground", inkScale)}
       >
         <SidebarResizeHandle />
         {/* Room for the macOS traffic lights, then the notifications and the
@@ -73,7 +74,7 @@ export function AppSidebar() {
               type="button"
               aria-label="Hide the sidebar"
               onClick={() => usePrefs.setState({ sidebarCollapsed: true })}
-              className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-[18px]"
+              className={cn("inline-flex size-7 items-center justify-center rounded-lg hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-[18px]", ink.glyph)}
             >
               <PanelLeftIcon strokeWidth={1.8} />
             </button>
@@ -149,7 +150,7 @@ export function AppSidebar() {
               aria-current={view.kind === "settings" ? "page" : undefined}
               // Shift-click goes straight to Developer.
               onClick={(e) => setView({ kind: "settings", section: e.shiftKey ? "developer" : undefined })}
-              className={cn("inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4", view.kind === "settings" && "bg-sidebar-accent text-foreground")}
+              className={cn("inline-flex size-7 shrink-0 items-center justify-center rounded-lg hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4", ink.glyph, view.kind === "settings" && "bg-sidebar-accent text-foreground")}
             >
               <SettingsIcon strokeWidth={1.8} />
             </button>
@@ -188,16 +189,16 @@ function Rail() {
         type="button"
         aria-label={label}
         onClick={onClick}
-        className={cn("relative inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4", active && "bg-sidebar-accent text-foreground")}
+        className={cn("relative inline-flex size-8 items-center justify-center rounded-lg hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4", ink.row, active && "bg-sidebar-accent text-foreground")}
       >
         {icon}
         {/* Amber only when something needs you, as in the sidebar. */}
-        {badge?.count ? <span className={cn("absolute top-0.5 right-0.5 size-2 rounded-full", badge.loud ? "bg-warning" : "bg-muted-foreground/70")} /> : null}
+        {badge?.count ? <span className={cn("absolute top-0.5 right-0.5 size-2 rounded-full", badge.loud ? "bg-warning" : "bg-foreground/45")} /> : null}
       </button>
     </Tip>
   );
   return (
-    <aside aria-label="Sidebar" data-testid="sidebar-rail" className="relative flex w-19 shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar">
+    <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-19 shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
       <SidebarResizeHandle folded />
       <div data-tauri-drag-region className="h-10 w-full shrink-0" />
       <div className="flex flex-col items-center gap-1">
@@ -214,7 +215,8 @@ function Rail() {
                   type="button"
                   aria-label="More"
                   className={cn(
-                    "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground data-popup-open:bg-sidebar-accent",
+                    "inline-flex size-8 items-center justify-center rounded-lg hover:bg-sidebar-accent hover:text-foreground data-popup-open:bg-sidebar-accent",
+                    ink.row,
                     more.some((n) => n.active) && "bg-sidebar-accent text-foreground",
                   )}
                 />
