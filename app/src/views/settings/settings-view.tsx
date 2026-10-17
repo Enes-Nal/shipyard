@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, BellIcon, BotIcon, CableIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
 import { type ComponentType, useEffect } from "react";
 
+import { ink, inkScale } from "@/components/sidebar/ink";
 import { SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN } from "@/lib/sidebar-width";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -82,19 +83,19 @@ export function SettingsView() {
       <nav
         aria-label="Settings sections"
         style={{ width: `clamp(${SIDEBAR_MIN}px, var(--sidebar-w, ${SIDEBAR_DEFAULT}px), max(${SIDEBAR_DEFAULT}px, min(${SIDEBAR_MAX}px, 40vw)))` }}
-        className="flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground"
+        className={cn("flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground", inkScale)}
       >
         {/* Room for the macOS traffic lights; the strip drags the window. */}
         <div data-tauri-drag-region className="h-10 shrink-0" />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
-          <button type="button" onClick={back} className={cn(ROW, "text-muted-foreground")}>
+          <button type="button" onClick={back} className={cn(ROW, ink.quiet)}>
             <ArrowLeftIcon />
             <span className="flex-1">Back to app</span>
-            <kbd className="font-sans text-[11px] text-muted-foreground">esc</kbd>
+            <kbd className={cn("font-sans text-tag", ink.faint)}>esc</kbd>
           </button>
           {GROUPS.map((g) => (
             <div key={g.title} className="flex flex-col gap-px">
-              <div className="px-1 pt-4 pb-1 font-medium text-[11px] text-muted-foreground">{g.title}</div>
+              <div className={cn("px-1 pt-4 pb-1 text-tag font-medium", ink.faint)}>{g.title}</div>
               {g.ids.map((sid) => (
                 <NavItem key={sid} id={sid} current={id} />
               ))}
@@ -116,7 +117,8 @@ export function SettingsView() {
 }
 
 // A nav row, drawn as the sidebar's places are (components/sidebar/nav.tsx).
-const ROW = "flex h-side-row w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-muted-foreground";
+// In the sidebar's one ink (components/sidebar/ink.ts).
+const ROW = cn("flex h-side-row w-full items-center gap-2 rounded-lg px-2 text-left text-desc outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-(color:--ink-glyph)", ink.row);
 
 function NavItem({ id, current }: { id: SettingsSectionId; current: SettingsSectionId }) {
   const s = SECTIONS.find((x) => x.id === id)!;
@@ -129,7 +131,7 @@ function NavItem({ id, current }: { id: SettingsSectionId; current: SettingsSect
       data-testid={`settings-nav-${s.id}`}
       aria-current={active ? "page" : undefined}
       aria-label={s.title}
-      className={cn(ROW, active && "bg-sidebar-accent text-sidebar-accent-foreground")}
+      className={cn(ROW, active && "bg-sidebar-accent text-foreground [&>svg]:text-(color:--ink-row)")}
     >
       <s.icon />
       <span className="min-w-0 flex-1 truncate">{title}</span>
@@ -147,5 +149,5 @@ function NavNote({ id }: { id: SettingsSectionId }) {
   if (id === "boxes" && status?.boxes.length) note = `${status.boxes.filter((b) => b.state === "online").length} of ${status.boxes.length} online`;
   if (id === "about" && version && version !== "…") note = version === "dev" || version === "unknown" ? version : `v${version}`;
   if (!note) return null;
-  return <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{note}</span>;
+  return <span className={cn("shrink-0 text-tag tabular-nums", ink.faint)}>{note}</span>;
 }
