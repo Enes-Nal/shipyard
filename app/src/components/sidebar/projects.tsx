@@ -112,23 +112,23 @@ export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Par
   const group = (list: Repo[], chip: boolean) => list.map((r) => <RepoGroup key={r.key} repo={r} chip={chip} prefs={prefs} update={update} />);
 
   // By repository, boxes only appear when there is something to say: an
-  // empty box, one that is not online, or one whose link is slow (below the
-  // projects, so nothing above it moves).
+  // empty box, one that is not online, or one whose link is slow. They sit at
+  // the foot of the list, by the boxes' line below it, so nothing above moves.
   const notable = boxes.filter((b) => b.state !== "online" || b.link?.slow || !data[b.name]?.locations?.length);
 
   return (
     <>
       {prefs.groupBy === "project" ? (
-        <>
+        <div className="flex min-h-full flex-col">
           <ProjectSections prefs={prefs} update={update} />
           {notable.length > 0 && (
-            <div className="mt-3">
+            <div data-testid="notable-boxes" className="mt-auto pt-3">
               {notable.map((b) => (
                 <BoxHeader key={b.name} box={b} empty={!data[b.name]?.locations?.length} />
               ))}
             </div>
           )}
-        </>
+        </div>
       ) : (
         boxes.map((b) => (
           <div key={b.name} className="mb-3">
