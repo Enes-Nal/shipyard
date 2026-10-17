@@ -63,7 +63,7 @@ test("300 worktrees: the sidebar stays small and its rows make no menus or toolt
   // Its + and ⋯ menus (and at most the row the pointer came by).
   expect(await page.locator("[data-row-menu] [data-slot=menu-trigger]").count()).toBeLessThanOrEqual(4);
   await actions.click();
-  await expect(page.getByRole("menuitem", { name: /Copy path/ })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Copy", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
@@ -91,7 +91,7 @@ test("the keyboard: Shift+F10 and the menu key open a row's menu, F2 renames it,
   await row.focus();
 
   await page.keyboard.press("Shift+F10");
-  await expect(page.getByRole("menuitem", { name: /Copy branch/ })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "New agent", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
 

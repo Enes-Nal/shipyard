@@ -298,7 +298,10 @@ function urlFor(box: string, loc: Location, wt: Worktree) {
   return port ? portUrl(port, { ref: refOf(box, loc, wt), services, urlPort: st.status?.proxy.url_port }) : undefined;
 }
 
-// worktreeActions is everything a worktree row offers.
+// worktreeActions is everything a worktree row offers, in four short
+// groups: what to start in it; where else to open it and what to run on it;
+// what it is called and looks like, and what to copy; then what ends it.
+// The rarer ones (resuming, comparing, each thing to copy) sit one step in.
 export function worktreeActions(box: string, loc: Location, wt: Worktree): Action[] {
   const st = useStore.getState();
   const sessions = worktreeSessions(st.boxes[box]?.sessions, wt).filter((s) => !s.exited);
@@ -314,57 +317,75 @@ export function worktreeActions(box: string, loc: Location, wt: Worktree): Actio
   const ws = useWorkspaces.getState();
   const front = ws.current && ws.current !== key ? ws.spaces[ws.current]?.ref : undefined;
   const grouping = usePrefs.getState().labs;
+
+  const agents: Action[] = presets.map((p) =>
+    item(p.name, slot(<AgentIcon agent={p.id} />), () => {
+      select();
+      void startAgent(p, { kind: "tab" }, p.name, key);
+    }),
+  );
+  if (st.boxes[box]?.info?.capabilities?.includes("conversations")) agents.push(sep, { type: "sub", label: "Resume a conversation", icon: <HistoryIcon />, items: () => <ResumeItems box={box} loc={loc} wt={wt} /> });
+
   const items: Action[] = [
     item("Open", wt.main ? <HomeIcon /> : <GitBranchIcon />, select),
-    ...(grouping && front && !isShown(key) ? [item(`Add to tabs beside ${shortLabel(front)}`, <ListPlusIcon />, () => void addGroup(key), { shortcut: "⌥ Click" })] : []),
-    ...(grouping ? [item("Compare with…", <GitCompareArrowsIcon />, () => openWorktreePicker({ kind: "compare", from: key }))] : []),
+    { type: "sub", label: "New agent", icon: <BotIcon />, items: agents },
     item("New terminal", <SquareTerminalIcon />, () => {
       select();
       void startSession("", { kind: "tab" }, "Terminal", key);
     }),
-    {
-      type: "sub",
-      label: "New agent",
-      icon: <BotIcon />,
-      items: presets.map((p) =>
-        item(p.name, slot(<AgentIcon agent={p.id} />), () => {
-          select();
-          void startAgent(p, { kind: "tab" }, p.name, key);
-        }),
-      ),
-    },
-    ...(st.boxes[box]?.info?.capabilities?.includes("conversations")
-      ? [{ type: "sub" as const, label: "Resume a conversation", icon: <HistoryIcon />, items: () => <ResumeItems box={box} loc={loc} wt={wt} /> }]
-      : []),
-    { type: "sub", label: "Run", icon: <PlayIcon />, items: () => <RunItems box={box} loc={loc} wt={wt} /> },
-    item(url ? "Open dev server in browser tab" : "New browser tab", <GlobeIcon />, () => {
+    item(url ? "Open dev server" : "New browser tab", <GlobeIcon />, () => {
       select();
       openBrowserAt(url ?? "", { kind: "tab" }, key);
     }),
-    { type: "sub", label: "Open in", icon: <CodeXmlIcon />, items: () => <EditorMenuItems box={box} path={wt.path} /> },
-    ...(grouping ? [{ type: "sub" as const, label: "Colour", icon: <PaletteIcon />, items: () => <ToneItems wsKey={key} /> }] : []),
+    sep,
+    {
+      type: "sub",
+      label: "Open in",
+      icon: <CodeXmlIcon />,
+      items: () => (
+        <>
+          <EditorMenuItems box={box} path={wt.path} />
+          {grouping && (
+            <>
+              <MenuSeparator />
+              <ActionItems
+                items={[
+                  ...(front && !isShown(key) ? [item(`Tabs beside ${shortLabel(front)}`, <ListPlusIcon />, () => void addGroup(key), { shortcut: "⌥ Click" })] : []),
+                  item("Compare with…", <GitCompareArrowsIcon />, () => openWorktreePicker({ kind: "compare", from: key })),
+                ]}
+              />
+            </>
+          )}
+        </>
+      ),
+    },
+    { type: "sub", label: "Run", icon: <PlayIcon />, items: () => <RunItems box={box} loc={loc} wt={wt} /> },
   ];
-  if (agentSession) items.push({ type: "sub", label: "Orchestrate", icon: <WorkflowIcon />, items: () => <SessionActionItems box={box} session={agentSession.name} /> });
   // A branch's pull request can fix its own CI and review comments.
   if (!wt.main && wt.branch && boxHasRuns(box)) items.push({ type: "sub", label: "Auto-fix this PR", icon: <WrenchIcon />, items: () => <AutoFixItems box={box} path={wt.path} /> });
-  // A display name for it; the branch and folder keep theirs.
-  if (!wt.main) {
-    items.push(sep, item("Rename…", <PencilIcon />, () => openRenameWorktree(box, loc, wt), { shortcut: "F2" }));
-    if (wt.title) items.push(item(`Show as ${wt.name}`, <span className="size-4" />, () => void renameWorktree(box, loc, wt, "")));
-  }
-  items.push(sep, item("Copy path", <CopyIcon />, () => copy(wt.path, "path")));
-  if (wt.branch) items.push(item("Copy branch", <GitBranchIcon />, () => copy(wt.branch!, "branch name")));
-  if (url) items.push(item("Copy URL", <LinkIcon />, () => copy(url, "URL")));
+  if (agentSession) items.push({ type: "sub", label: "Orchestrate", icon: <WorkflowIcon />, items: () => <SessionActionItems box={box} session={agentSession.name} /> });
   // The berth://review link for its PR, for a teammate to review it on
   // their own box: a review's PR, or the PR its branch has, if any.
   const review = reviewOf(wt);
   const knownPr = useReview.getState().prs[entryKey(box, wt.path)];
-  if (review || (!wt.main && wt.branch && knownPr !== null)) {
-    items.push(item("Copy review link", <GitPullRequestIcon />, () => void copyReviewLink(box, loc, wt)));
-    // The same link, opening logged in as one of the project's dev users.
-    items.push({ type: "sub", label: "Copy review link as…", icon: <span className="size-4" />, items: () => <ReviewLinkAsItems box={box} loc={loc} wt={wt} /> });
+  if (review) items.push(item("Update review to latest…", <RotateCwIcon />, () => openUpdate(box, loc, wt)));
+
+  items.push(sep);
+  // A display name for it; the branch and folder keep theirs.
+  if (!wt.main) {
+    items.push(item("Rename…", <PencilIcon />, () => openRenameWorktree(box, loc, wt), { shortcut: "F2" }));
+    if (wt.title) items.push(item(`Show as ${wt.name}`, <span className="size-4" />, () => void renameWorktree(box, loc, wt, "")));
   }
-  if (review) items.push(item("Update review to latest…", <span className="size-4" />, () => openUpdate(box, loc, wt)));
+  if (grouping) items.push({ type: "sub", label: "Colour", icon: <PaletteIcon />, items: () => <ToneItems wsKey={key} /> });
+  const copies: Action[] = [item("Path", <FolderOpenIcon />, () => copy(wt.path, "path"))];
+  if (wt.branch) copies.push(item("Branch", <GitBranchIcon />, () => copy(wt.branch!, "branch name")));
+  if (url) copies.push(item("URL", <LinkIcon />, () => copy(url, "URL")));
+  if (review || (!wt.main && wt.branch && knownPr !== null)) {
+    copies.push(item("Review link", <GitPullRequestIcon />, () => void copyReviewLink(box, loc, wt)));
+    // The same link, opening logged in as one of the project's dev users.
+    copies.push({ type: "sub", label: "Review link as…", icon: <span className="size-4" />, items: () => <ReviewLinkAsItems box={box} loc={loc} wt={wt} /> });
+  }
+  items.push({ type: "sub", label: "Copy", icon: <CopyIcon />, items: copies });
 
   const danger: Action[] = [];
   if (sessions.length > 0) {

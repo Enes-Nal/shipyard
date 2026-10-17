@@ -264,9 +264,9 @@ export function RowKeys({ keys }: { keys: string }) {
   return <span aria-hidden className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-meta text-muted-foreground peer-data-[active=true]/menu-button:text-sidebar-foreground">{platformKeys(keys)}</span>;
 }
 
-// A place's row: 34px at the default density, a 16px icon and its name at
-// 14px; the one you are on sits on the selected tint.
-export const rowClass = cn("h-[calc(var(--side-row)+6px)] gap-2.5 px-2.5 text-row font-normal text-foreground [&>svg]:size-4 [&>svg]:text-foreground", selectedRow, "data-[active=true]:font-normal");
+// A place's row, sized as Settings' nav: 28px at the default density, a
+// 14px icon and its name at 13px; the one you are on sits on the selected tint.
+export const rowClass = cn("h-side-row gap-2 px-2 text-[13px] font-normal text-foreground [&>svg]:size-3.5 [&>svg]:text-muted-foreground", selectedRow, "data-[active=true]:font-normal");
 
 function NavRow({ item, list, index, ids }: { item: NavItem; list: NavList; index: number; ids: string[] }) {
   const over = useDrag((s) => s.over);
@@ -325,7 +325,7 @@ export function Nav({ lead, extra }: { lead?: ReactNode; extra?: ReactNode } = {
   const afterHome = pinned[0]?.id === "home" && !!pinned[0].keys;
   return (
     <div>
-      <SidebarMenu className="gap-0.5" {...dropProps("pinned", pinned.length, ids)}>
+      <SidebarMenu className="gap-px" {...dropProps("pinned", pinned.length, ids)}>
         {!afterHome && lead}
         {pinned.map((item, i) => (
           <Fragment key={item.id}>
