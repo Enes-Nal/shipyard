@@ -157,7 +157,7 @@ function BoxHeader({ box, empty }: { box: BoxStatus; empty: boolean }) {
         tabIndex={0}
         role="group"
         aria-label={`${box.name}, ${online ? (box.link?.slow ? "online, slow link" : "online") : awayText(box)}`}
-        className="group/row relative flex h-8 outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-1.5 rounded-lg px-2.5 text-label text-muted-foreground hover:bg-sidebar-accent"
+        className="group/row relative flex h-side-row outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-2 rounded-lg px-2 text-[13px] text-muted-foreground hover:bg-sidebar-accent"
       >
         {online ? <ServerIcon className="size-3" /> : <ServerOffIcon className="size-3" />}
         <span className="truncate normal-case tracking-normal">{box.name}</span>
@@ -249,7 +249,7 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
   return (
     // A project showing tasks has room under it; a folded or empty one sits
     // right under the one before, like any other row.
-    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-3" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectActions(box.name, loc)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path]} />}>
           <SidebarMenuButton
@@ -301,7 +301,7 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 function FoldRow({ label, onClick }: { label: string; onClick(): void }) {
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-9 text-muted-foreground")} onClick={onClick}>
+      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-[30px] text-muted-foreground")} onClick={onClick}>
         <span>{label}</span>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
@@ -536,7 +536,7 @@ const WorktreeNode = memo(function WorktreeNode({ node, depth, prefs, update }: 
           {/* Its children hang under it on a guide from its status lane.
               Up to MAX_INDENT levels step in; deeper ones line up with
               their parent. */}
-          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-[17px] pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
+          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-[14px] pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
             <WorktreeNodes nodes={node.children} depth={depth + 1} prefs={prefs} update={update} />
           </SidebarMenuSub>
         </SidebarMenuSubItem>
@@ -628,7 +628,7 @@ function AwayMark({ box, short }: { box: BoxStatus; short?: boolean }) {
 // one in it; it still opens the main checkout when clicked.
 // Lit while the pointer is anywhere on the row, its buttons too, so they sit
 // on the row's own highlight rather than a patch of their own.
-const headerClass = "h-8 gap-1.5 rounded-lg px-2.5 text-label tracking-[0.01em] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground group-hover/row:bg-sidebar-accent group-hover/row:text-foreground";
+const headerClass = "h-6 gap-1.5 rounded-lg px-2 font-medium text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground group-hover/row:bg-sidebar-accent group-hover/row:text-foreground";
 // A project's tasks line up with the places above, not indented under it.
 const rowsClass = "mx-0 mt-px translate-x-0 gap-px border-l-0 px-0 py-0";
 
@@ -908,7 +908,7 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
   return (
     // A project showing tasks has room under it; a folded or empty one sits
     // right under the one before, like any other row.
-    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-3" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={p.members.map((m) => `${m.box.name}: ${m.loc.path}`)} />}>
           <SidebarMenuButton

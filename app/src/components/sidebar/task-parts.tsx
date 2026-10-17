@@ -17,11 +17,11 @@ import { cn } from "@/lib/utils";
 // the theme's own sidebar and text colours.
 export const selectedRow = "data-[active=true]:bg-[color-mix(in_srgb,var(--sidebar-accent),var(--foreground)_4%)] data-[active=true]:font-medium data-[active=true]:text-foreground";
 
-// A task row is a place row's height (34px at the default density); a
-// child's, under its parent on the guide, a little lower and smaller.
+// A task row is a place row's height (28px at the default density), and so
+// is a child's, under its parent on the guide.
 // It stays lit while the pointer is on its + and ⋯, which sit on that light.
-export const taskRowClass = cn("h-[calc(var(--side-row)+6px)] w-full translate-x-0 gap-2.5 px-2.5 text-row font-normal sm:h-[calc(var(--side-row)+6px)] group-hover/row:not-data-[active=true]:bg-sidebar-accent", selectedRow);
-export const childRowClass = "h-[calc(var(--side-row)+4px)] gap-2.5 pr-2.5 pl-1.5 text-[13.5px] sm:h-[calc(var(--side-row)+4px)]";
+export const taskRowClass = cn("h-side-row w-full translate-x-0 gap-2 px-2 text-[13px] font-normal sm:h-side-row group-hover/row:not-data-[active=true]:bg-sidebar-accent", selectedRow);
+export const childRowClass = "h-side-row gap-2 pr-2 pl-1.5 text-[13px] sm:h-side-row";
 
 // toneOf is how much a row's title asks of you: waiting for you in full
 // ink, working a little softer, done or idle muted.
@@ -37,7 +37,7 @@ export function toneOf(state?: SessionState) {
 export function TaskGlyph({ state, small }: { state?: SessionState; small?: boolean }) {
   const label = state && state !== "exited" ? sessionWord(state) : "Idle";
   return (
-    <span role="img" aria-label={label} className={cn("inline-flex shrink-0 items-center justify-center", small ? "w-3.5" : "w-4")}>
+    <span role="img" aria-label={label} className={cn("inline-flex shrink-0 items-center justify-center", "w-3.5")}>
       {state === "waiting" ? (
         <span className="size-[7px] rounded-full bg-warning" />
       ) : state === "running" ? (
@@ -98,7 +98,7 @@ export function TimeLane({ since, tip }: { since?: string; tip?: string }) {
   const t = useNow();
   const text = shortAgo(since, Math.max(t, Date.now() - 30_000));
   const lane = (
-    <span data-testid="row-time" className="w-7 shrink-0 text-right text-meta text-muted-foreground tabular-nums in-data-[active=true]:text-sidebar-foreground">
+    <span data-testid="row-time" className="w-7 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums in-data-[active=true]:text-sidebar-foreground">
       {text}
     </span>
   );
@@ -137,7 +137,7 @@ export function BoxesFoot() {
         type="button"
         data-testid="sidebar-boxes"
         onClick={() => useStore.getState().setView({ kind: "settings", section: "boxes" })}
-        className="flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-desc text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-lg px-2 text-left text-[13px] text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
       >
         {states.length > 0 && (
           <span className="flex shrink-0 items-center gap-1">
