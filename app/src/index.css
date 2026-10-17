@@ -333,6 +333,12 @@
   inherits: false;
 }
 
+/* The two-column sidebar's tasks column, the same way. */
+@property --tasks-live {
+  syntax: "*";
+  inherits: false;
+}
+
 /* A sidebar or rail row out of sight (RowMenus in sidebar/actions.tsx):
    its agent's glyph stops spinning or pulsing until it is scrolled back. */
 [data-offscreen] * {

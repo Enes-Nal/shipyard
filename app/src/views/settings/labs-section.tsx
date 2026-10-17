@@ -9,6 +9,7 @@ export function LabsSection() {
   const agentView = usePrefs((p) => p.agentView);
   const structured = usePrefs((p) => p.structuredClaude);
   const approvals = usePrefs((p) => p.approvals);
+  const columns = usePrefs((p) => p.sidebarLayout === "columns");
   return (
     <SettingsPage title="Labs" description="Newer ideas, on by default. They may change or go away.">
       <SettingsGroup>
@@ -47,6 +48,9 @@ export function LabsSection() {
             />
           </SettingsRow>
         )}
+        <SettingsRow label="Two-column sidebar" description="Your projects in one column, and the tasks of the one you pick in the next.">
+          <Switch aria-label="Two-column sidebar" data-testid="labs-sidebar-columns" checked={columns} onCheckedChange={(on) => setPrefs({ sidebarLayout: on ? "columns" : "list" })} />
+        </SettingsRow>
       </SettingsGroup>
     </SettingsPage>
   );

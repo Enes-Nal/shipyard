@@ -73,3 +73,53 @@ export function stepped(width: number, key: string, shift: boolean, windowWidth 
       return undefined;
   }
 }
+
+// The two-column sidebar (components/sidebar/columns.tsx): its projects
+// column is a fixed PROJECTS_COLUMN wide, enough for a project's name and
+// its mark; the tasks column beside it is dragged by its own edge, like
+// the sidebar's. 200px keeps a task row readable, as above, and 272px
+// leaves a title room beside its status and time. Both columns together
+// stay within 40% of the window, so the panes keep their room (at 1200px
+// that is 480px, leaving the main area 720px), but the tasks column never
+// goes under its narrowest. Dragged narrower than TASKS_FOLD_AT it folds
+// away, and comes back from the projects column.
+export const PROJECTS_COLUMN = 220;
+export const TASKS_MIN = 200;
+export const TASKS_DEFAULT = 272;
+export const TASKS_MAX = 380;
+export const TASKS_FOLD_AT = 140;
+
+// tasksMax is the widest the tasks column may be in a window this wide.
+export function tasksMax(windowWidth = Infinity): number {
+  return Math.max(TASKS_MIN, Math.min(TASKS_MAX, Math.round(windowWidth * 0.4) - PROJECTS_COLUMN));
+}
+
+// clampTasks holds the tasks column between its narrowest and widest;
+// anything that isn't a width is the default.
+export function clampTasks(w: unknown, windowWidth = Infinity): number {
+  if (typeof w !== "number" || !Number.isFinite(w)) return TASKS_DEFAULT;
+  return Math.round(Math.min(tasksMax(windowWidth), Math.max(TASKS_MIN, w)));
+}
+
+// draggedTasks is where a drag of the tasks column's edge leaves it.
+export function draggedTasks(proposed: number, windowWidth = Infinity): { folded: boolean; width: number } {
+  return { folded: proposed < TASKS_FOLD_AT, width: clampTasks(proposed, windowWidth) };
+}
+
+// steppedTasks is the tasks column's width after a key on its focused
+// edge, or undefined for a key that doesn't size it.
+export function steppedTasks(width: number, key: string, shift: boolean, windowWidth = Infinity): number | undefined {
+  const by = shift ? BIG_STEP : STEP;
+  switch (key) {
+    case "ArrowLeft":
+      return clampTasks(width - by, windowWidth);
+    case "ArrowRight":
+      return clampTasks(width + by, windowWidth);
+    case "Home":
+      return TASKS_MIN;
+    case "End":
+      return tasksMax(windowWidth);
+    default:
+      return undefined;
+  }
+}
