@@ -54,7 +54,7 @@ import { orgName, suggestionFor } from "@/lib/team-suggest-model";
 export type GroupBy = "project" | "box";
 export type Show = "active" | "all";
 
-interface SidebarPrefs {
+export interface SidebarPrefs {
   groupBy: GroupBy;
   show: Show;
   collapsed: Record<string, boolean>;
@@ -82,13 +82,13 @@ export function useSidebarPrefs() {
 const urgency: Record<SessionState, number> = { waiting: 0, running: 1, finished: 2, ready: 3, idle: 4, exited: 5 };
 
 // summary is the one status a row shows: its most urgent session's.
-function summary(sessions: Session[], data?: BoxData): { state?: SessionState; count: number } {
+export function summary(sessions: Session[], data?: BoxData): { state?: SessionState; count: number } {
   const states = sessions.map((s) => sessionState(s, data?.stats)).filter((s) => s !== "exited");
   states.sort((a, b) => urgency[a] - urgency[b]);
   return { state: states[0], count: sessions.length };
 }
 
-interface Repo {
+export interface Repo {
   key: string;
   box: BoxStatus;
   loc: Location;
@@ -96,11 +96,12 @@ interface Repo {
   worktrees: Worktree[];
 }
 
-export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+// useRepos is every project on every box as Group by: Box lists them, one
+// per box, by name.
+export function useRepos(): Repo[] {
   const boxes = useStore((s) => s.status?.boxes ?? NONE);
   const data = useStore((s) => s.boxes);
-
-  const repos = useMemo(() => {
+  return useMemo(() => {
     const out: Repo[] = [];
     for (const b of boxes) {
       for (const loc of data[b.name]?.locations ?? []) {
@@ -110,6 +111,12 @@ export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Par
     }
     return out.sort((a, b) => a.loc.name.localeCompare(b.loc.name) || a.box.name.localeCompare(b.box.name));
   }, [boxes, data]);
+}
+
+export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+  const boxes = useStore((s) => s.status?.boxes ?? NONE);
+  const data = useStore((s) => s.boxes);
+  const repos = useRepos();
 
   const group = (list: Repo[], chip: boolean) => list.map((r) => <RepoGroup key={r.key} repo={r} chip={chip} prefs={prefs} update={update} />);
 
@@ -139,7 +146,7 @@ export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Par
 
 // BoxHeader heads a box: its name, state and latency, with a way to add a
 // project to it, or to reconnect when it is not online.
-function BoxHeader({ box, empty }: { box: BoxStatus; empty: boolean }) {
+export function BoxHeader({ box, empty }: { box: BoxStatus; empty: boolean }) {
   const online = box.state === "online";
   const data = useStore((s) => s.boxes[box.name]);
   const outdated = useOutdatedBoxes().includes(box.name);
@@ -195,14 +202,18 @@ function BoxChip({ box }: { box: BoxStatus }) {
   return online ? chip : <Tip label={`${box.name} is ${awayText(box)}`}>{chip}</Tip>;
 }
 
-function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+// useRepoTree is what a project on one box shows under its header: its
+// main checkout while it has work or is open, and its worktrees, the quiet
+// ones folded away. foldable says whether the header's fold applies (the
+// two-column sidebar's tasks never fold).
+export function useRepoTree(repo: Repo, prefs: SidebarPrefs, foldable = true) {
   const { box, loc, main, worktrees } = repo;
   const data = useStore((s) => s.boxes[box.name]);
   const removals = useRemovals((s) => s.byKey);
   const current = useWorkspaces((s) => s.current);
   const inWorkspace = useStore((s) => s.view.kind === "workspace");
   const online = box.state === "online";
-  const collapsed = prefs.collapsed[repo.key] ?? false;
+  const collapsed = foldable && (prefs.collapsed[repo.key] ?? false);
   const all = prefs.show === "all";
   const expanded = all || (prefs.expanded[repo.key] ?? false);
 
@@ -226,13 +237,34 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
   const tree = nest(rows, (r) => r.key, (r) => r.wt.parent);
   const shown = expanded ? tree : prune(tree, isActive);
   const hidden = rows.length - size(shown);
+  return { data, online, collapsed, all, expanded, mainSessions, mainSel, mainRow, rows, active, shown, hidden, any: mainRow || shown.length > 0 || hidden > 0 };
+}
+
+// RepoTreeRows are a project's task rows on one box (useRepoTree).
+export function RepoTreeRows({ repo, t, prefs, update }: { repo: Repo; t: ReturnType<typeof useRepoTree>; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+  const { box, loc, main } = repo;
+  const open = (wt: Worktree) => selectWorktree(refOf(box.name, loc, wt));
+  return (
+    <>
+      {t.mainRow && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={t.mainSessions} data={t.data} selected={t.mainSel} onOpen={() => open(main)} away={t.online ? undefined : box} />}
+      <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
+      {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
+    </>
+  );
+}
+
+function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+  const { box, loc, main } = repo;
+  const t = useRepoTree(repo, prefs);
+  const { online, collapsed } = t;
   const open = (wt: Worktree) => selectWorktree(refOf(box.name, loc, wt));
   const toggle = () => update({ collapsed: { ...prefs.collapsed, [repo.key]: !collapsed } });
 
   return (
     // A project showing tasks has room under it; a folded or empty one sits
     // right under the one before, like any other row.
-    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-3" : "mb-0.5", "last:mb-0")}>
+    <SidebarMenuItem className={cn(!collapsed && t.any ? "mb-3" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectActions(box.name, loc)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path, ...(online ? [] : [`${box.name} is ${awayText(box)}`])]} />}>
           <SidebarMenuButton
@@ -272,12 +304,9 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
         )}
       </ContextRow>
 
-      {!collapsed && (mainRow || shown.length > 0 || hidden > 0) && (
+      {!collapsed && t.any && (
         <SidebarMenuSub className={rowsClass}>
-          {mainRow && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={mainSessions} data={data} selected={mainSel} onOpen={() => open(main)} away={online ? undefined : box} />}
-          <WorktreeNodes nodes={shown} depth={0} prefs={prefs} update={update} />
-          {hidden > 0 && <FoldRow label={`Show ${hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })} />}
-          {!all && expanded && rows.length > active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
+          <RepoTreeRows repo={repo} t={t} prefs={prefs} update={update} />
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
@@ -598,7 +627,7 @@ function awayActions(box: BoxStatus): Action[] {
 // state's word, small and faint ("offline"). The row's or header's own tip
 // names the box and how long it has been gone. lane gives it a row's time
 // lane to sit in.
-function AwayWord({ boxes, lane }: { boxes: BoxStatus[]; lane?: boolean }) {
+export function AwayWord({ boxes, lane }: { boxes: BoxStatus[]; lane?: boolean }) {
   return (
     <span data-testid="away-word" className={cn("shrink-0 text-tag", lane && "min-w-7 text-right", ink.faint)}>
       {BOX_WORDS[boxState(boxes[0])].lower}
@@ -647,7 +676,7 @@ function timeTip(sessions: Session[], top?: Session) {
 // under it and nothing in the row moves. beside puts it just before a
 // parent row's fold, which stays where it is. Its buttons and their menus
 // are only made once the row is first pointed at or focused (Armed).
-function RowOverlay({ className, selected, beside, children }: { className?: string; selected?: boolean; beside?: boolean; children: React.ReactNode }) {
+export function RowOverlay({ className, selected, beside, children }: { className?: string; selected?: boolean; beside?: boolean; children: React.ReactNode }) {
   if (!useArmed()) return null;
   return (
     <div
@@ -716,7 +745,7 @@ function RowActions({ box, loc, wt, project, onNewWorktree, selected, beside }: 
   );
 }
 
-function RowButton({ label, ...props }: React.ComponentProps<"button"> & { label: string }) {
+export function RowButton({ label, ...props }: React.ComponentProps<"button"> & { label: string }) {
   return (
     <Tip label={label}>
       <button
@@ -731,7 +760,9 @@ function RowButton({ label, ...props }: React.ComponentProps<"button"> & { label
 
 // ProjectSections lists projects under their sections (Work, Personal…);
 // projects in none come first. Drag a project onto a section to move it.
-function ProjectSections({ prefs, update }: { prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+// row draws a project another way (the two-column sidebar's project rows);
+// by default it is the project with its tasks under it.
+export function ProjectSections({ prefs, update, row }: { prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void; row?: (p: Project) => React.ReactNode }) {
   const { projects, sections } = useProjects();
   const multiBox = useStore((s) => (s.status?.boxes.length ?? 0) > 1);
   const [over, setOver] = useState<string>();
@@ -750,7 +781,7 @@ function ProjectSections({ prefs, update }: { prefs: SidebarPrefs; update(p: Par
       if (p && p.section !== section) void groupActions.setSection(p, section);
     },
   });
-  const list = (ps: Project[]) => ps.map((p) => <ProjectGroup key={p.id} project={p} chips={multiBox} prefs={prefs} update={update} />);
+  const list = (ps: Project[]) => ps.map((p) => (row ? row(p) : <ProjectGroup key={p.id} project={p} chips={multiBox} prefs={prefs} update={update} />));
 
   return (
     <>
@@ -828,7 +859,11 @@ const sameProject = (a: Project, b: Project) =>
   a === b ||
   (a.id === b.id && a.name === b.name && a.slug === b.slug && a.section === b.section && a.defaultBox === b.defaultBox && a.remote === b.remote && a.members.length === b.members.length && a.members.every((m, i) => sameMember(m, b.members[i])));
 
-function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Project; chips: boolean; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+// useProjectTree is what a project shows under its header: with one box
+// its main checkout while it has work or is open, and the worktrees from
+// all its boxes, the quiet ones folded away. foldable says whether the
+// header's fold applies (the two-column sidebar's tasks never fold).
+export function useProjectTree(p: Project, prefs: SidebarPrefs, foldable = true) {
   // Only its own boxes' data: agents changing on another box leave it be.
   const memberData = useStore(useShallow((s) => p.members.map((m) => s.boxes[m.box.name])));
   const boxes = useMemo(() => Object.fromEntries(p.members.map((m, i) => [m.box.name, memberData[i]])) as Record<string, BoxData | undefined>, [p.members, memberData]);
@@ -836,7 +871,7 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
   const current = useWorkspaces((s) => s.current);
   const inWorkspace = useStore((s) => s.view.kind === "workspace");
   const key = `project:${p.id}`;
-  const collapsed = prefs.collapsed[key] ?? false;
+  const collapsed = foldable && (prefs.collapsed[key] ?? false);
   const all = prefs.show === "all";
   const expanded = all || (prefs.expanded[key] ?? false);
   const multi = p.members.length > 1;
@@ -890,6 +925,36 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
   // With one box, its main checkout is a task row while it has work in it
   // or is open (or every worktree shows); the header only names the project.
   const mainRow = !multi && !!defMain && (all || mainSel || glyphSessions.some((s) => !s.exited));
+  return { boxes, key, collapsed, all, expanded, multi, def, defMain, rows, active, shown, hidden, mainSel, glyphSessions, online, mainRow, any: mainRow || shown.length > 0 || hidden > 0 };
+}
+
+// ProjectTreeRows are a project's task rows (useProjectTree).
+export function ProjectTreeRows({ t, prefs, update }: { t: ReturnType<typeof useProjectTree>; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+  const { def, defMain, key } = t;
+  return (
+    <>
+      {t.mainRow && defMain && (
+        <WorktreeRow
+          box={def.box.name}
+          loc={def.loc}
+          wt={defMain}
+          sessions={t.glyphSessions}
+          data={t.boxes[def.box.name]}
+          selected={t.mainSel}
+          onOpen={() => selectWorktree(refOf(def.box.name, def.loc, defMain))}
+          away={def.box.state === "online" ? undefined : def.box}
+        />
+      )}
+      <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
+      {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
+    </>
+  );
+}
+
+function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Project; chips: boolean; prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
+  const t = useProjectTree(p, prefs);
+  const { boxes, key, collapsed, multi, def, defMain, shown, hidden, mainRow, glyphSessions, online } = t;
 
   return (
     // A project showing tasks has room under it; a folded or empty one sits
@@ -950,21 +1015,7 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
 
       {!collapsed && (mainRow || shown.length > 0 || hidden > 0) && (
         <SidebarMenuSub className={rowsClass}>
-          {mainRow && defMain && (
-            <WorktreeRow
-              box={def.box.name}
-              loc={def.loc}
-              wt={defMain}
-              sessions={glyphSessions}
-              data={boxes[def.box.name]}
-              selected={mainSel}
-              onOpen={() => selectWorktree(refOf(def.box.name, def.loc, defMain))}
-              away={def.box.state === "online" ? undefined : def.box}
-            />
-          )}
-          <WorktreeNodes nodes={shown} depth={0} prefs={prefs} update={update} />
-          {hidden > 0 && <FoldRow label={`Show ${hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })} />}
-          {!all && expanded && rows.length > active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
+          <ProjectTreeRows t={t} prefs={prefs} update={update} />
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
@@ -984,7 +1035,7 @@ const ProjectGroup = memo(ProjectGroupBody, (a, b) => a.chips === b.chips && a.p
 const NO_SESSIONS: Session[] = [];
 
 // PlaceTip says where a sidebar row is: its name, then its path on each box.
-function PlaceTip({ name, sub, lines, work = [] }: { name: string; sub?: string; lines: string[]; work?: string[] }) {
+export function PlaceTip({ name, sub, lines, work = [] }: { name: string; sub?: string; lines: string[]; work?: string[] }) {
   return (
     <span className="flex max-w-96 flex-col gap-0.5">
       <span>{name}</span>
@@ -1034,7 +1085,7 @@ function SetupMark({ box, wt }: { box: string; wt: Worktree }) {
 // TeamSuggestMark is a project row's quiet note that its org publishes a
 // team setup the person hasn't looked at (lib/team-suggest.ts): one small
 // muted icon, and the row's menu says the rest.
-function TeamSuggestMark({ places }: { places: { box: string; location: string }[] }) {
+export function TeamSuggestMark({ places }: { places: { box: string; location: string }[] }) {
   const list = useTeamSuggestions();
   if (!list.length) return null;
   const found = places.map((p) => suggestionFor(list, p.box, p.location)).find(Boolean);
