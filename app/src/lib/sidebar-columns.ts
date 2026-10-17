@@ -3,8 +3,8 @@
 // (sidebar-columns.test.ts).
 //
 // The one picked last wins: a click on a project in the first column picks
-// it, and so does opening a worktree (the sidebar records that project as
-// picked when the worktree in front changes). A pick that is gone (the
+// it, and so does opening a worktree (the pick becomes that worktree's
+// project; components/sidebar/columns.tsx). A pick that is gone (the
 // project was removed, or Group by changed what a key names) gives way to
 // the project of the worktree in front, then to the first project listed.
 export function pickedColumn(order: readonly string[], pick: string | null | undefined, inFront: string | undefined): string | undefined {

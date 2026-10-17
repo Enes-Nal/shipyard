@@ -1,5 +1,5 @@
 import { ChevronsLeftIcon, HomeIcon, PlusIcon } from "lucide-react";
-import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { type Action, ContextRow, DotsMenu, projectActions, projectGroupActions } from "@/components/sidebar/actions";
@@ -34,7 +34,7 @@ import { nextRow, pickedColumn } from "@/lib/sidebar-columns";
 import { clampTasks, draggedTasks, PROJECTS_COLUMN, TASKS_DEFAULT, TASKS_MAX, TASKS_MIN, tasksMax, steppedTasks } from "@/lib/sidebar-width";
 import { NONE, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
+import { homeBox, refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
 
 // The two-column sidebar (Settings › Labs): the places and the projects in
 // the first column, one quiet row each, and the tasks of the project picked
@@ -49,8 +49,17 @@ export type Picked = { kind: "project"; key: string; project: Project } | { kind
 
 const inWorktrees = (loc: Location, s: Session) => !s.service && !!loc.worktrees?.some((w) => w.path === s.dir);
 
+// Opening a worktree, from anywhere (the tasks column, ⌘K, the rail, a
+// notification), picks its project: the pick becomes "the project of this
+// worktree" (ws:<key>), which usePicked resolves. Going Home leaves it be.
+useWorkspaces.subscribe((s, prev) => {
+  if (s.current === prev.current || !s.current || homeBox(s.current)) return;
+  if (usePrefs.getState().sidebarLayout !== "columns") return;
+  usePrefs.setState({ sidebarPick: `ws:${s.current}` });
+});
+
 // usePicked is the project picked in the first column (lib/sidebar-columns),
-// in the order the column lists them. Opening a worktree picks its project.
+// in the order the column lists them.
 export function usePicked(groupBy: SidebarPrefs["groupBy"]): Picked | undefined {
   const { projects, sections } = useProjects();
   const repos = useRepos();
@@ -69,25 +78,20 @@ export function usePicked(groupBy: SidebarPrefs["groupBy"]): Picked | undefined 
     return boxes.flatMap((b) => repos.filter((r) => r.box.name === b.name)).map((repo) => ({ kind: "repo", key: repo.key, repo }));
   }, [byProject, projects, sections, boxes, repos]);
 
-  const front = useMemo(() => {
-    if (!current) return undefined;
-    const has = (box: string, loc: Location) => !!loc.worktrees?.some((w) => wsKey(box, w.path) === current);
-    return list.find((x) => (x.kind === "project" ? x.project.members.some((m) => has(m.box.name, m.loc)) : has(x.repo.box.name, x.repo.loc)))?.key;
-  }, [list, current]);
-
-  // A worktree brought to the front picks its project; the one in front
-  // when the sidebar first draws leaves the saved pick as it is.
-  const seen = useRef(current);
-  useEffect(() => {
-    if (seen.current === current) return;
-    seen.current = current;
-    if (front && front !== usePrefs.getState().sidebarPick) usePrefs.setState({ sidebarPick: front });
-  }, [current, front]);
+  // The project a workspace's worktree is in.
+  const holding = useCallback(
+    (ws: string | undefined) => {
+      if (!ws) return undefined;
+      const has = (box: string, loc: Location) => !!loc.worktrees?.some((w) => wsKey(box, w.path) === ws);
+      return list.find((x) => (x.kind === "project" ? x.project.members.some((m) => has(m.box.name, m.loc)) : has(x.repo.box.name, x.repo.loc)))?.key;
+    },
+    [list],
+  );
 
   const key = pickedColumn(
     list.map((x) => x.key),
-    pick,
-    front,
+    pick?.startsWith("ws:") ? holding(pick.slice(3)) : pick,
+    holding(current),
   );
   return list.find((x) => x.key === key);
 }
