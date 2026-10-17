@@ -143,7 +143,8 @@ export const test = base.extend<{ app: App }>({
         if (!(await row.isVisible())) {
           while ((await more.count()) > 0 && !(await row.isVisible())) await more.first().click();
         }
-        await row.click();
+        // On its title: a narrow row's middle can be under its + and ⋯.
+        await row.click({ position: { x: 32, y: 12 } });
         await expect(row).toHaveAttribute("data-active", "true");
       },
       panes: page.locator("[data-testid=pane]:visible"),

@@ -22,6 +22,7 @@ import { Component, Fragment, type ErrorInfo, type ReactNode, useEffect, useMemo
 import { create } from "zustand";
 
 import { type Action, ContextRow } from "@/components/sidebar/actions";
+import { ink } from "@/components/sidebar/ink";
 import { selectedRow } from "@/components/sidebar/task-parts";
 import { Tip } from "@/components/tip";
 import { Button } from "@/components/ui/button";
@@ -252,7 +253,7 @@ function dragProps(id: string) {
 function RowBadge({ badge }: { badge: NonNullable<NavItem["badge"]> }) {
   return (
     <Tip label={badge.title} side="right">
-      <SidebarMenuBadge data-testid="nav-badge" className={cn("top-1/2 right-1.5 h-5 min-w-5 -translate-y-1/2 peer-data-[size=sm]/menu-button:top-1/2 rounded-full px-1 text-label leading-none tabular-nums", badge.loud ? "bg-warning/15 text-warning-foreground" : "text-muted-foreground")}>
+      <SidebarMenuBadge data-testid="nav-badge" className={cn("top-1/2 right-1.5 h-5 min-w-5 -translate-y-1/2 peer-data-[size=sm]/menu-button:top-1/2 rounded-full px-1 text-tag leading-none tabular-nums", badge.loud ? "bg-warning/15 text-warning-foreground" : ink.faint)}>
         {badge.count}
       </SidebarMenuBadge>
     </Tip>
@@ -261,12 +262,13 @@ function RowBadge({ badge }: { badge: NonNullable<NavItem["badge"]> }) {
 
 // RowKeys is a place's shortcut at its row's end, where a count would be.
 export function RowKeys({ keys }: { keys: string }) {
-  return <span aria-hidden className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-meta text-muted-foreground peer-data-[active=true]/menu-button:text-sidebar-foreground">{platformKeys(keys)}</span>;
+  return <span aria-hidden className={cn("pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-tag peer-data-[active=true]/menu-button:text-foreground", ink.faint)}>{platformKeys(keys)}</span>;
 }
 
 // A place's row, sized as Settings' nav: 28px at the default density, a
-// 14px icon and its name at 13px; the one you are on sits on the selected tint.
-export const rowClass = cn("h-side-row gap-2 px-2 text-[13px] font-normal text-foreground [&>svg]:size-3.5 [&>svg]:text-muted-foreground", selectedRow, "data-[active=true]:font-normal");
+// 14px icon and its name in text-desc, in the ordinary row's ink; the one
+// you are on is full ink on the selected tint.
+export const rowClass = cn("h-side-row gap-2 px-2 text-desc font-normal hover:text-foreground [&>svg]:size-3.5 [&>svg]:text-(color:--ink-glyph) data-[active=true]:[&>svg]:text-(color:--ink-row)", ink.row, selectedRow, "data-[active=true]:font-normal");
 
 function NavRow({ item, list, index, ids }: { item: NavItem; list: NavList; index: number; ids: string[] }) {
   const over = useDrag((s) => s.over);
@@ -297,7 +299,7 @@ export function MoreItems({ more }: { more: NavItem[] }) {
         <MenuItem key={n.id} onClick={n.go} aria-current={n.active ? "page" : undefined} className={cn(n.active && "bg-accent/50 font-medium")}>
           <span className="flex size-4 items-center justify-center [&_svg]:size-4">{n.icon}</span>
           <span className="min-w-0 flex-1 truncate">{n.label}</span>
-          {n.badge && <span className={cn("text-xs tabular-nums", n.badge.loud ? "text-warning-foreground" : "text-muted-foreground")}>{n.badge.count}</span>}
+          {n.badge && <span className={cn("text-meta tabular-nums", n.badge.loud ? "text-warning-foreground" : "text-muted-foreground")}>{n.badge.count}</span>}
         </MenuItem>
       ))}
       {more.length > 0 && <MenuSeparator />}
@@ -333,7 +335,7 @@ export function Nav({ lead, extra }: { lead?: ReactNode; extra?: ReactNode } = {
             {afterHome && i === 0 && lead}
           </Fragment>
         ))}
-        {pinned.length === 0 && <li className="px-2 py-1 text-muted-foreground text-xs">Drag places here to pin them.</li>}
+        {pinned.length === 0 && <li className={cn("px-2 py-1 text-meta", ink.faint)}>Drag places here to pin them.</li>}
         <SidebarMenuItem {...dropProps("more", more.length, ids)} className="relative">
           <Menu>
             <MenuTrigger
@@ -355,7 +357,7 @@ export function Nav({ lead, extra }: { lead?: ReactNode; extra?: ReactNode } = {
             </MenuPopup>
           </Menu>
           {here ? (
-            <span className="pointer-events-none absolute top-1/2 right-2.5 max-w-28 -translate-y-1/2 truncate text-meta text-sidebar-foreground">{here.label}</span>
+            <span className={cn("pointer-events-none absolute top-1/2 right-2.5 max-w-28 -translate-y-1/2 truncate text-tag", ink.row)}>{here.label}</span>
           ) : loud?.badge ? (
             <RowBadge badge={loud.badge} />
           ) : null}
@@ -365,7 +367,7 @@ export function Nav({ lead, extra }: { lead?: ReactNode; extra?: ReactNode } = {
         <div
           {...dropProps("hidden", 0, ids)}
           className={cn(
-            "mt-1.5 flex h-8 items-center justify-center gap-1.5 rounded-md border border-dashed text-muted-foreground text-xs",
+            "mt-1.5 flex h-8 items-center justify-center gap-1.5 rounded-md border border-dashed text-meta text-muted-foreground",
             over?.list === "hidden" ? "border-ring bg-sidebar-accent text-foreground" : "border-sidebar-border",
           )}
         >
@@ -400,10 +402,10 @@ export function CustomizeSidebarSheet() {
         <SheetPanel className="flex flex-col gap-5">
           {lists.map(([list, title, items, hint]) => (
             <section key={list} {...dropProps(list, items.length, ids)}>
-              <h3 className="font-medium text-sm">{title}</h3>
-              <p className="mb-1.5 text-muted-foreground text-xs">{hint}</p>
+              <h3 className="text-row">{title}</h3>
+              <p className="mb-1.5 text-meta text-muted-foreground">{hint}</p>
               <ul className="flex min-h-9 flex-col gap-px rounded-lg border p-1">
-                {items.length === 0 && <li className="px-2 py-1.5 text-muted-foreground text-xs">Nothing here. Drag a place in.</li>}
+                {items.length === 0 && <li className="px-2 py-1.5 text-meta text-muted-foreground">Nothing here. Drag a place in.</li>}
                 {items.map((item, i) => (
                   <CustomizeRow key={item.id} item={item} list={list} index={i} count={items.length} ids={ids} />
                 ))}
@@ -434,7 +436,7 @@ function CustomizeRow({ item, list, index, count, ids }: { item: NavItem; list: 
     ] as [NavList, string, ReactNode][]
   ).filter(([l]) => l !== list);
   return (
-    <li {...dropProps(list, index, ids)} {...dragProps(item.id)} className="relative flex h-8 items-center gap-2 rounded-md px-1.5 text-sm hover:bg-accent/60">
+    <li {...dropProps(list, index, ids)} {...dragProps(item.id)} className="relative flex h-8 items-center gap-2 rounded-md px-1.5 text-body hover:bg-accent/60">
       {before && <span className="pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded-full bg-ring" />}
       <GripVerticalIcon className="size-3.5 shrink-0 cursor-grab text-muted-foreground" />
       <span className="flex size-4 items-center justify-center text-muted-foreground [&_svg]:size-3.5">{item.icon}</span>

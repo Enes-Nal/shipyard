@@ -45,7 +45,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
             </div>
           </div>
           {view.update && (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-info/30 bg-info/6 px-3 py-2 text-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-info/30 bg-info/6 px-3 py-2 text-body">
               <span className="min-w-0 flex-1">
                 {name}'s setup changed: {view.update.changes.length} changes in {view.update.commits} commits by {view.update.author}
                 {view.update.sudo.length ? ", one asks for your password" : ""}.
@@ -62,7 +62,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
         {first && firstLoc && (
           <section className="rounded-xl border bg-card p-4" aria-label="Your first task">
             <p className="text-section">Your first task, suggested by {name}</p>
-            <Textarea className="mt-2 text-sm" value={task} onChange={(e) => setTask(e.target.value)} aria-label="First task" />
+            <Textarea className="mt-2 text-body" value={task} onChange={(e) => setTask(e.target.value)} aria-label="First task" />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
               <span className="text-meta text-muted-foreground">
                 on {first.id} · Claude Code · a new worktree on {run.box}
@@ -79,7 +79,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
             return (
               <div key={r.id} className="rounded-xl border bg-card p-4">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium font-mono text-sm">{r.repo}</span>
+                  <span className="font-mono text-row">{r.repo}</span>
                   {p?.private && <LockIcon className="size-3 text-muted-foreground" />}
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-meta text-muted-foreground">
@@ -127,7 +127,7 @@ function MissingKeys({ run }: { run: TeamStatus }) {
       {missing.length > 0 && (
         <ul className="mt-2 ml-6 space-y-1.5">
           {missing.map((m) => (
-            <li key={m.project} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <li key={m.project} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
               <span className="font-medium font-mono">{m.project}</span>
               <span className="min-w-0 font-mono text-muted-foreground">{m.keys.join(", ")}</span>
               {m.location && (

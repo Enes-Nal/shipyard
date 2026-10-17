@@ -7,10 +7,10 @@ import { cn, TYPE_SCALE } from "./utils.ts";
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
-test("every step of the type scale is defined in index.css, with a line height", () => {
+test("every step of the type scale is defined in index.css in rem, with a line height", () => {
   for (const name of TYPE_SCALE) {
-    assert.match(css, new RegExp(`--text-${name}:\\s*[\\d.]+px;`), `--text-${name}`);
-    assert.match(css, new RegExp(`--text-${name}--line-height:\\s*[\\d.]+px;`), `--text-${name}--line-height`);
+    assert.match(css, new RegExp(`--text-${name}:\\s*[\\d.]+rem;`), `--text-${name}`);
+    assert.match(css, new RegExp(`--text-${name}--line-height:\\s*[\\d.]+rem;`), `--text-${name}--line-height`);
     // A colour of the same name would make text-<name> a colour too.
     assert.doesNotMatch(css, new RegExp(`--color-${name}:`), `--color-${name} clashes with text-${name}`);
   }

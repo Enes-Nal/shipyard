@@ -42,7 +42,7 @@ export function FlowsSection({ box, location }: { box: string; location: string 
       }
     >
       {flows && shown.length === 0 ? (
-        <button type="button" onClick={() => open()} className="flex w-full items-center gap-2 px-4 py-3 text-left text-muted-foreground text-sm hover:text-foreground">
+        <button type="button" onClick={() => open()} className="flex w-full items-center gap-2 px-4 py-3 text-left text-muted-foreground text-body hover:text-foreground">
           <WorkflowIcon className="size-4" />
           No flows for {location} yet. Make one.
         </button>

@@ -13,6 +13,7 @@ import { ChatBackgroundSettings, ChatWidthSettings } from "@/views/settings/chat
 import { Segmented } from "@/views/settings/controls";
 import { HeaderPictureSettings } from "@/views/settings/header-picture-section";
 import { SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings/rows";
+import { Dots, Preview } from "@/views/settings/theme-preview";
 import { IS_LINUX } from "@/lib/platform";
 
 const BERTH = new Set(berthThemes.map((t) => t.id));
@@ -64,8 +65,8 @@ export function AppearanceSection() {
       <SettingsGroup
         title="Theme"
         actions={
-          <span className="text-[13px] text-muted-foreground leading-4">
-            {themes.length} themes · add your own in <span className="font-mono text-xs">~/.berth/themes</span>
+          <span className="text-desc text-muted-foreground">
+            {themes.length} themes · add your own in <span className="font-mono text-mono">~/.berth/themes</span>
           </span>
         }
       >
@@ -86,11 +87,11 @@ export function AppearanceSection() {
         {groups.map((g, i) => (
           <div key={g.title} className="mt-5 first:mt-0">
             <div className="mb-1 flex h-6 items-center gap-3">
-              <h3 className="flex-1 text-[13px] text-muted-foreground">{g.title}</h3>
+              <h3 className="flex-1 text-desc text-muted-foreground">{g.title}</h3>
               {i === 0 && (
                 <div className="relative w-44 shrink-0">
                   <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input size="sm" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Find a theme" aria-label="Find a theme" className="[&_input]:h-6 [&_input]:pl-7.5 [&_input]:text-xs" />
+                  <Input size="sm" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Find a theme" aria-label="Find a theme" className="[&_input]:h-6 [&_input]:pl-7.5 [&_input]:text-meta" />
                 </div>
               )}
             </div>
@@ -101,9 +102,9 @@ export function AppearanceSection() {
             </div>
           </div>
         ))}
-        {!groups.length && <p className="text-muted-foreground text-xs">No theme is called “{query.trim()}”.</p>}
+        {!groups.length && <p className="text-muted-foreground text-meta">No theme is called “{query.trim()}”.</p>}
         {(hidden.length > 0 || all) && !q && (
-          <button type="button" onClick={() => setAll((v) => !v)} className="mt-4 flex max-w-full items-baseline gap-2 text-left text-[13px]">
+          <button type="button" onClick={() => setAll((v) => !v)} className="mt-4 flex max-w-full items-baseline gap-2 text-left text-desc">
             <span className="shrink-0 font-medium">{all ? "Show fewer" : `Show ${hidden.length} more`}</span>
             {!all && <span className="truncate text-muted-foreground">{hidden.map((t) => t.name).join(", ")}</span>}
           </button>
@@ -214,54 +215,10 @@ function ThemeCard({ theme, selected, following, onSelect }: { theme: Theme; sel
         <Preview theme={theme} />
         <Dots theme={theme} />
       </div>
-      <div className="flex items-center gap-2 px-0.5 text-[13px]">
+      <div className="flex items-center gap-2 px-0.5 text-desc">
         <span className={cn("min-w-0 flex-1 truncate", selected && "font-medium")}>{theme.name}</span>
-        {selected && (following ? <span className="shrink-0 text-muted-foreground text-xs">Now</span> : <CheckIcon className="size-3.5 shrink-0" />)}
+        {selected && (following ? <span className="shrink-0 text-muted-foreground text-meta">Now</span> : <CheckIcon className="size-3.5 shrink-0" />)}
       </div>
     </button>
-  );
-}
-
-// Preview draws a theme's sidebar beside its terminal, in its own colors.
-function Preview({ theme }: { theme: Theme }) {
-  const c = theme.colors;
-  const t = theme.terminal;
-  return (
-    <div className="flex h-full" style={{ background: c.background }}>
-      <div className="flex w-[38%] flex-col gap-1.5 border-r px-2.5 py-2.5" style={{ background: c.sidebar, borderColor: c.border }}>
-        <div className="h-1.5 w-4/5 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.55 }} />
-        <div className="h-1.5 w-3/5 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.3 }} />
-        <div className="flex items-center gap-1">
-          <span className="size-1.5 rounded-full" style={{ background: c.warning }} />
-          <div className="h-1.5 flex-1 rounded-full" style={{ background: c.accent }} />
-        </div>
-        <div className="h-1.5 w-2/3 rounded-full" style={{ background: c.sidebarForeground, opacity: 0.3 }} />
-      </div>
-      <div className="flex-1 px-2.5 py-2 font-mono text-[10px] leading-[1.35]" style={{ background: t.background, color: t.foreground }}>
-        <div>
-          <span style={{ color: t.green }}>●</span> tests pass
-        </div>
-        <div>
-          <span style={{ color: t.yellow }}>●</span> <span style={{ color: t.blue }}>~/work/shop</span>
-        </div>
-        <div>
-          <span style={{ color: t.magenta }}>❯</span> <span style={{ color: t.cyan }}>berth</span>
-          <span className="ml-0.5 inline-block h-2.5 w-1 align-middle" style={{ background: t.cursor }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Dots are a theme's colours at a glance, in the corner of its preview: its
-// primary, then the terminal's red, yellow, green, blue and magenta.
-function Dots({ theme }: { theme: Theme }) {
-  const t = theme.terminal;
-  return (
-    <span className="absolute right-2 bottom-2 flex items-center gap-[3px] rounded-full border px-1.5 py-1" style={{ background: theme.colors.background, borderColor: theme.colors.border }} aria-hidden>
-      {[theme.colors.primary, t.red, t.yellow, t.green, t.blue, t.magenta].map((c, i) => (
-        <span key={i} className="size-2 rounded-full" style={{ background: c }} />
-      ))}
-    </span>
   );
 }

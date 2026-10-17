@@ -77,12 +77,12 @@ export function ProjectPicker({
                 <label key={key} className={cn("flex min-w-0 cursor-pointer items-start gap-2.5 border-b px-3 py-2 last:border-b-0 hover:bg-accent/40", disabled && "cursor-default hover:bg-transparent")}>
                   <Checkbox className="mt-0.5" checked={selected.has(key)} disabled={disabled} onCheckedChange={(v) => toggle(key, !!v)} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                    <div className="flex min-w-0 items-center gap-2 text-body">
                       <FolderGitIcon className="size-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">{l.name}</span>
                       {l.slug && <span className={cn("truncate font-mono text-meta", matches ? "text-success-foreground" : "text-muted-foreground")}>{l.slug}</span>}
                       {here && (
-                        <span className="ml-auto shrink-0 rounded-md border px-1.5 text-[11px] text-muted-foreground">
+                        <span className="ml-auto shrink-0 rounded-md border px-1.5 text-tag text-muted-foreground">
                           {here.kit.id === kitId ? (here.outdated ? "Has an older version" : "Has this kit") : `Has ${here.kit.name || here.kit.id}`}
                         </span>
                       )}

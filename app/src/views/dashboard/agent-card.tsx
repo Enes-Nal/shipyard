@@ -136,7 +136,7 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
           </div>
         )}
         {lines && lines.length > 0 && state !== "ready" && (
-          <div className={cn("mt-2 space-y-px rounded-md bg-muted/50 px-2 py-1.5 font-mono text-[11px] leading-snug", state === "waiting" ? "text-foreground/85" : "text-muted-foreground")}>
+          <div className={cn("mt-2 space-y-px rounded-md bg-muted/50 px-2 py-1.5 font-mono text-tag", state === "waiting" ? "text-foreground/85" : "text-muted-foreground")}>
             {lines.map((l, i) => (
               <div key={i} className="truncate whitespace-pre" title={l}>
                 {l}
@@ -163,10 +163,10 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
           </span>
         )}
         <span className="ml-auto flex items-center gap-0.5" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button size="xs" variant="ghost" className="h-6 text-[11px]" onClick={open}>
+          <Button size="xs" variant="ghost" className="h-6 text-tag" onClick={open}>
             Open
           </Button>
-          <Button size="xs" variant="ghost" className="h-6 text-[11px]" onClick={() => openOrchestrate("send", box, session.name)}>
+          <Button size="xs" variant="ghost" className="h-6 text-tag" onClick={() => openOrchestrate("send", box, session.name)}>
             {state === "ready" ? "Prompt…" : "Reply…"}
           </Button>
           <SessionActions box={box} session={session.name}>
@@ -205,7 +205,7 @@ function Answers({ box, session, choices }: { box: string; session: string; choi
             disabled={!!sent}
             onClick={() => void answer(c)}
             className={cn(
-              "inline-flex h-6 max-w-full items-center gap-1.5 rounded-md border bg-background px-2 text-[11px] transition-colors hover:border-ring/50 disabled:opacity-50",
+              "inline-flex h-6 max-w-full items-center gap-1.5 rounded-md border bg-background px-2 text-tag transition-colors hover:border-ring/50 disabled:opacity-50",
               sent === c.key && "border-success/50 text-success",
             )}
           >

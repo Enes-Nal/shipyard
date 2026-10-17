@@ -15,7 +15,7 @@ import { useHomeWidget } from "./env";
 // does something.
 export function WidgetRow({ children, onClick, className, label }: { children: ReactNode; onClick?: () => void; className?: string; label?: string }) {
   const cls = cn(
-    "group/row flex h-9 w-full min-w-0 shrink-0 items-center gap-2.5 rounded-md px-2 text-left text-sm outline-none",
+    "group/row flex h-9 w-full min-w-0 shrink-0 items-center gap-2.5 rounded-md px-2 text-left text-body outline-none",
     onClick && "hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
     className,
   );
@@ -68,7 +68,7 @@ export function More({ n, label, onClick }: { n: number; label: string; onClick?
   if (n <= 0) return null;
   const text = `+${n} more ${label}`;
   return onClick ? (
-    <button type="button" onClick={onClick} className="inline-flex min-h-6 items-center self-start rounded-sm px-2 text-muted-foreground text-xs outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+    <button type="button" onClick={onClick} className="inline-flex min-h-6 items-center self-start rounded-sm px-2 text-muted-foreground text-meta outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
       {text}
     </button>
   ) : (
@@ -78,7 +78,7 @@ export function More({ n, label, onClick }: { n: number; label: string; onClick?
 
 export function DiffStat({ add, del, className }: { add: number; del: number; className?: string }) {
   return (
-    <span className={cn("shrink-0 font-mono text-[11px] tabular-nums", className)}>
+    <span className={cn("shrink-0 font-mono text-tag tabular-nums", className)}>
       <span className="text-success-foreground">+{compactNumber(add)}</span> <span className="text-destructive-foreground">−{compactNumber(del)}</span>
     </span>
   );

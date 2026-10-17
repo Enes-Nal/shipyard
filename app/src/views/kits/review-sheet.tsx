@@ -163,7 +163,7 @@ function ReviewBody() {
                     {kit.source.commit.slice(0, 7)}
                   </span>
                 )}
-                {kit.match?.slug && <span className="rounded-md border px-1.5 font-mono text-[11px]">for {kit.match.slug}</span>}
+                {kit.match?.slug && <span className="rounded-md border px-1.5 font-mono text-tag">for {kit.match.slug}</span>}
               </div>
             )}
           </div>
@@ -171,7 +171,7 @@ function ReviewBody() {
       </SheetHeader>
 
       <SheetPanel className="space-y-6">
-        {error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-sm" text={error} />}
+        {error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-body" text={error} />}
         {!kit && !error && (
           <div className="space-y-3">
             <Skeleton className="h-20 rounded-lg" />

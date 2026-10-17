@@ -51,7 +51,7 @@ export function ShellHooks() {
     <div className="flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center gap-2 px-6 pt-1 pb-3">
-          <p className="min-w-0 flex-1 text-muted-foreground text-sm">Shell commands that run when an event happens. Gates run before an action and can stop it.</p>
+          <p className="min-w-0 flex-1 text-muted-foreground text-body">Shell commands that run when an event happens. Gates run before an action and can stop it.</p>
           <MachineMenu machines={machines} onPick={(m) => add(m)}>
             <PlusIcon />
             New hook
@@ -174,7 +174,7 @@ function DeleteHook({ target, hook, onClose, onConfirm }: { target?: { machine: 
           <AlertDialogTitle>Delete this hook?</AlertDialogTitle>
           <AlertDialogDescription>
             It stops running on {target && machineInProse(target.machine)} straight away.
-            {hook && <code className="mt-2 block truncate rounded-md bg-muted px-2 py-1 font-mono text-xs">{`${hook.on} → ${hook.run}`}</code>}
+            {hook && <code className="mt-2 block truncate rounded-md bg-muted px-2 py-1 font-mono text-mono">{`${hook.on} → ${hook.run}`}</code>}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

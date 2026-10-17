@@ -83,7 +83,7 @@ export function NotificationsSection() {
             {columns.map(([key, label, tip]) => (
               <Tip key={key} label={tip}>
                 {/* Focusable, so the column's meaning is there for the keyboard too. */}
-                <span tabIndex={0} className="w-16 rounded-sm text-center text-[13px] text-muted-foreground leading-4 outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span tabIndex={0} className="w-16 rounded-sm text-center text-desc text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   {label}
                 </span>
               </Tip>
@@ -107,7 +107,7 @@ export function NotificationsSection() {
         })}
       </SettingsGroup>
       {CATEGORIES.length > FIRST && (
-        <button type="button" onClick={() => setAll((v) => !v)} className="-mt-6 flex max-w-full items-baseline gap-2 text-left text-[13px]">
+        <button type="button" onClick={() => setAll((v) => !v)} className="-mt-6 flex max-w-full items-baseline gap-2 text-left text-desc">
           <span className="shrink-0 font-medium">{all ? "Show fewer" : `Show ${CATEGORIES.length - FIRST} more kinds`}</span>
           {!all && <span className="truncate text-muted-foreground">{CATEGORIES.slice(FIRST).map((c) => c.label).join(", ")}</span>}
         </button>
@@ -123,7 +123,7 @@ export function NotificationsSection() {
         {dnd.scheduled && (
           <SettingsRow label="Quiet hours">
             <div className="flex flex-wrap items-center justify-end gap-3">
-              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-meta">
                 <Input type="time" size="sm" aria-label="From" className="w-28" value={dnd.from} onChange={(e) => e.target.value && setQuietHours({ from: e.target.value })} />
                 to
                 <Input type="time" size="sm" aria-label="To" className="w-28" value={dnd.to} onChange={(e) => e.target.value && setQuietHours({ to: e.target.value })} />
@@ -143,7 +143,7 @@ export function NotificationsSection() {
                     <ToggleGroupItem
                       value={String(i)}
                       aria-label={DAY_NAMES[i]}
-                      className="min-w-7 rounded-md px-0 font-normal text-muted-foreground text-xs hover:bg-background/60 hover:text-foreground data-pressed:bg-background data-pressed:font-medium data-pressed:text-foreground data-pressed:shadow-xs/5 dark:hover:bg-input/32 dark:data-pressed:bg-input"
+                      className="min-w-7 rounded-md px-0 font-normal text-muted-foreground text-meta hover:bg-background/60 hover:text-foreground data-pressed:bg-background data-pressed:font-medium data-pressed:text-foreground data-pressed:shadow-xs/5 dark:hover:bg-input/32 dark:data-pressed:bg-input"
                     >
                       {DAYS[i]}
                     </ToggleGroupItem>

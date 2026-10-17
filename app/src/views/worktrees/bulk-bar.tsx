@@ -63,7 +63,7 @@ export function BulkBar({
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
         <div ref={liftToasts} className={shell} role="status" aria-live="polite">
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-3 text-body">
             {running ? <Spinner className="size-4" /> : problems.length ? <AlertTriangleIcon className="size-4 text-warning" /> : <CheckIcon className="size-4 text-success" />}
             <span className="tabular-nums">
               {running
@@ -162,7 +162,7 @@ export function BulkBar({
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
       <div ref={liftToasts} className={cn(shell, "flex-row flex-wrap items-center")}>
-        <span className="pr-1 text-sm tabular-nums">{selected.length} selected</span>
+        <span className="pr-1 text-body tabular-nums">{selected.length} selected</span>
         <span className="h-5 w-px bg-border" />
         <SyncButton
           size="xs"

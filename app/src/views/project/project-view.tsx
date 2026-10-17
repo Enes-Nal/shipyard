@@ -92,9 +92,9 @@ export function ProjectView({ box, location }: { box: string; location: string }
             <span className="flex min-w-0 items-center gap-1.5">
               <GitCommitHorizontalIcon className="size-3 shrink-0" />
               <code className="truncate font-mono text-mono">{config?.repo_path}</code>
-              <span className="shrink-0 rounded-md border px-1.5 text-[11px]">committed in the repo</span>
+              <span className="shrink-0 rounded-md border px-1.5 text-tag">committed in the repo</span>
               {trustPending(trust) ? (
-                <span className="shrink-0 rounded-md border border-warning/30 px-1.5 text-[11px] text-warning-foreground">not trusted on {box}</span>
+                <span className="shrink-0 rounded-md border border-warning/30 px-1.5 text-tag text-warning-foreground">not trusted on {box}</span>
               ) : (
                 trust?.state === "trusted" &&
                 (runsAnything(repo) ? (
@@ -119,13 +119,13 @@ export function ProjectView({ box, location }: { box: string; location: string }
                 <MenuItem onClick={() => copy("effective")}>
                   <span className="flex flex-col">
                     <span>Everything that applies</span>
-                    <span className="text-muted-foreground text-xs">The repo's config with {box}'s changes</span>
+                    <span className="text-muted-foreground text-meta">The repo's config with {box}'s changes</span>
                   </span>
                 </MenuItem>
                 <MenuItem onClick={() => copy("local")}>
                   <span className="flex flex-col">
                     <span>Only {box}'s changes</span>
-                    <span className="text-muted-foreground text-xs">To move them into the repo</span>
+                    <span className="text-muted-foreground text-meta">To move them into the repo</span>
                   </span>
                 </MenuItem>
               </MenuPopup>
@@ -145,14 +145,14 @@ export function ProjectView({ box, location }: { box: string; location: string }
       <div className="flex min-h-0 flex-1">
         <nav className="hidden w-48 shrink-0 border-r px-3 py-6 lg:block">
           {SECTIONS.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="block rounded-md px-2.5 py-1.5 text-muted-foreground text-sm hover:bg-accent hover:text-foreground">
+            <a key={s.id} href={`#${s.id}`} className="block rounded-md px-2.5 py-1.5 text-muted-foreground text-body hover:bg-accent hover:text-foreground">
               {s.label}
             </a>
           ))}
         </nav>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-8 px-8 pt-7 pb-24">
-            {error && <ErrorText className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-sm" text={error} />}
+            {error && <ErrorText className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-body" text={error} />}
             {!config ? (
               <div className="space-y-4">
                 <Skeleton className="h-40 rounded-xl" />
@@ -222,7 +222,7 @@ function PortsSection({ repo, draft, setDraft, box }: { repo: RepoConfig | null;
           </div>
           <div className="mt-1 flex flex-wrap gap-1">
             {names.map((n) => (
-              <code key={n} className={cn("rounded bg-muted px-1.5 py-px font-mono text-[11px] text-muted-foreground")}>
+              <code key={n} className={cn("rounded bg-muted px-1.5 py-px font-mono text-tag text-muted-foreground")}>
                 {n}
               </code>
             ))}
@@ -246,7 +246,7 @@ function MemberSwitcher({ box, location }: { box: string; location: string }) {
   const p = projects.find((x) => x.members.some((m) => m.box.name === box && m.loc.name === location));
   if (!p || p.members.length < 2) return <span className="font-normal text-muted-foreground text-subtitle">{box}</span>;
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-md border p-0.5 font-normal text-xs" role="group" aria-label="Box">
+    <span className="inline-flex items-center gap-0.5 rounded-md border p-0.5 font-normal text-meta" role="group" aria-label="Box">
       {p.members.map((m) => (
         <button
           key={m.box.name}
