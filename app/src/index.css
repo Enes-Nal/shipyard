@@ -70,7 +70,10 @@
     --spacing-row-gap: var(--row-gap);
     --spacing-side-row: var(--side-row);
     /* The type scale, Settings' and every page's: text-page-title, text-title,
-       text-subtitle, text-section, text-row, text-desc, text-label, text-meta, text-mono.
+       text-heading, text-subtitle, text-body, text-section, text-row,
+       text-desc, text-label, text-meta, text-tag, text-mono. It is the only
+       way the app sizes text (scripts/check-type.mjs); coss ui's own parts
+       in components/ui keep theirs.
        Colour stays with the caller (text-muted-foreground for the quiet ones);
        a font-* class beside one still wins over its weight. lib/utils.ts
        tells cn() these are sizes, so they merge with colours. */
@@ -83,8 +86,16 @@
     --text-title--line-height: 26px;
     --text-title--letter-spacing: -0.015em;
     --text-title--font-weight: 600;
+    /* A card's, panel's or popover's own heading. */
+    --text-heading: 16px;
+    --text-heading--line-height: 22px;
+    --text-heading--letter-spacing: -0.01em;
+    --text-heading--font-weight: 600;
     --text-subtitle: 14px;
     --text-subtitle--line-height: 20px;
+    /* Running text: a chat's messages, a paragraph, a field's value. */
+    --text-body: 14px;
+    --text-body--line-height: 20px;
     --text-section: 13px;
     --text-section--line-height: 16px;
     --text-section--font-weight: 600;
@@ -98,6 +109,9 @@
     --text-label--font-weight: 500;
     --text-meta: 12px;
     --text-meta--line-height: 16px;
+    /* The smallest: a row's time, a count, a badge, a chip, a key. */
+    --text-tag: 11px;
+    --text-tag--line-height: 14px;
     --text-mono: 12.5px;
     --text-mono--line-height: 18px;
   @keyframes skeleton {
