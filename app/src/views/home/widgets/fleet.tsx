@@ -49,7 +49,7 @@ function BoxRow({ b }: { b: BoxStatus }) {
   const disk = st?.disks[0] ? st.disks[0].used / Math.max(1, st.disks[0].total) : 0;
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md px-2 py-1.5">
-      <span className="flex min-w-0 items-center gap-2 text-sm">
+      <span className="flex min-w-0 items-center gap-2 text-body">
         <StatusDot state={state} />
         <span className="truncate text-row">{b.name}</span>
         <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
@@ -73,7 +73,7 @@ function BoxRow({ b }: { b: BoxStatus }) {
             ] as const
           ).map(([l, v]) => (
             <span key={l} className="flex min-w-0 flex-col gap-0.5" aria-hidden>
-              <span className="flex justify-between gap-1 text-[10px] text-muted-foreground">
+              <span className="flex justify-between gap-1 text-tag text-muted-foreground">
                 <span>{l}</span>
                 <span className="tabular-nums">{Math.round(Math.min(1, v) * 100)}%</span>
               </span>

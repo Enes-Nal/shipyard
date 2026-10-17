@@ -117,7 +117,7 @@ export function PrReviewBody() {
               <span data-testid="pr-review-repo" className="font-mono">
                 {req.ref.repo} #{req.ref.pr}
               </span>
-              {plan?.draft && <span className="rounded-md border px-1.5 text-[10.5px]">draft</span>}
+              {plan?.draft && <span className="rounded-md border px-1.5 text-tag">draft</span>}
             </div>
             <SheetTitle data-testid="pr-review-title" className="text-balance">
               {plan?.title ?? (error ? "Couldn't read this PR" : "Reading the PR…")}
@@ -138,7 +138,7 @@ export function PrReviewBody() {
       <SheetPanel>
         <div className="space-y-5 pt-4">
           {note && phase.kind === "review" && <p className="rounded-lg border border-info/30 bg-info/6 px-3 py-2 text-desc">{note}</p>}
-          {error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-sm" text={error} />}
+          {error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-body" text={error} />}
           {!plan && !error && (
             <div className="space-y-3">
               <Skeleton className="h-24 rounded-lg" />
@@ -307,7 +307,7 @@ function Facts({ plan }: { plan: ReviewSheet }) {
               </button>
             </Tip>
           </span>
-          <span className="mt-0.5 block break-all font-mono text-[10.5px] text-muted-foreground">{plan.head.sha}</span>
+          <span className="mt-0.5 block break-all font-mono text-tag text-muted-foreground">{plan.head.sha}</span>
           {plan.verdict.allowed && <span className="mt-0.5 block text-meta text-muted-foreground">The review stays at this commit; newer ones wait until you update.</span>}
           {plan.hint && !plan.hint.matches && <span className="mt-0.5 block text-meta text-warning-foreground">The link was made at {plan.hint.sha.slice(0, 7)}; the PR has moved on since.</span>}
         </Fact>
@@ -530,7 +530,7 @@ function Progress({ plan, box, phase, update }: { plan: ReviewSheet; box: Review
           </li>
         ))}
       </ol>
-      {phase.error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-sm" text={phase.error} />}
+      {phase.error && <ErrorText className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-destructive-foreground text-body" text={phase.error} />}
       {setupFailed && <p className="text-desc text-muted-foreground">Its setup failed; the notification has its output. The worktree is there to look at.</p>}
       {opened && !ready && !update && (
         <Button size="sm" variant="outline" onClick={() => finish(opened, false, openAt(plan, box))}>

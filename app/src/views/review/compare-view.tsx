@@ -139,9 +139,9 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
           </Button>
         )}
       </div>
-      {error && <ErrorText className="px-6 py-3 text-destructive-foreground text-sm" text={error} />}
+      {error && <ErrorText className="px-6 py-3 text-destructive-foreground text-body" text={error} />}
       {!data && !error && (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-sm">
+        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-body">
           <Spinner className="size-4" /> Reading the attempts…
         </div>
       )}
@@ -150,12 +150,12 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
           {all
             .filter((r) => r.data.judge)
             .map((r) => (
-              <p key={`${r.box}/${r.id}`} className="mb-4 rounded-xl border bg-muted/30 px-4 py-2.5 text-sm">
+              <p key={`${r.box}/${r.id}`} className="mb-4 rounded-xl border bg-muted/30 px-4 py-2.5 text-body">
                 <span className="font-medium">Judge{multi ? ` on ${r.box}` : ""}: </span>
                 {r.data.judge}
               </p>
             ))}
-          {!cands.length && <p className="text-muted-foreground text-sm">No attempt has finished yet.</p>}
+          {!cands.length && <p className="text-muted-foreground text-body">No attempt has finished yet.</p>}
           <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.max(1, cands.length)}, minmax(260px, 1fr))` }}>
             {cands.map((c) => {
               const files = c.review?.files ?? [];

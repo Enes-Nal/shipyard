@@ -149,7 +149,7 @@ export function ReviewView() {
           }}
         />
       ) : !loaded ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-sm">
+        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-body">
           <Spinner className="size-4" /> Reading each box's worktrees…
         </div>
       ) : entries.length === 0 ? (
@@ -170,7 +170,7 @@ export function ReviewView() {
                 <Row key={e.key} entry={e} active={e.key === selected?.key} onSelect={() => setSelectedKey(e.key)} onOpen={() => void focusSession(e.box, e.session)} />
               ))}
             </ul>
-            <footer className="flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap border-t px-3 py-2 text-[11px] text-muted-foreground">
+            <footer className="flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap border-t px-3 py-2 text-tag text-muted-foreground">
               {(
                 [
                   ["J K", "move"],
@@ -181,7 +181,7 @@ export function ReviewView() {
               ).map(([keys, label]) => (
                 <span key={label} className={cn("inline-flex items-center gap-1", label === "discard" && "max-xl:hidden")}>
                   {keys.split(" ").map((k) => (
-                    <Kbd key={k} className="h-4 min-w-4 px-1 text-[10px]">
+                    <Kbd key={k} className="h-4 min-w-4 px-1 text-tag">
                       {k}
                     </Kbd>
                   ))}

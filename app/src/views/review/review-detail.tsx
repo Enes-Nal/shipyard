@@ -54,7 +54,7 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <AgentIcon agent={entry.agent} className="size-4" />
-              <h2 className="truncate font-semibold text-base">{title}</h2>
+              <h2 className="truncate text-heading">{title}</h2>
               {entry.agent_state === "waiting" ? (
                 <Badge variant="warning" size="sm">
                   Waiting for you
@@ -97,7 +97,7 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
             <Button size="sm" className="rounded-r-none" onClick={() => actions.approve(hasFiles ? "commit" : "push")}>
               <CheckIcon />
               Approve…
-              <Kbd className="ml-0.5 hidden h-4.5 bg-primary-foreground/15 text-[10px] text-primary-foreground xl:inline-flex">A</Kbd>
+              <Kbd className="ml-0.5 hidden h-4.5 bg-primary-foreground/15 text-tag text-primary-foreground xl:inline-flex">A</Kbd>
             </Button>
             <Menu>
               <MenuTrigger render={<Button size="sm" className="rounded-l-none border-l border-l-primary-foreground/20 px-1.5" aria-label="More ways to approve" />}>
@@ -124,13 +124,13 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
           <Button size="sm" variant="outline" onClick={actions.sendBack}>
             <MessageSquareReplyIcon />
             Send back…
-            <Kbd className="ml-0.5 hidden h-4.5 text-[10px] xl:inline-flex">S</Kbd>
+            <Kbd className="ml-0.5 hidden h-4.5 text-tag xl:inline-flex">S</Kbd>
           </Button>
           <Tip label={hasFiles ? undefined : "Nothing uncommitted to discard"}>
             <Button size="sm" variant="outline" onClick={actions.discard} disabled={!hasFiles}>
               <Trash2Icon />
               Discard…
-              <Kbd className="ml-0.5 hidden h-4.5 text-[10px] xl:inline-flex">D</Kbd>
+              <Kbd className="ml-0.5 hidden h-4.5 text-tag xl:inline-flex">D</Kbd>
             </Button>
           </Tip>
           <span className="mx-1 h-5 w-px bg-border" />
@@ -138,13 +138,13 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
             <SquareArrowOutUpRightIcon />
             <span className="hidden xl:inline">Open worktree</span>
             <span className="xl:hidden">Open</span>
-            <Kbd className="ml-0.5 hidden h-4.5 text-[10px] xl:inline-flex">↵</Kbd>
+            <Kbd className="ml-0.5 hidden h-4.5 text-tag xl:inline-flex">↵</Kbd>
           </Button>
           <Tip label="Mark reviewed (E): it comes back if the agent changes anything">
             <Button size="sm" variant="ghost" className="ml-auto text-muted-foreground" onClick={actions.markReviewed}>
               <CheckCheckIcon />
               <span className="hidden xl:inline">Mark reviewed</span>
-              <Kbd className="ml-0.5 hidden h-4.5 text-[10px] xl:inline-flex">E</Kbd>
+              <Kbd className="ml-0.5 hidden h-4.5 text-tag xl:inline-flex">E</Kbd>
             </Button>
           </Tip>
         </div>
@@ -229,9 +229,9 @@ function LastWords({ entry }: { entry: ReviewEntry }) {
         {lines === undefined ? (
           <div className="h-12 animate-pulse rounded bg-muted/60" />
         ) : lines.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nothing on its screen to show.</p>
+          <p className="text-muted-foreground text-body">Nothing on its screen to show.</p>
         ) : (
-          <div className="max-h-56 overflow-y-auto font-mono text-[12px] leading-relaxed">
+          <div className="max-h-56 overflow-y-auto font-mono text-mono">
             {lines.map((l, i) => (
               <div key={i} className="whitespace-pre-wrap break-words">
                 {l || " "}
@@ -336,7 +336,7 @@ function Changes({ entry }: { entry: ReviewEntry }) {
               setGroup(g.id);
               setSelected(undefined);
             }}
-            className={cn("rounded-md px-2.5 py-1 text-[13px] text-foreground/80 hover:bg-background/60", g.id === current.id && "bg-background font-medium text-foreground shadow-xs/5")}
+            className={cn("rounded-md px-2.5 py-1 text-desc text-foreground/80 hover:bg-background/60", g.id === current.id && "bg-background font-medium text-foreground shadow-xs/5")}
           >
             {g.label}
             <span className="ml-1.5 font-mono text-meta text-muted-foreground tabular-nums">{g.files.length}</span>

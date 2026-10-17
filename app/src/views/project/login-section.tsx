@@ -22,7 +22,7 @@ export function LoginSection({ config, box }: { config: LocationConfig; box: str
     >
       {!login ? (
         <p className="px-4 py-3.5 text-desc text-muted-foreground">
-          None. Add <code className="rounded bg-muted px-1 py-px font-mono text-[11px]">"login"</code> with a script and users to the project's kit or <code className="rounded bg-muted px-1 py-px font-mono text-[11px]">.berth/config.json</code>.
+          None. Add <code className="rounded bg-muted px-1 py-px font-mono text-tag">"login"</code> with a script and users to the project's kit or <code className="rounded bg-muted px-1 py-px font-mono text-tag">.berth/config.json</code>.
         </p>
       ) : (
         <div className="divide-y divide-border/70">
@@ -39,7 +39,7 @@ export function LoginSection({ config, box }: { config: LocationConfig; box: str
           {(login.users ?? []).map((u) => (
             <div key={u.email} className="flex items-center gap-3 px-4 py-2.5" data-testid="login-user">
               <UserRoundIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate text-sm">{u.label || u.email}</span>
+              <span className="min-w-0 flex-1 truncate text-body">{u.label || u.email}</span>
               {u.label && <span className="shrink-0 truncate font-mono text-meta text-muted-foreground">{u.email}</span>}
             </div>
           ))}

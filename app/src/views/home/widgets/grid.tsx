@@ -235,7 +235,7 @@ export function HomeGrid({ className }: { className?: string }) {
               <button
                 type="button"
                 onClick={() => setPicker(true)}
-                className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed text-muted-foreground text-sm outline-none hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed text-muted-foreground text-body outline-none hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <PlusIcon className="size-4" />
                 Add widget
@@ -404,7 +404,7 @@ function SizeChips({ def, size, onSize }: { def: WidgetDef; size: WidgetSize; on
             aria-label={`${SIZES[s].label}, ${SIZES[s].c} by ${SIZES[s].r}`}
             onClick={() => onSize(s)}
             className={cn(
-              "h-5 min-w-6 rounded-[5px] px-1 font-mono text-[10px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "h-5 min-w-6 rounded-[5px] px-1 font-mono text-tag tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring",
               s === size ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent hover:text-foreground",
             )}
           >
@@ -435,9 +435,9 @@ function OffCell({ p, onRemove }: { p: Placed; onRemove(): void }) {
   const plugin = p.id.includes("/") ? p.id.split("/")[0] : undefined;
   return (
     <div role="listitem" data-widget={p.id} className={cn("relative min-h-0 min-w-0", SPAN[p.size] ?? SPAN.m)}>
-      <div className="flex size-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center text-muted-foreground text-xs">
-        <p className="font-medium text-foreground text-sm">{plugin ? "Its plugin is off" : "Not available"}</p>
-        <p className="font-mono text-[11px]">{p.id}</p>
+      <div className="flex size-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center text-muted-foreground text-meta">
+        <p className="text-foreground text-row">{plugin ? "Its plugin is off" : "Not available"}</p>
+        <p className="font-mono text-tag">{p.id}</p>
         <p className="text-balance">{plugin ? `Turn ${plugin} on in Settings → Plugins and it comes back here.` : "This version of Shipyard has no such widget."}</p>
         <Button size="xs" variant="outline" className="mt-1" onClick={onRemove}>
           Remove
@@ -452,7 +452,7 @@ function EmptyGrid({ onAdd, onReset }: { onAdd(): void; onReset(): void }) {
     <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 py-12 text-center">
       <Scene name="dock" width={150} className="text-muted-foreground" />
       <h3 className="mt-1 text-row">No widgets on Home</h3>
-      <p className="max-w-sm text-balance text-muted-foreground text-sm">Put what you check first here: agents that need you, pull requests, how your boxes are doing.</p>
+      <p className="max-w-sm text-balance text-muted-foreground text-body">Put what you check first here: agents that need you, pull requests, how your boxes are doing.</p>
       <div className="mt-2 flex gap-2">
         <Button size="sm" onClick={onAdd}>
           <PlusIcon />

@@ -15,7 +15,7 @@ function Block({ title, count, children }: { title: string; count?: number; chil
     <section>
       <h3 className="mb-1.5 flex items-center gap-1.5 text-section">
         {title}
-        {count !== undefined && <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">{count}</span>}
+        {count !== undefined && <span className="rounded-full bg-muted px-1.5 text-tag tabular-nums">{count}</span>}
       </h3>
       <div className="divide-y divide-border/70 overflow-hidden rounded-lg border bg-card">{children}</div>
     </section>
@@ -24,8 +24,8 @@ function Block({ title, count, children }: { title: string; count?: number; chil
 
 function Row({ label, children, mono }: { label?: ReactNode; children: ReactNode; mono?: boolean }) {
   return (
-    <div className="flex min-w-0 gap-3 px-3 py-2 text-sm">
-      {label && <span className="w-24 shrink-0 text-muted-foreground text-xs leading-5">{label}</span>}
+    <div className="flex min-w-0 gap-3 px-3 py-2 text-body">
+      {label && <span className="w-24 shrink-0 text-muted-foreground text-meta leading-5">{label}</span>}
       <div className={cn("min-w-0 flex-1", mono && "font-mono text-mono")}>{children}</div>
     </div>
   );
@@ -36,7 +36,7 @@ function Row({ label, children, mono }: { label?: ReactNode; children: ReactNode
 function Item({ icon, name, meta, children }: { icon: ReactNode; name: ReactNode; meta?: ReactNode; children: ReactNode }) {
   return (
     <div className="min-w-0 px-3 py-2">
-      <div className="flex min-w-0 items-center gap-1.5 text-sm">
+      <div className="flex min-w-0 items-center gap-1.5 text-body">
         <span className="shrink-0 text-muted-foreground [&_svg]:size-3">{icon}</span>
         <span className="min-w-0 truncate text-row">{name}</span>
         {meta && <span className="ml-auto shrink-0 text-meta text-muted-foreground">{meta}</span>}
@@ -173,7 +173,7 @@ function FileRow({ file, open }: { file: KitFile; open?: boolean }) {
         type="button"
         disabled={!viewable && !open}
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent/50 disabled:hover:bg-transparent"
+        className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left text-body hover:bg-accent/50 disabled:hover:bg-transparent"
       >
         <ChevronRightIcon className={cn("size-3 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-90", !viewable && "opacity-0")} />
         <Icon className="size-3.5 shrink-0 text-muted-foreground" />

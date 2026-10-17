@@ -200,7 +200,7 @@ function RunRow({ run: r, name }: { run: BoxRun; name: string }) {
   const where = r.path?.split("/").pop();
   return (
     <li>
-      <button type="button" onClick={() => setOpen(!open)} className="grid w-full grid-cols-[20px_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.1fr)_80px_70px] min-h-row items-center gap-3 px-4 py-1 text-left text-sm hover:bg-accent/40">
+      <button type="button" onClick={() => setOpen(!open)} className="grid w-full grid-cols-[20px_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.1fr)_80px_70px] min-h-row items-center gap-3 px-4 py-1 text-left text-body hover:bg-accent/40">
         <RunStatus status={r.status} />
         <span className="flex min-w-0 items-center gap-1.5">
           <ChevronRightIcon className={cn("size-3 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")} />
@@ -254,13 +254,13 @@ export function RunTimeline({ box, id, summary }: { box: string; id: string; sum
   }, [box, id, summary.updated]);
   if (legacy)
     return (
-      <div className="flex flex-col gap-2 bg-muted/20 px-4 py-3 pl-12 text-muted-foreground text-xs">
+      <div className="flex flex-col gap-2 bg-muted/20 px-4 py-3 pl-12 text-muted-foreground text-meta">
         {summary.error && <ErrorText text={summary.error} />}
         <NeedsUpdate box={box}>{box} keeps its flows' runs without a timeline.</NeedsUpdate>
       </div>
     );
-  if (error) return <ErrorText className="bg-muted/20 px-4 py-3 pl-12 text-destructive-foreground text-xs" text={error} />;
-  if (!run) return <div className="bg-muted/20 px-4 py-3 pl-12 text-muted-foreground text-xs">Loading…</div>;
+  if (error) return <ErrorText className="bg-muted/20 px-4 py-3 pl-12 text-destructive-foreground text-meta" text={error} />;
+  if (!run) return <div className="bg-muted/20 px-4 py-3 pl-12 text-muted-foreground text-meta">Loading…</div>;
   const t0 = new Date(run.created).getTime();
   const t1 = run.finished ? new Date(run.finished).getTime() : Date.now();
   const span = Math.max(1, t1 - t0);
@@ -302,7 +302,7 @@ export function RunTimeline({ box, id, summary }: { box: string; id: string; sum
         )}
       </div>
       {run.gate && (
-        <div className="rounded-lg border border-warning/40 bg-warning/8 px-3 py-2 text-sm">
+        <div className="rounded-lg border border-warning/40 bg-warning/8 px-3 py-2 text-body">
           <p className="font-medium">{run.gate.title}</p>
           {run.gate.text && <p className="mt-0.5 whitespace-pre-wrap text-desc text-muted-foreground">{run.gate.text}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -376,7 +376,7 @@ function Step({ s, t0, span, depth }: { s: RunStep; t0: number; span: number; de
   const group = !!s.children?.length;
   return (
     <div className={cn(group ? "" : "rounded-lg border bg-card")}>
-      <button type="button" className="flex w-full items-center gap-2 px-3 py-1 text-left text-xs" onClick={() => setOpen(!open)} disabled={!group && !s.output && !s.error}>
+      <button type="button" className="flex w-full items-center gap-2 px-3 py-1 text-left text-meta" onClick={() => setOpen(!open)} disabled={!group && !s.output && !s.error}>
         <Icon className={cn("size-3.5 shrink-0", m?.tone ?? "text-muted-foreground")} />
         <span className="font-medium">{s.kind === "round" || s.kind === "item" ? `${label} ${s.id.replace(/^\D+/, "") ? Number(s.id.replace(/^\D+/, "")) + (s.kind === "item" ? 1 : 0) : ""}` : label}</span>
         {s.id && !/^\d+$/.test(s.id) && s.kind !== "round" && s.kind !== "item" && <span className="text-muted-foreground">{s.id}</span>}

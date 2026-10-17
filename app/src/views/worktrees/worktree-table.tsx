@@ -198,7 +198,7 @@ function WorktreeRow({
       }}
       className={cn(
         // scroll-mt: clear of the two sticky headers when ↑ scrolls a row in.
-        "group grid h-row scroll-mt-16 cursor-pointer items-center gap-3 border-b border-border/60 px-4 text-sm outline-none hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/48 focus-visible:ring-inset",
+        "group grid h-row scroll-mt-16 cursor-pointer items-center gap-3 border-b border-border/60 px-4 text-body outline-none hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/48 focus-visible:ring-inset",
         COLS,
         selected && "bg-primary/[0.06] hover:bg-primary/[0.09]",
         open && "bg-accent/60",
@@ -223,13 +223,13 @@ function WorktreeRow({
           <span className="max-w-full shrink-0 truncate text-row">{name}</span>
           {r.branch && r.branch !== name && <span className="min-w-0 truncate font-mono text-meta text-muted-foreground">{r.branch}</span>}
           {r.paused && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-warning/12 px-1.5 py-px text-[10px] text-warning-foreground">
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-warning/12 px-1.5 py-px text-tag text-warning-foreground">
               <PauseIcon className="size-2.5" />
               Paused
             </span>
           )}
           {leaving && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-1.5 py-px text-tag text-muted-foreground">
               <Spinner className="size-2.5" />
               {removalLabel(leaving)}
             </span>
@@ -370,7 +370,7 @@ function ProgressMark({ p }: { p?: RowProgress }) {
     ) : p.state === "failed" ? (
       <XIcon className="size-3.5 text-destructive-foreground" />
     ) : (
-      <span className="text-[10px] text-muted-foreground">—</span>
+      <span className="text-tag text-muted-foreground">—</span>
     );
   const label =
     p.state === "queued"

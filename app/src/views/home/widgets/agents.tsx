@@ -154,7 +154,7 @@ function WaitingRow({ r }: { r: AgentRow }) {
 
   return (
     <div className="group/row flex min-w-0 flex-col gap-1 rounded-md px-2 py-1.5 hover:bg-accent/60">
-      <button type="button" onClick={open} className="flex w-full min-w-0 items-center gap-2.5 rounded-sm text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={open} className="flex w-full min-w-0 items-center gap-2.5 rounded-sm text-left text-body outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <StateGlyph state="waiting" />
         <span className="min-w-0 flex-1 truncate text-row">{r.title}</span>
         <span className="shrink-0 text-meta text-muted-foreground tabular-nums">{shortAgo(r.since)}</span>
@@ -165,15 +165,15 @@ function WaitingRow({ r }: { r: AgentRow }) {
           <span className="shrink-0">{answered === "Deny" ? "Denied" : "Allowed"} · resuming</span>
         ) : allow && deny ? (
           <span className="flex shrink-0 items-center gap-1">
-            <Button size="xs" variant="outline" className="h-5 rounded-[5px] px-1.5 text-[11px]" onClick={() => answer(deny.key, "Deny")} aria-label={`Deny: ${r.title}`}>
+            <Button size="xs" variant="outline" className="h-5 rounded-[5px] px-1.5 text-tag" onClick={() => answer(deny.key, "Deny")} aria-label={`Deny: ${r.title}`}>
               Deny
             </Button>
-            <Button size="xs" className="h-5 rounded-[5px] px-1.5 text-[11px]" onClick={() => answer(allow.key, "Allow")} aria-label={`Allow once: ${r.title}`}>
+            <Button size="xs" className="h-5 rounded-[5px] px-1.5 text-tag" onClick={() => answer(allow.key, "Allow")} aria-label={`Allow once: ${r.title}`}>
               Allow once
             </Button>
           </span>
         ) : (
-          <Button size="xs" variant="outline" className="h-5 shrink-0 rounded-[5px] px-1.5 text-[11px]" onClick={open} aria-label={`Answer: ${r.title}`}>
+          <Button size="xs" variant="outline" className="h-5 shrink-0 rounded-[5px] px-1.5 text-tag" onClick={open} aria-label={`Answer: ${r.title}`}>
             Answer
             <CornerDownLeftIcon className="size-3" />
           </Button>
@@ -260,7 +260,7 @@ function WorkingRow({ r }: { r: AgentRow }) {
       onClick={() => void focusSession(r.box, r.session.name)}
       className="flex w-full min-w-0 flex-col gap-0.5 rounded-md px-2 py-1.5 text-left outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="flex w-full min-w-0 items-center gap-2.5 text-sm">
+      <span className="flex w-full min-w-0 items-center gap-2.5 text-body">
         <StateGlyph state="running" />
         <span className="min-w-0 flex-1 truncate text-row">{r.title}</span>
         <AgentIcon agent={r.agent} className="size-3 shrink-0 text-muted-foreground" />

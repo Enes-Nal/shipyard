@@ -95,10 +95,10 @@ export function HistorySheet({ row, progress, busy, onClose, onAction, onDelete,
         {row && (
           <>
             <SheetHeader className="gap-1.5">
-              <SheetTitle className="flex items-center gap-2 text-base">
+              <SheetTitle className="flex items-center gap-2 text-heading">
                 {row.main ? row.location : row.name}
                 {row.paused && (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-warning/12 px-1.5 py-px font-normal text-[11px] text-warning-foreground">
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-warning/12 px-1.5 py-px font-normal text-tag text-warning-foreground">
                     <PauseIcon className="size-2.5" />
                     Paused
                   </span>
@@ -200,7 +200,7 @@ export function HistorySheet({ row, progress, busy, onClose, onAction, onDelete,
 
             <SheetPanel className="@container pt-2">
               {error ? (
-                <p className="pt-2 text-destructive-foreground text-sm">{error}</p>
+                <p className="pt-2 text-destructive-foreground text-body">{error}</p>
               ) : !log ? (
                 <div className="space-y-1 pt-1">
                   {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
@@ -208,12 +208,12 @@ export function HistorySheet({ row, progress, busy, onClose, onAction, onDelete,
                   ))}
                 </div>
               ) : log.commits.length === 0 || !graph ? (
-                <p className="pt-2 text-muted-foreground text-sm">No commits.</p>
+                <p className="pt-2 text-muted-foreground text-body">No commits.</p>
               ) : (
                 <ol className="-mx-3" style={vars}>
                   {scope === "branch" && row.behind > 0 && (
                     <li>
-                      <button type="button" className="flex h-7 w-full items-center gap-2 rounded-md px-3 text-left text-muted-foreground text-xs hover:bg-accent/50 hover:text-foreground" onClick={() => setScope("all")}>
+                      <button type="button" className="flex h-7 w-full items-center gap-2 rounded-md px-3 text-left text-muted-foreground text-meta hover:bg-accent/50 hover:text-foreground" onClick={() => setScope("all")}>
                         <ArrowDownIcon className="size-3.5" />
                         {baseRef} has {row.behind} newer commit{row.behind === 1 ? "" : "s"} this branch doesn't. Show them
                       </button>
@@ -300,7 +300,7 @@ function CommitRow({
           <GraphGutter row={row} lanes={lanes} height={height} highlight={mergeBase} />
           <code className={cn("w-[7ch] shrink-0 translate-y-px font-mono text-meta", row.side === "ahead" ? "text-foreground" : "text-muted-foreground")}>{c.short}</code>
           <Subject commit={c} merge={row.merge} className={cn("min-w-0 flex-1 truncate text-desc", row.side === "behind" ? "text-muted-foreground" : row.side === "shared" && "text-foreground/85")} />
-          {mergeBase && <span className="shrink-0 rounded border border-info/40 px-1 text-[10px] text-info leading-4">Branched here</span>}
+          {mergeBase && <span className="shrink-0 rounded border border-info/40 px-1 text-tag text-info leading-4">Branched here</span>}
           {refs.map((r) => (
             <RefChip key={`${r.kind}:${r.name}`} r={r} />
           ))}
@@ -372,7 +372,7 @@ function CommitDetails({ row, base, branch, mergeBase, where }: { row: GraphRow;
         : `On ${branch} and ${base}`;
 
   return (
-    <div className="min-w-0 space-y-2.5 text-sm">
+    <div className="min-w-0 space-y-2.5 text-body">
       <div className="space-y-1">
         <p className="break-words text-row">{c.subject}</p>
         {detail === undefined ? (
@@ -433,7 +433,7 @@ function RefChip({ r }: { r: Ref }) {
   return (
     <span
       className={cn(
-        "max-w-36 shrink-0 truncate rounded border px-1 font-mono text-[10px] leading-4",
+        "max-w-36 shrink-0 truncate rounded border px-1 font-mono text-tag leading-4",
         r.kind === "head" ? "border-info/50 bg-info/10 text-info" : r.kind === "tag" ? "border-border bg-muted text-foreground/80" : r.kind === "remote" ? "border-border text-muted-foreground" : "border-ring/40 text-foreground/80",
       )}
     >

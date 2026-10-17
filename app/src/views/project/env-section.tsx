@@ -139,7 +139,7 @@ function SecretInput({ name, value, onChange, box }: { name: string; value: stri
           type={shown || ref || problem ? "text" : "password"}
           onChange={(e) => onChange(e.target.value)}
           size="sm"
-          className="min-w-0 flex-1 font-mono text-xs"
+          className="min-w-0 flex-1 font-mono text-mono"
           spellCheck={false}
           autoComplete="off"
           aria-label={`${name} value`}
@@ -214,7 +214,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
         </Button>
       }
     >
-      {keys.length === 0 && !adding && <p className="px-4 py-3 text-muted-foreground text-sm">No variables yet. A common one: DATABASE_URL with $BERTH_WORKTREE_SLUG, so each worktree has its own database.</p>}
+      {keys.length === 0 && !adding && <p className="px-4 py-3 text-muted-foreground text-body">No variables yet. A common one: DATABASE_URL with $BERTH_WORKTREE_SLUG, so each worktree has its own database.</p>}
       {keys.length > 0 && (
         <div className="divide-y divide-border/70">
           {keys.map((k) => {
@@ -273,7 +273,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
           }}
         >
           <div>
-            <Input autoFocus value={adding.key} onChange={(e) => setAdding({ ...adding, key: e.target.value.toUpperCase().replace(/\s/g, "_") })} placeholder="NAME" size="sm" className="font-mono text-xs" aria-label="Name" aria-invalid={!!keyError} />
+            <Input autoFocus value={adding.key} onChange={(e) => setAdding({ ...adding, key: e.target.value.toUpperCase().replace(/\s/g, "_") })} placeholder="NAME" size="sm" className="font-mono text-mono" aria-label="Name" aria-invalid={!!keyError} />
             {keyError && <p className="mt-1 text-destructive-foreground text-meta">{keyError}</p>}
           </div>
           <div className="min-w-0">
@@ -282,7 +282,7 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
               onChange={(e) => setAdding({ ...adding, value: e.target.value })}
               placeholder="postgres://localhost/$BERTH_WORKTREE_SLUG, or a secret: op://vault/item/field"
               size="sm"
-              className="font-mono text-xs"
+              className="font-mono text-mono"
               aria-label="Value"
               aria-invalid={valueBroken || undefined}
               spellCheck={false}
@@ -301,12 +301,12 @@ export function EnvSection({ repo, draft, setDraft, box }: { repo: RepoConfig | 
         </form>
       )}
       <div className="border-t">
-        <button type="button" onClick={() => setShowVars(!showVars)} className="flex w-full items-center gap-1.5 px-4 py-2 text-left text-muted-foreground text-xs hover:text-foreground">
+        <button type="button" onClick={() => setShowVars(!showVars)} className="flex w-full items-center gap-1.5 px-4 py-2 text-left text-muted-foreground text-meta hover:text-foreground">
           <ChevronRightIcon className={cn("size-3 transition-transform", showVars && "rotate-90")} />
           Variables you can use
         </button>
         {showVars && (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 px-4 pb-3 text-xs">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 px-4 pb-3 text-meta">
             {VARIABLES.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt>
