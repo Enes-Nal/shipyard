@@ -186,7 +186,7 @@ function ConnectGitHub({ github, org }: { github: GitHubState; org: string }) {
             )}
           </div>
         )}
-        {github.error && <ErrorText className="mt-3 text-destructive-foreground text-xs" text={github.error} />}
+        {github.error && <ErrorText className="mt-3 text-destructive-foreground text-meta" text={github.error} />}
       </div>
     </Centered>
   );
@@ -313,7 +313,7 @@ function OrgPage({ org, from, wantBox, wantUpdate, github, onOrg }: { org: strin
   if (error) {
     return (
       <Centered>
-        <ErrorText className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-sm" text={error} />
+        <ErrorText className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-body" text={error} />
         <Button className="mt-4" variant="outline" onClick={() => setChecks((n) => n + 1)}>
           <RotateCwIcon /> Try again
         </Button>
@@ -322,7 +322,7 @@ function OrgPage({ org, from, wantBox, wantUpdate, github, onOrg }: { org: strin
   }
   if (!view) return <Loading />;
   if (view.state === "no-org") {
-    return <AskOrg onOrg={onOrg} note={<p className="mb-5 rounded-lg border bg-muted/40 px-3 py-2 text-sm">GitHub has no org or user called <span className="font-mono">{org}</span> that {github.login} can see.</p>} />;
+    return <AskOrg onOrg={onOrg} note={<p className="mb-5 rounded-lg border bg-muted/40 px-3 py-2 text-body">GitHub has no org or user called <span className="font-mono">{org}</span> that {github.login} can see.</p>} />;
   }
   if (view.state === "unreadable") return <Unreadable view={view} link={isLink(org) ? org : undefined} github={github} onCheck={() => setChecks((n) => n + 1)} onOrg={onOrg} />;
 
@@ -472,7 +472,7 @@ function OrgPage({ org, from, wantBox, wantUpdate, github, onOrg }: { org: strin
 
   return (
     <>
-      <OrgHeader view={view} from={from} badge={updating ? <span className="rounded-full bg-info/10 px-2.5 py-1 font-medium text-info-foreground text-xs">Update · {view.update!.from} → {view.update!.to}</span> : undefined} />
+      <OrgHeader view={view} from={from} badge={updating ? <span className="rounded-full bg-info/10 px-2.5 py-1 text-info-foreground text-label">Update · {view.update!.from} → {view.update!.to}</span> : undefined} />
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_300px] gap-8 px-8 pt-6 pb-16 @max-[819px]:grid-cols-1 @max-[819px]:gap-4 @max-[819px]:px-5 @max-[819px]:pt-4">
         <div className="min-w-0 @max-[819px]:order-2">
           {!live && !updating && <KitChoices view={view} box={box} />}
@@ -506,7 +506,7 @@ function Unreadable({ view, link, github, onCheck, onOrg }: { view: View; link?:
       <div data-testid="team-unreadable" className="flex items-center gap-3">
         <OrgAvatar org={view.org} size={44} />
         <div>
-          <p className="flex min-w-0 items-center gap-1.5 font-mono text-muted-foreground text-sm">
+          <p className="flex min-w-0 items-center gap-1.5 font-mono text-muted-foreground text-body">
             <GitHubMark className="size-3.5 shrink-0" /> <span className="truncate">{where}</span>
           </p>
           <p className="font-medium">{view.org.name}</p>
@@ -516,7 +516,7 @@ function Unreadable({ view, link, github, onCheck, onOrg }: { view: View; link?:
       <p className="mt-2 text-muted-foreground leading-relaxed">
         GitHub doesn't show <span className="break-all font-mono text-foreground">{where}</span> to <span className="text-foreground">{github.login}</span>. It's private, and this account hasn't been given access, or it isn't there{link ? ": check the branch and folder in the link" : ""}.
       </p>
-      <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-sm">
+      <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-body">
         <li>Ask an admin of {view.org.name} on GitHub for access to its repos (your team's onboarding channel is the place).</li>
         <li>Accept the invitation on GitHub, if one comes by email.</li>
         <li>Check again here.</li>
@@ -636,7 +636,7 @@ function NoBerth({
         <div className="mx-auto flex max-w-6xl items-start gap-4 px-8 pt-6 pb-5 @max-[819px]:px-5">
           <OrgAvatar org={view.org} size={48} />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 font-mono text-muted-foreground text-sm">
+            <p className="flex items-center gap-1.5 font-mono text-muted-foreground text-body">
               <GitHubMark className="size-3.5" /> {view.org.login}
             </p>
             <h1 data-testid="team-none" className="mt-0.5 text-title">
@@ -655,7 +655,7 @@ function NoBerth({
               <div className="divide-y overflow-hidden rounded-xl border bg-card">
                 {live.projects.map((p) => (
                   <div key={p.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                    <span className="font-mono text-[13px]">{p.repo}</span>
+                    <span className="font-mono text-desc">{p.repo}</span>
                     {p.adopted && p.path && <span className="truncate text-muted-foreground text-meta">in your existing checkout</span>}
                     <span className="ml-auto text-meta text-muted-foreground">{p.state === "ready" ? <Button size="xs" onClick={() => onStartOn(p.id)}>Start on {p.id}</Button> : p.state}</span>
                   </div>
@@ -665,7 +665,7 @@ function NoBerth({
           ) : (
             <Section title="Repos you can reach" aside={`${withBerth} have Shipyard setup and are picked`}>
               <div className="mb-2">
-                <label className="flex items-center gap-2 rounded-lg border bg-background px-2.5 text-sm dark:bg-input/32">
+                <label className="flex items-center gap-2 rounded-lg border bg-background px-2.5 text-body dark:bg-input/32">
                   <SearchIcon className="size-3.5 text-muted-foreground" />
                   <Input unstyled aria-label="Filter repos" placeholder="Filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
                 </label>
@@ -677,9 +677,9 @@ function NoBerth({
                       <Checkbox className="not-dark:border-foreground/25" checked={picked.has(r.full_name)} onCheckedChange={(v) => onPick(r.full_name, !!v)} />
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-x-2">
-                          <span className="font-medium font-mono text-[13px]">{r.full_name}</span>
+                          <span className="font-medium font-mono text-desc">{r.full_name}</span>
                           {r.private && <LockIcon className="size-3 text-muted-foreground" />}
-                          {r.has_berth && <span className="rounded-md border border-success/35 bg-success/8 px-1.5 py-px font-mono text-[10.5px] text-success-foreground">.berth/config.json</span>}
+                          {r.has_berth && <span className="rounded-md border border-success/35 bg-success/8 px-1.5 py-px font-mono text-tag text-success-foreground">.berth/config.json</span>}
                         </span>
                         <span className="block text-desc text-muted-foreground">
                           {r.description} · pushed {ago(r.pushed_at)}

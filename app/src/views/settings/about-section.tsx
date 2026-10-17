@@ -43,8 +43,8 @@ function Hero({ version }: { version: string }) {
       <div className={cn("flex items-center gap-4 bg-background px-5 py-4", picture && "border-t")}>
         <img src={`${import.meta.env.BASE_URL}berth-mark.svg`} alt="" className="size-12 shrink-0 rounded-xl shadow-sm" />
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-lg leading-6">Shipyard{plain ? "" : ` ${version}`}</div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+          <div className="text-heading">Shipyard{plain ? "" : ` ${version}`}</div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-desc text-muted-foreground">
             {u.dot && <span className={cn("size-1.5 shrink-0 rounded-full", u.dot)} />}
             <span className="truncate">{plain ? `${version} build · ${u.line}` : u.line}</span>
           </div>
@@ -112,7 +112,7 @@ function RunningGroup() {
   return (
     <SettingsGroup title="What's running">
       <SettingsRow label="Laptop agent" description="Holds the connection to every box, private URLs and forwards.">
-        <span className="font-mono text-muted-foreground text-xs">:1378 · proxy :{proxy?.port ?? "-"}</span>
+        <span className="font-mono text-muted-foreground text-mono">:1378 · proxy :{proxy?.port ?? "-"}</span>
       </SettingsRow>
       {boxes.map((b) => {
         const info = data[b.name]?.info;
@@ -126,11 +126,11 @@ function RunningGroup() {
               <span className={cn("flex items-center gap-2", !online && "text-muted-foreground")}>
                 <span className={cn("size-1.5 shrink-0 rounded-full", old ? "bg-warning" : online ? "bg-success" : "bg-muted-foreground/50")} />
                 berthd on {b.name}
-                {old && <span className="font-normal text-[13px] text-warning-foreground">older than this app</span>}
+                {old && <span className="font-normal text-desc text-warning-foreground">older than this app</span>}
               </span>
             }
           >
-            <span className="font-mono text-muted-foreground text-xs">{online ? (info?.build?.slice(0, 7) ?? "online") : b.state}</span>
+            <span className="font-mono text-muted-foreground text-mono">{online ? (info?.build?.slice(0, 7) ?? "online") : b.state}</span>
             {old && <UpgradeBox box={b.name} size="sm" variant="outline" label="Update" />}
           </SettingsRow>
         );

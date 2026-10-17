@@ -25,7 +25,7 @@ function Check({ n, title, state, value, children, compact }: { n: number; title
       <div className="flex min-w-0 items-center gap-2.5">
         <span
           className={cn(
-            "inline-flex size-5 shrink-0 items-center justify-center rounded-full border font-medium text-[11px]",
+            "inline-flex size-5 shrink-0 items-center justify-center rounded-full border font-medium text-tag",
             state === "done" && "border-success bg-success text-white",
             state === "warn" && "border-warning bg-warning/15 text-warning-foreground",
             state === "active" && "border-foreground text-foreground",
@@ -123,7 +123,7 @@ export function Checklist(p: ChecklistProps) {
   );
   const opChoice = opKeys.length > 0 && p.onSkipOP && (
     <div className="mb-2">
-      <div role="radiogroup" aria-label="1Password" className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs">
+      <div role="radiogroup" aria-label="1Password" className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-meta">
         {[
           { skip: false, label: "Use 1Password", id: "op-use" },
           { skip: true, label: "Skip 1Password", id: "op-skip" },
@@ -158,7 +158,7 @@ export function Checklist(p: ChecklistProps) {
         return (
           <label key={id} className="block" data-testid={`key-input-${k.key}`}>
             {/* A long name pushes the note to its own line, whole. */}
-            <span className="mb-1 flex flex-wrap items-baseline gap-x-1.5 text-xs">
+            <span className="mb-1 flex flex-wrap items-baseline gap-x-1.5 text-meta">
               <span className="min-w-0 break-all font-mono">{k.key}</span>
               <span className="whitespace-nowrap text-muted-foreground">{k.shared ? "the team's, from 1Password" : "yours alone"}</span>
             </span>
@@ -333,7 +333,7 @@ export function RunCard({ run, github, os, onOpenTerminal, onRetry, onBackground
         <div className="mt-1 text-desc text-muted-foreground">{detail}</div>
         <div className="mt-3">{bar}</div>
       </div>
-      <div className="space-y-1.5 border-t px-4 py-3 text-xs">
+      <div className="space-y-1.5 border-t px-4 py-3 text-meta">
         {github?.login && (
           <p className="flex items-center gap-2">
             <Avatar src={github.avatar_url} name={github.login} size={14} /> {github.login}
