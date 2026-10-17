@@ -35,11 +35,11 @@ export function QueueIndicator() {
           render={
             <button
               type="button"
-              className={cn("-mx-1 flex items-center gap-1.5 rounded px-1 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground", failed > 0 && "text-destructive-foreground")}
+              className={cn("-mx-1 flex items-center gap-1.5 rounded px-1 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground", failed > 0 && "text-warning-foreground")}
             />
           }
         >
-          {failed > 0 ? <span className="size-1.5 rounded-full bg-destructive" /> : <ListStartIcon className="size-3" />}
+          {failed > 0 ? <span className="size-1.5 rounded-full bg-warning" /> : <ListStartIcon className="size-3" />}
           Queued ({items.length})
         </PopoverTrigger>
       </Tip>

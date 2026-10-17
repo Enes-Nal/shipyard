@@ -1,14 +1,13 @@
-import { GlobeIcon, SettingsIcon } from "lucide-react";
+import { GlobeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { SimpleSelect } from "@/components/simple-select";
 import { Tip } from "@/components/tip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
-import { bytes, errorMessage } from "@/lib/format";
+import { errorMessage } from "@/lib/format";
 import { plainError } from "@/lib/errors";
 import { type BoxBrowser, type BoxProcesses, type BoxSessionProcs, OWNER_WORDS, SESSION_LIMITS, age, busy, cpu, memory, summary } from "@/lib/processes";
 import { useStore } from "@/lib/store";
@@ -60,77 +59,7 @@ async function stop(box: string, id: string): Promise<boolean> {
   }
 }
 
-// BoxMeter is a box's memory in the status bar; clicked, it lists the box's
-// browsers and heavy sessions. A box without the list opens Settings.
-export function BoxMeter({ box, mem, route, className }: { box: string; mem: { used: number; total: number }; route?: string; className?: string }) {
-  const has = useBoxHasProcesses(box);
-  const [open, setOpen] = useState(false);
-  const used = mem.used / mem.total;
-  const tip = [`${box} memory: ${bytes(mem.used)} of ${bytes(mem.total)} in use`, route].filter(Boolean).join(" · ");
-  const body = (
-    <>
-      {box}
-      <span className="relative h-1.5 w-6 overflow-hidden rounded-full bg-muted-foreground/20">
-        <span className={cn("absolute inset-y-0 left-0 rounded-full", used > 0.85 ? "bg-warning" : "bg-muted-foreground/60")} style={{ width: `${Math.round(used * 100)}%` }} />
-      </span>
-      <span className="tabular-nums">{Math.round(used * 100)}%</span>
-    </>
-  );
-  const cls = cn("-mx-1 flex items-center gap-1.5 rounded px-1 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground", used > 0.85 && "text-warning-foreground dark:text-warning", className);
-  if (!has) {
-    return (
-      <Tip label={tip}>
-        <button type="button" className={cls} onClick={() => useStore.getState().setView({ kind: "settings", section: "boxes" })}>
-          {body}
-        </button>
-      </Tip>
-    );
-  }
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <Tip label={`${tip}. Click for its browsers and sessions`}>
-        <PopoverTrigger render={<button type="button" data-testid={`box-meter-${box}`} className={cls} />}>{body}</PopoverTrigger>
-      </Tip>
-      <PopoverPopup side="top" align="end" sideOffset={6} className="w-[32rem] max-w-[calc(100vw-2rem)] p-0 [&_[data-slot=popover-viewport]]:p-0">
-        <BoxProcessesPopover box={box} mem={mem} on={open} onSettings={() => setOpen(false)} />
-      </PopoverPopup>
-    </Popover>
-  );
-}
-
-function BoxProcessesPopover({ box, mem, on, onSettings }: { box: string; mem: { used: number; total: number }; on: boolean; onSettings(): void }) {
-  const { data, error, reload } = useBoxProcesses(box, on);
-  return (
-    <div data-testid="box-processes" className="flex max-h-[min(34rem,70vh)] flex-col">
-      <div className="flex items-start gap-2 border-b px-4 pt-3 pb-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="text-row">{box}</div>
-          <p className="text-muted-foreground text-meta">
-            {bytes(mem.used)} of {bytes(mem.total)} in use{data ? ` · ${summary(data.browsers)}` : ""}
-          </p>
-        </div>
-        <Tip label="Settings › Boxes">
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label="Box settings"
-            onClick={() => {
-              onSettings();
-              useStore.getState().setView({ kind: "settings", section: "boxes" });
-            }}
-          >
-            <SettingsIcon />
-          </Button>
-        </Tip>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <ProcessesBody box={box} data={data} error={error} reload={reload} />
-      </div>
-    </div>
-  );
-}
-
-// ProcessesBody is the list itself, shared by the popover and Settings.
+// ProcessesBody is the list itself, in Settings → Boxes.
 function ProcessesBody({ box, data, error, reload }: { box: string; data?: BoxProcesses; error?: string; reload(): Promise<void> }) {
   if (error && !data) return <p className="px-4 py-6 text-center text-destructive-foreground text-meta">{error}</p>;
   if (!data)
