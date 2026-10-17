@@ -94,15 +94,20 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
   const noBoxes = useStore((s) => !!s.status && s.status.boxes.length === 0);
   const picked = usePicked(prefs.groupBy);
   return (
-    <aside aria-label="Sidebar" data-testid="sidebar" data-layout="columns" className={cn("relative flex shrink-0 border-sidebar-border border-r bg-sidebar text-sidebar-foreground", inkScale)}>
-      <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col pt-1.5 pb-2", !folded && !noBoxes && "border-sidebar-border border-r")}>
-        <WindowStrip extra={folded && !noBoxes ? <ShowTasks /> : undefined} />
-        <Places prefs={prefs} update={update} />
-        <TeamSidebarCard />
-        <ProjectsColumn prefs={prefs} update={update} picked={picked?.key} />
-        <Foot />
+    <aside aria-label="Sidebar" data-testid="sidebar" data-layout="columns" className={cn("relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pb-2 text-sidebar-foreground", inkScale)}>
+      <div className="mb-1 flex min-h-0 flex-1 border-sidebar-border border-b">
+        <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col pt-1.5", !folded && !noBoxes && "border-sidebar-border border-r")}>
+          <WindowStrip extra={folded && !noBoxes ? <ShowTasks /> : undefined} />
+          <Places prefs={prefs} update={update} />
+          <TeamSidebarCard />
+          <ProjectsColumn prefs={prefs} update={update} picked={picked?.key} />
+        </div>
+        {!folded && !noBoxes && <TasksColumn picked={picked} prefs={prefs} update={update} />}
       </div>
-      {!folded && !noBoxes && <TasksColumn picked={picked} prefs={prefs} update={update} />}
+      {/* The foot runs under both columns, so its notices and the boxes'
+          line have the whole width; its pieces sit in the sidebar itself,
+          which the notices' height is a share of. */}
+      <Foot />
     </aside>
   );
 }

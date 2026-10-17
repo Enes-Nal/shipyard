@@ -11,7 +11,7 @@ export function LabsSection() {
   const approvals = usePrefs((p) => p.approvals);
   const columns = usePrefs((p) => p.sidebarLayout === "columns");
   return (
-    <SettingsPage title="Labs" description="Newer ideas, on by default. They may change or go away.">
+    <SettingsPage title="Labs" description="Newer ideas to try. They may change or go away.">
       <SettingsGroup>
         <SettingsRow label="Harbour home and conversations" description="With no worktree open, start work from one box under the harbour. Agent panes get a Terminal | Conversation switch.">
           <Switch checked={labs} onCheckedChange={(on) => setPrefs({ labs: on, labsChosen: true })} />
