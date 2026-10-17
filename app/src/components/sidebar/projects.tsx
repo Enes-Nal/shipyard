@@ -157,7 +157,7 @@ function BoxHeader({ box, empty }: { box: BoxStatus; empty: boolean }) {
         tabIndex={0}
         role="group"
         aria-label={`${box.name}, ${online ? (box.link?.slow ? "online, slow link" : "online") : awayText(box)}`}
-        className="group/row relative flex h-7 outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-1.5 rounded-md pr-1 pl-2 font-medium text-[11px] text-muted-foreground hover:bg-sidebar-accent"
+        className="group/row relative flex h-8 outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-1.5 rounded-lg px-2.5 text-label text-muted-foreground hover:bg-sidebar-accent"
       >
         {online ? <ServerIcon className="size-3" /> : <ServerOffIcon className="size-3" />}
         <span className="truncate normal-case tracking-normal">{box.name}</span>
@@ -247,7 +247,9 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
   const toggle = () => update({ collapsed: { ...prefs.collapsed, [repo.key]: !collapsed } });
 
   return (
-    <SidebarMenuItem className="mb-5 last:mb-0">
+    // A project showing tasks has room under it; a folded or empty one sits
+    // right under the one before, like any other row.
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectActions(box.name, loc)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path]} />}>
           <SidebarMenuButton
@@ -624,7 +626,9 @@ function AwayMark({ box, short }: { box: BoxStatus; short?: boolean }) {
 
 // A project's own row is a quiet label over its tasks, with a + to start
 // one in it; it still opens the main checkout when clicked.
-const headerClass = "h-7 gap-1.5 rounded-lg px-2.5 text-label tracking-[0.01em] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground";
+// Lit while the pointer is anywhere on the row, its buttons too, so they sit
+// on the row's own highlight rather than a patch of their own.
+const headerClass = "h-8 gap-1.5 rounded-lg px-2.5 text-label tracking-[0.01em] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground group-hover/row:bg-sidebar-accent group-hover/row:text-foreground";
 // A project's tasks line up with the places above, not indented under it.
 const rowsClass = "mx-0 mt-px translate-x-0 gap-px border-l-0 px-0 py-0";
 
@@ -902,7 +906,9 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
   const mainRow = !multi && !!defMain && (all || mainSel || glyphSessions.some((s) => !s.exited));
 
   return (
-    <SidebarMenuItem className="mb-5 last:mb-0">
+    // A project showing tasks has room under it; a folded or empty one sits
+    // right under the one before, like any other row.
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={p.members.map((m) => `${m.box.name}: ${m.loc.path}`)} />}>
           <SidebarMenuButton
