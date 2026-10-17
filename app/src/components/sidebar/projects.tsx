@@ -1,6 +1,5 @@
 import {
   ChevronRightIcon,
-  FolderGitIcon,
   GitBranchIcon,
   HomeIcon,
   PencilIcon,
@@ -10,13 +9,13 @@ import {
   ServerOffIcon,
   SquareTerminalIcon,
   Trash2Icon,
-  WorkflowIcon,
   UsersRoundIcon,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
-import { AgentIcon, BoxStateDot, StateGlyph } from "@/components/agent-glyph";
+import { AgentIcon, BoxStateDot } from "@/components/agent-glyph";
+import { BranchMark, childRowClass, TaskGlyph, taskRowClass, TimeLane, toneOf } from "@/components/sidebar/task-parts";
 import { type Action, Armed, boxActions, useArmed, ContextRow, DotsMenu, newSection, projectActions, projectGroupActions, removeWorktree, worktreeActions } from "@/components/sidebar/actions";
 import { ReviewNotice, ReviewTag } from "@/views/pr-review/review-marks";
 import { confirm } from "@/components/sidebar/confirm";
@@ -158,7 +157,7 @@ function BoxHeader({ box, empty }: { box: BoxStatus; empty: boolean }) {
         tabIndex={0}
         role="group"
         aria-label={`${box.name}, ${online ? (box.link?.slow ? "online, slow link" : "online") : awayText(box)}`}
-        className="group/row relative flex h-7 outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-1.5 rounded-md pr-1 pl-2 font-medium text-[11px] text-muted-foreground hover:bg-sidebar-accent"
+        className="group/row relative flex h-8 outline-none focus-visible:ring-2 focus-visible:ring-ring items-center gap-1.5 rounded-lg px-2.5 text-label text-muted-foreground hover:bg-sidebar-accent"
       >
         {online ? <ServerIcon className="size-3" /> : <ServerOffIcon className="size-3" />}
         <span className="truncate normal-case tracking-normal">{box.name}</span>
@@ -226,6 +225,9 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 
   const mainSessions = main ? worktreeSessions(data?.sessions, main) : [];
   const mainSel = !!main && inWorkspace && current === wsKey(box.name, main.path);
+  // The main checkout is a task row like the others while it has work in
+  // it or is open; the project's header above it only names the project.
+  const mainRow = !!main && (all || mainSel || mainSessions.some((s) => !s.exited));
   const rows: TreeRow[] = worktrees.map((wt) => ({
     key: wt.path,
     box: box.name,
@@ -245,12 +247,13 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
   const toggle = () => update({ collapsed: { ...prefs.collapsed, [repo.key]: !collapsed } });
 
   return (
-    <SidebarMenuItem>
+    // A project showing tasks has room under it; a folded or empty one sits
+    // right under the one before, like any other row.
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectActions(box.name, loc)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path]} />}>
           <SidebarMenuButton
             size="sm"
-            isActive={mainSel && !all}
             disabled={!online || !main}
             onClick={() => main && open(main)}
             // → shows its worktrees, ← hides them, as in a tree.
@@ -261,28 +264,19 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
                 toggle();
               }
             }}
-            className={cn("h-[calc(var(--side-row)+0.125rem)] gap-1.5 font-medium text-[13px] text-foreground", !online && "text-muted-foreground")}
+            className={cn(headerClass, !online && "opacity-70")}
           >
-            {/* The pointer's way; the keyboard's is ← and → on the row. */}
-            <Tip label={collapsed ? `Show ${loc.name}` : `Hide ${loc.name}`} side="right">
-              <span
-                aria-hidden
-                data-fold=""
-                className="-ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggle();
-                }}
-              >
-                <ChevronRightIcon className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
-              </span>
-            </Tip>
-            <LeadIcon sessions={!all && main ? mainSessions : []} data={data} icon={<FolderGitIcon />} />
             <span className="min-w-0 truncate">{loc.name}</span>
+            {/* The pointer's way; the keyboard's is ← and → on the row. */}
+            <FoldToggle collapsed={collapsed} name={loc.name} onToggle={toggle} />
             <TeamSuggestMark places={[{ box: box.name, location: loc.name }]} />
-            {chip && <BoxChip box={box} />}
+            {chip && (
+              <span className="hidden @min-[22rem]/side:inline-flex">
+                <BoxChip box={box} />
+              </span>
+            )}
             <span className="ml-auto" />
-            {!all && main && <Glyphs sessions={mainSessions} data={data} />}
+            {online && main && <HeaderPlus />}
           </SidebarMenuButton>
         </Tip>
         {online && main && (
@@ -290,39 +284,50 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
         )}
       </ContextRow>
 
-      {!collapsed && (all || shown.length > 0 || hidden > 0) && (
-        <SidebarMenuSub className="mx-0 ml-[17px] gap-px py-0.5 pr-0 pl-1.5">
-          {all && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={mainSessions} data={data} selected={mainSel} onOpen={() => open(main)} away={online ? undefined : box} />}
+      {!collapsed && (mainRow || shown.length > 0 || hidden > 0) && (
+        <SidebarMenuSub className={rowsClass}>
+          {mainRow && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={mainSessions} data={data} selected={mainSel} onOpen={() => open(main)} away={online ? undefined : box} />}
           <WorktreeNodes nodes={shown} depth={0} prefs={prefs} update={update} />
-          {hidden > 0 && (
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                render={<button type="button" />}
-                size="sm"
-                className="h-6 w-full text-muted-foreground/80"
-                onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })}
-              >
-                <span>
-                  {hidden} more {hidden === 1 ? "worktree" : "worktrees"}
-                </span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          )}
-          {!all && expanded && rows.length > active.length && (
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                render={<button type="button" />}
-                size="sm"
-                className="h-6 w-full text-muted-foreground/80"
-                onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })}
-              >
-                <span>Show fewer</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          )}
+          {hidden > 0 && <FoldRow label={`Show ${hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })} />}
+          {!all && expanded && rows.length > active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
+  );
+}
+
+// FoldRow shows a project's quiet worktrees, or folds them away again: a
+// task row's size, its text where a title would be.
+function FoldRow({ label, onClick }: { label: string; onClick(): void }) {
+  return (
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-9 text-muted-foreground")} onClick={onClick}>
+        <span>{label}</span>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
+}
+
+// FoldToggle is a project header's chevron, after its name: it shows while
+// the project is folded, or the header is pointed at.
+function FoldToggle({ collapsed, name, onToggle }: { collapsed: boolean; name: string; onToggle(): void }) {
+  return (
+    <Tip label={collapsed ? `Show ${name}` : `Hide ${name}`} side="right">
+      <span
+        aria-hidden
+        data-fold=""
+        className={cn(
+          "inline-flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground",
+          !collapsed && "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+      >
+        <ChevronRightIcon className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
+      </span>
+    </Tip>
   );
 }
 
@@ -340,6 +345,19 @@ interface WorktreeRowProps {
   // so the worktree you have open never vanishes from under you; what it
   // last ran is not shown, since the box cannot say whether it still runs.
   away?: BoxStatus;
+  // A worktree that handed work to others: its children's fold.
+  fold?: Fold;
+  // One handed work by another, drawn under it on the guide.
+  child?: boolean;
+}
+
+// Fold is a parent row's fold of its children: how many, whether they are
+// hidden, and the most urgent agent among them while they are.
+interface Fold {
+  count: number;
+  closed: boolean;
+  state?: SessionState;
+  toggle(): void;
 }
 
 // A row is drawn again only when what it shows changed: its worktree, its
@@ -357,9 +375,13 @@ const sameRow = (a: Omit<WorktreeRowProps, "onOpen">, b: Omit<WorktreeRowProps, 
   a.chip?.name === b.chip?.name &&
   a.chip?.state === b.chip?.state &&
   a.data?.stats?.agents === b.data?.stats?.agents &&
+  a.fold?.count === b.fold?.count &&
+  a.fold?.closed === b.fold?.closed &&
+  a.fold?.state === b.fold?.state &&
+  a.child === b.child &&
   sameList(a.sessions, b.sessions);
 
-const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, selected, onOpen, chip, away }: WorktreeRowProps) {
+const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, selected, onOpen, chip, away, fold, child }: WorktreeRowProps) {
   // Its agents by what they work on ("Fix checkout webhook · Claude Code").
   const agents = away ? [] : sessions.filter((s) => agentOf(s) && !s.exited).map((s) => sessionName(s, { sessions, agent: true }));
   // A renamed worktree's tip says its own name and branch under the title.
@@ -379,7 +401,14 @@ const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, se
   const editing = useRenamingWorktree((s) => s.key === renameKey(box, wt.path));
   if (removal) return <LeavingRow wt={wt} label={removalLabel(removal)} script={removal.script} />;
   const key = wsKey(box, wt.path);
-  const name = wt.main ? (wt.branch ?? "main") : worktreeLabel(wt);
+  const self = wt.main ? (wt.branch ?? "main") : worktreeLabel(wt);
+  // A row names the task: the worktree's own display name when it has one,
+  // else what its most urgent agent works on, else the worktree.
+  const live = away ? [] : sessions;
+  const { state } = summary(live, data);
+  const top = topSession(live, data, state);
+  const task = wt.title?.trim() ? undefined : top?.title?.trim() || undefined;
+  const name = task || self;
   // A worktree on an away box can still be renamed: the name waits for it.
   const canRename = !wt.main && !away;
   if (editing && canRename)
@@ -410,29 +439,35 @@ const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, se
                 startRenamingWorktree(box, wt.path);
               }
             }}
-            onPointerDown={(e: React.PointerEvent<HTMLElement>) => labs && !away && armDrag(e, { kind: "worktree", key }, wt.main ? loc.name : name, wt.main ? <HomeIcon className="size-3" /> : <GitBranchIcon className="size-3" />)}
-            className={cn("h-side-row w-full text-[13px] sm:h-side-row [&>svg]:text-muted-foreground", away && "text-muted-foreground")}
+            onPointerDown={(e: React.PointerEvent<HTMLElement>) => labs && !away && armDrag(e, { kind: "worktree", key }, wt.main ? loc.name : self, wt.main ? <HomeIcon className="size-3" /> : <GitBranchIcon className="size-3" />)}
+            className={cn(taskRowClass, child && childRowClass, toneOf(state), away && "text-muted-foreground")}
           >
-            <LeadIcon sessions={away ? [] : sessions} data={data} icon={wt.main ? <HomeIcon /> : <GitBranchIcon />} />
-            <span className={cn("min-w-0 truncate", away && "opacity-70")}>{name}</span>
+            <TaskGlyph state={state} small={child} />
+            <span className={cn("mr-auto min-w-0 truncate", away && "opacity-70")}>{name}</span>
             {/* Its own name beside the title, when the sidebar is wide enough. */}
-            {!wt.main && wt.title && <span data-testid="worktree-row-name" className="hidden min-w-0 max-w-max grow basis-0 truncate font-mono text-[10px] text-muted-foreground @min-[17rem]/side:inline">{wt.name}</span>}
+            {((!wt.main && wt.title) || task) && (
+              <span data-testid="worktree-row-name" className="hidden min-w-0 max-w-max grow basis-0 truncate font-mono text-[11px] text-muted-foreground @min-[22rem]/side:inline">
+                {self}
+              </span>
+            )}
             {/* On screen beside another worktree: its colour. */}
             <WtDot wsKey={key} className="size-1.5" />
-            {/* Narrower than the default the name needs the room more; the
-                tip still says which box. */}
+            {/* Only in a wide sidebar: the title needs the room more, and
+                the tip still says which box. */}
             {chip && (
-              <span className="hidden shrink-0 @min-[14rem]/side:inline-flex">
+              <span className="hidden shrink-0 @min-[22rem]/side:inline-flex">
                 <BoxChip box={chip} />
               </span>
             )}
             {!away && <SetupMark box={box} wt={wt} />}
             {!away && <ReviewTag box={box} wt={wt} />}
-            <span className="ml-auto" />
-            {away ? <AwayMark box={away} short={!!chip} /> : <Glyphs sessions={sessions} data={data} />}
+            {/* Room for the fold of its children, drawn over this spot. */}
+            {fold && <FoldMarks count={fold.count} className="invisible" />}
+            {away ? <AwayMark box={away} short={!!chip} /> : <TimeLane since={top ? (top.state_since ?? top.created) : undefined} tip={timeTip(live, top)} />}
           </SidebarMenuSubButton>
         </Tip>
-        {!away && <RowActions box={box} loc={loc} wt={wt} />}
+        {fold && <FoldChip fold={fold} label={worktreeLabel(wt)} />}
+        {!away && <RowActions box={box} loc={loc} wt={wt} selected={selected} beside={!!fold} />}
       </ContextRow>
       {!away && <ReviewNotice box={box} loc={loc} wt={wt} onRemove={() => removeWorktree(box, loc, wt)} />}
     </SidebarMenuSubItem>
@@ -483,42 +518,25 @@ const sameLeaf = (a: WorktreeNodeProps, b: WorktreeNodeProps) =>
 // open, and while folded it shows the most urgent agent inside.
 const WorktreeNode = memo(function WorktreeNode({ node, depth, prefs, update }: WorktreeNodeProps) {
   const r = node.row;
-  const row = (
-    <WorktreeRow box={r.box} loc={r.loc} wt={r.wt} sessions={r.sessions} data={r.data} selected={r.selected} chip={r.chip} away={r.away} onOpen={() => selectWorktree(refOf(r.box, r.loc, r.wt))} />
-  );
-  if (!node.children.length) return row;
-  const fold = `wt:${node.key}`;
+  const key = `wt:${node.key}`;
   const inside = below(node);
-  const closed = (prefs.collapsed[fold] ?? false) && !inside.some((c) => c.selected);
+  const closed = (prefs.collapsed[key] ?? false) && !inside.some((c) => c.selected);
   const n = node.children.length;
-  const what = `${n} ${n === 1 ? "child" : "children"}`;
-  const { state } = closed ? summary(inside.flatMap((c) => (c.away ? [] : c.sessions)), r.data) : {};
+  const { state } = n && closed ? summary(inside.flatMap((c) => (c.away ? [] : c.sessions)), r.data) : {};
+  const fold: Fold | undefined = n ? { count: n, closed, state, toggle: () => update({ collapsed: { ...prefs.collapsed, [key]: !closed } }) } : undefined;
+  const row = (
+    <WorktreeRow box={r.box} loc={r.loc} wt={r.wt} sessions={r.sessions} data={r.data} selected={r.selected} chip={r.chip} away={r.away} fold={fold} child={depth > 0} onOpen={() => selectWorktree(refOf(r.box, r.loc, r.wt))} />
+  );
+  if (!n) return row;
   return (
     <>
       {row}
-      <SidebarMenuSubItem>
-        <button
-          type="button"
-          data-testid="worktree-children"
-          aria-expanded={!closed}
-          aria-label={`${closed ? "Show" : "Hide"} ${what} of ${worktreeLabel(r.wt)}`}
-          onClick={() => update({ collapsed: { ...prefs.collapsed, [fold]: !closed } })}
-          // A 24px target around a 20px pill.
-          className="group/pill ml-6 flex h-6 w-max items-center rounded-md text-[11px] text-muted-foreground outline-none hover:text-foreground"
-        >
-          <span className="flex h-5 items-center gap-1 rounded-md border border-sidebar-border px-1.5 group-hover/pill:bg-sidebar-accent group-focus-visible/pill:ring-2 group-focus-visible/pill:ring-ring [&_svg]:size-3">
-            <WorkflowIcon />
-            <span className="tabular-nums">{what}</span>
-            {(state === "running" || state === "waiting" || state === "finished") && <StateGlyph state={state} className="size-3" />}
-            <ChevronRightIcon className={cn("transition-transform", !closed && "rotate-90")} />
-          </span>
-        </button>
-      </SidebarMenuSubItem>
       {!closed && (
         <SidebarMenuSubItem>
-          {/* Up to MAX_INDENT levels step in, with a guide; deeper ones line
-              up with their parent. */}
-          <SidebarMenuSub className={cn("mx-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? "ml-[9px] pl-1.5" : "ml-0 border-l-0 pl-0")}>
+          {/* Its children hang under it on a guide from its status lane.
+              Up to MAX_INDENT levels step in; deeper ones line up with
+              their parent. */}
+          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-[17px] pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
             <WorktreeNodes nodes={node.children} depth={depth + 1} prefs={prefs} update={update} />
           </SidebarMenuSub>
         </SidebarMenuSubItem>
@@ -526,6 +544,40 @@ const WorktreeNode = memo(function WorktreeNode({ node, depth, prefs, update }: 
     </>
   );
 }, sameLeaf);
+
+// FoldMarks are a parent row's fork and count of the worktrees it handed
+// work to.
+function FoldMarks({ count, className }: { count: number; className?: string }) {
+  return (
+    <span aria-hidden className={cn("flex shrink-0 items-center gap-[3px] text-label tabular-nums", className)}>
+      <BranchMark />
+      {count}
+    </span>
+  );
+}
+
+// FoldChip is FoldMarks as the button that folds and unfolds the children,
+// over the row just before its time; while folded it shows the most urgent
+// agent among them instead of the fork.
+function FoldChip({ fold, label }: { fold: Fold; label: string }) {
+  const what = `${fold.count} ${fold.count === 1 ? "child" : "children"}`;
+  const urgent = fold.closed && (fold.state === "running" || fold.state === "waiting" || fold.state === "finished");
+  return (
+    <Tip label={fold.closed ? `Show ${what}` : `Hide ${what}`} side="right">
+      <button
+        type="button"
+        data-testid="worktree-children"
+        aria-expanded={!fold.closed}
+        aria-label={`${fold.closed ? "Show" : "Hide"} ${what} of ${label}`}
+        onClick={fold.toggle}
+        className="absolute top-1/2 right-11 flex h-6 -translate-y-1/2 items-center gap-[3px] rounded-md px-1 text-label text-muted-foreground tabular-nums outline-none group-has-[[data-active=true]]/row:text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {urgent ? <TaskGlyph state={fold.state} small /> : <BranchMark />}
+        <span>{fold.count}</span>
+      </button>
+    </Tip>
+  );
+}
 
 // LeavingRow is a worktree being archived or removed, in the row's place
 // and size so nothing shifts when it goes.
@@ -572,47 +624,54 @@ function AwayMark({ box, short }: { box: BoxStatus; short?: boolean }) {
 // leading icon, its trailing glyphs stay put, and its actions fade in over
 // them on a background of their own (RowOverlay).
 
-// LeadIcon is a row's leading icon: the state of its most urgent agent while
-// one is working, waiting or done, and the row's own icon otherwise, in the
-// same 14px box.
-function LeadIcon({ sessions, data, icon }: { sessions: Session[]; data?: BoxData; icon: React.ReactNode }) {
-  const { state } = summary(sessions, data);
-  if (state === "running" || state === "waiting" || state === "finished") return <StateGlyph state={state} className="size-3.5" />;
-  return <span className="inline-flex size-3.5 shrink-0 items-center justify-center text-muted-foreground [&_svg]:size-3.5">{icon}</span>;
+// A project's own row is a quiet label over its tasks, with a + to start
+// one in it; it still opens the main checkout when clicked.
+// Lit while the pointer is anywhere on the row, its buttons too, so they sit
+// on the row's own highlight rather than a patch of their own.
+const headerClass = "h-8 gap-1.5 rounded-lg px-2.5 text-label tracking-[0.01em] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground group-hover/row:bg-sidebar-accent group-hover/row:text-foreground";
+// A project's tasks line up with the places above, not indented under it.
+const rowsClass = "mx-0 mt-px translate-x-0 gap-px border-l-0 px-0 py-0";
+
+// HeaderPlus is the header's +, drawn where its real button fades in on
+// hover (RowOverlay), so the header always shows you can start a task.
+function HeaderPlus() {
+  return <PlusIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />;
 }
 
-// Glyphs are what runs in a row: the most urgent agent's icon, or a dot for
-// shells alone, and how many sessions when more than one.
-function Glyphs({ sessions, data }: { sessions: Session[]; data?: BoxData }) {
-  const { state, count } = summary(sessions, data);
-  if (!state) return null;
-  const agent = sessions.find((s) => agentOf(s) && sessionState(s, data?.stats) === state) ?? sessions.find((s) => agentOf(s) && !s.exited);
-  const shells = sessions.filter((s) => !agentOf(s)).length;
-  return (
-    <span className="flex shrink-0 items-center gap-1">
-      {agent ? (
-        <AgentIcon agent={agentOf(agent)} className="size-3 opacity-80" />
-      ) : (
-        <Tip label={`${shells} shell${shells === 1 ? "" : "s"} open`}>
-          <span className="inline-flex size-3 items-center justify-center">
-            <span className="size-1 rounded-full bg-muted-foreground/50" />
-          </span>
-        </Tip>
-      )}
-      {count > 1 && <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>}
-    </span>
-  );
+// topSession is the session a row speaks for: its most urgent one, an
+// agent before a shell.
+function topSession(sessions: Session[], data: BoxData | undefined, state: SessionState | undefined): Session | undefined {
+  if (!state) return undefined;
+  const at = sessions.filter((s) => !s.exited && sessionState(s, data?.stats) === state);
+  return at.find((s) => agentOf(s)) ?? at[0];
+}
+
+// timeTip says what runs in a row: its agent at work, or how many shells,
+// and how many sessions when there are more.
+function timeTip(sessions: Session[], top?: Session) {
+  if (!top) return undefined;
+  const live = sessions.filter((s) => !s.exited).length;
+  const what = agentOf(top) ? sessionName(top, { sessions, agent: true }) : `${live} ${live === 1 ? "shell" : "shells"} open`;
+  return live > 1 && agentOf(top) ? `${what} · ${live} sessions` : what;
 }
 
 // RowOverlay holds a row's actions over its trailing end. It only fades
-// (opacity, 100ms), and paints the row's hover colour, opaque, with a short
-// fade on its left edge, so it covers chips, counts and glyphs under it and
-// nothing in the row moves. Its buttons and their menus are only made once
-// the row is first pointed at or focused (Armed).
-function RowOverlay({ className, children }: { className?: string; children: React.ReactNode }) {
+// (opacity, 100ms), and paints the row's hover colour (or its selected
+// tint), opaque, with a short fade on its left edge, so it covers what is
+// under it and nothing in the row moves. beside puts it just before a
+// parent row's fold, which stays where it is. Its buttons and their menus
+// are only made once the row is first pointed at or focused (Armed).
+function RowOverlay({ className, selected, beside, children }: { className?: string; selected?: boolean; beside?: boolean; children: React.ReactNode }) {
   if (!useArmed()) return null;
   return (
-    <div className={cn("pointer-events-none absolute inset-y-0 right-0 flex items-center rounded-r-lg pr-1 pl-4 opacity-0 transition-opacity duration-100 [background:linear-gradient(var(--sidebar-accent),var(--sidebar-accent)),var(--sidebar)] [mask-image:linear-gradient(to_right,transparent,black_16px)] focus-within:pointer-events-auto focus-within:opacity-100 group-hover/row:pointer-events-auto group-hover/row:opacity-100 has-[[data-popup-open]]:pointer-events-auto has-[[data-popup-open]]:opacity-100", className)}>
+    <div
+      className={cn(
+        "pointer-events-none absolute inset-y-0 right-0 flex items-center rounded-r-lg pr-1 pl-3 opacity-0 transition-opacity duration-100 [mask-image:linear-gradient(to_right,transparent,black_12px)] focus-within:pointer-events-auto focus-within:opacity-100 group-hover/row:pointer-events-auto group-hover/row:opacity-100 has-[[data-popup-open]]:pointer-events-auto has-[[data-popup-open]]:opacity-100",
+        selected ? "[background:linear-gradient(color-mix(in_srgb,var(--sidebar-accent),var(--foreground)_4%),color-mix(in_srgb,var(--sidebar-accent),var(--foreground)_4%)),var(--sidebar)]" : "[background:linear-gradient(var(--sidebar-accent),var(--sidebar-accent)),var(--sidebar)]",
+        beside && "right-[76px] rounded-r-none pr-0",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -620,11 +679,11 @@ function RowOverlay({ className, children }: { className?: string; children: Rea
 
 // RowActions are a row's buttons: start something here, and its ⋯ menu. They
 // fade in over the row's trailing end on hover or keyboard focus.
-function RowActions({ box, loc, wt, project, onNewWorktree }: { box: string; loc: Location; wt: Worktree; project?: boolean; onNewWorktree?: () => void }) {
+function RowActions({ box, loc, wt, project, onNewWorktree, selected, beside }: { box: string; loc: Location; wt: Worktree; project?: boolean; onNewWorktree?: () => void; selected?: boolean; beside?: boolean }) {
   const select = () => selectWorktree(refOf(box, loc, wt));
 
   return (
-    <RowOverlay>
+    <RowOverlay selected={selected} beside={beside}>
       {onNewWorktree && (
         <RowButton label={`New task in ${loc.name}`} onClick={onNewWorktree}>
           <PlusIcon />
@@ -842,9 +901,14 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
     [multi, collapsed, p.members, boxes, def.box.name, defMain],
   );
   const online = p.members.some((m) => m.box.state === "online");
+  // With one box, its main checkout is a task row while it has work in it
+  // or is open (or every worktree shows); the header only names the project.
+  const mainRow = !multi && !!defMain && (all || mainSel || glyphSessions.some((s) => !s.exited));
 
   return (
-    <SidebarMenuItem>
+    // A project showing tasks has room under it; a folded or empty one sits
+    // right under the one before, like any other row.
+    <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-4" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative">
         <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={p.members.map((m) => `${m.box.name}: ${m.loc.path}`)} />}>
           <SidebarMenuButton
@@ -854,7 +918,6 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
               e.dataTransfer.setData("application/x-berth-project", p.id);
               e.dataTransfer.effectAllowed = "move";
             }}
-            isActive={mainSel && !all}
             disabled={!online}
             onClick={() => defMain && def.box.state === "online" && selectWorktree(refOf(def.box.name, def.loc, defMain))}
             aria-expanded={!collapsed}
@@ -864,26 +927,14 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
                 update({ collapsed: { ...prefs.collapsed, [key]: !collapsed } });
               }
             }}
-            className={cn("h-[calc(var(--side-row)+0.125rem)] gap-1.5 font-medium text-[13px] text-foreground", !online && "text-muted-foreground")}
+            className={cn(headerClass, !online && "opacity-70")}
           >
-            <Tip label={collapsed ? `Show ${p.name}` : `Hide ${p.name}`} side="right">
-              <span
-                aria-hidden
-                data-fold=""
-                className="-ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  update({ collapsed: { ...prefs.collapsed, [key]: !collapsed } });
-                }}
-              >
-                <ChevronRightIcon className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
-              </span>
-            </Tip>
-            <LeadIcon sessions={!all ? glyphSessions : []} data={boxes[def.box.name]} icon={<FolderGitIcon />} />
             <span className="min-w-0 truncate">{p.name}</span>
+            <FoldToggle collapsed={collapsed} name={p.name} onToggle={() => update({ collapsed: { ...prefs.collapsed, [key]: !collapsed } })} />
             <TeamSuggestMark places={p.members.map((m) => ({ box: m.box.name, location: m.loc.name }))} />
             {chips && (
-              <span className="flex min-w-0 shrink items-center gap-0.5 overflow-hidden">
+              // Which boxes, only when there is room; the tip says them too.
+              <span className="hidden min-w-0 shrink items-center gap-0.5 overflow-hidden @min-[22rem]/side:flex">
                 {p.members.slice(0, 3).map((m) => (
                   <BoxChip key={m.box.name} box={m.box} />
                 ))}
@@ -891,7 +942,9 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
               </span>
             )}
             <span className="ml-auto" />
-            {!all && <Glyphs sessions={glyphSessions} data={boxes[def.box.name]} />}
+            {/* Folded, the header still says how its most urgent agent is. */}
+            {collapsed && <HeaderState sessions={glyphSessions} data={boxes[def.box.name]} />}
+            {online && <HeaderPlus />}
           </SidebarMenuButton>
         </Tip>
         {online && (
@@ -907,9 +960,9 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
         )}
       </ContextRow>
 
-      {!collapsed && (all || shown.length > 0 || hidden > 0) && (
-        <SidebarMenuSub className="mx-0 ml-[17px] gap-px py-0.5 pr-0 pl-1.5">
-          {!multi && all && defMain && (
+      {!collapsed && (mainRow || shown.length > 0 || hidden > 0) && (
+        <SidebarMenuSub className={rowsClass}>
+          {mainRow && defMain && (
             <WorktreeRow
               box={def.box.name}
               loc={def.loc}
@@ -922,36 +975,19 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
             />
           )}
           <WorktreeNodes nodes={shown} depth={0} prefs={prefs} update={update} />
-          {hidden > 0 && (
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                render={<button type="button" />}
-                size="sm"
-                className="h-6 w-full text-muted-foreground/80"
-                onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })}
-              >
-                <span>
-                  {hidden} more {hidden === 1 ? "worktree" : "worktrees"}
-                </span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          )}
-          {!all && expanded && rows.length > active.length && (
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                render={<button type="button" />}
-                size="sm"
-                className="h-6 w-full text-muted-foreground/80"
-                onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })}
-              >
-                <span>Show fewer</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          )}
+          {hidden > 0 && <FoldRow label={`Show ${hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })} />}
+          {!all && expanded && rows.length > active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
   );
+}
+
+// HeaderState is a folded project's most urgent agent, on its header.
+function HeaderState({ sessions, data }: { sessions: Session[]; data?: BoxData }) {
+  const { state } = summary(sessions, data);
+  if (state !== "running" && state !== "waiting" && state !== "finished") return null;
+  return <TaskGlyph state={state} small />;
 }
 
 const ProjectGroup = memo(ProjectGroupBody, (a, b) => a.chips === b.chips && a.prefs === b.prefs && a.update === b.update && sameProject(a.project, b.project));

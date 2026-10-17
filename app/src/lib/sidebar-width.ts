@@ -6,13 +6,13 @@
 // leading icon and trailing glyphs take about 100px, leaving the name some
 // 13 characters ("Fix the cart b…"), enough to tell worktrees apart, and
 // room for the actions that fade in over a row's end without covering all
-// of it. 240px is the width it always had. 420px fits a long display name
+// of it. 304px, the default, leaves a task's title room beside its status and time. 420px fits a long display name
 // with its worktree's own name beside it (about 50 characters); wider only
 // adds empty space and takes it from the terminals. The widest is also held
 // to 40% of the window, so a small window keeps its room for work.
 
 export const SIDEBAR_MIN = 200;
-export const SIDEBAR_DEFAULT = 240;
+export const SIDEBAR_DEFAULT = 304;
 export const SIDEBAR_MAX = 420;
 // The folded rail's width (app-sidebar.tsx Rail, w-19).
 export const RAIL_WIDTH = 76;
@@ -24,6 +24,16 @@ export const UNFOLD_AT = 170;
 // ← and → move it by STEP, with Shift by BIG_STEP.
 export const STEP = 16;
 export const BIG_STEP = 64;
+
+// A window narrower than ROOMY_AT starts the sidebar at its old 240px, so
+// the panes beside it keep their room; a roomier one at the default.
+export const SIDEBAR_NARROW_DEFAULT = 240;
+export const ROOMY_AT = 1200;
+
+// defaultWidth is where the sidebar starts in a window this wide.
+export function defaultWidth(windowWidth = Infinity): number {
+  return windowWidth < ROOMY_AT ? SIDEBAR_NARROW_DEFAULT : SIDEBAR_DEFAULT;
+}
 
 // sidebarMax is the widest the sidebar may be in a window this wide: 420px,
 // or 40% of the window when that is less, but never under the default.
