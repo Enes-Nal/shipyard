@@ -19,7 +19,8 @@ export const selectedRow = "data-[active=true]:bg-[color-mix(in_srgb,var(--sideb
 
 // A task row is a place row's height (34px at the default density); a
 // child's, under its parent on the guide, a little lower and smaller.
-export const taskRowClass = cn("h-[calc(var(--side-row)+6px)] w-full translate-x-0 gap-2.5 px-2.5 text-row font-normal sm:h-[calc(var(--side-row)+6px)]", selectedRow);
+// It stays lit while the pointer is on its + and ⋯, which sit on that light.
+export const taskRowClass = cn("h-[calc(var(--side-row)+6px)] w-full translate-x-0 gap-2.5 px-2.5 text-row font-normal sm:h-[calc(var(--side-row)+6px)] group-hover/row:not-data-[active=true]:bg-sidebar-accent", selectedRow);
 export const childRowClass = "h-[calc(var(--side-row)+4px)] gap-2.5 pr-2.5 pl-1.5 text-[13.5px] sm:h-[calc(var(--side-row)+4px)]";
 
 // toneOf is how much a row's title asks of you: waiting for you in full
