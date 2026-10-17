@@ -304,6 +304,10 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
     void useStore.getState().refreshBox(box);
   };
 
+  // Every hook runs before the pane's early returns, or a pane that goes
+  // from an error to its chat would draw with a hook too many.
+  const [resuming, setResuming] = useState<string>();
+
   // The box is away: what it last said may be stale, so say only that.
   if (away && !mock) {
     return (
@@ -397,8 +401,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   };
 
   // A structured chat's /resume is the app's picker: its agent has no
-  // screen to show its own.
-  const [resuming, setResuming] = useState<string>();
+  // screen to show its own (resuming, kept above the early returns).
   const reply = async (text: string) => {
     const resumeQuery = structured && canPickPast(box) ? resumeWords(text) : undefined;
     if (resumeQuery !== undefined) {
