@@ -19,7 +19,9 @@ const app = resolve(import.meta.dirname, "..");
 const src = join(app, "src");
 
 const ALLOW = new Map([
-  // path relative to src → why its text is not the scale's
+  ["components/whats-new/art.tsx", "What's new's pictures: miniature mock screens drawn on a 480×280 canvas and scaled to fit"],
+  ["views/settings/theme-preview.tsx", "a theme card's drawing of a sidebar and a terminal; at 11px its lines wrap"],
+  ["views/settings/chat-miniature.tsx", "the chat drawn at about 60% in the chat-background preview"],
 ]);
 
 const RAW = /(?<![\w-])text-(?:\[[0-9.]+(?:px|rem|em)\]|xs|sm|base|lg|xl|[2-9]xl)(?![\w[-])/g;
