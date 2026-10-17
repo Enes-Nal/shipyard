@@ -55,7 +55,7 @@ test("the sidebar's foot names the route each box is reached by, and how busy it
   const { page } = app;
   await app.open();
   await page.getByTestId("sidebar-boxes").hover();
-  const gpu = page.getByTestId("boxes-tip-line").filter({ hasText: "gpu" });
-  await expect(gpu).toContainText("via SSH");
-  await expect(gpu).toContainText("% mem");
+  const devl = page.getByTestId("boxes-tip-line").filter({ hasText: "devl" });
+  await expect(devl).toContainText("via SSH");
+  await expect(devl).toContainText("% mem");
 });

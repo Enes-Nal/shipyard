@@ -234,7 +234,7 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
     // right under the one before, like any other row.
     <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-3" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectActions(box.name, loc)} className="group/row relative">
-        <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path]} />}>
+        <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path, ...(online ? [] : [`${box.name} is ${awayText(box)}`])]} />}>
           <SidebarMenuButton
             size="sm"
             disabled={!online || !main}
@@ -595,16 +595,14 @@ function awayActions(box: BoxStatus): Action[] {
 }
 
 // AwayWord says a project's box is away, where a time would be: the
-// state's word, small and faint ("offline"), with a tip naming the box and
-// how long it has been gone. lane gives it a row's time lane to sit in.
+// state's word, small and faint ("offline"). The row's or header's own tip
+// names the box and how long it has been gone. lane gives it a row's time
+// lane to sit in.
 function AwayWord({ boxes, lane }: { boxes: BoxStatus[]; lane?: boolean }) {
-  const word = BOX_WORDS[boxState(boxes[0])].lower;
   return (
-    <Tip label={boxes.map((b) => `${b.name} is ${awayText(b)}`).join(" · ")}>
-      <span data-testid="away-word" className={cn("shrink-0 text-tag", lane && "min-w-7 text-right", ink.faint)}>
-        {word}
-      </span>
-    </Tip>
+    <span data-testid="away-word" className={cn("shrink-0 text-tag", lane && "min-w-7 text-right", ink.faint)}>
+      {BOX_WORDS[boxState(boxes[0])].lower}
+    </span>
   );
 }
 
@@ -898,7 +896,7 @@ function ProjectGroupBody({ project: p, chips, prefs, update }: { project: Proje
     // right under the one before, like any other row.
     <SidebarMenuItem className={cn(!collapsed && (mainRow || shown.length > 0 || hidden > 0) ? "mb-3" : "mb-0.5", "last:mb-0")}>
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative">
-        <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={p.members.map((m) => `${m.box.name}: ${m.loc.path}`)} />}>
+        <Tip side="right" delay={700} wrapClassName="flex w-full min-w-0" label={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={[...p.members.map((m) => `${m.box.name}: ${m.loc.path}`), ...p.members.filter((m) => m.box.state !== "online").map((m) => `${m.box.name} is ${awayText(m.box)}`)]} />}>
           <SidebarMenuButton
             size="sm"
             draggable

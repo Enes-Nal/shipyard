@@ -262,7 +262,7 @@ function RowBadge({ badge }: { badge: NonNullable<NavItem["badge"]> }) {
 
 // RowKeys is a place's shortcut at its row's end, where a count would be.
 export function RowKeys({ keys }: { keys: string }) {
-  return <span aria-hidden className={cn("pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-tag", ink.faint)}>{platformKeys(keys)}</span>;
+  return <span aria-hidden className={cn("pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-tag peer-data-[active=true]/menu-button:text-foreground", ink.faint)}>{platformKeys(keys)}</span>;
 }
 
 // A place's row, sized as Settings' nav: 28px at the default density, a

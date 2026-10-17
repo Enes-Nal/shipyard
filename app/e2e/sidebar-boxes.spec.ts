@@ -87,13 +87,16 @@ test("a project whose box goes away dims and says offline where a time would be"
     const sidebar = app.page.getByTestId("sidebar");
     const word = sidebar.getByTestId("away-word");
     await expect(word).toHaveText("offline");
-    await word.hover();
+    // The header's tip names the box and how long it has been away. (Its
+    // button is disabled, so the pointer meets the tip's wrapper.)
+    const header = sidebar.locator("[data-slot=tip-disabled]", { has: app.page.getByRole("button", { name: "shop offline", exact: true }) });
+    await header.hover();
     await expect(app.page.locator("[data-slot=tooltip-popup]")).toContainText(`${BOX} is offline for 3h`);
     // The row stays, quiet, without a time.
     await expect(row).toBeVisible();
     await expect(row.getByTestId("row-time")).toHaveText("");
     // Its box's actions are still in its menu: Reconnect.
-    await sidebar.getByRole("button", { name: "shop", exact: true }).hover();
+    await header.hover();
     await app.page.getByRole("button", { name: "shop actions" }).click();
     await app.page.getByRole("menuitem", { name: BOX, exact: true }).click();
     await expect(app.page.getByRole("menuitem", { name: "Reconnect" })).toBeVisible();
