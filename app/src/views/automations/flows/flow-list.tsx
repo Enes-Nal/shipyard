@@ -167,7 +167,7 @@ function ScopeGroup({
         <button
           type="button"
           onClick={() => onNew(box, scope)}
-          className="flex w-full items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-left text-muted-foreground text-sm hover:border-ring/40 hover:text-foreground"
+          className="flex w-full items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-left text-muted-foreground text-body hover:border-ring/40 hover:text-foreground"
         >
           <WorkflowIcon className="size-4" />
           No flows {loc ? `for ${loc}` : `for every project on ${box}`} yet. Make one, or start from a template above.
@@ -210,7 +210,7 @@ function FlowRow({ f, run, onEdit, onToggle, overridden }: { f: ScopedFlow; run?
           <span className="truncate text-row">{flow.name}</span>
           {f.source === "repo" && (
             <Tip label="Committed in the repository's .berth/config.json">
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[11px] text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-tag text-muted-foreground">
                 <LockIcon className="size-2.5" />
                 In repo
               </span>
@@ -218,13 +218,13 @@ function FlowRow({ f, run, onEdit, onToggle, overridden }: { f: ScopedFlow; run?
           )}
           {f.source === "kit" && (
             <Tip label="From the project's kit">
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[11px] text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-tag text-muted-foreground">
                 <PackageIcon className="size-2.5" />
                 From kit
               </span>
             </Tip>
           )}
-          {overridden && <span className="shrink-0 rounded-md border border-ring/30 px-1.5 py-px text-[11px] text-muted-foreground">Overridden here</span>}
+          {overridden && <span className="shrink-0 rounded-md border border-ring/30 px-1.5 py-px text-tag text-muted-foreground">Overridden here</span>}
         </div>
         <p className="mt-0.5 truncate text-desc text-muted-foreground">{summary(flow)}</p>
       </div>

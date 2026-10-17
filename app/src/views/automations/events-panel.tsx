@@ -30,7 +30,7 @@ export function EventsPanel({ onClose, onNewHook }: { onClose(): void; onNewHook
       {/* Wraps rather than scrolls: a hidden scrollbar read as chips cut off. */}
       <div className="flex flex-wrap gap-1 px-3 pb-2" role="group" aria-label="Show only">
         {PREFIXES.map((p) => (
-          <FilterChip key={p} className="font-mono text-[11px]" pressed={prefixes.includes(p)} onPressedChange={(on) => setPrefixes((ps) => (on ? [...ps, p] : ps.filter((x) => x !== p)))}>
+          <FilterChip key={p} className="font-mono text-tag" pressed={prefixes.includes(p)} onPressedChange={(on) => setPrefixes((ps) => (on ? [...ps, p] : ps.filter((x) => x !== p)))}>
             {p}.*
           </FilterChip>
         ))}
@@ -52,7 +52,7 @@ function EventRow({ e, onNewHook }: { e: BerthEvent; onNewHook(): void }) {
   return (
     <li className="border-b border-border/60">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-baseline gap-2 px-3 py-1.5 text-left hover:bg-accent/40">
-        <span className="shrink-0 font-mono text-[10px] text-muted-foreground tabular-nums">{new Date(e.time).toLocaleTimeString([], { hour12: false })}</span>
+        <span className="shrink-0 font-mono text-tag text-muted-foreground tabular-nums">{new Date(e.time).toLocaleTimeString([], { hour12: false })}</span>
         <span className={cn("min-w-0 flex-1 truncate font-mono text-meta", e.error && "text-destructive-foreground")}>{e.type}</span>
         <span className="shrink-0 truncate text-meta text-muted-foreground">{[e.box, e.origin && e.origin !== "berth" && `via ${e.origin}`].filter(Boolean).join(" · ")}</span>
       </button>
@@ -75,7 +75,7 @@ export function EventsRail({ onOpen }: { onOpen(): void }) {
   return (
     <button type="button" onClick={onOpen} aria-label="Show live events" className="flex w-9 shrink-0 flex-col items-center gap-1.5 border-l bg-sidebar/40 pt-3 text-muted-foreground hover:text-foreground">
       <ActivityIcon className="size-4" />
-      <span className="font-mono text-[10px] tabular-nums">{count}</span>
+      <span className="font-mono text-tag tabular-nums">{count}</span>
     </button>
   );
 }

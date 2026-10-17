@@ -48,7 +48,7 @@ export function SourceBadge({ source, box, field, entry }: { source: Source; box
   }[source];
   return (
     <Tip label={map.title}>
-      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[11px]", map.cls)}>
+      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-tag", map.cls)}>
         <map.Icon className="size-3" />
         {map.label}
       </span>
@@ -103,7 +103,7 @@ export function LayeredScript({
       {repo && !overriding ? (
         <pre className="overflow-x-auto rounded-lg border bg-muted/40 px-3 py-2 font-mono text-mono">{repo}</pre>
       ) : (
-        <Textarea value={local ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-h-16 font-mono text-xs" spellCheck={false} />
+        <Textarea value={local ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-h-16 font-mono text-mono" spellCheck={false} />
       )}
     </div>
   );

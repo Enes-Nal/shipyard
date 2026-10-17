@@ -43,7 +43,7 @@ export function KitsView() {
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl px-8 pt-7 pb-24">
-          {error && <ErrorText className="mb-4 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-sm" text={error} />}
+          {error && <ErrorText className="mb-4 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-body" text={error} />}
           {!kits && !error && (
             <div className="grid gap-3 md:grid-cols-2">
               <Skeleton className="h-40 rounded-2xl" />
@@ -138,7 +138,7 @@ function KitCard({ kit, installed }: { kit: KitInfo; installed: InstalledKitOn[]
             <p className="line-clamp-3 text-desc text-muted-foreground">{kit.description || kitCounts(kit)}</p>
           </div>
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-tag text-muted-foreground">
           {kit.match?.slug && <span className="rounded-md border px-1.5 py-px font-mono">for {kit.match.slug}</span>}
           <Tip label={kit.source?.src}>
             <span className="flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-px">
@@ -161,7 +161,7 @@ function KitCard({ kit, installed }: { kit: KitInfo; installed: InstalledKitOn[]
                   type="button"
                   onClick={() => useStore.getState().setView({ kind: "project", box: i.box, location: i.location })}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-md border px-1.5 py-px text-[11px] hover:bg-accent",
+                    "inline-flex items-center gap-1 rounded-md border px-1.5 py-px text-tag hover:bg-accent",
                     i.outdated ? "border-warning/30 text-warning-foreground" : "text-foreground/80",
                   )}
                 >
@@ -254,7 +254,7 @@ function AddFromLinkDialog({ open, onOpenChange }: { open: boolean; onOpenChange
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder="berth://kit?src=…  or  https://github.com/acme/kits/tree/main/shop"
-            className="font-mono text-xs"
+            className="font-mono text-mono"
           />
           <p className="text-desc text-muted-foreground">
             A Shipyard kit link, a git repository (a folder in it with <code className="font-mono">…/tree/main/dir</code> or <code className="font-mono">URL#dir</code>), a gist, a URL to a{" "}

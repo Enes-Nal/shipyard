@@ -174,7 +174,7 @@ export function DashboardView() {
                     <StateGlyph state={c.state} />
                     <h2 className="text-section">{c.title}</h2>
                     {picked && items.length > 0 && (
-                      <button type="button" className="ml-auto text-muted-foreground text-xs hover:text-foreground" onClick={() => pick(items.map(keyOf), !items.every((e) => picked.has(keyOf(e))))}>
+                      <button type="button" className="ml-auto text-muted-foreground text-meta hover:text-foreground" onClick={() => pick(items.map(keyOf), !items.every((e) => picked.has(keyOf(e))))}>
                         {items.every((e) => picked.has(keyOf(e))) ? "None" : "All"}
                       </button>
                     )}
@@ -212,7 +212,7 @@ export function DashboardView() {
 
           {rest.length > 0 && (
             <div className="border-t px-6 py-2">
-              <button type="button" aria-expanded={showRest} onClick={() => setShowRest(!showRest)} className="flex items-center gap-1.5 rounded-md py-1 text-muted-foreground text-xs hover:text-foreground">
+              <button type="button" aria-expanded={showRest} onClick={() => setShowRest(!showRest)} className="flex items-center gap-1.5 rounded-md py-1 text-muted-foreground text-meta hover:text-foreground">
                 <ChevronRightIcon className={cn("size-3 transition-transform", showRest && "rotate-90")} />
                 <TerminalIcon className="size-3.5" />
                 Shells & ended · {summary(rest)}
@@ -232,7 +232,7 @@ export function DashboardView() {
       {picked && (
         <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
           <div ref={liftToasts} className="pointer-events-auto flex items-center gap-2 rounded-xl border bg-popover px-3 py-2 shadow-lg/10">
-            <span className="pr-1 text-sm tabular-nums">{pickedEntries.length ? `${pickedEntries.length} selected` : "Click cards to select them"}</span>
+            <span className="pr-1 text-body tabular-nums">{pickedEntries.length ? `${pickedEntries.length} selected` : "Click cards to select them"}</span>
             <Button size="xs" disabled={!pickedEntries.length} onClick={() => openBroadcast({ targets: pickedEntries.map((e) => ({ box: e.box, session: e.session.name })) })}>
               <SendIcon />
               {pickedEntries.length ? `Send to ${pickedEntries.length} agent${pickedEntries.length === 1 ? "" : "s"}…` : "Send to agents…"}
@@ -263,7 +263,7 @@ function QuietCard({ entry }: { entry: SessionEntry }) {
   const locations = useStore((s) => s.boxes[box]?.locations);
   const where = worktreeOf(locations, session);
   return (
-    <button type="button" onClick={() => void focusSession(box, session.name)} className="flex items-center gap-2 rounded-lg border bg-card/60 px-2.5 py-1.5 text-left text-xs hover:border-ring/40">
+    <button type="button" onClick={() => void focusSession(box, session.name)} className="flex items-center gap-2 rounded-lg border bg-card/60 px-2.5 py-1.5 text-left text-meta hover:border-ring/40">
       <AgentIcon agent={agentOf(session)} />
       <span className="min-w-0 flex-1 truncate">{where?.worktree.main ? where.location.name : (where?.worktree.name ?? session.name)}</span>
       <span className="shrink-0 text-muted-foreground">{state === "exited" ? sessionWord("exited", true) : `${box} · ${ago(session.created)}`}</span>

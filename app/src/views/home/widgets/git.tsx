@@ -117,7 +117,7 @@ export function GitWidget() {
   return (
     <div className="flex h-full flex-col gap-2 px-2 pb-1">
       <div className="flex items-baseline gap-2">
-        <span className="font-heading font-semibold text-2xl tabular-nums tracking-tight">{total}</span>
+        <span className="font-heading text-title tabular-nums tracking-tight">{total}</span>
         <span className="text-meta text-muted-foreground">commits · {DAYS} days</span>
         <DiffStat add={add} del={del} className="ml-auto" />
       </div>
@@ -158,7 +158,7 @@ function Bars({ days }: { days: Day[] }) {
           </Tip>
         ))}
       </div>
-      <div className="flex gap-[2px] text-[10px] text-muted-foreground" aria-hidden>
+      <div className="flex gap-[2px] text-tag text-muted-foreground" aria-hidden>
         {days.map((d) => (
           <span key={d.day} className="flex-1 text-center">
             {weekday(d.day)}

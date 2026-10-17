@@ -53,8 +53,8 @@ export function ServicesSection({ repo, draft, setDraft, box, location, urlPort 
       }
     >
       {names.length === 0 ? (
-        <p className="px-4 py-3 text-muted-foreground text-sm">
-          No services. Add the dev server, for example <code className="font-mono text-xs">pnpm dev --port $BERTH_PORT</code>, and every worktree gets its own.
+        <p className="px-4 py-3 text-muted-foreground text-body">
+          No services. Add the dev server, for example <code className="font-mono text-mono">pnpm dev --port $BERTH_PORT</code>, and every worktree gets its own.
         </p>
       ) : (
         <div className="divide-y divide-border/70">
@@ -82,13 +82,13 @@ export function ServicesSection({ repo, draft, setDraft, box, location, urlPort 
                 {mine && !c ? (
                   // Always the same tooltip: switching it on as the name goes bad would remount the field mid-word.
                   <Tip label="Lowercase letters, digits and dashes">
-                    <Input value={mine.name} onChange={(e) => update(name, { name: e.target.value })} size="sm" className="font-mono text-xs" aria-invalid={!!bad} />
+                    <Input value={mine.name} onChange={(e) => update(name, { name: e.target.value })} size="sm" className="font-mono text-mono" aria-invalid={!!bad} />
                   </Tip>
                 ) : (
                   <code className="truncate font-mono text-mono">{name}</code>
                 )}
                 {mine ? (
-                  <Input value={mine.run} onChange={(e) => update(name, { run: e.target.value })} placeholder="pnpm dev --port $BERTH_PORT" size="sm" className="font-mono text-xs" spellCheck={false} />
+                  <Input value={mine.run} onChange={(e) => update(name, { run: e.target.value })} placeholder="pnpm dev --port $BERTH_PORT" size="sm" className="font-mono text-mono" spellCheck={false} />
                 ) : (
                   <code className="truncate px-2.5 font-mono text-muted-foreground text-mono" title={s.run}>
                     {s.run}
@@ -175,7 +175,7 @@ function LiveServices({ box, location }: { box: string; location: string }) {
               const running = s.terminal ? serviceRunning(s, sessions) : s.state === "running" || s.state === "active";
               const key = `${wt.name}/${s.name}`;
               return (
-                <span key={s.name} className="inline-flex items-center gap-1.5 rounded-lg border bg-card py-0.5 pr-0.5 pl-2 text-xs">
+                <span key={s.name} className="inline-flex items-center gap-1.5 rounded-lg border bg-card py-0.5 pr-0.5 pl-2 text-meta">
                   <span className={cn("size-1.5 rounded-full", running ? "bg-success" : "bg-muted-foreground/40")} />
                   <code className="font-mono">{s.name}</code>
                   {s.port && <span className="font-mono text-muted-foreground tabular-nums">:{s.port}</span>}

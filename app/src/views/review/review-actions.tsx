@@ -178,7 +178,7 @@ export function ApproveDialog({ entry, initial, onClose }: { entry?: ReviewEntry
                 onChange={(e) => setMessage(e.target.value)}
                 rows={5}
                 placeholder="What the agent changed, in one line, then details"
-                className="font-mono text-xs"
+                className="font-mono text-mono"
                 autoFocus
               />
               <span className="text-meta text-muted-foreground">Drafted from {agentLabel(entry.agent)}'s last message. The first line is the subject{mode === "pr" && openPR ? " and the PR's title" : ""}.</span>
@@ -200,7 +200,7 @@ export function ApproveDialog({ entry, initial, onClose }: { entry?: ReviewEntry
           </Button>
           <Button onClick={() => void go()} loading={busy} disabled={!valid}>
             {options.find((o) => o.value === mode)?.label}
-            <Kbd className="ml-1 h-4.5 bg-primary-foreground/15 text-[10px] text-primary-foreground">⌘↵</Kbd>
+            <Kbd className="ml-1 h-4.5 bg-primary-foreground/15 text-tag text-primary-foreground">⌘↵</Kbd>
           </Button>
         </DialogFooter>
       </DialogPopup>
@@ -266,7 +266,7 @@ export function SendBackDialog({ entry, onClose }: { entry?: ReviewEntry; onClos
           </Button>
           <Button onClick={() => void go()} loading={busy} disabled={!!files.blocker || !note.replace(/^Changes requested:\s*/, "").trim()}>
             Send back
-            <Kbd className="ml-1 h-4.5 bg-primary-foreground/15 text-[10px] text-primary-foreground">⌘↵</Kbd>
+            <Kbd className="ml-1 h-4.5 bg-primary-foreground/15 text-tag text-primary-foreground">⌘↵</Kbd>
           </Button>
         </DialogFooter>
       </DialogPopup>

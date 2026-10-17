@@ -17,7 +17,7 @@ function Count({ use }: { use: NonNullable<WidgetDef["useCount"]> }) {
   const c = use();
   if (!c || c.n <= 0) return null;
   return (
-    <span className={cn("rounded-sm px-1 font-medium text-[11px] tabular-nums", c.urgent ? "bg-warning/14 text-warning-foreground" : "text-muted-foreground")} aria-label={`${c.n}${c.urgent ? ", needs you" : ""}`}>
+    <span className={cn("rounded-sm px-1 font-medium text-tag tabular-nums", c.urgent ? "bg-warning/14 text-warning-foreground" : "text-muted-foreground")} aria-label={`${c.n}${c.urgent ? ", needs you" : ""}`}>
       {c.n}
     </span>
   );
