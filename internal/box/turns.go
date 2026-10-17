@@ -601,9 +601,18 @@ func (t *Turns) resolve(e events.Event) (s *sessTrack, ambiguous bool) {
 		return nil, false
 	}
 	path = filepath.Clean(path)
+	// An agent berth didn't start (one in an editor, or a one-off claude -p
+	// a tool runs) names no session: its folder says which session it is.
+	// But a session that knows its agent's conversation is not another
+	// conversation in the same folder: that one starting or exiting says
+	// nothing of it.
+	id := str(e.Data, "agent_session_id")
 	var match []*sessTrack
 	for _, s := range t.sess {
 		if s.Agent != "" && s.State != "exited" && sameDir(s.Dir, path) {
+			if id != "" && s.AgentSessionID != "" && s.AgentSessionID != id {
+				continue
+			}
 			match = append(match, s)
 		}
 	}

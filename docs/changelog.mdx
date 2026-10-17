@@ -11,6 +11,18 @@ again.
 
 ## Unreleased
 
+- **A helper's permission no longer gets lost.** When Claude Code started
+  helpers (subagents) in a chat session and they asked to run something
+  while Claude asked too, or after its turn ended, the app showed the newest
+  ask while Yes answered the oldest, moved on to "working" after one answer,
+  and dropped the helpers' asks when the turn ended: they waited forever.
+  Each ask now shows in turn, the one shown is the one you answer, and a
+  helper's ask stays until you answer it or the helper is stopped.
+- **Another Claude in the same folder no longer stalls a session.** A Claude
+  that Shipyard didn't start (in an editor, or a one-off `claude -p` a tool
+  runs) in a session's folder could mark the session's agent exited when it
+  quit; the session then showed as working for good and Stop did nothing.
+  Its events are now told apart by its own conversation.
 - **A two-column sidebar, in Labs.** Turn it on in Settings › Labs and your
   projects sit in one column, with the tasks of the one you pick in the
   next. A project's row turns amber when something in it needs you and
