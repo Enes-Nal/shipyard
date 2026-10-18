@@ -27,6 +27,10 @@ type hostHead struct {
 	Subtype   string  `json:"subtype"`
 	Parent    *string `json:"parent_tool_use_id"`
 	Timestamp string  `json:"timestamp"`
+	// A task_notification's: the call that started the helper, and how it
+	// ended.
+	ToolUseID string `json:"tool_use_id"`
+	Status    string `json:"status"`
 }
 
 // unwrapHost is the transcript line a log entry carries: one of the
@@ -46,6 +50,19 @@ func unwrapHost(b []byte) ([]byte, bool) {
 		return nil, false
 	case h.Type == "user", h.Type == "assistant":
 	case h.Type == "system" && h.Subtype == "compact_boundary":
+	case h.Type == "system" && h.Subtype == "task_notification":
+		// A helper left working in the background is back. The stream says
+		// so in a line of its own, where the transcript queues Claude a
+		// <task-notification>: read as that, so the crew shows it back.
+		if h.ToolUseID == "" || h.Status == "" {
+			return nil, false
+		}
+		note := "<task-notification>\n<tool-use-id>" + h.ToolUseID + "</tool-use-id>\n<status>" + h.Status + "</status>\n</task-notification>"
+		line, _ := json.Marshal(map[string]string{
+			"type": "queue-operation", "operation": "enqueue", "content": note,
+			"timestamp": time.UnixMilli(e.At).UTC().Format(time.RFC3339Nano),
+		})
+		return line, true
 	default:
 		return nil, false
 	}

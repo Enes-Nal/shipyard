@@ -678,3 +678,29 @@ func TestACodexDaemonsHooksReachTheirOwnSession(t *testing.T) {
 		t.Fatalf("claude by name: %+v", st)
 	}
 }
+
+// Another Claude in the same folder (one in an editor, or a one-off
+// `claude -p` a tool runs) names no session. Its starting and exiting are
+// not the session's, whose agent is in a conversation of its own: once
+// marked exited, a live session read as working for good.
+func TestAnotherAgentInTheSameFolderIsNotTheSessions(t *testing.T) {
+	tr, bus := ledger(t, Session{Name: "cl", Dir: "/w/app", Agent: "claude"})
+	state := func() SessionState { st, _ := tr.State("cl"); return st }
+	hook(bus, "agent.started", "cl", "/w/app", "claude", "signal", "prompt", "agent_session_id", "mine")
+	hook(bus, "agent.finished", "cl", "/w/app", "claude", "agent_session_id", "mine")
+	if st := state(); st.State != "finished" || st.AgentSessionID != "mine" {
+		t.Fatalf("before: %+v", st)
+	}
+
+	hook(bus, "agent.ready", "", "/w/app", "claude", "agent_session_id", "other")
+	hook(bus, "agent.exited", "", "/w/app", "claude", "agent_session_id", "other")
+	if st := state(); st.State != "finished" || st.AgentSessionID != "mine" {
+		t.Fatalf("another conversation in the folder changed the session: %+v", st)
+	}
+
+	// Its own conversation, unnamed (an older hook), still reaches it.
+	hook(bus, "agent.started", "", "/w/app", "claude", "signal", "prompt", "agent_session_id", "mine")
+	if st := state(); st.State != "running" {
+		t.Fatalf("its own conversation by folder: %+v", st)
+	}
+}

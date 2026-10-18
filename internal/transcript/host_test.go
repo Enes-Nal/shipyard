@@ -110,3 +110,35 @@ func TestASkillsInstructionsAreNotShownAsThePersonsMessage(t *testing.T) {
 		t.Fatalf("items %q, want %q", strings.Join(got, "|"), want)
 	}
 }
+
+// A helper an agent leaves working in the background (an Agent call with
+// run_in_background) is back when the stream says so, in a system line of
+// its own (Claude Code 2.1, as recorded): the crew shows it back, its time
+// stopped, though no user line carries the notification.
+func TestAHelperIsBackWhenTheStreamSaysSo(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "log.jsonl")
+	lines := []string{
+		`{"seq":1,"at":1792200000000,"dir":"out","data":{"type":"user","message":{"role":"user","content":"Score the trial"}}}`,
+		`{"seq":2,"at":1792200001000,"dir":"out","data":{"type":"assistant","message":{"id":"m1","role":"assistant","content":[{"type":"tool_use","id":"toolu_score","name":"Agent","input":{"description":"Score the trial","subagent_type":"general-purpose","prompt":"...","run_in_background":true}}]}}}`,
+		`{"seq":3,"at":1792200001500,"dir":"out","data":{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_score","content":[{"type":"text","text":"Async agent launched successfully. agentId: a6dfde406d4d6c871"}]}]}}}`,
+		`{"seq":4,"at":1792200100000,"dir":"out","data":{"type":"system","subtype":"task_updated","task_id":"a6dfde406d4d6c871","patch":{"status":"completed"}}}`,
+		`{"seq":5,"at":1792200100000,"dir":"out","data":{"type":"system","subtype":"task_notification","task_id":"a6dfde406d4d6c871","tool_use_id":"toolu_score","status":"completed","output_file":"/tmp/x.output"}}`,
+	}
+	crew := func(n int) []CrewMember {
+		t.Helper()
+		os.WriteFile(path, []byte(strings.Join(lines[:n], "\n")+"\n"), 0o644)
+		res, err := NewReader().Read(SourceClaudeHost, path, "/home/dev/acme", 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.Crew
+	}
+	if c := crew(4); len(c) != 1 || c[0].State != "running" {
+		t.Fatalf("while it works: %+v", c)
+	}
+	c := crew(5)
+	if len(c) != 1 || c[0].State != "finished" || c[0].Until != 1792200100000 {
+		t.Fatalf("once the stream says it is back: %+v", c)
+	}
+}

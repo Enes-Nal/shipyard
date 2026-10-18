@@ -189,6 +189,9 @@ type claudeRequest struct {
 	Input       json.RawMessage `json:"input"`
 	Suggestions json.RawMessage `json:"permission_suggestions"`
 	Description string          `json:"description"`
+	// AgentID names the helper (a subagent working in the background)
+	// that asks; "" when it is the agent itself.
+	AgentID string `json:"agent_id"`
 }
 
 // claudeConv is what berthd knows of one structured session, from its log.
@@ -417,8 +420,9 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		var l streamLine
 		if json.Unmarshal(e.Data, &l) == nil && l.Type == "control_response" && l.Response != nil {
 			if c.drop(l.Response.RequestID) && live {
-				// Answered: the tool runs, or the agent goes on without it.
-				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "tool"}, nil) })
+				// Answered: the tool runs, or the agent goes on without it,
+				// unless another permission still waits for the person.
+				say = append(say, c.afterAsk())
 			}
 		}
 		return
@@ -455,6 +459,12 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		switch {
 		case l.Event.Type == "message_start":
 			c.draft.Reset()
+			if !c.busy {
+				// A turn no prompt started: Claude goes on by itself, as
+				// when a helper it left working in the background is back.
+				c.busy, c.since = true, time.UnixMilli(e.At)
+				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "background"}, nil) })
+			}
 		case l.Event.Type == "content_block_delta" && l.Event.Delta != nil && l.Event.Delta.Type == "text_delta":
 			if c.draft.Len() < maxDraft {
 				c.draft.WriteString(l.Event.Delta.Text)
@@ -495,12 +505,18 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 			return
 		}
 		c.pending = append(c.pending, r)
+		// What shows is the oldest still waiting: the one an answer answers
+		// (pick). A helper asking meanwhile waits its turn behind it.
+		r = c.pending[0]
 		ask := r.ask(c.cwd)
 		say = append(say, func() {
 			c.event(adapters.Waiting, map[string]any{"reason": askReason(r)}, map[string]any{adapters.AskKey: ask})
 		})
 	case "control_cancel_request":
-		c.drop(l.RequestID)
+		// Withdrawn: a helper that asked was stopped, or the turn was.
+		if c.drop(l.RequestID) && live {
+			say = append(say, c.afterAsk())
+		}
 	case "control_response":
 		if l.Response != nil {
 			if ch := c.replies[l.Response.RequestID]; ch != nil {
@@ -517,8 +533,25 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		if helper {
 			return
 		}
-		c.busy, c.pending, c.since = false, nil, time.Time{}
+		// The turn ends, but a helper still working in the background may
+		// be waiting for the person: its permission stays, and so does the
+		// wait, for Claude goes on once it is answered.
+		var helpers []claudeRequest
+		for _, r := range c.pending {
+			if r.AgentID != "" {
+				helpers = append(helpers, r)
+			}
+		}
+		c.busy, c.pending, c.since = false, helpers, time.Time{}
 		c.draft.Reset()
+		if len(helpers) > 0 {
+			r := helpers[0]
+			ask := r.ask(c.cwd)
+			say = append(say, c.changedConversation, func() {
+				c.event(adapters.Waiting, map[string]any{"reason": askReason(r)}, map[string]any{adapters.AskKey: ask})
+			})
+			return
+		}
 		data := map[string]any{}
 		if l.IsError {
 			data["status"] = "error"
@@ -530,6 +563,23 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		say = append(say, func() { c.event(adapters.Finished, data, nil) }, c.changedConversation,
 			func() { noteConversation(dir, func(m *Conversation) { m.Updated = time.Now().UTC() }) })
 	}
+}
+
+// afterAsk is what is said once a permission is answered or withdrawn:
+// the next one still waiting, or working again, or (the turn having ended
+// while a helper asked) done. Called with c.mu held.
+func (c *claudeConv) afterAsk() func() {
+	if len(c.pending) > 0 {
+		r := c.pending[0]
+		ask := r.ask(c.cwd)
+		return func() {
+			c.event(adapters.Waiting, map[string]any{"reason": askReason(r)}, map[string]any{adapters.AskKey: ask})
+		}
+	}
+	if c.busy {
+		return func() { c.event(adapters.Started, map[string]any{"signal": "tool"}, nil) }
+	}
+	return func() { c.event(adapters.Finished, nil, nil) }
 }
 
 // drop forgets a permission that was answered or withdrawn, and says
