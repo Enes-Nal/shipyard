@@ -67,7 +67,7 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
             both bands are h-bar, the tab bar's border on its last pixel. */}
         <div
           data-testid="sidebar-sheet"
-          className={cn("flex min-w-0 flex-1 flex-col", rail ? "-mt-px rounded-tl-xl border-sidebar-border border-t border-l bg-background/55" : "pl-px")}
+          className={cn("flex min-w-0 flex-1 flex-col", rail ? "-mt-px rounded-tl-xl border-sidebar-border border-t border-l bg-background" : "pl-px")}
         >
           {/* The places' own gutters are the list sidebar's, from the
               aside's edge: the sheet's pixel in comes off them. */}
