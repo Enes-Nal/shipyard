@@ -37,7 +37,7 @@ type Update = (p: Partial<SidebarPrefs>) => void;
 
 // RAIL is the rail's width; the sheet beside it is as wide as the list
 // sidebar would be, and its edge sizes it the same way.
-const RAIL = 60;
+const RAIL = 60; // w-rail, as a number for the sheet's width
 
 const inWorktrees = (loc: Location, s: Session) => !s.service && !!loc.worktrees?.some((w) => w.path === s.dir);
 
@@ -57,18 +57,17 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
       data-testid="sidebar"
       data-layout="rail"
       style={{ width: rail ? `calc(${RAIL}px + ${sheet})` : sheet }}
-      className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pt-1.5 text-sidebar-foreground", inkScale)}
+      className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground", inkScale)}
     >
       <SidebarResizeHandle />
       <TopStrip />
       <div className="flex min-h-0 flex-1">
         {rail && <ProjectRail projects={ordered} picked={project?.id} />}
         {/* The sheet's top border is the tab bar's bottom one carried on:
-            the strip above is 2.375rem, the tab bar 2.5rem with its border
-            on its last pixel. */}
+            both bands are h-bar, the tab bar's border on its last pixel. */}
         <div
           data-testid="sidebar-sheet"
-          className={cn("flex min-w-0 flex-1 flex-col", rail ? "mt-[calc(0.125rem-1px)] rounded-tl-xl border-sidebar-border border-t border-l bg-background/55" : "pl-px")}
+          className={cn("flex min-w-0 flex-1 flex-col", rail ? "-mt-px rounded-tl-xl border-sidebar-border border-t border-l bg-background/55" : "pl-px")}
         >
           {!rail && places}
           <TeamSidebarCard />
@@ -90,7 +89,7 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
 // window.
 function TopStrip() {
   return (
-    <div data-tauri-drag-region className="flex h-8 shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
+    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       <Tip label={"Hide the sidebar (⌘\\)"} side="bottom" align="end">
         <button
@@ -323,15 +322,13 @@ function IdenticonFace({ name }: { name: string }) {
 
 // ---- The sheet -----------------------------------------------------------------
 
-// The sheet's two lanes, so everything on it lines up: boxes (the avatar,
-// search, a row's highlight, the boxes' line) start 12px in from the
-// sheet's edge (11px and its border) and end 12px from the other; their
-// content (search's icon, a row's glyph, the label, the boxes' dots) starts
-// where a row's own padding puts its glyph, 0.5rem further in. Rows are
-// sized in rem, so the content lane is too.
+// The sheet's two lanes (index.css, the grid), so everything on it lines
+// up: boxes (the avatar, search, a row's highlight, the boxes' line) on the
+// edge, their content (search's icon, a row's glyph, the label, the boxes'
+// dots) on the lane. The sheet's left border is a pixel of the way in.
 const lanes = {
-  box: "pr-[12px] pl-[11px]",
-  content: "pr-[12px] pl-[calc(11px+0.5rem)]",
+  box: "pr-edge pl-[calc(var(--spacing-edge)-1px)]",
+  content: "pr-edge pl-[calc(var(--spacing-lane)-1px)]",
 };
 
 
@@ -374,7 +371,7 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
           type="button"
           data-testid="sheet-search"
           onClick={() => useStore.getState().setPaletteOpen(true)}
-          className="flex h-8 w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background pr-[calc(0.5rem-1px)] pl-[calc(0.5rem-1px)] text-left shadow-xs/5 hover:border-foreground/15"
+          className="flex h-8 w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background px-[calc(var(--spacing-lane)-var(--spacing-edge)-1px)] text-left shadow-xs/5 hover:border-foreground/15"
         >
           <SearchIcon className={cn("size-3.5 shrink-0", ink.glyph)} strokeWidth={2} />
           <span className={cn("flex-1 text-desc", ink.faint)}>Search</span>

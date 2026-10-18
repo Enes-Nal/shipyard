@@ -276,12 +276,12 @@ export function TasksColumn({ picked, prefs, update }: { picked?: Picked; prefs:
       aria-label={picked ? undefined : "Tasks"}
       data-testid="sidebar-tasks"
       style={{ width: `clamp(${TASKS_MIN}px, var(--tasks-live, var(--tasks-w, ${TASKS_DEFAULT}px)), max(${TASKS_MIN}px, min(${TASKS_MAX}px, calc(40vw - ${PROJECTS_COLUMN}px))))` }}
-      className="@container/side relative flex shrink-0 flex-col pt-1.5 pb-2"
+      className="@container/side relative flex shrink-0 flex-col pb-2"
     >
       <TasksResizeHandle />
       {/* The window's strip, as over the first column: it drags the window,
           and at its end folds this column away. */}
-      <div data-tauri-drag-region className="flex h-8 shrink-0 items-center justify-end pr-[6px]">
+      <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end pr-[6px]">
         <Tip label="Hide the tasks" side="bottom" align="end">
           <button
             type="button"

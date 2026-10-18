@@ -377,7 +377,7 @@ export function ZenBar() {
     <div
       data-tauri-drag-region
       className={cn(
-        "flex h-10 shrink-0 items-center gap-1 pr-2",
+        "flex h-bar shrink-0 items-center gap-1 pr-2",
         hasTrafficLights() ? "pl-[84px]" : "pl-2",
         home ? "absolute inset-x-0 top-0 z-30 [&_button]:bg-background/70 [&_button]:backdrop-blur-sm" : "border-b bg-background",
       )}

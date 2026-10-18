@@ -86,7 +86,7 @@ export function SettingsView() {
         className={cn("flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground", inkScale)}
       >
         {/* Room for the macOS traffic lights; the strip drags the window. */}
-        <div data-tauri-drag-region className="h-10 shrink-0" />
+        <div data-tauri-drag-region className="h-bar shrink-0" />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
           <button type="button" onClick={back} className={cn(ROW, ink.quiet)}>
             <ArrowLeftIcon />

@@ -81,7 +81,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
     return (
       <div role="alert" className={cn("relative flex h-full min-h-0 items-center justify-center overflow-y-auto p-6", className)}>
-        {whole && <div data-tauri-drag-region className="absolute inset-x-0 top-0 h-10" />}
+        {whole && <div data-tauri-drag-region className="absolute inset-x-0 top-0 h-bar" />}
         <Empty className="max-w-xl">
           <EmptyHeader>
             <EmptyMedia>

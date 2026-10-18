@@ -402,7 +402,7 @@ export function NotificationCenter() {
         data-notification-center=""
         onKeyDown={onKeyDown}
       >
-        <div ref={panel} tabIndex={-1} className="flex h-12 shrink-0 items-center gap-1 border-b pr-2 pl-4 outline-none">
+        <div ref={panel} tabIndex={-1} className="flex h-bar shrink-0 items-center gap-1 border-b pr-2 pl-4 outline-none">
           <SheetTitle className="mr-1 text-heading">Notifications</SheetTitle>
           {notes.length > 0 && (
             <Menu>

@@ -51,7 +51,7 @@ export function PaneLayer({ showing }: { showing: boolean }) {
         return [
           ...(visible
             ? [
-                <ErrorBoundary key={`bar:${tab.id}`} compact scope="the Compare bar" className="absolute inset-x-0 top-0 z-10 h-10 border-b bg-sidebar" rescues={() => [{ label: "Close tab", run: () => closeCompare(key, tab.id) }]}>
+                <ErrorBoundary key={`bar:${tab.id}`} compact scope="the Compare bar" className="absolute inset-x-0 top-0 z-10 h-bar border-b bg-sidebar" rescues={() => [{ label: "Close tab", run: () => closeCompare(key, tab.id) }]}>
                   <CompareBar wsKey={key} tab={tab} />
                 </ErrorBoundary>,
               ]

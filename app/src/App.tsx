@@ -146,7 +146,7 @@ export default function App() {
         <ToastProvider position="bottom-right" viewportClassName="max-w-88 data-[position=bottom-right]:bottom-3 data-[position=bottom-right]:right-3">
           <div className="flex h-svh flex-col overflow-hidden bg-background text-foreground">
             {/* Room for the traffic lights; the strip drags the window. */}
-            <div data-tauri-drag-region className="h-10 shrink-0" />
+            <div data-tauri-drag-region className="h-bar shrink-0" />
             <main className="relative min-h-0 flex-1">
               <ErrorBoundary scope="onboarding">
                 <Suspense>{view.kind === "team" ? <TeamSetupView org={view.org} from={view.from ?? "onboarding"} box={view.box} onBack={() => useStore.getState().setView({ kind: "workspace" })} /> : <OnboardingView />}</Suspense>
@@ -192,13 +192,13 @@ export default function App() {
               ) : workspace && !onboarding ? (
                 <Disconnectable className="shrink-0 flex-col" label="Tab bar">
                   {!onHome && <WorkspaceHeading />}
-                  <ErrorBoundary compact scope="the tab bar" className="h-10 border-b bg-sidebar" rescues={showingTabRescues}>
+                  <ErrorBoundary compact scope="the tab bar" className="h-bar border-b bg-sidebar" rescues={showingTabRescues}>
                     {onHome ? <HomeTabs /> : <TabStrip />}
                   </ErrorBoundary>
                 </Disconnectable>
               ) : !workspace ? null /* every other view's ViewHeader is the strip */ : (
                 // Onboarding names itself; the strip only drags the window.
-                <div data-tauri-drag-region className="h-10 shrink-0 bg-background" />
+                <div data-tauri-drag-region className="h-bar shrink-0 bg-background" />
               )}
               <main className="relative min-h-0 flex-1">
                 {/* Always mounted: terminals keep running behind other views. */}

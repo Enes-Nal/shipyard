@@ -67,7 +67,7 @@ export function AppSidebar() {
           aria-label="Sidebar"
           data-testid="sidebar"
           style={{ width: `clamp(${SIDEBAR_MIN}px, var(--sidebar-live, var(--sidebar-w, ${SIDEBAR_DEFAULT}px)), max(${SIDEBAR_DEFAULT}px, min(${SIDEBAR_MAX}px, 40vw)))` }}
-          className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pt-1.5 pb-2 text-sidebar-foreground", inkScale)}
+          className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pb-2 text-sidebar-foreground", inkScale)}
         >
           <SidebarResizeHandle />
           <WindowStrip />
@@ -101,7 +101,7 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
   return (
     <aside aria-label="Sidebar" data-testid="sidebar" data-layout="columns" className={cn("relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pb-2 text-sidebar-foreground", inkScale)}>
       <div className="mb-1 flex min-h-0 flex-1 border-sidebar-border border-b">
-        <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col pt-1.5", !folded && !noBoxes && "border-sidebar-border border-r")}>
+        <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col", !folded && !noBoxes && "border-sidebar-border border-r")}>
           <WindowStrip extra={folded && !noBoxes ? <ShowTasks /> : undefined} />
           <Places prefs={prefs} update={update} />
           <TeamSidebarCard />
@@ -124,7 +124,7 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
 // to its tasks).
 function WindowStrip({ extra }: { extra?: React.ReactNode }) {
   return (
-    <div data-tauri-drag-region className="flex h-8 shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
+    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
       {LINUX_ALPHA && <AlphaBadge link className="mr-auto" />}
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       {extra}
@@ -267,7 +267,7 @@ function Rail() {
   return (
     <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-19 shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
       <SidebarResizeHandle folded />
-      <div data-tauri-drag-region className="h-10 w-full shrink-0" />
+      <div data-tauri-drag-region className="h-bar w-full shrink-0" />
       <div className="flex flex-col items-center gap-1">
         {item("Search (⌘K)", <SearchIcon />, false, () => useStore.getState().setPaletteOpen(true))}
         <NotificationBell size="rail" />
