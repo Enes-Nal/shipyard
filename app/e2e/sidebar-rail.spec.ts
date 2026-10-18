@@ -59,7 +59,7 @@ test("opening a worktree from elsewhere picks its project on the rail", async ({
   await expect(app.worktree("devl/checkout-fix")).toHaveAttribute("data-active", "true");
 });
 
-test("folded away, the rail keeps its projects, clear of the traffic lights, and a tile opens its project", async ({ app }) => {
+test("folded away, the rail keeps its projects, the traffic lights over its middle, and a tile opens its project", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: { ...rail, version: 4, uiFontSize: 11 } });
   const page = app.page;
@@ -67,8 +67,8 @@ test("folded away, the rail keeps its projects, clear of the traffic lights, and
   const folded = page.getByTestId("sidebar-rail");
   await expect(folded.getByTestId("rail-project")).toHaveCount(3);
   await expect(page.getByTestId("sidebar-sheet")).toHaveCount(0);
-  // The traffic lights need 76px whatever the text size.
-  await expect.poll(async () => (await folded.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(76);
+  // The traffic lights (14pt to 74pt) sit over its middle whatever the text size.
+  await expect.poll(async () => (await folded.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(88);
   await folded.locator("[data-testid=rail-project][data-project=notes]").click();
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 });

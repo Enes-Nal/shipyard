@@ -245,7 +245,7 @@ function TopAction({ label, keys, icon, onClick }: { label: string; keys: string
 // Rail is the sidebar folded away (⌘\): the window's controls, the places
 // in the sidebar's own order, the agents by state (sidebar/rail.tsx), and a
 // way back. It keeps clear of the traffic lights like the full one, which is
-// why it is w-rail-folded, 76px at the least.
+// why it is w-rail-folded, 88px at the least.
 function Rail() {
   const view = useStore((s) => s.view);
   const setView = useStore((s) => s.setView);
