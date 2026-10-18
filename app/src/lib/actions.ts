@@ -12,7 +12,7 @@ import { plainError } from "@/lib/errors";
 import { findLeaf, type Leaf, leaves, type PaneContent, paneWorktree } from "@/lib/layout";
 import { scheduleRefresh, useStore } from "@/lib/store";
 import { resolveBrowserInput } from "@/lib/browser-url";
-import { closeCompare } from "@/lib/compare-actions";
+import { closeCompare, setCompareLane } from "@/lib/compare-actions";
 import { currentSpace, focusSession, here, hereRef, homeBox, openTab, refFor, removePane, setPaneContent, showWorktree, splitPane, useWorkspaces, type WorktreeRef, wsKey } from "@/lib/workspaces";
 import { refuseHome } from "@/lib/box-home";
 import { structuredLaunch } from "@/lib/structured";
@@ -388,6 +388,25 @@ export function closeTab(key: string, tab: string) {
   const t = useWorkspaces.getState().spaces[key]?.tabs.find((x) => x.id === tab);
   if (t?.compare) return closeCompare(key, tab);
   if (t) ask({ key, tab, leaves: leaves(t.root) });
+}
+
+// For a tab that broke (components/workspace/pane-guard.tsx): resetTab
+// shows it as plain terminals, an agent's chat as its terminal and a
+// Compare tab in its Terminal lane; dropTab takes it away without the
+// usual question, which may be what can't draw. Neither stops anything:
+// its agents keep running, and the launcher has them.
+export function resetTab(key: string, tab: string) {
+  const t = useWorkspaces.getState().spaces[key]?.tabs.find((x) => x.id === tab);
+  if (!t) return;
+  if (t.compare) return setCompareLane(key, tab, "terminal");
+  for (const l of leaves(t.root)) if (l.content.kind === "terminal" && l.content.view !== "terminal") setPaneContent(key, tab, l.id, { ...l.content, view: "terminal" });
+}
+
+export function dropTab(key: string, tab: string) {
+  const t = useWorkspaces.getState().spaces[key]?.tabs.find((x) => x.id === tab);
+  if (!t) return;
+  if (t.compare) return closeCompare(key, tab);
+  for (const l of leaves(t.root)) removePane(key, tab, l.id, l.content.kind === "terminal" ? l.content.session : undefined);
 }
 
 export async function stopSession(box: string, name: string, quiet = false) {

@@ -10,7 +10,6 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
-
 - **Attempts on a repository GitHub doesn't host finish with your pick.**
   On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
   turned on failed the run at `gh pr create` and left every worktree
@@ -23,6 +22,13 @@ again.
   publishing that failed, not the agents' work. Review's Compare and
   Automations → Runs offer **Retry publishing** or **Finish without a pull
   request**; `berth run approve` and `berth run reject` do the same.
+- **A saved Compare tab no longer leaves the window empty.** Quitting with
+  a Compare tab open left the next launch, and every one after, on a dark
+  grey window with no sidebar, until the saved tab was removed by hand. It
+  now opens as it was. Saved tabs that can't be drawn are left out rather
+  than stopping the app, and a pane that breaks says so in its own place,
+  with a way out (its terminal, or closing the tab), while the sidebar and
+  your other tabs carry on.
 - **A helper that is back shows as back in a chat session.** In a chat
   (structured) Claude session, a helper Claude left working in the
   background stayed "working" in Crew, its time running on, after it had
