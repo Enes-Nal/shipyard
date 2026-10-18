@@ -1,5 +1,7 @@
 import {
+  ChevronDownIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   GitBranchIcon,
   HomeIcon,
   PencilIcon,
@@ -249,7 +251,7 @@ export function RepoTreeRows({ repo, t, prefs, update }: { repo: Repo; t: Return
       {t.mainRow && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={t.mainSessions} data={t.data} selected={t.mainSel} onOpen={() => open(main)} away={t.online ? undefined : box} />}
       <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
       {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })} />}
-      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow fewer label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
     </>
   );
 }
@@ -315,12 +317,17 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 
 // FoldRow shows a project's quiet worktrees, or folds them away again: a
 // task row's size, its text where a title would be.
-function FoldRow({ label, onClick }: { label: string; onClick(): void }) {
+function FoldRow({ label, onClick, fewer }: { label: string; onClick(): void; fewer?: boolean }) {
+  const Chevron = fewer ? ChevronUpIcon : ChevronDownIcon;
   return (
     <SidebarMenuSubItem>
-      {/* Its words start where a row's title does: the row's padding, glyph
-          and gap, all in rem as the row's are. */}
-      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-7.5", ink.faint)} onClick={onClick}>
+      {/* A way to show more or fewer, not a worktree: a chevron where a
+          row's glyph goes and quieter, smaller words, which still start on
+          the titles' line. */}
+      <SidebarMenuSubButton render={<button type="button" />} size="sm" data-testid="fold-row" className={cn(taskRowClass, "text-label", ink.faint)} onClick={onClick}>
+        <span className="inline-flex w-3.5 shrink-0 items-center justify-center">
+          <Chevron strokeWidth={2} className={cn("size-3", ink.glyph)} />
+        </span>
         <span>{label}</span>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
@@ -949,7 +956,7 @@ export function ProjectTreeRows({ t, prefs, update }: { t: ReturnType<typeof use
       )}
       <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
       {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })} />}
-      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow fewer label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
     </>
   );
 }
