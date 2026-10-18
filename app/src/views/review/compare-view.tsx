@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, CheckIcon, Columns2Icon, CrownIcon, GitCompareArrowsIcon, SquareTerminalIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, Columns2Icon, CrownIcon, ExternalLinkIcon, GitCompareArrowsIcon, GitPullRequestIcon, RotateCcwIcon, SquareTerminalIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AgentIcon } from "@/components/agent-glyph";
@@ -16,6 +16,7 @@ import { openCompare } from "@/lib/compare-actions";
 import { usePrefs } from "@/lib/prefs";
 import { tokens } from "@/views/automations/flows/runs-tab";
 import { ErrorText } from "@/components/error-note";
+import { openUrl } from "@/lib/open-url";
 
 // CompareStrip lists attempts runs with candidates to compare, at the top of
 // Review: the ones waiting for a pick first.
@@ -28,10 +29,57 @@ export function CompareStrip({ runs, onOpen }: { runs: BoxRun[]; onOpen(r: BoxRu
       {runs.map((r) => (
         <Button key={`${r.box}/${r.id}`} size="xs" variant={r.status === "waiting_gate" ? "default" : "outline"} onClick={() => onOpen(r)}>
           {r.title ?? r.id}
-          {r.status === "waiting_gate" && " · pick one"}
+          {r.status === "waiting_gate" && (r.gate?.approve_label ? " · publishing failed" : r.gate && !r.gate.pick ? " · needs you" : " · pick one")}
         </Button>
       ))}
     </div>
+  );
+}
+
+// PullRequestNote says what became of the pick's pull request: that it
+// didn't open (publishing failed, not the agents' work), with retry and
+// finish without one; or, once the run is past it, what the step said (on
+// Gitea, say, the branch is pushed and the link is the forge's own).
+function PullRequestNote({ data, where, busy, onPublish }: { data: RunCompare; where?: string; busy: boolean; onPublish(retry: boolean): void }) {
+  const gate = data.gate;
+  if (gate && !gate.pick && gate.approve_label) {
+    return (
+      <section aria-label={gate.title} className="mb-4 rounded-xl border border-warning/40 bg-warning/8 px-4 py-2.5 text-body">
+        <p className="flex items-center gap-1.5 font-medium">
+          <GitPullRequestIcon className="size-3.5 shrink-0 text-warning-foreground" />
+          {gate.title}
+          {where && <span className="font-normal text-muted-foreground">on {where}</span>}
+        </p>
+        {gate.text && <p className="mt-1 whitespace-pre-wrap text-desc text-muted-foreground">{gate.text}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <Button size="xs" disabled={busy} onClick={() => onPublish(true)}>
+            <RotateCcwIcon />
+            {gate.approve_label}
+          </Button>
+          <Button size="xs" variant="outline" disabled={busy} onClick={() => onPublish(false)}>
+            {gate.reject_label}
+          </Button>
+        </div>
+      </section>
+    );
+  }
+  const pr = data.pr;
+  if (gate || !pr?.output || (pr.status !== "succeeded" && pr.status !== "skipped")) return null;
+  const link = /https?:\/\/[^\s'"<>)]+/.exec(pr.output)?.[0]?.replace(/[.,;]+$/, "");
+  return (
+    <section aria-label="Pull request" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border bg-muted/30 px-4 py-2.5 text-body">
+      <GitPullRequestIcon className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">
+        <span className="font-medium">Pull request{where ? ` on ${where}` : ""}: </span>
+        <span className="text-muted-foreground">{pr.status === "succeeded" ? "opened" : pr.output}</span>
+      </span>
+      {link && (
+        <Button size="xs" variant="outline" onClick={() => void openUrl(link)}>
+          <ExternalLinkIcon />
+          {pr.status === "succeeded" ? "Open pull request" : `Open ${new URL(link).host}`}
+        </Button>
+      )}
+    </section>
   );
 }
 
@@ -69,12 +117,28 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
     setBusy(true);
     try {
       for (const r of all) {
-        if (!r.data.gate) continue;
+        if (!r.data.gate?.pick) continue;
         const mine = at && r.box === at.box && r.id === at.id;
         await runsApi.decide(r.box, r.id, approve ? { approve: true, pick: mine ? at.index : -1 } : { approve: false });
         scheduleRuns(r.box, 0);
       }
       toastManager.add({ type: "success", title: approve && at ? `Picked attempt ${at.index + 1}${all.length > 1 ? ` on ${at.box}` : ""}` : "Rejected every attempt", description: approve ? "The run goes on: its pull request, then the others are archived." : undefined });
+      await load();
+    } catch (err) {
+      toastManager.add({ type: "error", title: "Couldn't decide", description: errorMessage(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A pull request that didn't open waits at its own gate: the pick is in,
+  // so this only publishes again or lets the run finish without one.
+  const publish = async (r: (typeof all)[number], retry: boolean) => {
+    setBusy(true);
+    try {
+      await runsApi.decide(r.box, r.id, { approve: retry });
+      scheduleRuns(r.box, 0);
+      toastManager.add({ type: "success", title: retry ? "Trying the pull request again" : "Finished without a pull request", description: retry ? undefined : "The pick is kept, and the other attempts are archived." });
       await load();
     } catch (err) {
       toastManager.add({ type: "error", title: "Couldn't decide", description: errorMessage(err) });
@@ -147,6 +211,9 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
       )}
       {data && (
         <div className="min-h-0 flex-1 overflow-auto p-6">
+          {all.map((r) => (
+            <PullRequestNote key={`${r.box}/${r.id}`} data={r.data} where={multi ? r.box : undefined} busy={busy} onPublish={(retry) => void publish(r, retry)} />
+          ))}
           {all
             .filter((r) => r.data.judge)
             .map((r) => (
