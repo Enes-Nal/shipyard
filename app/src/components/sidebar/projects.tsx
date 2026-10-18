@@ -318,7 +318,9 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 function FoldRow({ label, onClick }: { label: string; onClick(): void }) {
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-[30px]", ink.faint)} onClick={onClick}>
+      {/* Its words start where a row's title does: the row's padding, glyph
+          and gap, all in rem as the row's are. */}
+      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-7.5", ink.faint)} onClick={onClick}>
         <span>{label}</span>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>

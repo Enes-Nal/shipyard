@@ -79,3 +79,45 @@ test("an update keeps a two-column sidebar someone chose", async ({ app }) => {
   await expect(app.page.getByTestId("sidebar-projects")).toBeVisible();
   await expect(app.page.getByTestId("project-rail")).toHaveCount(0);
 });
+
+test("the sheet's boxes, their contents and their ends each line up", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  const page = app.page;
+  await page.locator("[data-testid=rail-project][data-project=shop]").click();
+  await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+  const lanes = () =>
+    page.evaluate(() => {
+      const sheet = document.querySelector("[data-testid=sidebar-sheet]")!.getBoundingClientRect();
+      const q = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const row = document.querySelector("[data-testid=worktree-row]")!;
+      const label = [...document.querySelectorAll("[data-testid=sidebar-sheet] h3")].find((h) => h.textContent === "Worktrees")!;
+      const left = (r: DOMRect) => Math.round(r.left - sheet.left);
+      const right = (r: DOMRect) => Math.round(sheet.right - r.right);
+      return {
+        boxes: [left(q("[data-testid=tasks-heading] > span")), left(q("[data-testid=sheet-search]")), left(row.getBoundingClientRect()), left(q("[data-testid=sidebar-boxes]"))],
+        contents: [left(q("[data-testid=sheet-search] svg")), left(label.getBoundingClientRect()), left(row.querySelector("[role=img]")!.getBoundingClientRect()), left(q("[data-testid=sidebar-boxes] > span"))],
+        ends: [right(q("[data-testid=sheet-search]")), right(label.parentElement!.querySelector("button")!.getBoundingClientRect()), right(row.getBoundingClientRect())],
+      };
+    });
+  const same = (xs: number[]) => xs.every((x) => x === xs[0]);
+  await expect.poll(async () => { const l = await lanes(); return same(l.boxes) && same(l.contents) && same(l.ends); }).toBe(true);
+});
+
+test("the sheet's top edge carries on the tab bar's bottom line", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  const page = app.page;
+  const lined = () =>
+    page.evaluate(() => {
+      const sheet = document.querySelector("[data-testid=sidebar-sheet]")!.getBoundingClientRect();
+      const bar = document.querySelector("[data-tab-bar]")!.getBoundingClientRect();
+      return Math.round(sheet.top) === Math.round(bar.bottom - 1);
+    });
+  await expect.poll(lined).toBe(true);
+  // At a larger text size too (⌘+ twice), since both are sized in rem.
+  await page.keyboard.press("Meta+Equal");
+  await page.keyboard.press("Meta+Equal");
+  await expect.poll(() => app.stored("berth.prefs").then((p) => (p as { uiFontSize: number }).uiFontSize)).toBe(15);
+  await expect.poll(lined).toBe(true);
+});

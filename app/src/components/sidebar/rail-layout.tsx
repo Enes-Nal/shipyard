@@ -63,16 +63,19 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
       <TopStrip />
       <div className="flex min-h-0 flex-1">
         {rail && <ProjectRail projects={ordered} picked={project?.id} />}
+        {/* The sheet's top border is the tab bar's bottom one carried on:
+            the strip above is 2.375rem, the tab bar 2.5rem with its border
+            on its last pixel. */}
         <div
           data-testid="sidebar-sheet"
-          className={cn("flex min-w-0 flex-1 flex-col", rail && "mt-1 rounded-tl-xl border-sidebar-border border-t border-l bg-background/55")}
+          className={cn("flex min-w-0 flex-1 flex-col", rail ? "mt-[calc(0.125rem-1px)] rounded-tl-xl border-sidebar-border border-t border-l bg-background/55" : "pl-px")}
         >
           {!rail && places}
           <TeamSidebarCard />
           {noBoxes ? null : project ? <ProjectSheet key={project.id} project={project} prefs={prefs} update={update} /> : <NoProjects />}
           <SkillsNotices />
           <WhatsNewNudge />
-          <div className="flex h-[34px] shrink-0 items-center gap-1 pr-[15px] pl-3.5">
+          <div className={cn("flex h-[34px] shrink-0 items-center gap-1", lanes.box)}>
             <BoxesFoot />
             {!rail && <SettingsButton />}
           </div>
@@ -320,6 +323,18 @@ function IdenticonFace({ name }: { name: string }) {
 
 // ---- The sheet -----------------------------------------------------------------
 
+// The sheet's two lanes, so everything on it lines up: boxes (the avatar,
+// search, a row's highlight, the boxes' line) start 12px in from the
+// sheet's edge (11px and its border) and end 12px from the other; their
+// content (search's icon, a row's glyph, the label, the boxes' dots) starts
+// where a row's own padding puts its glyph, 0.5rem further in. Rows are
+// sized in rem, so the content lane is too.
+const lanes = {
+  box: "pr-[12px] pl-[11px]",
+  content: "pr-[12px] pl-[calc(11px+0.5rem)]",
+};
+
+
 // ProjectSheet is the picked project: its avatar, name, how many worktrees
 // on which boxes, a new task and its menu; then search, and its worktrees as
 // the list sidebar draws them.
@@ -333,7 +348,7 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
   return (
     <section aria-labelledby={id} data-testid="sidebar-tasks" className="flex min-h-0 flex-1 flex-col">
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative shrink-0 rounded-none data-popup-open:bg-transparent">
-        <div data-testid="tasks-heading" className="flex items-center gap-2.5 pt-3.5 pr-2 pb-2.5 pl-3.5">
+        <div data-testid="tasks-heading" className={cn("flex items-center gap-2.5 pt-3.5 pb-2.5", lanes.box)}>
           <Avatar project={p} />
           <div className="flex min-w-0 flex-1 flex-col">
             <h2 id={id} className={cn("truncate font-semibold text-subtitle leading-5 tracking-[-0.01em]", ink.strong)}>
@@ -354,24 +369,24 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
           </span>
         </div>
       </ContextRow>
-      <div className="shrink-0 px-3 pb-1">
+      <div className={cn("shrink-0 pb-1", lanes.box)}>
         <button
           type="button"
           data-testid="sheet-search"
           onClick={() => useStore.getState().setPaletteOpen(true)}
-          className="flex h-8 w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background px-2.5 text-left shadow-xs/5 hover:border-foreground/15"
+          className="flex h-8 w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background pr-[calc(0.5rem-1px)] pl-[calc(0.5rem-1px)] text-left shadow-xs/5 hover:border-foreground/15"
         >
           <SearchIcon className={cn("size-3.5 shrink-0", ink.glyph)} strokeWidth={2} />
           <span className={cn("flex-1 text-desc", ink.faint)}>Search</span>
           <kbd className={cn("font-sans text-tag", ink.faint)}>⌘K</kbd>
         </button>
       </div>
-      <div className="flex h-7 shrink-0 items-center pt-3 pr-[13px] pl-5">
+      <div className={cn("flex h-7 shrink-0 items-center pt-3", lanes.content)}>
         <h3 className={cn("flex-1 text-label", ink.faint)}>Worktrees</h3>
         <ShowMenu prefs={prefs} update={update} />
       </div>
       {/* One context menu and one tooltip for every row in it. */}
-      <RowLayer className="min-h-0 flex-1 overflow-y-auto pt-1.5 pr-[11px] pb-3 pl-3.5">
+      <RowLayer className={cn("min-h-0 flex-1 overflow-y-auto pt-1.5 pb-3", lanes.box)}>
         {t.any ? (
           <SidebarMenuSub className="mx-0 translate-x-0 gap-px border-l-0 px-0 py-0">
             <ProjectTreeRows t={t} prefs={prefs} update={update} />
