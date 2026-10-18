@@ -103,7 +103,7 @@ export function TabStrip() {
   const fade = edges.left && edges.right ? "[mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)]" : edges.left ? "[mask-image:linear-gradient(to_right,transparent,black_24px)]" : edges.right ? "[mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]" : "";
 
   return (
-    <div data-tauri-drag-region data-tab-bar className="flex h-10 shrink-0 items-stretch border-b bg-sidebar">
+    <div data-tauri-drag-region data-tab-bar className="flex h-bar shrink-0 items-stretch border-b bg-sidebar">
       {/* Tabs scroll when they do not fit (a wheel scrolls them sideways),
           with a fade at each end that has more; + stays just after them,
           outside the scroller, so it never scrolls away. */}

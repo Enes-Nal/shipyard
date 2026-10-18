@@ -239,7 +239,7 @@ export function EditChange({ d, header = true }: { d: ToolDetail; header?: boole
   return (
     <div ref={ref} data-selectable className="font-mono text-mono leading-5 [font-variant-ligatures:none]">
       {header && d.file && (
-        <div className="flex h-8 items-center gap-2 border-b bg-muted/30 pr-1 pl-3 font-sans text-muted-foreground text-meta">
+        <div className="flex h-bar-pane items-center gap-2 border-b bg-muted/30 pr-1 pl-3 font-sans text-muted-foreground text-meta">
           <span className="min-w-0 flex-1 truncate">
             {d.old != null || d.hunks?.length ? "Updated" : "Created"} <span className="font-mono">{d.file}</span>
           </span>

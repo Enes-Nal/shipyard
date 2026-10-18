@@ -205,7 +205,7 @@ function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wra
     return () => window.clearInterval(id);
   }, []);
   return (
-    <div className="flex h-8 shrink-0 items-center gap-2 border-b px-3" data-testid="file-header">
+    <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b px-edge" data-testid="file-header">
       <Crumbs path={doc.path} dirty={dirty} compact={narrow} />
       <SaveState doc={doc} />
       <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -284,7 +284,7 @@ function CompareMine({ doc }: { doc: Doc }) {
   const who = agentName(doc.turn?.agent);
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="file-compare">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-warning/6 px-3 text-meta">
+      <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b bg-warning/6 px-edge text-meta">
         <GitCompareArrowsIcon className="size-3.5 text-muted-foreground" />
         <span className="text-muted-foreground">Yours</span>
         <span className="text-muted-foreground/60">→</span>

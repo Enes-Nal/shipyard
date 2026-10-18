@@ -25,10 +25,11 @@ export interface Prefs {
   sidebarCollapsed: boolean;
   // How wide the open sidebar is, dragged by its edge (lib/sidebar-width).
   sidebarWidth: number;
-  // Labs: the sidebar as one list of every project's tasks, or as two
-  // columns, the projects and the tasks of the one picked
-  // (components/sidebar/columns.tsx).
-  sidebarLayout: "list" | "columns";
+  // The sidebar's layout: a rail of projects with the picked one's
+  // worktrees beside it (components/sidebar/rail-layout.tsx), one list of
+  // every project's tasks, or two columns, the projects and the tasks of the
+  // one picked (components/sidebar/columns.tsx).
+  sidebarLayout: "rail" | "list" | "columns";
   // Two columns: how wide the tasks column is, whether it is folded away,
   // and the project last picked in the first column.
   tasksWidth: number;
@@ -107,7 +108,7 @@ const DEFAULTS: Prefs = {
   enabledPlugins: [],
   sidebarCollapsed: false,
   sidebarWidth: SIDEBAR_DEFAULT,
-  sidebarLayout: "list",
+  sidebarLayout: "rail",
   tasksWidth: TASKS_DEFAULT,
   tasksFolded: false,
   sidebarPick: null,
@@ -135,7 +136,8 @@ const DEFAULTS: Prefs = {
 
 // PREFS_VERSION counts changes of default that saved prefs are moved to
 // once. 2: closing an agent's tab stops it ("keep" was the default before).
-const PREFS_VERSION = 3;
+// 3: Labs on. 4: the project rail is the sidebar.
+const PREFS_VERSION = 4;
 
 type Saved = Partial<Prefs> & { version?: number };
 
@@ -152,6 +154,9 @@ export function migratePrefs(saved: Saved): Saved {
   }
   // Version 3 turns Labs on: off was only the old default.
   if ((saved.version ?? 1) < 3 && !saved.labsChosen) out.labs = true;
+  // Version 4 makes the project rail the sidebar: the list was the only
+  // other default. Two columns was chosen in Labs, so it stays.
+  if ((saved.version ?? 1) < 4 && saved.sidebarLayout !== "columns") out.sidebarLayout = "rail";
   out.version = PREFS_VERSION;
   return out;
 }
@@ -175,7 +180,7 @@ export const usePrefs = create<Prefs>()(() => ({
   headerPicture: normalizeHeaderPicture(saved.headerPicture),
   // 240px was the default before the task sidebar: a saved 240 is a sidebar
   // never dragged, so it starts at today's default for this window.
-  sidebarLayout: saved.sidebarLayout === "columns" ? "columns" : "list",
+  sidebarLayout: saved.sidebarLayout === "columns" || saved.sidebarLayout === "list" ? saved.sidebarLayout : "rail",
   tasksWidth: clampTasks(saved.tasksWidth),
   sidebarWidth: saved.sidebarWidth === undefined || saved.sidebarWidth === SIDEBAR_NARROW_DEFAULT ? defaultWidth(typeof window === "undefined" ? Infinity : window.innerWidth) : clampWidth(saved.sidebarWidth),
 }));
@@ -190,6 +195,10 @@ save("berth.prefs", { ...usePrefs.getState(), version: PREFS_VERSION });
   const q = new URLSearchParams(location.search);
   if (q.has("labs")) usePrefs.setState({ labs: q.get("labs") !== "0" });
   if (q.has("zen")) usePrefs.setState({ zen: q.get("zen") !== "0" });
+  // ?sidebar=rail, list or columns picks the sidebar's layout (the browser
+  // tests pin the list unless they test another).
+  const side = q.get("sidebar");
+  if (side === "rail" || side === "list" || side === "columns") usePrefs.setState({ sidebarLayout: side });
   const v = q.get("view");
   if (v === "terminal" || v === "conversation") usePrefs.setState({ agentView: v });
 }

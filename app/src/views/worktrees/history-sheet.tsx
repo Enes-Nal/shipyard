@@ -170,7 +170,8 @@ export function HistorySheet({ row, progress, busy, onClose, onAction, onDelete,
             </div>
             {progress && progress.state !== "queued" && <ProgressLine p={progress} />}
 
-            <div className="flex h-10 shrink-0 items-center gap-3 border-b px-6 text-meta">
+            {/* grid-ok: a sheet's list header; h-bar-pane would take 8px off */}
+            <div className="flex h-10 shrink-0 items-center gap-3 border-b px-page text-meta">
               <span className="text-label text-muted-foreground">Commits</span>
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="size-2 shrink-0 rounded-full" style={{ background: laneColor(sameAsBase ? 1 : 0) }} />

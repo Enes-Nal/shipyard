@@ -12,7 +12,7 @@ import { SettingsFind } from "@/views/settings/find";
 // beside "Find a setting".
 export function SettingsPage({ title, badge, description, actions, children }: { title: string; badge?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-[728px] px-6 pt-14 pb-20 max-[1200px]:pt-10">
+    <div className="mx-auto w-full max-w-[728px] px-page pt-14 pb-20 max-[1200px]:pt-10">
       <header data-tauri-drag-region className="mb-10 flex items-end gap-4">
         <div data-tauri-drag-region className="min-w-0 flex-1">
           <h1 className="flex items-center gap-2 text-page-title">

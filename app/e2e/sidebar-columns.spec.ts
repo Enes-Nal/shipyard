@@ -1,22 +1,20 @@
 import { expect, mockOnly, test } from "./fixtures";
 
-// The two-column sidebar (Settings › Labs, components/sidebar/columns.tsx):
+// The two-column sidebar (Settings › Appearance, components/sidebar/columns.tsx):
 // the places and a row per project in the first column, the picked
 // project's tasks in the second. On the mock fixtures: shop has an agent
 // waiting for you, evals one at work, and notes nothing going on.
 
 const columns = { sidebarLayout: "columns" };
 
-test("turning it on in Labs gives two columns, and turning it off brings the single list back", async ({ app }) => {
+test("picking two columns in Appearance gives two columns, and the list brings the single list back", async ({ app }) => {
   mockOnly();
   await app.open();
   const page = app.page;
   await expect(page.getByTestId("sidebar-projects")).toHaveCount(0);
 
-  const labs = await app.openSettings("labs");
-  const toggle = labs.getByRole("switch", { name: "Two-column sidebar" });
-  await expect(toggle).not.toBeChecked();
-  await toggle.click();
+  const look = await app.openSettings("appearance");
+  await look.getByRole("button", { name: "Two columns", exact: true }).click();
   await app.leaveSettings();
 
   await expect(page.getByTestId("sidebar-projects")).toBeVisible();
@@ -26,8 +24,7 @@ test("turning it on in Labs gives two columns, and turning it off brings the sin
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "evals", exact: true })).toBeVisible();
   await expect(app.worktree("devl/checkout-fix")).toHaveCount(0);
 
-  await app.openSettings("labs");
-  await page.getByRole("switch", { name: "Two-column sidebar" }).click();
+  await app.openSettings("appearance").then((s) => s.getByRole("button", { name: "List", exact: true }).click());
   await app.leaveSettings();
   await expect(page.getByTestId("sidebar-projects")).toHaveCount(0);
   await expect(page.getByTestId("sidebar-tasks")).toHaveCount(0);
@@ -181,4 +178,38 @@ test("grouped by box, boxes head their projects and a project's tasks are its ta
   await shop.click();
   await expect(shop).toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "shop", exact: true }).locator('[data-testid=worktree-row][data-worktree="devl/checkout-fix"]')).toBeVisible();
+});
+
+test("each column's boxes, their contents and their ends line up on the sidebar's lanes", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: columns });
+  const page = app.page;
+  await page.locator("[data-testid=column-project][data-project=shop]").click();
+  await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+  const lanes = () =>
+    page.evaluate(() => {
+      // Each column's box inside its borders (the first has one between them).
+      const inner = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return new DOMRect(r.left + el.clientLeft, r.top, el.clientWidth, r.height);
+      };
+      const first = inner(document.querySelector("[data-testid=sidebar-projects]")!);
+      const tasks = inner(document.querySelector("[data-testid=sidebar-tasks]")!);
+      const q = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const row = document.querySelector("[data-testid=worktree-row][data-worktree='devl/checkout-fix']")!;
+      const left = (r: DOMRect, col: DOMRect) => Math.round(r.left - col.left);
+      const right = (r: DOMRect, col: DOMRect) => Math.round(col.right - r.right);
+      return {
+        boxes: [left(q("[data-testid=nav-home]"), first), left(q("[data-testid=column-project]"), first), left(row.getBoundingClientRect(), tasks)],
+        contents: [left(q("[data-testid=nav-home] svg"), first), left(q("[data-testid=tasks-heading] h2"), tasks), left(row.querySelector("[role=img]")!.getBoundingClientRect(), tasks)],
+        ends: [right(q("[data-testid=nav-home]"), first), right(q("[data-testid=column-project]"), first), right(row.getBoundingClientRect(), tasks), right(q("[data-testid=tasks-fold]"), tasks)],
+      };
+    });
+  const same = (xs: number[]) => xs.every((x) => x === xs[0]);
+  await expect
+    .poll(async () => {
+      const l = await lanes();
+      return same(l.boxes) && same(l.contents) && same(l.ends);
+    })
+    .toBe(true);
 });

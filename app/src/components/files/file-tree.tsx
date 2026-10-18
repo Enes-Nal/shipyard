@@ -291,7 +291,7 @@ export function TreePanel({ ws, wref, current, onOpen, onClose, className }: { w
   return (
     <div className={cn("flex min-h-0 flex-col", className)} data-testid="file-tree" data-filter={filter}>
       {/* The File tab's header line: 32px, so the two read as one row. */}
-      <div className="flex h-8 shrink-0 items-center gap-1.5 border-b pr-1.5 pl-3">
+      <div className="flex h-bar-pane shrink-0 items-center gap-1.5 border-b px-edge">
         <span className="text-muted-foreground text-label">Files</span>
         <FilterSwitch filter={filter} onChange={(f) => pickFilter(ws, f)} count={count} />
         <Tip label="New file" side="bottom">

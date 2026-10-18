@@ -1,5 +1,7 @@
 import {
+  ChevronDownIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   GitBranchIcon,
   HomeIcon,
   PencilIcon,
@@ -249,7 +251,7 @@ export function RepoTreeRows({ repo, t, prefs, update }: { repo: Repo; t: Return
       {t.mainRow && main && <WorktreeRow box={box.name} loc={loc} wt={main} sessions={t.mainSessions} data={t.data} selected={t.mainSel} onOpen={() => open(main)} away={t.online ? undefined : box} />}
       <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
       {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: true } })} />}
-      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow fewer label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [repo.key]: false } })} />}
     </>
   );
 }
@@ -315,10 +317,17 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 
 // FoldRow shows a project's quiet worktrees, or folds them away again: a
 // task row's size, its text where a title would be.
-function FoldRow({ label, onClick }: { label: string; onClick(): void }) {
+function FoldRow({ label, onClick, fewer }: { label: string; onClick(): void; fewer?: boolean }) {
+  const Chevron = fewer ? ChevronUpIcon : ChevronDownIcon;
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton render={<button type="button" />} size="sm" className={cn(taskRowClass, "pl-[30px]", ink.faint)} onClick={onClick}>
+      {/* A way to show more or fewer, not a worktree: a chevron where a
+          row's glyph goes and quieter, smaller words, which still start on
+          the titles' line. */}
+      <SidebarMenuSubButton render={<button type="button" />} size="sm" data-testid="fold-row" className={cn(taskRowClass, "text-label", ink.faint)} onClick={onClick}>
+        <span className="inline-flex w-3.5 shrink-0 items-center justify-center">
+          <Chevron strokeWidth={2} className={cn("size-3", ink.glyph)} />
+        </span>
         <span>{label}</span>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
@@ -556,7 +565,7 @@ const WorktreeNode = memo(function WorktreeNode({ node, depth, prefs, update }: 
           {/* Its children hang under it on a guide from its status lane.
               Up to MAX_INDENT levels step in; deeper ones line up with
               their parent. */}
-          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-[14px] pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
+          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-3.5 pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
             <WorktreeNodes nodes={node.children} depth={depth + 1} prefs={prefs} update={update} />
           </SidebarMenuSub>
         </SidebarMenuSubItem>
@@ -795,7 +804,7 @@ export function ProjectSections({ prefs, update, row }: { prefs: SidebarPrefs; u
         return (
           <div key={name} {...drop(name)} className={cn("mt-2 rounded-md", over === name && "bg-sidebar-accent/40 ring-1 ring-ring/40")}>
             <ContextRow items={() => sectionActions(name)}>
-              <div className="group/row flex h-6 items-center gap-1 rounded-md pr-1 pl-1.5 hover:bg-sidebar-accent/40">
+              <div className="group/row flex h-6 items-center gap-1 rounded-md pr-1 pl-2 hover:bg-sidebar-accent/40">
                 <button
                   type="button"
                   onClick={() => update({ collapsed: { ...prefs.collapsed, [key]: !closed } })}
@@ -947,7 +956,7 @@ export function ProjectTreeRows({ t, prefs, update }: { t: ReturnType<typeof use
       )}
       <WorktreeNodes nodes={t.shown} depth={0} prefs={prefs} update={update} />
       {t.hidden > 0 && <FoldRow label={`Show ${t.hidden} older`} onClick={() => update({ expanded: { ...prefs.expanded, [key]: true } })} />}
-      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
+      {!t.all && t.expanded && t.rows.length > t.active.length && <FoldRow fewer label="Show fewer" onClick={() => update({ expanded: { ...prefs.expanded, [key]: false } })} />}
     </>
   );
 }

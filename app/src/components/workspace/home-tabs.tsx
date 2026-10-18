@@ -28,7 +28,7 @@ export function HomeTabs() {
   const onHome = !front;
 
   return (
-    <div data-tauri-drag-region data-tab-bar className="flex h-10 shrink-0 items-stretch border-b bg-sidebar">
+    <div data-tauri-drag-region data-tab-bar className="flex h-bar shrink-0 items-stretch border-b bg-sidebar">
       {homes.length > 0 && (
         <div data-tauri-drag-region data-tab-strip role="tablist" aria-label="Home tabs" className="flex min-w-0 items-stretch overflow-x-auto [scrollbar-width:none]">
           <Tip label="Home" side="bottom">

@@ -27,7 +27,7 @@ export default function Preview({ ws, path }: { ws: string; path: string }) {
   const hunks = marks?.hunks.length ?? 0;
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="file-preview" data-path={shown}>
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b px-3 text-meta">
+      <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b px-edge text-meta">
         <FileGlyph path={shown} />
         <span className="min-w-0 truncate text-muted-foreground">
           {dirName(shown) && <span>{dirName(shown)}/</span>}

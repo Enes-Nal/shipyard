@@ -125,6 +125,9 @@ export const test = base.extend<{ app: App }>({
           );
         }
         const q = new URLSearchParams(opts.agent ? { token: opts.agent.token, agent: opts.agent.url } : live ? { token, agent: agentUrl } : { mock: "1" });
+        // The specs were written against the list sidebar; they keep it
+        // unless they seed or ask for another layout (sidebar-rail.spec.ts).
+        if (!opts.prefs?.sidebarLayout) q.set("sidebar", "list");
         for (const [k, v] of Object.entries(opts.params ?? {})) q.set(k, v);
         await page.goto(`/?${q}`);
         // Connected: the sidebar's places are there and not dimmed.

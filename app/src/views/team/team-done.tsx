@@ -28,7 +28,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
   return (
     <div data-testid="team-done">
       <div className="border-b bg-gradient-to-b from-success/8 to-transparent">
-        <div className="mx-auto max-w-4xl px-8 pt-8 pb-6 @max-[819px]:px-5 @max-[819px]:pt-6">
+        <div className="mx-auto max-w-[calc(52rem+2*var(--spacing-page))] px-page pt-8 pb-6 @max-[819px]:pt-6">
           <div className="flex items-center gap-4">
             <OrgAvatar org={view.org} size={44} />
             <div className="min-w-0">
@@ -57,7 +57,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
           )}
         </div>
       </div>
-      <div className="mx-auto max-w-4xl px-8 pt-6 pb-16 @max-[819px]:px-5">
+      <div className="mx-auto max-w-[calc(52rem+2*var(--spacing-page))] px-page pt-6 pb-16">
         <MissingKeys run={run} />
         {first && firstLoc && (
           <section className="rounded-xl border bg-card p-4" aria-label="Your first task">

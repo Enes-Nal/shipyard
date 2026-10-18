@@ -118,14 +118,15 @@ test("dragged past the narrowest it folds to the rail; the rail's edge drags it 
 
   // Its edge dragged out opens it at the width dragged to.
   const rail = page.getByRole("separator", { name: "Open the sidebar" });
-  await expect(rail).toHaveAttribute("aria-valuenow", "76");
+  await expect(rail).toHaveAttribute("aria-valuenow", "88");
   await drag(page, 250);
   await expect(page.getByTestId("sidebar")).toBeVisible();
-  await expect.poll(() => width(page)).toBe(326);
+  // The rail's 88px and the 250 dragged.
+  await expect.poll(() => width(page)).toBe(338);
 
   // ⌘\ folds and opens it at the width it had.
   await page.getByRole("button", { name: "Hide the sidebar" }).click();
   await expect(page.getByTestId("sidebar-rail")).toBeVisible();
   await page.getByRole("button", { name: "Show the sidebar (⌘\\)" }).click();
-  await expect.poll(() => width(page)).toBe(326);
+  await expect.poll(() => width(page)).toBe(338);
 });
