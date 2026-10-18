@@ -11,16 +11,15 @@ export interface AgentDefaults {
   mode?: string;
 }
 
-// The prefs structuredLaunch reads.
+// The prefs structuredLaunch reads: only the permissions, since agents run
+// structured wherever the box can.
 export interface DefaultsPrefs {
-  labs: boolean;
-  structuredClaude: boolean;
   approvals: "bypass" | "ask";
 }
 
-// agentDefaultsFor is the default the prefs ask for.
+// agentDefaultsFor is the default the prefs ask for: always structured, in
+// the mode Permissions names.
 export function agentDefaultsFor(p: DefaultsPrefs): AgentDefaults {
-  if (!p.labs || !p.structuredClaude) return { structured: false };
   return { structured: true, mode: p.approvals === "bypass" ? "bypassPermissions" : "default" };
 }
 
@@ -32,7 +31,7 @@ function same(a: AgentDefaults, b: AgentDefaults): boolean {
 
 // defaultsToPut is what to PUT to a box so its default follows the prefs:
 // nothing when it already does, or when the box keeps none (an older
-// berthd). A box that reports none has never been given one: off.
+// berthd). A box that reports none is taken as off, so it is sent one.
 export function defaultsToPut(p: DefaultsPrefs, caps: string[] | undefined, current: AgentDefaults | undefined): AgentDefaults | undefined {
   if (!caps?.includes("agents.defaults")) return undefined;
   const want = agentDefaultsFor(p);

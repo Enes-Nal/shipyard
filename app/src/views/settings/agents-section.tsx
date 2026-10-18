@@ -17,6 +17,7 @@ import type { AgentPreset } from "@/lib/api";
 import { plainError } from "@/lib/errors";
 import { errorMessage } from "@/lib/format";
 import { openUrl } from "@/lib/open-url";
+import { setPrefs, usePrefs } from "@/lib/prefs";
 import { type Project, projectActions, useProjects } from "@/lib/project-groups";
 import { endSnooze, setRemind, useSkillsNotice } from "@/lib/skills-notice";
 import { neverRemind, untilText } from "@/lib/skills-notice-model";
@@ -72,6 +73,8 @@ export function AgentsSection() {
         </>
       }
     >
+      <Permissions />
+
       {online.length === 0 ? (
         <p className="rounded-xl border px-4 py-6 text-center text-muted-foreground text-body">No box is online. Agents are listed once one connects.</p>
       ) : (
@@ -144,6 +147,28 @@ export function AgentsSection() {
 
       {boxes.length > online.length && <p className="text-muted-foreground text-meta">Offline boxes are listed once they reconnect.</p>}
     </SettingsPage>
+  );
+}
+
+// Permissions is what a new agent does when it wants to run a command or
+// change a file (the approvals pref): the mode the app starts it in
+// (lib/structured.ts) and the one each box is given for agents started
+// without the app (lib/box-defaults.ts).
+function Permissions() {
+  const approvals = usePrefs((p) => p.approvals);
+  return (
+    <SettingsGroup>
+      <SettingsRow label="Permissions" description="What new agents do when they want to run a command or change a file. Bypass lets the box allow it; their questions and plans still come to you. Ask brings each one to you.">
+        <Segmented
+          value={approvals}
+          options={[
+            { value: "bypass", label: "Bypass" },
+            { value: "ask", label: "Ask" },
+          ]}
+          onChange={(v) => setPrefs({ approvals: v })}
+        />
+      </SettingsRow>
+    </SettingsGroup>
   );
 }
 

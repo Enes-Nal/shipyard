@@ -11,8 +11,8 @@ import (
 
 // AgentDefaults is how an agent starts when whatever starts it names no
 // driver: another agent through the berth tools, the CLI, a run or an
-// automation. The app names one with every start of its own, and keeps
-// these in step with the person's Labs setting so the rest follow it too.
+// automation. The app names one with every start of its own, and gives
+// each box the mode its Permissions choice names so the rest follow it too.
 type AgentDefaults struct {
 	// Structured starts Claude Code, Codex and an agent whose preset speaks
 	// ACP structured, where this box can (driver.claude and the rest).
@@ -29,17 +29,28 @@ type AgentDefaultsStore struct {
 	mu   sync.Mutex
 }
 
-// Get is what was saved; nothing saved, or no store, is today's way:
-// agents run in their terminals.
+// NoSavedDefaults is how agents start on a box that was never given its
+// defaults (one only the CLI or other agents have used): structured, as
+// the app starts them, but asking for each permission, since nobody chose
+// to let them through.
+var NoSavedDefaults = AgentDefaults{Structured: true, Mode: "default"}
+
+// Get is what was saved, or NoSavedDefaults when nothing was. No store (a
+// box that keeps none, and so doesn't advertise agents.defaults) runs
+// agents in their terminals.
 func (s *AgentDefaultsStore) Get() AgentDefaults {
-	var d AgentDefaults
 	if s == nil || s.Path == "" {
-		return d
+		return AgentDefaults{}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if raw, err := os.ReadFile(s.Path); err == nil {
-		json.Unmarshal(raw, &d)
+	raw, err := os.ReadFile(s.Path)
+	if err != nil {
+		return NoSavedDefaults
+	}
+	var d AgentDefaults
+	if json.Unmarshal(raw, &d) != nil {
+		return NoSavedDefaults
 	}
 	return d
 }
