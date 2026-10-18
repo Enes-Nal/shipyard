@@ -6,6 +6,7 @@ import { Tip } from "@/components/tip";
 import { AgentIcon, StateGlyph } from "@/components/agent-glyph";
 import { FileGlyph } from "@/components/files/file-bits";
 import { EmptySide } from "@/components/workspace/compare-view";
+import { CrashProbe } from "@/components/workspace/pane-guard";
 import { CompareSideContext, type CompareSide, pageLoading } from "@/lib/compare-actions";
 import { openChatBackgroundSettings } from "@/components/conversation/chat-background";
 import { ConversationPane } from "@/components/conversation/conversation-pane";
@@ -143,6 +144,7 @@ export function Pane({ wsKey, tab, pane, visible, focused, split, mixed, compare
           {/* The terminal stays connected underneath, so switching back is instant. */}
           {c.kind === "terminal" && view === "conversation" && (
             <div className="absolute inset-0 z-10 flex flex-col">
+              <CrashProbe session={c.session} />
               <ConversationPane box={c.box} session={c.session} agent={c.agent} visible={visible} onStartAgain={() =>
                   useStore.getState().boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.switch
                     ? void resumeSession(c.box, c.session)

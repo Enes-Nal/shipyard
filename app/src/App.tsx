@@ -27,6 +27,7 @@ import { FileDropGuard } from "@/components/file-drop-guard";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Launcher } from "@/components/workspace/launcher";
 import { PaneLayer } from "@/components/workspace/pane-layer";
+import { showingTabRescues } from "@/components/workspace/pane-guard";
 import { TabStrip } from "@/components/workspace/tab-strip";
 import { HomeTabs } from "@/components/workspace/home-tabs";
 import { BoxPicker } from "@/components/box-picker";
@@ -191,7 +192,9 @@ export default function App() {
               ) : workspace && !onboarding ? (
                 <Disconnectable className="shrink-0 flex-col" label="Tab bar">
                   {!onHome && <WorkspaceHeading />}
-                  {onHome ? <HomeTabs /> : <TabStrip />}
+                  <ErrorBoundary compact scope="the tab bar" className="h-10 border-b bg-sidebar" rescues={showingTabRescues}>
+                    {onHome ? <HomeTabs /> : <TabStrip />}
+                  </ErrorBoundary>
                 </Disconnectable>
               ) : !workspace ? null /* every other view's ViewHeader is the strip */ : (
                 // Onboarding names itself; the strip only drags the window.
@@ -200,7 +203,11 @@ export default function App() {
               <main className="relative min-h-0 flex-1">
                 {/* Always mounted: terminals keep running behind other views. */}
                 <TreeDockFrame showing={workspace && view.kind === "workspace"}>
-                  <PaneLayer showing={workspace} />
+                  {/* Each pane guards itself (pane-guard.tsx); this is for the
+                      layer around them, with the tab showing as the way out. */}
+                  <ErrorBoundary scope="the workspace" rescues={showingTabRescues}>
+                    <PaneLayer showing={workspace} />
+                  </ErrorBoundary>
                 </TreeDockFrame>
                 <ErrorBoundary key={view.kind} scope={viewTitles[view.kind as keyof typeof viewTitles] || (view.kind === "workspace" ? "the workspace" : undefined)} onLeave={view.kind === "workspace" ? undefined : () => useStore.getState().setView({ kind: "workspace" })}>
                   <MainView />
