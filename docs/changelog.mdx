@@ -10,6 +10,7 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+
 - **Attempts on a repository GitHub doesn't host finish with your pick.**
   On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
   turned on failed the run at `gh pr create` and left every worktree
@@ -29,6 +30,24 @@ again.
   than stopping the app, and a pane that breaks says so in its own place,
   with a way out (its terminal, or closing the tab), while the sidebar and
   your other tabs carry on.
+- **Rerun judge.** When you try a task several ways, Review's Compare now
+  has a **Rerun judge** button: the judge looks again at the attempts as
+  their worktrees are now (after an agent made more changes, or when its
+  first reply wasn't valid), without restarting the agents. The run keeps
+  waiting for your pick, keeps every worktree, and opens no pull request.
+  Compare says when each evaluation ran and which version of each worktree
+  it saw (its commit, and whether it had changes not committed yet), marks
+  an attempt that changed since it was judged, and keeps the earlier
+  evaluations so you can see what changed. A reply that isn't valid shows as
+  a failure with **Retry**, and the checks' pick that stands in for it is
+  labelled as a fallback, not as the judge's verdict. `berth run judge
+  BOX/RUN` does the same from the command line.
+- **An attempt's changes count all its work.** Compare showed "0 files, 0
+  commits" for an attempt whose work was committed when the project's
+  checkout had no local copy of the default branch, and kept the count from
+  when the run collected it while the file list showed the work after. The
+  count and the file list now both read the worktree as it is, against
+  origin's default branch, committed or not.
 - **A helper that is back shows as back in a chat session.** In a chat
   (structured) Claude session, a helper Claude left working in the
   background stayed "working" in Crew, its time running on, after it had
