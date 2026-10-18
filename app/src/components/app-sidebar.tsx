@@ -7,6 +7,7 @@ import { MoreItems, Nav as PlacesNav, RowKeys, rowClass, useArrangedNav } from "
 import { ProjectsColumn, ShowTasks, TasksColumn, usePicked } from "@/components/sidebar/columns";
 import { Projects, useSidebarPrefs } from "@/components/sidebar/projects";
 import { RailAgents } from "@/components/sidebar/rail";
+import { RailSidebar } from "@/components/sidebar/rail-layout";
 import { SidebarResizeHandle } from "@/components/sidebar/resize-handle";
 import { RowLayer } from "@/components/sidebar/row-layer";
 import { RailSkillsNotices, SkillsNotices } from "@/components/sidebar/skills-notice";
@@ -37,21 +38,25 @@ const alwaysOpen: SidebarContextProps = {
   toggleSidebar: () => {},
 };
 
-// AppSidebar: the window's controls, a short list of places, the tasks in
-// every project on every box, and at its foot the boxes and Settings. With
-// Labs' two-column sidebar, the projects and the tasks of the one picked
-// sit side by side (ColumnsSidebar).
+// AppSidebar: by default a rail of the places and projects with the picked
+// project's worktrees beside it (sidebar/rail-layout.tsx). The list layout
+// has the window's controls, a short list of places, the tasks in every
+// project on every box, and at its foot the boxes and Settings; the
+// two-column one sets the projects and the tasks of the one picked side by
+// side (ColumnsSidebar).
 export function AppSidebar() {
   const [prefs, update] = useSidebarPrefs();
   const context = useMemo(() => alwaysOpen, []);
   const collapsed = usePrefs((p) => p.sidebarCollapsed);
-  const columns = usePrefs((p) => p.sidebarLayout === "columns");
+  const layout = usePrefs((p) => p.sidebarLayout);
 
   if (collapsed) return <Rail />;
 
   return (
     <SidebarContext.Provider value={context}>
-      {columns ? (
+      {layout === "rail" ? (
+        <RailSidebar prefs={prefs} update={update} places={<Places prefs={prefs} update={update} />} />
+      ) : layout === "columns" ? (
         <ColumnsSidebar prefs={prefs} update={update} />
       ) : (
         // Its width is --sidebar-w (prefs), or --sidebar-live as a drag

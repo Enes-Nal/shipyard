@@ -50,11 +50,11 @@ export type Picked = { kind: "project"; key: string; project: Project } | { kind
 const inWorktrees = (loc: Location, s: Session) => !s.service && !!loc.worktrees?.some((w) => w.path === s.dir);
 
 // Opening a worktree, from anywhere (the tasks column, ⌘K, the rail, a
-// notification), picks its project: the pick becomes "the project of this
+// notification), picks its project in the two-column and rail layouts: the pick becomes "the project of this
 // worktree" (ws:<key>), which usePicked resolves. Going Home leaves it be.
 useWorkspaces.subscribe((s, prev) => {
   if (s.current === prev.current || !s.current || homeBox(s.current)) return;
-  if (usePrefs.getState().sidebarLayout !== "columns") return;
+  if (usePrefs.getState().sidebarLayout === "list") return;
   usePrefs.setState({ sidebarPick: `ws:${s.current}` });
 });
 

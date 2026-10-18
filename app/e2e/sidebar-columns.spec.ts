@@ -1,22 +1,20 @@
 import { expect, mockOnly, test } from "./fixtures";
 
-// The two-column sidebar (Settings › Labs, components/sidebar/columns.tsx):
+// The two-column sidebar (Settings › Appearance, components/sidebar/columns.tsx):
 // the places and a row per project in the first column, the picked
 // project's tasks in the second. On the mock fixtures: shop has an agent
 // waiting for you, evals one at work, and notes nothing going on.
 
 const columns = { sidebarLayout: "columns" };
 
-test("turning it on in Labs gives two columns, and turning it off brings the single list back", async ({ app }) => {
+test("picking two columns in Appearance gives two columns, and the list brings the single list back", async ({ app }) => {
   mockOnly();
   await app.open();
   const page = app.page;
   await expect(page.getByTestId("sidebar-projects")).toHaveCount(0);
 
-  const labs = await app.openSettings("labs");
-  const toggle = labs.getByRole("switch", { name: "Two-column sidebar" });
-  await expect(toggle).not.toBeChecked();
-  await toggle.click();
+  const look = await app.openSettings("appearance");
+  await look.getByRole("button", { name: "Two columns", exact: true }).click();
   await app.leaveSettings();
 
   await expect(page.getByTestId("sidebar-projects")).toBeVisible();
@@ -26,8 +24,7 @@ test("turning it on in Labs gives two columns, and turning it off brings the sin
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "evals", exact: true })).toBeVisible();
   await expect(app.worktree("devl/checkout-fix")).toHaveCount(0);
 
-  await app.openSettings("labs");
-  await page.getByRole("switch", { name: "Two-column sidebar" }).click();
+  await app.openSettings("appearance").then((s) => s.getByRole("button", { name: "List", exact: true }).click());
   await app.leaveSettings();
   await expect(page.getByTestId("sidebar-projects")).toHaveCount(0);
   await expect(page.getByTestId("sidebar-tasks")).toHaveCount(0);
