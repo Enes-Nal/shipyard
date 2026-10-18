@@ -76,7 +76,7 @@ export function AppSidebar() {
           <TeamSidebarCard />
 
           {/* One context menu and one tooltip for every row in it. */}
-          <RowLayer className="min-h-0 flex-1 overflow-y-auto pt-5 pr-[11px] pb-3 pl-3.5">
+          <RowLayer className="min-h-0 flex-1 overflow-y-auto px-edge pt-5 pb-3">
             <Projects prefs={prefs} update={update} />
           </RowLayer>
 
@@ -124,7 +124,7 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
 // to its tasks).
 function WindowStrip({ extra }: { extra?: React.ReactNode }) {
   return (
-    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
+    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 px-edge">
       {LINUX_ALPHA && <AlphaBadge link className="mr-auto" />}
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       {extra}
@@ -149,7 +149,7 @@ function Places({ prefs, update }: SidebarPrefsProps) {
   const noBoxes = useStore((s) => !!s.status && s.status.boxes.length === 0);
   const labs = usePrefs((p) => p.labs);
   return (
-    <div className="pt-5 pr-[11px] pl-3.5">
+    <div className="px-edge pt-5">
       <PlacesNav
         lead={
           <>
@@ -208,7 +208,7 @@ function Foot() {
     <>
       <SkillsNotices />
       <WhatsNewNudge />
-      <div className="flex h-[34px] shrink-0 items-center gap-1 pr-[15px] pl-3.5">
+      <div className="flex h-[34px] shrink-0 items-center gap-1 px-edge">
         <BoxesFoot />
         <Tip label="Settings · ⇧-click for Developer" side="top" align="end">
           <button

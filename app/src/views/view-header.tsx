@@ -66,5 +66,5 @@ export function ViewHeaderHost({ fallback, children }: { fallback: ViewHeaderPro
 // PluginPage is the body of a plugin screen: one width for every plugin,
 // left aligned under the strip like the app's own pages.
 export function PluginPage({ className, children }: { className?: string; children?: ReactNode }) {
-  return <div className={cn("w-full max-w-5xl space-y-5 px-6 pt-5 pb-16", className)}>{children}</div>;
+  return <div className={cn("w-full max-w-5xl space-y-5 px-page pt-5 pb-16", className)}>{children}</div>;
 }

@@ -172,7 +172,7 @@ export function WorktreesView() {
       />
 
       {/* One row of filters, search first; it stays one row down to 1100px. */}
-      <div className="@container/toolbar flex shrink-0 items-center gap-2 border-b px-6 py-2">
+      <div className="@container/toolbar flex shrink-0 items-center gap-2 border-b px-page py-2">
         <div className="relative w-56 min-w-36 shrink">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input size="sm" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search" className="[&_input]:pl-8" aria-label="Search worktrees" />
@@ -217,12 +217,12 @@ export function WorktreesView() {
 
       <div className="min-h-0 flex-1 overflow-auto pb-24">
         {Object.entries(errors).map(([box, err]) => (
-          <div key={box} className="border-b px-6 py-2">
+          <div key={box} className="border-b px-page py-2">
             <BoxError box={box} error={err} what="its worktrees" />
           </div>
         ))}
         {!loaded ? (
-          <div className="space-y-2 px-6 pt-4">
+          <div className="space-y-2 px-page pt-4">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-10" />
             ))}

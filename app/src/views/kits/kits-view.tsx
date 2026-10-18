@@ -42,7 +42,7 @@ export function KitsView() {
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-8 pt-7 pb-24">
+        <div className="mx-auto w-full max-w-[calc(52rem+2*var(--spacing-page))] px-page pt-7 pb-24">
           {error && <ErrorText className="mb-4 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-body" text={error} />}
           {!kits && !error && (
             <div className="grid gap-3 md:grid-cols-2">

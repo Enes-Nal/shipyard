@@ -87,7 +87,7 @@ export function SettingsView() {
       >
         {/* Room for the macOS traffic lights; the strip drags the window. */}
         <div data-tauri-drag-region className="h-bar shrink-0" />
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-edge pb-2">
           <button type="button" onClick={back} className={cn(ROW, ink.quiet)}>
             <ArrowLeftIcon />
             <span className="flex-1">Back to app</span>
@@ -95,7 +95,7 @@ export function SettingsView() {
           </button>
           {GROUPS.map((g) => (
             <div key={g.title} className="flex flex-col gap-px">
-              <div className={cn("px-1 pt-4 pb-1 text-tag font-medium", ink.faint)}>{g.title}</div>
+              <div className={cn("pt-4 pb-1 text-tag font-medium", ink.faint)}>{g.title}</div>
               {g.ids.map((sid) => (
                 <NavItem key={sid} id={sid} current={id} />
               ))}

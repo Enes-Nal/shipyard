@@ -179,3 +179,37 @@ test("grouped by box, boxes head their projects and a project's tasks are its ta
   await expect(shop).toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "shop", exact: true }).locator('[data-testid=worktree-row][data-worktree="devl/checkout-fix"]')).toBeVisible();
 });
+
+test("each column's boxes, their contents and their ends line up on the sidebar's lanes", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: columns });
+  const page = app.page;
+  await page.locator("[data-testid=column-project][data-project=shop]").click();
+  await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+  const lanes = () =>
+    page.evaluate(() => {
+      // Each column's box inside its borders (the first has one between them).
+      const inner = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return new DOMRect(r.left + el.clientLeft, r.top, el.clientWidth, r.height);
+      };
+      const first = inner(document.querySelector("[data-testid=sidebar-projects]")!);
+      const tasks = inner(document.querySelector("[data-testid=sidebar-tasks]")!);
+      const q = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const row = document.querySelector("[data-testid=worktree-row][data-worktree='devl/checkout-fix']")!;
+      const left = (r: DOMRect, col: DOMRect) => Math.round(r.left - col.left);
+      const right = (r: DOMRect, col: DOMRect) => Math.round(col.right - r.right);
+      return {
+        boxes: [left(q("[data-testid=nav-home]"), first), left(q("[data-testid=column-project]"), first), left(row.getBoundingClientRect(), tasks)],
+        contents: [left(q("[data-testid=nav-home] svg"), first), left(q("[data-testid=tasks-heading] h2"), tasks), left(row.querySelector("[role=img]")!.getBoundingClientRect(), tasks)],
+        ends: [right(q("[data-testid=nav-home]"), first), right(q("[data-testid=column-project]"), first), right(row.getBoundingClientRect(), tasks), right(q("[data-testid=tasks-fold]"), tasks)],
+      };
+    });
+  const same = (xs: number[]) => xs.every((x) => x === xs[0]);
+  await expect
+    .poll(async () => {
+      const l = await lanes();
+      return same(l.boxes) && same(l.contents) && same(l.ends);
+    })
+    .toBe(true);
+});
