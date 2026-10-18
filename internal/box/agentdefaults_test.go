@@ -29,7 +29,11 @@ func TestStartDriverFollowsTheBoxDefault(t *testing.T) {
 		driver, mode   string
 		kind, wantMode string
 	}{
-		{name: "nothing saved", convs: true, p: claude},
+		{name: "nothing saved: structured, asking", convs: true, p: claude, kind: DriverClaude, wantMode: "default"},
+		{name: "nothing saved, Codex", convs: true, p: codex, kind: DriverCodex, wantMode: "default"},
+		{name: "nothing saved, ACP: its own modes", convs: true, p: opencode, kind: DriverACP},
+		{name: "nothing saved, no structured driver", convs: true, p: own},
+		{name: "nothing saved, a box keeping no conversations", p: claude},
 		{name: "off", saved: &AgentDefaults{}, convs: true, p: claude},
 		{name: "on", saved: &AgentDefaults{Structured: true}, convs: true, p: claude, kind: DriverClaude, wantMode: "default"},
 		{name: "on, ask", saved: &AgentDefaults{Structured: true, Mode: "default"}, convs: true, p: codex, kind: DriverCodex, wantMode: "default"},
@@ -58,6 +62,12 @@ func TestStartDriverFollowsTheBoxDefault(t *testing.T) {
 			}
 		})
 	}
+	// A saved file that can't be read is as good as none.
+	broken := &Box{ConversationsDir: t.TempDir(), AgentDefaults: &AgentDefaultsStore{Path: filepath.Join(t.TempDir(), "agent-defaults.json")}}
+	os.WriteFile(broken.AgentDefaults.Path, []byte("{not json"), 0o600)
+	if kind, mode, _ := broken.startDriver(claude, "", ""); kind != DriverClaude || mode != "default" {
+		t.Fatalf("a broken file started %q %q", kind, mode)
+	}
 	var none *Box = &Box{ConversationsDir: t.TempDir()}
 	if kind, _, _ := none.startDriver(claude, "", ""); kind != "" {
 		t.Fatalf("a box without the store started %q", kind)
@@ -83,8 +93,13 @@ func TestAgentDefaultsAreKeptAndAdvertised(t *testing.T) {
 		t.Fatalf("capabilities %v", first.Capabilities())
 	}
 	var d AgentDefaults
-	if st := call(t, c, "GET", "/v1/agents/defaults", "", nil, &d); st != 200 || d.Structured || d.Mode != "" {
+	// Nothing saved: structured, asking, and said so.
+	if st := call(t, c, "GET", "/v1/agents/defaults", "", nil, &d); st != 200 || d != NoSavedDefaults {
 		t.Fatalf("before any PUT: %d %+v", st, d)
+	}
+	var unsaved Info
+	if st := call(t, c, "GET", "/v1/info", "", nil, &unsaved); st != 200 || unsaved.AgentDefaults == nil || *unsaved.AgentDefaults != NoSavedDefaults {
+		t.Fatalf("info before any PUT: %d %+v", st, unsaved.AgentDefaults)
 	}
 	if st := call(t, c, "PUT", "/v1/agents/defaults", "", map[string]any{"structured": true, "mode": "sideways"}, nil); st != 400 {
 		t.Fatalf("an unknown mode: %d", st)
@@ -181,20 +196,35 @@ func conversationMode(t *testing.T, c *wire.Client, name string) string {
 }
 
 // An agent started with no driver named (another agent's task, the CLI)
-// runs in its terminal until the person turns structured agents on, then
-// structured, in the mode the default says unless it asked for its own.
+// runs structured, asking, on a box never given a default, then in the
+// mode the default says unless it asked for its own; only a default saved
+// off keeps it in its terminal.
 func TestAnAgentStartedWithNoDriverFollowsTheDefault(t *testing.T) {
 	c, bx := structuredBox(t)
 	stop := func(name string) { t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+name, "", nil, nil) }) }
 
-	// Nothing saved: today's way, a terminal.
+	// Nothing saved (a box the app never reached): structured, asking.
 	var task Task
+	if st := call(t, c, "POST", "/v1/tasks", "", TaskRequest{Location: "acme", Name: "unsaved", Agent: "claude", Prompt: "hello"}, &task); st != 200 {
+		t.Fatalf("task: %d", st)
+	}
+	stop(task.Session.Name)
+	if task.Session.Driver != DriverClaude {
+		t.Fatalf("with nothing saved, a task's agent ran %q (%s)", task.Session.Driver, task.Session.Command)
+	}
+	if live, err := bx.Sessions.Get(t.Context(), task.Session.Name); err != nil || live.bypass {
+		t.Fatalf("with nothing saved, it bypassed permissions: %+v %v", live, err)
+	}
+
+	// Saved off (only an older Shipyard sends it): a terminal.
+	call(t, c, "PUT", "/v1/agents/defaults", "", AgentDefaults{}, nil)
+	task = Task{}
 	if st := call(t, c, "POST", "/v1/tasks", "", TaskRequest{Location: "acme", Name: "before", Agent: "claude", Prompt: "hello"}, &task); st != 200 {
 		t.Fatalf("task: %d", st)
 	}
 	stop(task.Session.Name)
 	if task.Session.Driver != DriverTerminal || strings.Contains(task.Session.Command, "agent-host") {
-		t.Fatalf("with no default, a task's agent ran %q (%s)", task.Session.Driver, task.Session.Command)
+		t.Fatalf("with the default off, a task's agent ran %q (%s)", task.Session.Driver, task.Session.Command)
 	}
 
 	// Turned on: a task's agent runs structured.

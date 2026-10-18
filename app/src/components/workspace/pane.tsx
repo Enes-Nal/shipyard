@@ -223,8 +223,11 @@ function GonePane({ name, onClose }: { name: string; onClose(): void }) {
   );
 }
 
-// usePaneView is how an agent's pane shows: its terminal, or (Labs) its
-// conversation. Shells and other panes are always what they are.
+// usePaneView is how an agent's pane shows: its terminal, or its
+// conversation. An agent in chat (structured) is its conversation, Labs or
+// not, and a Claude moved to its own terminal keeps the switch back; for an
+// agent that runs in its terminal the Terminal | Conversation switch is
+// Labs. Shells and other panes are always what they are.
 export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined {
   const c = pane.content;
   const labs = usePrefs((p) => p.labs);
@@ -241,8 +244,11 @@ export function usePaneView(pane: Leaf): "terminal" | "conversation" | undefined
   // whatever the pane last showed. Claude Code's terminal is a move
   // (showTerminal), after which the session isn't structured.
   const structured = useStore((st) => c.kind === "terminal" && isStructured(st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.driver));
-  if (c.kind !== "terminal" || !labs || !runsAgent) return undefined;
-  return structured ? "conversation" : (c.view ?? fallback);
+  const backToChat = useStore((st) => c.kind === "terminal" && st.boxes[c.box]?.sessions?.find((x) => x.name === c.session)?.switch === "chat");
+  if (c.kind !== "terminal" || !runsAgent) return undefined;
+  if (structured) return "conversation";
+  if (!labs) return backToChat ? "terminal" : undefined;
+  return c.view ?? fallback;
 }
 
 // showTerminal turns an agent's pane to its terminal. A structured Claude

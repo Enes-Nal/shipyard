@@ -53,12 +53,10 @@ export interface Prefs {
   labsChosen: boolean;
   // Labs: how an agent's pane opens, until switched.
   agentView: "terminal" | "conversation";
-  // Labs: new Claude Code and Codex agents run structured, driven through
-  // their stream or app server by berthd rather than typed into, and open as
-  // conversations (boxes with "driver.claude", "driver.codex").
-  structuredClaude: boolean;
-  // What a structured agent's permissions do: "bypass" has berthd allow
-  // them (questions and plans still ask), "ask" brings each to you.
+  // What an agent's permissions do (Settings › Agents › Permissions):
+  // "bypass" has berthd allow them (questions and plans still ask), "ask"
+  // brings each to you. Agents run structured wherever the box can
+  // (lib/structured.ts); there is no setting for that.
   approvals: "bypass" | "ask";
   // Labs: zen (⌘.): no sidebar or status bar, a switcher for a tab strip,
   // agents as conversations.
@@ -120,7 +118,6 @@ const DEFAULTS: Prefs = {
   labs: true,
   labsChosen: false,
   agentView: "terminal",
-  structuredClaude: false,
   approvals: "bypass",
   zen: false,
   autoUpdateBoxes: false,
@@ -164,7 +161,9 @@ const stored = load<Saved>("berth.prefs", {});
 // has nothing to catch up on (lib/whats-new.ts).
 export const firstRun = !stored || !Object.keys(stored).length;
 const saved = migratePrefs(stored ?? {});
-const { version: _version, ...savedPrefs } = saved;
+// structuredClaude was the Labs switch for agents in chat, which are now
+// simply how agents run: a saved one is dropped.
+const { version: _version, structuredClaude: _structured, ...savedPrefs } = saved as Saved & { structuredClaude?: boolean };
 
 export const usePrefs = create<Prefs>()(() => ({
   ...DEFAULTS,

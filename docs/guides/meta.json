@@ -2,6 +2,7 @@
   "title": "Guides",
   "pages": [
     "home",
+    "structured-agents",
     "orchestration",
     "runs",
     "terminals",
