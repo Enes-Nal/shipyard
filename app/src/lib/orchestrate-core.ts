@@ -355,6 +355,9 @@ export interface RunCompare {
   run: RunSummary;
   gate?: Run["gate"];
   judge?: string;
+  // The pull request step: opened, skipped (a host without them, or
+  // finished without one) or failed, with what it said.
+  pr?: Run["steps"][number];
   candidates: (NonNullable<Run["candidates"]>[number] & { review?: { files?: { path: string; added?: number; removed?: number; status?: string }[]; commits?: { sha: string; subject: string }[] } })[];
 }
 

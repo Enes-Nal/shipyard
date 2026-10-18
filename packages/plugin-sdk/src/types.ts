@@ -720,6 +720,11 @@ export interface RunGate {
   pick?: boolean;
   // The candidate a pick approves without naming one (0-based).
   default?: number;
+  // The two ways on when they aren't approve and reject: "Retry
+  // publishing" and "Finish without a pull request" at a pull request
+  // that didn't open.
+  approve_label?: string;
+  reject_label?: string;
 }
 
 export interface RunStep {

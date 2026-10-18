@@ -11,6 +11,18 @@ again.
 
 ## Unreleased
 
+- **Attempts on a repository GitHub doesn't host finish with your pick.**
+  On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
+  turned on failed the run at `gh pr create` and left every worktree
+  behind. Shipyard now pushes the picked branch, says plainly that it
+  didn't open a pull request there (with the forge's own link to open one
+  when it prints it), archives the other attempts and finishes the run.
+- **A pull request that doesn't open no longer fails the run.** When `gh`
+  can't open the pick's pull request (a sign-in that ran out, say), the
+  run waits with your pick kept and nothing archived, and says it is
+  publishing that failed, not the agents' work. Review's Compare and
+  Automations → Runs offer **Retry publishing** or **Finish without a pull
+  request**; `berth run approve` and `berth run reject` do the same.
 - **A helper that is back shows as back in a chat session.** In a chat
   (structured) Claude session, a helper Claude left working in the
   background stayed "working" in Crew, its time running on, after it had

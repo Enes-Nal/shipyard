@@ -673,8 +673,21 @@ func (h *runHost) pullRequest(ctx context.Context, x *runs.StepCtx) runs.Result 
 	if err := h.b.beforeAs(ctx, origOf(x), "run.pr", map[string]any{"path": dir, "branch": branch, "run": x.Run.ID}); err != nil {
 		return fail(err)
 	}
-	if out, err := git(ctx, "-C", dir, "push", "-u", "origin", branch); err != nil {
-		return runs.Result{Status: runs.Failed, Code: 1, Out: string(out), Err: "git push failed"}
+	// gh opens pull requests on GitHub only: elsewhere (Gitea, Forgejo,
+	// GitLab, a folder) the branch is pushed and the step says so, a skip
+	// the run goes on from, rather than a gh error that fails it.
+	f := originForge(ctx, dir)
+	out, err := git(ctx, "-C", dir, "push", "-u", "origin", branch)
+	if err != nil {
+		return runs.Result{Status: runs.Failed, Code: 1, Out: noUserinfo(string(out)), Err: "git push failed"}
+	}
+	if !f.GitHub {
+		link := pushLink(string(out))
+		set := map[string]string{"pr.skipped": "1"}
+		if link != "" {
+			set["pr.link"] = link
+		}
+		return runs.Result{Status: runs.Skipped, Out: noPRText(f, branch, link), Set: set}
 	}
 	var existing struct {
 		URL string `json:"url"`
@@ -695,9 +708,9 @@ func (h *runHost) pullRequest(ctx context.Context, x *runs.StepCtx) runs.Result 
 	cmd := exec.CommandContext(cctx, bin, args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GH_PROMPT_DISABLED=1", "GIT_TERMINAL_PROMPT=0", "NO_COLOR=1")
-	out, err := cmd.CombinedOutput()
+	out, err = cmd.CombinedOutput()
 	if err != nil {
-		return runs.Result{Status: runs.Failed, Code: 1, Out: string(out), Err: "gh pr create failed"}
+		return runs.Result{Status: runs.Failed, Code: 1, Out: noUserinfo(string(out)), Err: "gh pr create failed"}
 	}
 	u := strings.TrimSpace(string(out))
 	if i := strings.LastIndex(u, "\n"); i >= 0 {

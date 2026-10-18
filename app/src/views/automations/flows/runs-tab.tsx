@@ -320,11 +320,11 @@ export function RunTimeline({ box, id, summary }: { box: string; id: string; sum
               </>
             ) : (
               <Button size="xs" onClick={() => void decide(true)}>
-                Approve
+                {run.gate.approve_label ?? "Approve"}
               </Button>
             )}
-            <Button size="xs" variant="ghost" onClick={() => void decide(false)}>
-              Reject
+            <Button size="xs" variant={run.gate.reject_label ? "outline" : "ghost"} onClick={() => void decide(false)}>
+              {run.gate.reject_label ?? "Reject"}
             </Button>
           </div>
         </div>
@@ -358,7 +358,9 @@ function Steps({ steps, t0, span, depth }: { steps: RunStep[]; t0: number; span:
   return (
     <div className={cn("space-y-1", depth > 0 && "border-l pl-3")}>
       {steps
-        .filter((s) => s.status !== "skipped")
+        // A step its when rule skipped says nothing; one that chose not to
+        // act (a pull request on Gitea) says why.
+        .filter((s) => s.status !== "skipped" || s.output)
         .map((s) => (
           <Step key={s.path} s={s} t0={t0} span={span} depth={depth} />
         ))}
