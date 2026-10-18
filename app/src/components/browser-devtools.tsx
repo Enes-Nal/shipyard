@@ -154,7 +154,7 @@ export function DevtoolsDrawer({ logKey, pageUrl, ctx, proxied, agent }: DrawerP
         onKeyDown={nudge}
         className="absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize outline-none focus-visible:bg-ring"
       />
-      <div className="flex h-8 shrink-0 items-center gap-0.5 border-b px-1.5">
+      <div className="flex h-bar-pane shrink-0 items-center gap-0.5 border-b px-edge">
         <div
           role="tablist"
           aria-label="Console and network"
@@ -234,7 +234,7 @@ function Chip({ on, onClick, children, label }: { on: boolean; onClick(): void; 
 
 function FilterBar({ children, filter, onFilter }: { children: React.ReactNode; filter: string; onFilter(v: string): void }) {
   return (
-    <div className="flex h-7.5 shrink-0 items-center gap-1 border-b bg-muted/30 px-1.5">
+    <div className="flex h-bar-pane shrink-0 items-center gap-1 border-b bg-muted/30 px-edge">
       <input
         aria-label="Filter"
         value={filter}

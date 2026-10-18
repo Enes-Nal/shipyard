@@ -493,7 +493,7 @@ function PreviewBar({
   const allTheme: Theme = frames.length && frames.every((f) => f.theme === frames[0].theme) ? frames[0].theme : s.theme;
   const mixed = frames.some((f) => f.theme !== s.theme);
   return (
-    <ToolbarPrimitive.Root aria-label="Preview" className="@container/bar flex h-9 shrink-0 items-center gap-1.5 border-b px-2">
+    <ToolbarPrimitive.Root aria-label="Preview" className="@container/bar flex h-bar-pane shrink-0 items-center gap-1.5 border-b px-edge">
       <Tip label="Reload all frames" side="bottom">
         <ToolbarPrimitive.Button aria-label="Reload all frames" onClick={onReload} className={cn(btn, quiet, "w-6.5 justify-center px-0")}>
           <RotateCwIcon />
@@ -573,7 +573,7 @@ function Address({ url, onGo }: { url: string; onGo(raw: string): void }) {
 
 function AddressBar({ url, onGo }: { url: string; onGo(raw: string): void }) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-1 border-b px-2">
+    <div className="flex h-bar-pane shrink-0 items-center gap-1 border-b px-edge">
       <Address url={url} onGo={onGo} />
     </div>
   );

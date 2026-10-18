@@ -177,7 +177,7 @@ function Card({ worktree, at, onOpen }: { worktree: WorktreeRef; at: FileRef; on
 
   return (
     <>
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-muted/30 pr-1 pl-3 text-meta">
+      <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b bg-muted/30 pr-1 pl-edge text-meta">
         <FileGlyph path={at.path} className="size-3" />
         <span className="min-w-0 flex-1 truncate font-mono text-tag text-muted-foreground">
           {dir && <span>{dir}/</span>}

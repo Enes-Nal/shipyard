@@ -119,7 +119,7 @@ export function Pane({ wsKey, tab, pane, visible, focused, split, mixed, compare
           // the pane's worktree, and the focus line is in that one's colour.
           <div
             onPointerDown={(e) => armDrag(e, { kind: "pane", key: wsKey, tab, pane: pane.id }, (c.kind === "terminal" && (session?.title?.trim() || c.title)) || paneLabel(c, agent), <PaneIcon content={c} agent={agent} className="size-3" />)}
-            className={cn("group/header flex h-7 shrink-0 items-center gap-1.5 border-b px-2 text-meta", focused ? "bg-accent/50 text-foreground shadow-[inset_0_2px_0_var(--ring)]" : "text-muted-foreground")}
+            className={cn("group/header flex h-bar-pane shrink-0 items-center gap-1.5 border-b px-edge text-meta", focused ? "bg-accent/50 text-foreground shadow-[inset_0_2px_0_var(--ring)]" : "text-muted-foreground")}
             style={tone ? { boxShadow: focused ? `inset 0 2px 0 ${tone}` : `inset 0 1px 0 color-mix(in oklab, ${tone} 50%, transparent)` } : undefined}
           >
             {tone && <WtChip wsKey={owner} />}
