@@ -11,6 +11,10 @@ again.
 
 ## Unreleased
 
+- **A turn Claude starts by itself shows as working.** When a helper
+  (subagent) Claude left in the background came back, Claude went on in a
+  turn no prompt started, and the session showed as done while it worked:
+  no spinner and no Stop. That turn now shows as working until it ends.
 - **A helper's permission no longer gets lost.** When Claude Code started
   helpers (subagents) in a chat session and they asked to run something
   while Claude asked too, or after its turn ended, the app showed the newest

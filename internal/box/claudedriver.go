@@ -459,6 +459,12 @@ func (c *claudeConv) apply(e agenthost.Entry, live bool) {
 		switch {
 		case l.Event.Type == "message_start":
 			c.draft.Reset()
+			if !c.busy {
+				// A turn no prompt started: Claude goes on by itself, as
+				// when a helper it left working in the background is back.
+				c.busy, c.since = true, time.UnixMilli(e.At)
+				say = append(say, func() { c.event(adapters.Started, map[string]any{"signal": "background"}, nil) })
+			}
 		case l.Event.Type == "content_block_delta" && l.Event.Delta != nil && l.Event.Delta.Type == "text_delta":
 			if c.draft.Len() < maxDraft {
 				c.draft.WriteString(l.Event.Delta.Text)

@@ -140,6 +140,19 @@ for line in sys.stdin:
         out({"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": t, "content": "12 passed" if ok else "denied", "is_error": not ok}]}, "parent_tool_use_id": None, "uuid": uid()})
         say("The tests pass." if ok else "I didn't run them.")
         result()
+    elif text == "in the background":
+        # The agent ends its turn with a helper still working; when the
+        # helper is back, Claude starts a turn of its own: no prompt.
+        say("A helper is on it.")
+        result()
+        import time
+        time.sleep(1)
+        out({"type": "system", "subtype": "task_notification", "task_id": "a1", "status": "completed"})
+        out({"type": "system", "subtype": "init", "cwd": "/w", "model": "claude-fake", "permissionMode": mode, "uuid": uid()})
+        out({"type": "stream_event", "event": {"type": "message_start"}, "parent_tool_use_id": None})
+        time.sleep(1.5)
+        say("The helper is back.")
+        result()
     elif text in ("audit", "audit and stop it"):
         # The agent asks, and a helper it started in the background asks
         # too; the agent's turn ends while the helper still waits.
@@ -797,5 +810,55 @@ func TestAHelpersPermissionWaitsUntilItIsAnswered(t *testing.T) {
 		}
 		pick()
 		waitFor("finished once the helper was answered", func(st SessionState) bool { return st.State == "finished" })
+	}
+}
+
+// A turn Claude starts by itself (a helper it left in the background is
+// back) is a turn too: it shows as working until it ends, though no prompt
+// started it.
+func TestATurnClaudeStartsByItselfShowsAsWorking(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("the stand-in Claude needs python3")
+	}
+	bin := t.TempDir()
+	os.WriteFile(filepath.Join(bin, "claude"), []byte(fakeStreamClaude), 0o755)
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	states := &Turns{}
+	c, bus := servedBox(t, func(b *Box) {
+		b.Turns = states
+		b.ConversationsDir = conversationsDir(t)
+		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
+	})
+	states.Attach(bus)
+	repo := gitRepo(t)
+	call(t, c, "POST", "/v1/locations", "", map[string]string{"name": "acme", "path": repo}, nil)
+	var sess Session
+	if status := call(t, c, "POST", "/v1/sessions", "", map[string]any{"location": "acme", "agent": "claude", "driver": "claude", "prompt": "in the background"}, &sess); status != 200 {
+		t.Fatalf("start: %d", status)
+	}
+	t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+sess.Name, "", nil, nil) })
+	// Its own turn (running, finished), then the one Claude starts
+	// (running, finished).
+	want := []string{"running", "finished", "running", "finished"}
+	var order []string
+	deadline := time.Now().Add(20 * time.Second)
+	for len(order) < len(want) {
+		st, _ := states.State(sess.Name)
+		if n := len(order); (st.State == "running" || st.State == "finished") && (n == 0 || order[n-1] != st.State) {
+			order = append(order, st.State)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the turn Claude started never showed as working, then done: %v (now %+v)", order, st)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	for i := range want {
+		if order[i] != want[i] {
+			t.Fatalf("states: %v", order)
+		}
 	}
 }
