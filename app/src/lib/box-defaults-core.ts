@@ -13,14 +13,13 @@ export interface AgentDefaults {
 
 // The prefs structuredLaunch reads.
 export interface DefaultsPrefs {
-  labs: boolean;
   structuredClaude: boolean;
   approvals: "bypass" | "ask";
 }
 
 // agentDefaultsFor is the default the prefs ask for.
 export function agentDefaultsFor(p: DefaultsPrefs): AgentDefaults {
-  if (!p.labs || !p.structuredClaude) return { structured: false };
+  if (!p.structuredClaude) return { structured: false };
   return { structured: true, mode: p.approvals === "bypass" ? "bypassPermissions" : "default" };
 }
 

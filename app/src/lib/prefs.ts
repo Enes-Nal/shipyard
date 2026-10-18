@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { type ChatBackground, DEFAULT_CHAT_BACKGROUND, normalizeChatBackground } from "@/lib/chat-background";
 import { DEFAULT_HEADER_PICTURE, type HeaderPicture, normalizeHeaderPicture } from "@/lib/header-picture";
 import type { HomeLayout } from "@/lib/home-layout";
+import { migratePrefs, PREFS_VERSION, type Saved } from "@/lib/prefs-migrate";
 import { clampTasks, clampWidth, defaultWidth, SIDEBAR_DEFAULT, SIDEBAR_NARROW_DEFAULT, TASKS_DEFAULT } from "@/lib/sidebar-width";
 import { load, save } from "@/lib/storage";
 import { DEFAULT_TERMINAL_PREFS, type TerminalPrefs } from "@/lib/terminal";
@@ -53,9 +54,11 @@ export interface Prefs {
   labsChosen: boolean;
   // Labs: how an agent's pane opens, until switched.
   agentView: "terminal" | "conversation";
-  // Labs: new Claude Code and Codex agents run structured, driven through
-  // their stream or app server by berthd rather than typed into, and open as
-  // conversations (boxes with "driver.claude", "driver.codex").
+  // New Claude Code, Codex and ACP agents run structured, driven through
+  // their stream, app server or ACP by berthd rather than typed into, and
+  // open as conversations (boxes with "driver.claude" and the rest). On by
+  // default since version 4; off runs them in their terminals (Settings ›
+  // Agents). The key keeps its Labs-era name.
   structuredClaude: boolean;
   // What a structured agent's permissions do: "bypass" has berthd allow
   // them (questions and plans still ask), "ask" brings each to you.
@@ -120,7 +123,7 @@ const DEFAULTS: Prefs = {
   labs: true,
   labsChosen: false,
   agentView: "terminal",
-  structuredClaude: false,
+  structuredClaude: true,
   approvals: "bypass",
   zen: false,
   autoUpdateBoxes: false,
@@ -135,29 +138,6 @@ const DEFAULTS: Prefs = {
   installAgents: null,
   whatsNewSeen: null,
 };
-
-// PREFS_VERSION counts changes of default that saved prefs are moved to
-// once. 2: closing an agent's tab stops it ("keep" was the default before).
-const PREFS_VERSION = 3;
-
-type Saved = Partial<Prefs> & { version?: number };
-
-// migrate brings prefs saved by an older Shipyard up to date. Prefs are saved
-// whole, so a "keep" saved before version 2 is only the old default unless
-// the person chose it, which closeAgentsChosen records from now on.
-export function migratePrefs(saved: Saved): Saved {
-  const out = { ...saved };
-  if ((saved.version ?? 1) < 2 && Object.keys(saved).length) {
-    if ((saved.closeAgents ?? "keep") === "keep" && !saved.closeAgentsChosen) {
-      out.closeAgents = "stop";
-      out.agentCloseTips = 0;
-    }
-  }
-  // Version 3 turns Labs on: off was only the old default.
-  if ((saved.version ?? 1) < 3 && !saved.labsChosen) out.labs = true;
-  out.version = PREFS_VERSION;
-  return out;
-}
 
 const stored = load<Saved>("berth.prefs", {});
 // Nothing saved before: a new install (or storage that was cleared), which

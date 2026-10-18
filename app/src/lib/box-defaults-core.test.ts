@@ -5,15 +5,15 @@ import { test } from "node:test";
 import { agentDefaultsFor, defaultsToPut } from "./box-defaults-core.ts";
 
 const caps = ["driver.claude", "driver.codex", "driver.acp", "agents.defaults"];
-const on = { labs: true, structuredClaude: true, approvals: "bypass" as const };
-const off = { labs: true, structuredClaude: false, approvals: "bypass" as const };
+const on = { structuredClaude: true, approvals: "bypass" as const };
+const off = { structuredClaude: false, approvals: "bypass" as const };
 
 test("the prefs map to the default structuredLaunch would use", () => {
   assert.deepEqual(agentDefaultsFor(on), { structured: true, mode: "bypassPermissions" });
   assert.deepEqual(agentDefaultsFor({ ...on, approvals: "ask" }), { structured: true, mode: "default" });
   assert.deepEqual(agentDefaultsFor(off), { structured: false });
-  // Labs off turns structured agents off, whatever the switch says.
-  assert.deepEqual(agentDefaultsFor({ ...on, labs: false }), { structured: false });
+  // Out of Labs: the Labs switch no longer has a say.
+  assert.deepEqual(agentDefaultsFor({ ...on, labs: false } as typeof on), { structured: true, mode: "bypassPermissions" });
 });
 
 test("a box that keeps no default is left alone", () => {

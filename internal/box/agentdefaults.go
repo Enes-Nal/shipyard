@@ -12,7 +12,8 @@ import (
 // AgentDefaults is how an agent starts when whatever starts it names no
 // driver: another agent through the berth tools, the CLI, a run or an
 // automation. The app names one with every start of its own, and keeps
-// these in step with the person's Labs setting so the rest follow it too.
+// these in step with the person's setting (Settings › Agents, on unless
+// turned off) so the rest follow it too.
 type AgentDefaults struct {
 	// Structured starts Claude Code, Codex and an agent whose preset speaks
 	// ACP structured, where this box can (driver.claude and the rest).
@@ -29,8 +30,10 @@ type AgentDefaultsStore struct {
 	mu   sync.Mutex
 }
 
-// Get is what was saved; nothing saved, or no store, is today's way:
-// agents run in their terminals.
+// Get is what was saved; nothing saved, or no store, runs agents in their
+// terminals. The app gives every box it reaches its setting, structured
+// unless turned off, as soon as it sees the box; until then (a box only
+// the CLI has used) nothing changes for agents started without it.
 func (s *AgentDefaultsStore) Get() AgentDefaults {
 	var d AgentDefaults
 	if s == nil || s.Path == "" {

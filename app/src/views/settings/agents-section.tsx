@@ -17,6 +17,7 @@ import type { AgentPreset } from "@/lib/api";
 import { plainError } from "@/lib/errors";
 import { errorMessage } from "@/lib/format";
 import { openUrl } from "@/lib/open-url";
+import { setPrefs, usePrefs } from "@/lib/prefs";
 import { type Project, projectActions, useProjects } from "@/lib/project-groups";
 import { endSnooze, setRemind, useSkillsNotice } from "@/lib/skills-notice";
 import { neverRemind, untilText } from "@/lib/skills-notice-model";
@@ -72,6 +73,8 @@ export function AgentsSection() {
         </>
       }
     >
+      <HowAgentsRun />
+
       {online.length === 0 ? (
         <p className="rounded-xl border px-4 py-6 text-center text-muted-foreground text-body">No box is online. Agents are listed once one connects.</p>
       ) : (
@@ -144,6 +147,37 @@ export function AgentsSection() {
 
       {boxes.length > online.length && <p className="text-muted-foreground text-meta">Offline boxes are listed once they reconnect.</p>}
     </SettingsPage>
+  );
+}
+
+// HowAgentsRun is how new agents start: in chat (structured: the box
+// drives them through their own protocol, lib/structured.ts), or in their
+// terminals, the fallback. Kept on this computer and given to each box for
+// the agents started without the app (lib/box-defaults.ts).
+function HowAgentsRun() {
+  const chat = usePrefs((p) => p.structuredClaude);
+  const approvals = usePrefs((p) => p.approvals);
+  return (
+    <SettingsGroup title="How agents run">
+      <SettingsRow
+        label="Run agents in chat"
+        description="New Claude Code, Codex, OpenCode, Gemini CLI, Cursor Agent and oh-my-pi agents open as a conversation, and Shipyard talks to them directly instead of typing into their terminal. Claude Code's own terminal is one switch away. Turn this off to run new agents in their terminals."
+      >
+        <Switch data-testid="agents-run-in-chat" checked={chat} onCheckedChange={(on) => setPrefs({ structuredClaude: on })} />
+      </SettingsRow>
+      {chat && (
+        <SettingsRow label="Permissions" description="Bypass lets the box allow what an agent in chat asks to do; its questions and plans still come to you. Ask brings every permission to you.">
+          <Segmented
+            value={approvals}
+            options={[
+              { value: "bypass", label: "Bypass" },
+              { value: "ask", label: "Ask" },
+            ]}
+            onChange={(v) => setPrefs({ approvals: v })}
+          />
+        </SettingsRow>
+      )}
+    </SettingsGroup>
   );
 }
 
