@@ -1,4 +1,4 @@
-import { EllipsisIcon, FolderPlusIcon, ListFilterIcon, PanelLeftIcon, PenLineIcon, PlusIcon, SearchIcon, ServerIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, FolderPlusIcon, ListFilterIcon, PanelLeftIcon, PanelLeftOpenIcon, PenLineIcon, PlusIcon, SearchIcon, ServerIcon, SettingsIcon } from "lucide-react";
 import { memo, type ReactNode, useId, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -109,10 +109,27 @@ function TopStrip() {
 
 // ---- The rail ------------------------------------------------------------------
 
+// FoldedRail is the rail sidebar folded away (⌘\): the rail alone, wide
+// enough for the traffic lights over it, with search and the
+// notifications (the strip that held them is folded away too) and a way
+// back. A tile opens the sheet again on its project.
+export function FoldedRail() {
+  const { projects, sections } = useProjects();
+  const ordered = useMemo(() => [...projects.filter((p) => !p.section), ...sections.flatMap((name) => projects.filter((p) => p.section === name))], [projects, sections]);
+  const picked = usePicked("project");
+  return (
+    <aside aria-label="Sidebar" data-testid="sidebar-rail" data-layout="rail" className={cn("relative flex w-rail-folded shrink-0 flex-col border-sidebar-border border-r bg-sidebar", inkScale)}>
+      <SidebarResizeHandle folded />
+      <div data-tauri-drag-region className="h-bar w-full shrink-0" />
+      <ProjectRail projects={ordered} picked={picked?.kind === "project" ? picked.project.id : undefined} folded />
+    </aside>
+  );
+}
+
 // ProjectRail is the column of icons: the pinned places (More holds the
 // rest), then a tile per project and a way to add one, and Settings at the
 // foot.
-function ProjectRail({ projects, picked }: { projects: Project[]; picked?: string }) {
+function ProjectRail({ projects, picked, folded }: { projects: Project[]; picked?: string; folded?: boolean }) {
   const { pinned, more } = useArrangedNav();
   // Projects of one GitHub owner have the same avatar; a letter tells them
   // apart.
@@ -121,8 +138,18 @@ function ProjectRail({ projects, picked }: { projects: Project[]; picked?: strin
     return new Set(projects.filter((_, i) => owners[i] && owners.indexOf(owners[i]) !== owners.lastIndexOf(owners[i])).map((p) => p.id));
   }, [projects]);
   return (
-    <nav aria-label="Places and projects" data-testid="project-rail" style={{ width: RAIL }} className="flex shrink-0 flex-col items-center pt-1 pb-2">
+    <nav aria-label="Places and projects" data-testid="project-rail" style={folded ? undefined : { width: RAIL }} className={cn("flex shrink-0 flex-col items-center pt-1 pb-2", folded && "min-h-0 w-full flex-1")}>
       <div className="flex flex-col items-center gap-1">
+        {folded && (
+          <>
+            <Tip label="Search (⌘K)" side="right">
+              <button type="button" aria-label="Search" onClick={() => useStore.getState().setPaletteOpen(true)} className={cn(railButton, ink.row)}>
+                <SearchIcon />
+              </button>
+            </Tip>
+            <NotificationBell size="rail" />
+          </>
+        )}
         {pinned.map((n) => (
           <PlaceIcon key={n.id} item={n} />
         ))}
@@ -131,7 +158,7 @@ function ProjectRail({ projects, picked }: { projects: Project[]; picked?: strin
       <span aria-hidden className="my-2.5 h-px w-5 shrink-0 bg-sidebar-border" />
       <div role="group" aria-label="Projects" className="-mx-px flex min-h-0 w-full flex-1 flex-col items-center gap-1.5 overflow-y-auto px-px pt-0.5 pb-1 [scrollbar-width:none]">
         {projects.map((p) => (
-          <ProjectTile key={p.id} project={p} selected={p.id === picked} shared={shared.has(p.id)} />
+          <ProjectTile key={p.id} project={p} selected={p.id === picked} shared={shared.has(p.id)} folded={!!folded} />
         ))}
         <Tip label="Add a project…" side="right">
           <button
@@ -145,6 +172,13 @@ function ProjectRail({ projects, picked }: { projects: Project[]; picked?: strin
         </Tip>
       </div>
       <SettingsButton rail />
+      {folded && (
+        <Tip label={"Show the sidebar (⌘\\)"} side="right">
+          <button type="button" aria-label="Show the sidebar" onClick={() => usePrefs.setState({ sidebarCollapsed: false })} className={cn(railButton, "mt-1 shrink-0 [&_svg]:size-[17px]", ink.glyph)}>
+            <PanelLeftOpenIcon strokeWidth={1.8} />
+          </button>
+        </Tip>
+      )}
     </nav>
   );
 }
@@ -246,7 +280,7 @@ function useTileState(p: Project): { state?: SessionState; waiting: number; runn
 // one sits on a raised tile with a bar at the rail's edge; a dot at its
 // corner is amber while an agent in it needs you, blue while one works.
 // Its menu is the project's, as on its header.
-const ProjectTile = memo(function ProjectTile({ project: p, selected, shared }: { project: Project; selected: boolean; shared: boolean }) {
+const ProjectTile = memo(function ProjectTile({ project: p, selected, shared, folded }: { project: Project; selected: boolean; shared: boolean; folded: boolean }) {
   const { state, waiting, running } = useTileState(p);
   const online = p.members.some((m) => m.box.state === "online");
   const what = [waiting ? `${waiting} ${waiting === 1 ? "needs" : "need"} you` : "", running ? `${running} working` : "", online ? "" : awayText(p.members[0].box)].filter(Boolean);
@@ -260,7 +294,8 @@ const ProjectTile = memo(function ProjectTile({ project: p, selected, shared }: 
           data-state={state}
           aria-label={what.length ? `${p.name}, ${what.join(", ")}` : p.name}
           aria-current={selected ? "true" : undefined}
-          onClick={() => usePrefs.setState({ sidebarPick: p.id, tasksFolded: false })}
+          // Folded away, a tile opens the sheet again on its project.
+          onClick={() => usePrefs.setState({ sidebarPick: p.id, tasksFolded: false, ...(folded ? { sidebarCollapsed: false } : {}) })}
           className={cn(
             "relative flex size-9 items-center justify-center rounded-[10px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
             selected ? "border border-sidebar-border bg-background shadow-xs" : "hover:bg-sidebar-accent",

@@ -7,7 +7,7 @@ import { MoreItems, Nav as PlacesNav, RowKeys, rowClass, useArrangedNav } from "
 import { ProjectsColumn, ShowTasks, TasksColumn, usePicked } from "@/components/sidebar/columns";
 import { Projects, useSidebarPrefs } from "@/components/sidebar/projects";
 import { RailAgents } from "@/components/sidebar/rail";
-import { RailSidebar } from "@/components/sidebar/rail-layout";
+import { FoldedRail, RailSidebar } from "@/components/sidebar/rail-layout";
 import { SidebarResizeHandle } from "@/components/sidebar/resize-handle";
 import { RowLayer } from "@/components/sidebar/row-layer";
 import { RailSkillsNotices, SkillsNotices } from "@/components/sidebar/skills-notice";
@@ -50,7 +50,7 @@ export function AppSidebar() {
   const collapsed = usePrefs((p) => p.sidebarCollapsed);
   const layout = usePrefs((p) => p.sidebarLayout);
 
-  if (collapsed) return <Rail />;
+  if (collapsed) return layout === "rail" ? <FoldedRail /> : <Rail />;
 
   return (
     <SidebarContext.Provider value={context}>
@@ -245,7 +245,7 @@ function TopAction({ label, keys, icon, onClick }: { label: string; keys: string
 // Rail is the sidebar folded away (⌘\): the window's controls, the places
 // in the sidebar's own order, the agents by state (sidebar/rail.tsx), and a
 // way back. It keeps clear of the traffic lights like the full one, which is
-// why it is 76px.
+// why it is w-rail-folded, 76px at the least.
 function Rail() {
   const view = useStore((s) => s.view);
   const setView = useStore((s) => s.setView);
@@ -265,7 +265,7 @@ function Rail() {
     </Tip>
   );
   return (
-    <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-19 shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
+    <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-rail-folded shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
       <SidebarResizeHandle folded />
       <div data-tauri-drag-region className="h-bar w-full shrink-0" />
       <div className="flex flex-col items-center gap-1">

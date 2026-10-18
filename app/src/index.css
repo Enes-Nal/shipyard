@@ -80,13 +80,15 @@
        px-edge: where boxes (rows, fields, cards) start and end in a column.
        pl-lane: where their content (icons, glyphs, labels) starts, a row's
        padding further in. px-page: a full-page view's gutter. w-rail: the
-       sidebar's rail. */
+       sidebar's rail; w-rail-folded the sidebar folded away (⌘\), never
+       narrower than the traffic lights need. */
     --spacing-bar: max(40px, 2.5rem);
     --spacing-bar-pane: 2rem;
     --spacing-edge: 0.75rem;
     --spacing-lane: 1.25rem;
     --spacing-page: 1.5rem;
     --spacing-rail: 60px;
+    --spacing-rail-folded: max(76px, 4.75rem);
     /* The type scale, Settings' and every page's: text-page-title, text-title,
        text-heading, text-subtitle, text-body, text-section, text-row,
        text-desc, text-label, text-meta, text-tag, text-mono. It is the only

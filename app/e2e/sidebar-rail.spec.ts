@@ -45,13 +45,32 @@ test("opening a worktree from elsewhere picks its project on the rail", async ({
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 
-  // From the folded sidebar's agents.
-  await page.getByRole("button", { name: "Hide the sidebar" }).click();
-  await page.locator('[data-testid=rail-agent][data-session="devl/checkout-fix-claude"]').click();
-  await page.getByRole("button", { name: /Show the sidebar/ }).click();
+  // From ⌘K.
+  const input = page.getByRole("combobox", { name: "Search sessions, worktrees and commands" });
+  const option = page.getByRole("option", { name: /checkout-fix/ }).first();
+  await expect(async () => {
+    if (!(await input.isVisible())) await page.keyboard.press("Meta+k");
+    await input.fill("checkout-fix");
+    await expect(option).toBeVisible({ timeout: 500 });
+  }).toPass();
+  await option.click();
 
   await expect(page.locator("[data-testid=rail-project][data-project=shop]")).toHaveAttribute("aria-current", "true");
   await expect(app.worktree("devl/checkout-fix")).toHaveAttribute("data-active", "true");
+});
+
+test("folded away, the rail keeps its projects, clear of the traffic lights, and a tile opens its project", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: { ...rail, version: 4, uiFontSize: 11 } });
+  const page = app.page;
+  await page.getByRole("button", { name: "Hide the sidebar" }).click();
+  const folded = page.getByTestId("sidebar-rail");
+  await expect(folded.getByTestId("rail-project")).toHaveCount(3);
+  await expect(page.getByTestId("sidebar-sheet")).toHaveCount(0);
+  // The traffic lights need 76px whatever the text size.
+  await expect.poll(async () => (await folded.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(76);
+  await folded.locator("[data-testid=rail-project][data-project=notes]").click();
+  await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 });
 
 test("the rail's places and Settings go where the sidebar's do", async ({ app }) => {

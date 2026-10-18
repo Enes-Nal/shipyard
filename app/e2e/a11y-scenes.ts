@@ -364,6 +364,16 @@ export const scenes: Scene[] = [
     },
   },
   {
+    // The rail sidebar folded away (⌘\): the rail alone.
+    id: "sidebar-rail-folded",
+    extra: true,
+    async run(app, theme) {
+      await app.open({ theme, prefs: { version: 4, sidebarLayout: "rail" } });
+      await app.page.getByRole("button", { name: "Hide the sidebar" }).click();
+      await expect(app.page.getByTestId("sidebar-rail").getByTestId("rail-project").first()).toBeVisible();
+    },
+  },
+  {
     // The two-column sidebar (Settings › Appearance): a project picked, its
     // tasks beside the projects.
     id: "sidebar-columns",
