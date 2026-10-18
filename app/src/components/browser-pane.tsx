@@ -269,7 +269,7 @@ export function BrowserPane({ id: paneId, url, visible, onNavigate, worktree, on
         <form
           // A narrow pane (a Compare tab's side in a small window) keeps the
           // address, dropping the labels around it.
-          className="@container/bar flex h-9 shrink-0 items-center gap-1 border-b px-2"
+          className="@container/bar flex h-bar-pane shrink-0 items-center gap-1 border-b px-edge"
           onSubmit={(e) => {
             e.preventDefault();
             const next = resolveBrowserInput(input, ctx);
@@ -911,7 +911,7 @@ function AgentBar({
   const label = size ? sizeLabel(size.w, size.h, size.scale) : fallbackSize;
   const zoom = size && size.zoom > 0 && size.zoom < 0.995 ? `${Math.round(size.zoom * 100)}%` : undefined;
   return (
-    <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-emerald-500/[0.06] px-2 text-meta">
+    <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b bg-emerald-500/[0.06] px-edge text-meta">
       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-1 font-medium text-tag text-emerald-800 dark:text-emerald-300">
         <BotIcon className="size-3" />
         Agent's view · live
@@ -970,7 +970,7 @@ function AgentTabs({ tabs, watched, onPick }: { tabs: AgentBrowserTab[]; watched
     return () => window.clearInterval(t);
   }, [active.size > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="flex h-8 shrink-0 items-center border-b bg-emerald-500/[0.03] px-2">
+    <div className="flex h-bar-pane shrink-0 items-center border-b bg-emerald-500/[0.03] px-edge">
       <ToggleGroup
         size="sm"
         value={[`tab:${watched}`]}
@@ -1016,7 +1016,7 @@ function AgentTabs({ tabs, watched, onPick }: { tabs: AgentBrowserTab[]; watched
 // agent's browser can't start.
 function SandboxBar({ box, fixed, onBack }: { box: string; fixed: boolean; onBack(): void }) {
   return (
-    <div className={cn("flex h-9 shrink-0 items-center gap-2 border-b px-2 text-meta", fixed ? "bg-success/[0.06]" : "bg-warning/[0.06]")}>
+    <div className={cn("flex h-bar-pane shrink-0 items-center gap-2 border-b px-edge text-meta", fixed ? "bg-success/[0.06]" : "bg-warning/[0.06]")}>
       <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 font-medium text-tag", fixed ? "bg-success/15 text-success-foreground" : "bg-warning/15 text-warning-foreground")}>
         <BotIcon className="size-3" />
         {fixed ? "Agent's browser" : "Agent's browser · blocked"}
