@@ -127,7 +127,7 @@ export function ProjectsColumn({ prefs, update, picked }: { prefs: SidebarPrefs;
     rows[to]?.focus();
   };
   return (
-    <RowLayer onKeyDown={onKeyDown} aria-label="Projects" role="group" className="min-h-0 flex-1 overflow-y-auto pt-5 pr-[11px] pb-3 pl-3.5">
+    <RowLayer onKeyDown={onKeyDown} aria-label="Projects" role="group" className="min-h-0 flex-1 overflow-y-auto px-edge pt-5 pb-3">
       {prefs.groupBy === "project" ? (
         <ProjectSections prefs={prefs} update={update} row={(p) => <ProjectColumnRow key={p.id} project={p} selected={picked === p.id} />} />
       ) : (
@@ -281,7 +281,7 @@ export function TasksColumn({ picked, prefs, update }: { picked?: Picked; prefs:
       <TasksResizeHandle />
       {/* The window's strip, as over the first column: it drags the window,
           and at its end folds this column away. */}
-      <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end pr-[6px]">
+      <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end pr-edge">
         <Tip label="Hide the tasks" side="bottom" align="end">
           <button
             type="button"
@@ -299,7 +299,7 @@ export function TasksColumn({ picked, prefs, update }: { picked?: Picked; prefs:
       ) : picked?.kind === "repo" ? (
         <RepoTasks key={picked.key} id={id} repo={picked.repo} prefs={prefs} update={update} />
       ) : (
-        <div className="pt-5 pr-[11px] pl-3.5">
+        <div className="px-edge pt-5">
           <p className={cn("px-2 py-1 text-desc", ink.faint)}>No projects yet.</p>
           <EmptyAction icon={<PlusIcon />} label="Add a project…" onClick={() => useStore.getState().openAddLocation()} />
         </div>
@@ -373,7 +373,7 @@ function TasksBody({
 }) {
   return (
     <>
-      <div className="pt-5 pr-[11px] pl-3.5">
+      <div className="px-edge pt-5">
         <ContextRow items={items} className="group/row relative">
           <div data-testid="tasks-heading" className="flex h-side-row items-center gap-2 pr-1 pl-2">
             <h2 id={id} className={cn("min-w-0 truncate text-section", ink.strong)}>
@@ -398,7 +398,7 @@ function TasksBody({
         </ContextRow>
       </div>
       {/* One context menu and one tooltip for every row in it. */}
-      <RowLayer className="min-h-0 flex-1 overflow-y-auto pt-1 pr-[11px] pb-3 pl-3.5">
+      <RowLayer className="min-h-0 flex-1 overflow-y-auto px-edge pt-1 pb-3">
         {empty ? (
           <div data-testid="tasks-empty" className="flex flex-col gap-px">
             <p className={cn("px-2 pt-1 pb-2 text-desc", ink.faint)}>{away ? `${away[0].name} is ${awayText(away[0])}.` : "No tasks here yet."}</p>

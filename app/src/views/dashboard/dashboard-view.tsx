@@ -165,7 +165,7 @@ export function DashboardView() {
         </Empty>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] items-start gap-x-4 gap-y-6 px-6 pt-4 pb-6">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] items-start gap-x-4 gap-y-6 px-page pt-4 pb-6">
             {COLUMNS.map((c) => {
               const items = visible.filter((e) => e.state === c.state).sort((a, b) => sinceOf(a) - sinceOf(b));
               return (
@@ -211,7 +211,7 @@ export function DashboardView() {
           </div>
 
           {rest.length > 0 && (
-            <div className="border-t px-6 py-2">
+            <div className="border-t px-page py-2">
               <button type="button" aria-expanded={showRest} onClick={() => setShowRest(!showRest)} className="flex items-center gap-1.5 rounded-md py-1 text-muted-foreground text-meta hover:text-foreground">
                 <ChevronRightIcon className={cn("size-3 transition-transform", showRest && "rotate-90")} />
                 <TerminalIcon className="size-3.5" />

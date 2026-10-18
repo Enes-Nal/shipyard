@@ -165,12 +165,12 @@ export function ReviewView() {
       ) : (
         <div className="flex min-h-0 flex-1">
           <aside aria-label="Work to review" className="flex w-80 shrink-0 flex-col border-r max-xl:w-64">
-            <ul className="min-h-0 flex-1 overflow-y-auto p-2" aria-label="Work to review">
+            <ul className="min-h-0 flex-1 overflow-y-auto px-edge py-2" aria-label="Work to review">
               {entries.map((e) => (
                 <Row key={e.key} entry={e} active={e.key === selected?.key} onSelect={() => setSelectedKey(e.key)} onOpen={() => void focusSession(e.box, e.session)} />
               ))}
             </ul>
-            <footer className="flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap border-t px-3 py-2 text-tag text-muted-foreground">
+            <footer className="flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap border-t px-edge py-2 text-tag text-muted-foreground">
               {(
                 [
                   ["J K", "move"],
@@ -204,7 +204,7 @@ function Notices({ outdated, errors }: { outdated: string[]; errors: Record<stri
   const failing = Object.entries(errors);
   if (!outdated.length && !failing.length) return null;
   return (
-    <div className="flex shrink-0 flex-col gap-1 border-b bg-muted/30 px-6 py-2 text-meta">
+    <div className="flex shrink-0 flex-col gap-1 border-b bg-muted/30 px-page py-2 text-meta">
       {outdated.map((box) => (
         <NeedsUpdate key={box} box={box} className="py-1.5 text-meta">
           <span className="font-medium">{box}</span> runs an older berthd without Review. Update it to include its agents' work here.

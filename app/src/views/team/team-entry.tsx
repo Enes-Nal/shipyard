@@ -83,7 +83,7 @@ export function TeamSidebarCard() {
         type="button"
         data-testid="team-sidebar"
         onClick={() => useStore.getState().setView({ kind: "team", org: keyOf(useTeam.getState(), run), box: run.box, from: "sidebar" })}
-        className={cn("mx-2 mt-3 block w-[calc(100%-16px)] rounded-lg border bg-card px-2.5 py-2 text-left hover:bg-accent/40", view.kind === "team" && "border-foreground/20")}
+        className={cn("mx-edge mt-3 block w-[calc(100%-2*var(--spacing-edge))] rounded-lg border bg-card px-2 py-2 text-left hover:bg-accent/40", view.kind === "team" && "border-foreground/20")}
       >
         <span className="flex items-center gap-1.5 text-label">
           {sum.tone === "failed" ? <CircleAlertIcon className="size-3.5 text-destructive" /> : sum.tone === "waiting" ? <KeyRoundIcon className="size-3.5 text-warning-foreground" /> : done ? <GitHubMark className="size-3.5" /> : <Spinner className="size-3.5" />}

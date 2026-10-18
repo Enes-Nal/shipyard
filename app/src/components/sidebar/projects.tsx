@@ -797,7 +797,7 @@ export function ProjectSections({ prefs, update, row }: { prefs: SidebarPrefs; u
         return (
           <div key={name} {...drop(name)} className={cn("mt-2 rounded-md", over === name && "bg-sidebar-accent/40 ring-1 ring-ring/40")}>
             <ContextRow items={() => sectionActions(name)}>
-              <div className="group/row flex h-6 items-center gap-1 rounded-md pr-1 pl-1.5 hover:bg-sidebar-accent/40">
+              <div className="group/row flex h-6 items-center gap-1 rounded-md pr-1 pl-2 hover:bg-sidebar-accent/40">
                 <button
                   type="button"
                   onClick={() => update({ collapsed: { ...prefs.collapsed, [key]: !closed } })}

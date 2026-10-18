@@ -69,7 +69,9 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
           data-testid="sidebar-sheet"
           className={cn("flex min-w-0 flex-1 flex-col", rail ? "-mt-px rounded-tl-xl border-sidebar-border border-t border-l bg-background/55" : "pl-px")}
         >
-          {!rail && places}
+          {/* The places' own gutters are the list sidebar's, from the
+              aside's edge: the sheet's pixel in comes off them. */}
+          {!rail && <div className="-ml-px">{places}</div>}
           <TeamSidebarCard />
           {noBoxes ? null : project ? <ProjectSheet key={project.id} project={project} prefs={prefs} update={update} /> : <NoProjects />}
           <SkillsNotices />
@@ -89,7 +91,7 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
 // window.
 function TopStrip() {
   return (
-    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
+    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 px-edge">
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       <Tip label={"Hide the sidebar (⌘\\)"} side="bottom" align="end">
         <button
