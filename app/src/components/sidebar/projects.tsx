@@ -558,7 +558,7 @@ const WorktreeNode = memo(function WorktreeNode({ node, depth, prefs, update }: 
           {/* Its children hang under it on a guide from its status lane.
               Up to MAX_INDENT levels step in; deeper ones line up with
               their parent. */}
-          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-[14px] pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
+          <SidebarMenuSub className={cn("mx-0 translate-x-0 gap-px py-0 pr-0", depth + 1 < MAX_INDENT ? (depth === 0 ? "ml-3.5 pl-2" : "ml-3 pl-2") : "ml-0 border-l-0 pl-0")}>
             <WorktreeNodes nodes={node.children} depth={depth + 1} prefs={prefs} update={update} />
           </SidebarMenuSub>
         </SidebarMenuSubItem>

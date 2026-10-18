@@ -146,6 +146,7 @@ function useInstallPlan(host: string, agents: string[]) {
 }
 
 function Header({ icon, title, sub, right }: { icon: ReactNode; title: ReactNode; sub?: ReactNode; right?: ReactNode }) {
+  // grid-ok: a card's header in onboarding, under the window's own h-bar strip
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b px-5" data-tauri-drag-region>
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted/50 text-muted-foreground">{icon}</span>

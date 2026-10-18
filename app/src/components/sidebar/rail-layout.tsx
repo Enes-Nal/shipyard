@@ -272,7 +272,7 @@ const ProjectTile = memo(function ProjectTile({ project: p, selected, shared }: 
             <span
               aria-hidden
               data-testid="rail-project-letter"
-              className="pointer-events-none absolute right-px bottom-px flex size-3.5 items-center justify-center rounded-[4px] border-[1.5px] border-sidebar bg-foreground font-semibold text-[9px] text-background leading-none"
+              className="pointer-events-none absolute right-0 bottom-0 flex size-4 items-center justify-center rounded-[5px] border-[1.5px] border-sidebar bg-foreground font-semibold text-tag text-background leading-none"
             >
               {(p.name.match(/[\p{L}\p{N}]/u)?.[0] ?? "?").toUpperCase()}
             </span>

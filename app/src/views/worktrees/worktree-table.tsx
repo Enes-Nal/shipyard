@@ -73,7 +73,7 @@ export function WorktreeTable({
   };
   return (
     <div ref={listRef} className="@container">
-      <div className={cn("sticky top-0 z-20 grid h-8 items-center gap-3 border-b bg-background px-4 text-label text-muted-foreground", COLS)}>
+      <div className={cn("sticky top-0 z-20 grid h-bar-pane items-center gap-3 border-b bg-background px-4 text-label text-muted-foreground", COLS)}>
         <Tip
           label={
             <span className="flex items-center gap-1.5">
@@ -105,7 +105,7 @@ export function WorktreeTable({
         const n = g.rows.filter((r) => selected.has(r.key)).length;
         return (
           <section key={g.key} aria-label={`${g.location} on ${g.box}`}>
-            <header className={cn("sticky top-8 z-10 grid h-8 items-center gap-3 border-b bg-[color-mix(in_srgb,var(--color-muted)_60%,var(--color-background))] px-4", COLS)}>
+            <header className={cn("sticky top-8 z-10 grid h-bar-pane items-center gap-3 border-b bg-[color-mix(in_srgb,var(--color-muted)_60%,var(--color-background))] px-4", COLS)}>
               <Checkbox
                 checked={n > 0 && n === g.rows.length}
                 indeterminate={n > 0 && n < g.rows.length}

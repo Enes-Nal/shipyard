@@ -183,6 +183,7 @@ function MachineList({
 
   return (
     <div className="overflow-hidden rounded-lg border">
+      {/* grid-ok: the filter field is the row, sized as a field */}
       {all.length >= FILTER_FROM && (
         <label className="flex h-9 items-center gap-2 border-b px-3 text-muted-foreground">
           <SearchIcon aria-hidden className="size-3.5 shrink-0" />

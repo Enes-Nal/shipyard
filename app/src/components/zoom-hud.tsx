@@ -32,7 +32,7 @@ export function ZoomHud() {
       data-testid="zoom-hud"
       data-shown={shown || undefined}
       className={cn(
-        "pointer-events-none fixed top-[64px] left-1/2 z-70 flex w-[244px] -translate-x-1/2 flex-col gap-[10px] rounded-lg border bg-popover px-[14px] pt-[12px] pb-[12px] text-popover-foreground shadow-xl/20",
+        "pointer-events-none fixed top-[64px] left-1/2 z-70 flex w-[244px] -translate-x-1/2 flex-col gap-[10px] rounded-lg border bg-popover px-3.5 py-3 text-popover-foreground shadow-xl/20",
         "opacity-0 transition-[opacity,translate] duration-200 ease-out -translate-y-[4px] data-shown:translate-y-0 data-shown:opacity-100",
       )}
     >

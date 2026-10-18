@@ -41,6 +41,7 @@ function Item({ icon, name, meta, children }: { icon: ReactNode; name: ReactNode
         <span className="min-w-0 truncate text-row">{name}</span>
         {meta && <span className="ml-auto shrink-0 text-meta text-muted-foreground">{meta}</span>}
       </div>
+      {/* grid-ok: the text under a heading starts after its 14px icon and gap */}
       <div className="mt-0.5 pl-[18px] text-muted-foreground">{children}</div>
     </div>
   );

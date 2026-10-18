@@ -11,10 +11,13 @@
 //   Each such height is a line that won't meet its neighbour's.
 // - A gutter in raw pixels (pl-[11px], mr-[15px]): a step nobody chose,
 //   and why two columns that should line up don't. Pixels inside calc()
-//   with a grid token (a border's pixel taken off) are fine.
+//   with a grid token (a border's pixel taken off) are fine, and so are
+//   small vertical nudges (mt-[3px]) that sit text on a control's line.
 //
-// coss ui's own parts (components/ui) keep theirs. A line in ALLOW is a
-// deliberate exception and says why.
+// coss ui's own parts (components/ui) keep theirs, and so do the
+// illustrations (components/art). A file in ALLOW, or an element with a
+// `grid-ok: why` comment on one of the two lines above it, is a deliberate
+// exception and says why.
 //
 //   node scripts/check-grid.mjs            check app/src
 //   node scripts/check-grid.mjs --count    how many each file has, most first
@@ -37,14 +40,14 @@ const ALLOW = new Map([
 const CLASS = /className=(?:"([^"]*)"|\{cn\(\s*"([^"]*)")/g;
 const OFF_BAR = /(?<![\w-])h-(?:7|7\.5|8|9|10|11|12|14|\[[0-9.]+px\])(?![\w.[-])/;
 const BAR = /(?<![\w-])(?:border-b|data-tauri-drag-region)(?![\w-])/;
-// A padding or margin in raw pixels, outside calc().
-const RAW_GUTTER = /(?<![\w-])-?(?:p|px|py|pl|pr|pt|pb|m|mx|my|ml|mr|mt|mb)-\[[0-9.]+px\](?![\w-])/g;
+// A horizontal padding or margin in raw pixels, outside calc().
+const RAW_GUTTER = /(?<![\w-])-?(?:p|px|pl|pr|m|mx|ml|mr)-\[[0-9.]+px\](?![\w-])/g;
 
 async function* files(dir) {
   for (const e of await readdir(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) {
-      if (relative(src, p) === join("components", "ui")) continue;
+      if ([join("components", "ui"), join("components", "art")].includes(relative(src, p))) continue;
       yield* files(p);
     } else if (/\.tsx$/.test(e.name)) yield p;
   }
@@ -56,6 +59,7 @@ for await (const f of files(src)) {
   if (ALLOW.has(rel)) continue;
   const lines = (await readFile(f, "utf8")).split("\n");
   lines.forEach((line, i) => {
+    if (/grid-ok:/.test(`${lines[i - 2] ?? ""} ${lines[i - 1] ?? ""} ${line}`)) return;
     // A strip's attributes can sit on the line before its className.
     const tag = `${lines[i - 1] ?? ""} ${line}`;
     for (const m of line.matchAll(CLASS)) {
