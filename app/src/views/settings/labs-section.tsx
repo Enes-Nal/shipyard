@@ -9,6 +9,9 @@ export function LabsSection() {
   const agentView = usePrefs((p) => p.agentView);
   const structured = usePrefs((p) => p.structuredClaude);
   const approvals = usePrefs((p) => p.approvals);
+
+  const columns = usePrefs((p) => p.sidebarLayout === "columns");
+
   return (
     <SettingsPage title="Labs" description="Newer ideas to try. They may change or go away.">
       <SettingsGroup>
@@ -16,7 +19,7 @@ export function LabsSection() {
           <Switch checked={labs} onCheckedChange={(on) => setPrefs({ labs: on, labsChosen: true })} />
         </SettingsRow>
         {labs && (
-          <SettingsRow label="Open agents as" description="How an agent's pane shows until you switch it. The conversation needs a box whose berthd streams transcripts.">
+          <SettingsRow label="Open agents as" description="How the pane of an agent that runs in its terminal shows until you switch it. The conversation needs a box whose berthd streams transcripts. Agents in chat always open as their conversation.">
             <Segmented
               value={agentView}
               options={[
@@ -47,6 +50,9 @@ export function LabsSection() {
             />
           </SettingsRow>
         )}
+        <SettingsRow label="Two-column sidebar" description="Your projects in one column, and the tasks of the one you pick in the next.">
+          <Switch aria-label="Two-column sidebar" data-testid="labs-sidebar-columns" checked={columns} onCheckedChange={(on) => setPrefs({ sidebarLayout: on ? "columns" : "list" })} />
+        </SettingsRow>
       </SettingsGroup>
     </SettingsPage>
   );

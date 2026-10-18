@@ -4,9 +4,9 @@ import { usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 
 // Keeps each box's default for agents started without the app (another
-// agent, the CLI, a run: lib/box-defaults-core.ts) to the person's Labs
-// prefs: when a box's info loads (it comes online, the app reconnects) and
-// when the prefs change.
+// agent, the CLI, a run: lib/box-defaults-core.ts) structured, in the mode
+// Settings › Agents › Permissions names: when a box's info loads (it comes
+// online, the app reconnects) and when Permissions changes.
 
 type Info = BoxInfo & { agent_defaults?: AgentDefaults };
 
@@ -47,7 +47,7 @@ export function startBoxDefaultsSync(): () => void {
     if (s.boxes !== prev.boxes || s.client !== prev.client) sync();
   });
   const unsubPrefs = usePrefs.subscribe((p, prev) => {
-    if (p.labs !== prev.labs || p.structuredClaude !== prev.structuredClaude || p.approvals !== prev.approvals) sync();
+    if (p.approvals !== prev.approvals) sync();
   });
   sync();
   return () => {

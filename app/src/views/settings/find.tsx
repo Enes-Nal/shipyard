@@ -15,11 +15,11 @@ const INDEX: { id: SettingsSectionId; title: string; words: string }[] = [
   { id: "boxes", title: "Boxes", words: "servers machines berthd update routes sessions browsers offline reconnect pair" },
   { id: "computers", title: "Computers", words: "laptops this mac join link pair remove" },
   { id: "phone", title: "Phone", words: "mobile qr code pairing ntfy push" },
-  { id: "agents", title: "Agents", words: "claude code codex models skills turn check cli install" },
+  { id: "agents", title: "Agents", words: "claude code codex models skills turn check cli install permissions bypass ask approvals allow chat" },
   { id: "integrations", title: "Integrations", words: "linear github slack webhooks connect" },
   { id: "plugins", title: "Plugins", words: "marketplace install built in extensions allow" },
   { id: "shortcuts", title: "Shortcuts", words: "keyboard keys bindings hotkeys" },
-  { id: "labs", title: "Labs", words: "experiments early harbour conversations structured agents diagnostics" },
+  { id: "labs", title: "Labs", words: "experiments early harbour conversations diagnostics" },
   { id: "about", title: "About", words: "version update release notes documentation diagnostics" },
   { id: "developer", title: "Developer", words: "reset reload mock sample data onboarding connection build" },
 ];

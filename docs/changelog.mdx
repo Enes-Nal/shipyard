@@ -26,6 +26,16 @@ again.
   their right ends sit on the same lines, and each full page's content
   starts right under its title. Full pages now title themselves in the top
   bar, at the size of a window's title.
+- **Agents run in chat, with nothing to turn on.** New Claude Code, Codex,
+  OpenCode, Gemini CLI, Cursor Agent and oh-my-pi agents open as a
+  conversation that the box drives directly, whether Labs is on or off.
+  The *Structured agents* switch is gone from Settings → Labs, and
+  *Permissions* (Bypass or Ask) moved to Settings → Agents and models.
+  Agents that other agents, the CLI, runs and automations start run in chat
+  too, asking for each permission on a box Shipyard hasn't reached yet.
+  Claude Code's own terminal is still one click away in its pane, and a box
+  too old for chat keeps running agents in their terminals until you
+  upgrade it. [Agents in chat](/guides/structured-agents) has the details.
 - **Attempts on a repository GitHub doesn't host finish with your pick.**
   On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
   turned on failed the run at `gh pr create` and left every worktree
