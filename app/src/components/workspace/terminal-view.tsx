@@ -15,11 +15,14 @@ import { tryNow } from "@/lib/reconnect";
 import { useStore } from "@/lib/store";
 import { openEditor } from "@/components/editors/open";
 import { findPaths, resolveIn } from "@/lib/editor-paths";
+import { openFile } from "@/lib/files";
+import { isMarkdown } from "@/lib/md-links";
 import { OVERLAYS } from "@/lib/overlays";
 import { EchoPredictor } from "@/lib/predict-overlay";
 import { createTerminal, type TermHandle } from "@/lib/terminal";
 import { terminalKeyInput } from "@/lib/terminal-keys";
 import { cn } from "@/lib/utils";
+import { hereRef } from "@/lib/workspaces";
 import { WheelBatcher, wheelPixels } from "@/lib/wheel";
 
 type ConnState = "connecting" | "open" | "reconnecting" | "offline" | "ended";
@@ -161,7 +164,9 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
         const r = root.current?.getBoundingClientRect();
         setLinkHint(at && r ? { x: at.x - r.left, y: at.y - r.top, left: at.x - r.left > r.width - 160, up: at.y - r.top > r.height - 48 } : undefined);
       });
-      // ⌘-click a file path to open it at its line in your editor.
+      // ⌘-click a file path to open it at its line in your editor, or a
+      // Markdown file of the worktree as a page in a File tab (⌘⇧-click
+      // takes that to your editor too).
       t.registerLinkFinder((line) => {
         const dir = dirRef.current;
         if (!dir) return [];
@@ -174,7 +179,11 @@ export function TerminalView({ box, session, agent, command, wsKey, tab, pane, v
               end: m.end,
               activate: (e: MouseEvent) => {
                 if (!e.metaKey && !e.ctrlKey) return;
-                void openEditor({ box, path: dir, file, line: m.line, col: m.col });
+                const ref = hereRef();
+                const top = ref?.box === box ? ref.path.replace(/\/$/, "") : undefined;
+                const rel = top && file.startsWith(`${top}/`) ? file.slice(top.length + 1) : undefined;
+                if (rel && isMarkdown(rel) && !e.shiftKey) openFile(rel, "tab");
+                else void openEditor({ box, path: dir, file, line: m.line, col: m.col });
               },
             },
           ];
