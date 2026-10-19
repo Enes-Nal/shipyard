@@ -18,7 +18,7 @@ import (
 // never), asks a question to "ask me", works until interrupted on "work",
 // and resumes a thread by its id.
 const fakeCodexAppServer = `#!/usr/bin/env python3
-import json, sys
+import json, os, sys
 T = "00000000-0000-7000-8000-0000000000d1"
 n = [0]
 srv = [0]
@@ -82,6 +82,13 @@ def handle(m):
                 ok = bool(r) and r.get("decision") in ("accept", "acceptForSession")
             note("item/completed", {"item": {"type": "commandExecution", "id": i, "command": "/bin/zsh -lc 'pnpm test'", "status": "completed" if ok else "declined", "exitCode": 0 if ok else None, "aggregatedOutput": "12 passed" if ok else None}})
             say("The tests pass." if ok else "I didn't run them.")
+            finish()
+        elif text == "edit the notes":
+            i = uid()
+            change = {"type": "fileChange", "id": i, "changes": [{"path": os.getcwd() + "/notes.txt", "kind": {"type": "update"}, "diff": "@@ -1 +1 @@\n-old\n+new\n"}]}
+            note("item/started", {"item": dict(change, status="inProgress")})
+            note("item/completed", {"item": dict(change, status="completed")})
+            say("Edited the notes.")
             finish()
         elif text == "ask me":
             r = ask("item/tool/requestUserInput", {"turnId": state["turn"], "itemId": "ask-item", "questions": [{"id": "drink", "header": "Drink", "question": "Tea or coffee?", "isOther": False, "isSecret": False, "options": [{"label": "Tea", "description": ""}, {"label": "Coffee", "description": ""}]}]})
@@ -179,6 +186,36 @@ func TestAStructuredCodexSessionIsDrivenThroughItsAppServer(t *testing.T) {
 	call(t, c, "POST", "/v1/sessions/"+name+"/send", "", map[string]any{"text": "1", "enter": false, "when": "now", "force": true}, nil)
 	until("the approved command's reply", said("The tests pass."))
 	until("its turn's end", state("finished"))
+
+	// An edit, then each step opened up as the chat's cards do: from
+	// berthd's own log of the app server, where the ids are the items'.
+	call(t, c, "POST", "/v1/sessions/"+name+"/send", "", map[string]any{"text": "edit the notes", "when": "now"}, nil)
+	until("the edit's reply", said("Edited the notes."))
+	until("its turn's end", state("finished"))
+	var res transcript.Result
+	call(t, c, "GET", "/v1/sessions/"+name+"/transcript?since=0", "", nil, &res)
+	edit, run := "", ""
+	for _, it := range res.Items {
+		if it.Kind == "edit" && it.File == "notes.txt" {
+			edit = it.Tool
+		}
+		for _, tc := range it.Items {
+			if strings.Contains(tc.Target, "pnpm test") {
+				run = tc.ID
+			}
+		}
+	}
+	if edit == "" || run == "" {
+		t.Fatalf("no edit or command to open: %+v", res.Items)
+	}
+	var change transcript.ToolDetail
+	if status := call(t, c, "GET", "/v1/sessions/"+name+"/transcript/tool/"+edit, "", nil, &change); status != 200 || change.File != "notes.txt" || !strings.Contains(change.New, "+new") {
+		t.Fatalf("the edit's change: %d %+v", status, change)
+	}
+	var cmd transcript.ToolDetail
+	if status := call(t, c, "GET", "/v1/sessions/"+name+"/transcript/tool/"+run, "", nil, &cmd); status != 200 || cmd.Command != "pnpm test" || cmd.Output != "12 passed" {
+		t.Fatalf("the command's output: %d %+v", status, cmd)
+	}
 
 	// Bypass: the turn says so, and Codex asks nothing.
 	var mode map[string]string
