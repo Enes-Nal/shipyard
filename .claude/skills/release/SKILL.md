@@ -30,10 +30,10 @@ git commit -am "release: v$V"
 
 If the release has an entry in `app/src/lib/whats-new-releases.ts`, its version must match.
 
-Check CI is green on the commit (`gh pr checks` or `gh run list`). Then the user runs:
+The release PR runs no CI of its own (no `run-ci` label needed): the tag's run checks everything before anything is published. Once it is merged, the user tags the merged commit:
 
 ```sh
-git push origin main && git tag -a "v$V" -m "Shipyard v$V" && git push origin "v$V"
+git fetch origin && git tag -a "v$V" -m "Shipyard v$V" origin/main && git push origin "v$V"
 ```
 
 ## Retag after a failure
