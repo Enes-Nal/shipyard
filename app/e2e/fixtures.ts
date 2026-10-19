@@ -138,14 +138,7 @@ export const test = base.extend<{ app: App }>({
       async openWorktree(w) {
         await app.leaveSettings();
         const row = app.worktree(w);
-        // A real fleet folds worktrees with nothing going on under
-        // "Show N older" (smoke:live): unfold them to find this one.
-        const more = page.getByText(/^Show \d+ older$/);
-        // Both may show at once: the row, and a fold with others under it.
-        await expect(row.or(more).first()).toBeVisible();
-        if (!(await row.isVisible())) {
-          while ((await more.count()) > 0 && !(await row.isVisible())) await more.first().click();
-        }
+        await expect(row).toBeVisible();
         // On its title: a narrow row's middle can be under its + and ⋯.
         await row.click({ position: { x: 32, y: 12 } });
         await expect(row).toHaveAttribute("data-active", "true");
@@ -193,10 +186,7 @@ export async function agentWorktree(app: App, mock: string): Promise<string> {
   if (!live) return mock;
   if (process.env.BERTH_E2E_WORKTREE) return process.env.BERTH_E2E_WORKTREE;
   const rows = app.page.locator("[data-testid=worktree-row]");
-  const more = app.page.getByText(/^Show \d+ older$/);
-  await expect(rows.or(more).first()).toBeVisible();
-  // Worktrees with nothing going on are folded away: unfold them all.
-  while ((await more.count()) > 0) await more.first().click();
+  await expect(rows.first()).toBeVisible();
   for (const row of await rows.all()) {
     if (await row.locator("svg.lucide-asterisk, [role=img]").count()) return (await row.getAttribute("data-worktree")) ?? mock;
   }
