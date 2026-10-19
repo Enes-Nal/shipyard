@@ -127,6 +127,9 @@ func merge(repo, local RepoConfig) RepoConfig {
 	if local.ReviewButton != nil {
 		out.ReviewButton = local.ReviewButton
 	}
+	if local.KeepMain != nil {
+		out.KeepMain = local.KeepMain
+	}
 	return out
 }
 
