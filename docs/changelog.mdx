@@ -11,6 +11,17 @@ again.
 
 ## Unreleased
 
+- **Answers from the question card reach Claude Code, long ones too.**
+  When Claude asked several questions with lists in them, or you wrote a
+  long answer, the card's answers often stopped before the first one and
+  left Claude's own form untouched: an agent nobody has open has a screen
+  too short for the form. Now the box makes room while it answers, then
+  puts the screen back.
+
+- **Answers that don't go are kept.** If the box still can't fill in
+  Claude's form, the card keeps every answer and says why, with Retry and
+  Copy answers, and Claude's own screen opens under it to finish there.
+
 - **⌘-click a Markdown path in a terminal to read it here.** A `.md` file
   of the worktree, such as one an agent names in its reply, opens in a File
   tab as a page. ⌘⇧-click sends it to your editor, as ⌘-click does with

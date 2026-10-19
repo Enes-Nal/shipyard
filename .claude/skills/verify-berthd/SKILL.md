@@ -5,7 +5,7 @@ description: Prove a change to the Shipyard app works the way a person sees it -
 
 # Verify the Shipyard app
 
-The app (`app/`) is what people touch. Its production build runs in a browser on the mock fixtures (`?mock=1`, `src/lib/mock*.ts`, synthetic "acme" data), with no laptop agent and no box. That is the surface this skill drives. The Go daemons (`berthd`, `berth`) are verified by `go test -race ./...`; a box-side change also needs a run on a real box, which this skill doesn't cover.
+The app (`app/`) is what people touch. Its production build runs in a browser on the mock fixtures (`?mock=1`, `src/lib/mock*.ts`, synthetic "acme" data), with no laptop agent and no box. That is the surface this skill drives. The Go daemons (`berthd`, `berth`) are verified by `go test -race ./...`; a box-side change also needs a run on a real box: `scripts/dev-box.sh up` starts a box and an agent of this checkout beside whatever Shipyard already runs on the machine, and `drive.mjs --agent` drives the same build against it (see [features/chat-questions.md](features/chat-questions.md)).
 
 The e2e suite (`app/e2e`, see `.claude/skills/e2e-tests`) asserts. This skill **shows**: it drives the same build through a scenario and keeps the evidence for a PR or a person.
 
@@ -37,7 +37,7 @@ Read only. It checks the port answers with the app, that the PID in `/tmp/verify
 node .claude/skills/verify-berthd/scripts/drive.mjs <scenario> --port $PORT [--out DIR]
 ```
 
-`<scenario>` is a file in `scripts/scenarios/` (by name, without `.mjs`) or a path. The driver:
+`<scenario>` is a file in `scripts/scenarios/` (by name, without `.mjs`) or a path. With `--agent http://127.0.0.1:9378` and `VERIFY_BERTH_TOKEN` in the environment it opens the app on that laptop agent instead of the mock (a scenario that needs it exports `live = true`). The driver:
 
 - opens `http://localhost:$PORT/?mock=1` at 1440×900 in dark mode, and waits until the sidebar's `nav-home` is there;
 - refuses every request to the laptop agent's ports (1377-1379), as the e2e fixtures do;

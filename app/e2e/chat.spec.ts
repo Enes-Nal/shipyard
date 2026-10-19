@@ -186,6 +186,45 @@ test("a form of questions steps through to a review and submits", async ({ app }
   await expect(app.chat.getByText("I'll plan it for Next minor")).toBeVisible();
 });
 
+test("answers the box couldn't deliver stay in the form, to retry or copy", async ({ app }) => {
+  mockOnly("answers a question on a box");
+  await app.open({ params: { view: "conversation", scene: "answer-stuck" } });
+  await app.openWorktree("gpu/shop");
+  const form = app.chat.getByTestId("question-form");
+  const next = form.getByRole("button", { name: /^(Next|Review|Submit answers)$/ }).last();
+  const words = "Ship it Thursday only if the payment provider's sandbox is green by Wednesday noon; otherwise hold it for QA and tell support before anything else.";
+  await form.getByRole("radio", { name: "Something else" }).click();
+  await form.getByRole("textbox", { name: "Your own answer" }).fill(words);
+  await next.click();
+  await form.getByRole("checkbox", { name: /Unit tests/ }).click();
+  await next.click();
+  await form.getByRole("radio", { name: /bailey/ }).click();
+  await next.click();
+  await expect(next).toHaveText(/Submit answers/);
+  await next.click();
+
+  // It didn't take: the form stays, with every answer and why.
+  const failed = form.getByTestId("question-form-failed");
+  await expect(failed).toBeVisible();
+  await expect(failed).toContainText("Your answers didn't reach Claude");
+  await expect(failed).toContainText("Claude's screen doesn't show its questions");
+  await expect(form).toContainText("Review your answers");
+  await expect(form).toContainText(words);
+  await expect(form).toContainText("Unit tests");
+
+  // Copy answers: each under its question's name, ready to paste.
+  await app.context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await failed.getByRole("button", { name: "Copy answers" }).click();
+  await expect.poll(() => app.page.evaluate(() => navigator.clipboard.readText())).toBe(`Release: ${words}\nChecks: Unit tests\nReviewer: bailey`);
+
+  // Retry goes, and the form becomes what was answered.
+  await failed.getByRole("button", { name: "Retry" }).click();
+  await expect(form).toHaveCount(0);
+  const answered = app.chat.locator("[data-testid=chat-item][data-kind=question]");
+  await expect(answered).toContainText("Answered 3 questions");
+  await expect(answered).toContainText(words);
+});
+
 test("the artifacts chip lists the pages an agent published", async ({ app }) => {
   mockOnly();
   await app.openWorktree("devl/search-perf");

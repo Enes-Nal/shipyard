@@ -1,13 +1,16 @@
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ListChecksIcon, PencilIcon, SendHorizontalIcon, SquareTerminalIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CopyIcon, ListChecksIcon, PencilIcon, RotateCwIcon, SendHorizontalIcon, SquareTerminalIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 
+import { ErrorText } from "@/components/error-note";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Radio, RadioGroup } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
-import { complete, type Question, type QuestionAnswer, shownAnswer } from "@/lib/questions";
+import { copyText } from "@/lib/clipboard";
+import { answersText, complete, type Question, type QuestionAnswer, shownAnswer } from "@/lib/questions";
 import type { TranscriptItem } from "@/lib/transcript";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +26,8 @@ export interface QuestionsActions {
   live?: string;
   // The chat can fill in the form: Claude Code, on a box that answers.
   canAnswer: boolean;
-  // Why it couldn't, when it tried: the person finishes in the agent's
-  // own screen, open below.
+  // Why it couldn't, when it tried: the form keeps every answer, to try
+  // again or copy, and the agent's own screen opens below to finish in.
   stuck?: string;
   submit(tool: string, answers: QuestionAnswer[]): Promise<void>;
 }
@@ -38,13 +41,14 @@ export function QuestionCard({ it, who }: { it: Item; who: string }) {
   const [sent, setSent] = useState<QuestionAnswer[]>();
   if (it.done) return <Answered it={it} />;
   const live = !!ctx && !!it.tool && ctx.live === it.tool;
-  if (sent && !ctx?.stuck) return <Sending it={it} answers={sent} who={who} />;
+  if (sent) return <Sending it={it} answers={sent} who={who} />;
   if (!live) return <Asked it={it} />;
-  if (!ctx.canAnswer || ctx.stuck) return <InTerminal it={it} who={who} reason={ctx.stuck} />;
+  if (!ctx.canAnswer) return <InTerminal it={it} who={who} />;
   return (
     <Form
       it={it}
       who={who}
+      stuck={ctx.stuck}
       onSubmit={async (answers) => {
         await ctx.submit(it.tool ?? "", answers);
         setSent(answers);
@@ -139,7 +143,7 @@ function Asked({ it }: { it: Item }) {
 
 // The questions, when only the agent's own screen can answer them: its
 // terminal opens under the conversation.
-function InTerminal({ it, who, reason }: { it: Item; who: string; reason?: string }) {
+function InTerminal({ it, who }: { it: Item; who: string }) {
   return (
     <Card className="cv-in border-warning/60">
       <div className="flex flex-col gap-3 p-4">
@@ -166,7 +170,7 @@ function InTerminal({ it, who, reason }: { it: Item; who: string; reason?: strin
       </div>
       <div className="flex items-center gap-2 border-t px-4 py-3 text-muted-foreground text-body">
         <SquareTerminalIcon className="size-3.5 shrink-0" />
-        <span className="min-w-0">{reason ? `${reason}.` : `Answer in ${who}'s screen below.`}</span>
+        <span className="min-w-0">Answer in {who}'s screen below.</span>
       </div>
     </Card>
   );
@@ -178,7 +182,7 @@ type Draft = { picks: string[]; other: string; otherOn: boolean };
 
 const toAnswer = (d: Draft): QuestionAnswer => ({ picks: d.picks, other: d.otherOn ? d.other.replace(/\s+/g, " ").trim() : "" });
 
-function Form({ it, who, onSubmit }: { it: Item; who: string; onSubmit(answers: QuestionAnswer[]): Promise<void> }) {
+function Form({ it, who, stuck, onSubmit }: { it: Item; who: string; stuck?: string; onSubmit(answers: QuestionAnswer[]): Promise<void> }) {
   const qs = it.questions;
   const [drafts, setDrafts] = useState<Draft[]>(() => qs.map(() => ({ picks: [], other: "", otherOn: false })));
   // One question with one pick goes as soon as it is picked, as the
@@ -202,19 +206,19 @@ function Form({ it, who, onSubmit }: { it: Item; who: string; onSubmit(answers: 
     body.current?.querySelector<HTMLElement>('[role=radio][tabindex="0"], [role=radio], [role=checkbox], textarea, input:not([type=hidden]):not([aria-hidden=true]), button:not([disabled])')?.focus({ preventScroll: true });
   }, [step]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
   const answers = drafts.map(toAnswer);
+  // The box couldn't fill in the agent's form: nothing here is lost.
+  const failed = busy ? undefined : stuck;
   const done = qs.map((q, i) => complete(q, answers[i]));
   const review = reviewed && step === qs.length;
   const q = qs[Math.min(step, qs.length - 1)];
   const set = (i: number, f: (d: Draft) => Draft) => setDrafts((ds) => ds.map((d, j) => (j === i ? f(d) : d)));
   const submit = async () => {
     setBusy(true);
-    setError(undefined);
     try {
       await onSubmit(answers);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      // Why is the pane's (stuck), for this wait.
       setBusy(false);
     }
   };
@@ -269,6 +273,28 @@ function Form({ it, who, onSubmit }: { it: Item; who: string; onSubmit(answers: 
           <Step key={step} q={q} d={drafts[step]} disabled={busy} onChange={(f) => set(step, f)} onEnter={next} />
         )}
       </div>
+      {failed && (
+        <div className="border-t px-4 py-3">
+          <Alert variant="error" data-testid="question-form-failed">
+            <TriangleAlertIcon />
+            <AlertTitle>Your answers didn't reach {who}</AlertTitle>
+            <AlertDescription>
+              <ErrorText text={failed} />
+              <span className="text-foreground">They're kept here: try again, or copy them and finish in {who}'s screen below.</span>
+            </AlertDescription>
+            <AlertAction>
+              <Button size="sm" variant="outline" onClick={() => void submit()}>
+                <RotateCwIcon />
+                Retry
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => void copyText(answersText(qs, answers), "Answers copied")}>
+                <CopyIcon />
+                Copy answers
+              </Button>
+            </AlertAction>
+          </Alert>
+        </div>
+      )}
       <div className="flex items-center gap-2 border-t px-4 py-3">
         {steps > 1 && (
           <Button size="sm" variant="ghost" disabled={busy || step === 0} onClick={() => go(step - 1)}>
@@ -276,9 +302,7 @@ function Form({ it, who, onSubmit }: { it: Item; who: string; onSubmit(answers: 
             Back
           </Button>
         )}
-        <span className={cn("min-w-0 flex-1 truncate text-meta", error ? "text-destructive-foreground" : "text-muted-foreground")} role={error ? "alert" : undefined}>
-          {error ? error : busy ? `Answering in ${who}'s form…` : review ? "Check your answers, then submit" : `${who} waits for your answer`}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">{busy ? `Answering in ${who}'s form…` : failed ? "Not sent yet" : review ? "Check your answers, then submit" : `${who} waits for your answer`}</span>
         <Button size="sm" disabled={busy || (review ? !done.every(Boolean) : !done[step])} onClick={next}>
           {busy ? <Spinner className="size-3.5" /> : last ? <SendHorizontalIcon /> : null}
           {last ? (reviewed ? "Submit answers" : "Submit") : step === qs.length - 1 ? "Review" : "Next"}
