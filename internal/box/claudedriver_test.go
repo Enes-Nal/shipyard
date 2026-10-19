@@ -72,18 +72,30 @@ def transcript(sid):
     d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"), "projects", re.sub(r"[^A-Za-z0-9]", "-", os.getcwd()))
     os.makedirs(d, exist_ok=True)
     return os.path.join(d, sid + ".jsonl")
+# As Claude Code does: --resume finds only a conversation it saved, which
+# it does at its first prompt; --session-id names one it hasn't.
+if "--resume" in sys.argv:
+    S = sys.argv[sys.argv.index("--resume") + 1]
+    if not os.path.exists(transcript(S)):
+        print("No conversation found with session ID: " + S, file=sys.stderr, flush=True)
+        if "-p" in sys.argv:
+            print(json.dumps({"type": "result", "subtype": "error_during_execution", "is_error": True, "num_turns": 0, "session_id": S}), flush=True)
+        sys.exit(1)
+elif "--session-id" in sys.argv:
+    S = sys.argv[sys.argv.index("--session-id") + 1]
+    if os.path.exists(transcript(S)):
+        print("Session ID " + S + " is already in use.", file=sys.stderr, flush=True)
+        sys.exit(1)
 if "-p" not in sys.argv:
-    # Claude Code's own screen, resumed: a turn typed there, then /exit.
-    sid = sys.argv[sys.argv.index("--resume") + 1]
-    with open(transcript(sid), "a") as f:
-        f.write(json.dumps({"type": "user", "message": {"role": "user", "content": "typed in the terminal"}, "uuid": "00000000-0000-4000-8000-0000000000f1", "sessionId": sid, "timestamp": "2026-10-13T12:00:00Z"}) + "\n")
-        f.write(json.dumps({"type": "assistant", "message": {"id": "msg_t", "role": "assistant", "content": [{"type": "text", "text": "answered in the terminal"}]}, "uuid": "00000000-0000-4000-8000-0000000000f2", "sessionId": sid, "timestamp": "2026-10-13T12:00:01Z"}) + "\n")
-    print("Claude Code, resumed " + sid, flush=True)
+    # Claude Code's own screen: a turn typed there, then /exit.
+    with open(transcript(S), "a") as f:
+        f.write(json.dumps({"type": "user", "message": {"role": "user", "content": "typed in the terminal"}, "uuid": "00000000-0000-4000-8000-0000000000f1", "sessionId": S, "timestamp": "2026-10-13T12:00:00Z"}) + "\n")
+        f.write(json.dumps({"type": "assistant", "message": {"id": "msg_t", "role": "assistant", "content": [{"type": "text", "text": "answered in the terminal"}]}, "uuid": "00000000-0000-4000-8000-0000000000f2", "sessionId": S, "timestamp": "2026-10-13T12:00:01Z"}) + "\n")
+    print("Claude Code, " + ("resumed " if "--resume" in sys.argv else "new ") + S, flush=True)
     for line in sys.stdin:
         if "/exit" in line:
             sys.exit(0)
     sys.exit(0)
-open(transcript(S), "a").close()
 mode = sys.argv[sys.argv.index("--permission-mode") + 1]
 n = [0]
 def out(d):
@@ -120,12 +132,16 @@ def wait_for(rid):
             control_reply(m)
             if m["request"]["subtype"] == "interrupt":
                 return None
+# SessionStart hooks run before any prompt and already carry the session.
+out({"type": "system", "subtype": "hook_started", "hook_event": "SessionStart", "hook_name": "SessionStart:startup"})
+out({"type": "system", "subtype": "hook_response", "hook_event": "SessionStart", "hook_name": "SessionStart:startup", "outcome": "success"})
 first = True
 for line in sys.stdin:
     m = json.loads(line)
     if m["type"] == "control_request":
         control_reply(m)
         continue
+    open(transcript(S), "a").close()
     text = m["message"]["content"]
     out({"type": "user", "message": m["message"], "isReplay": True, "parent_tool_use_id": None, "uuid": uid()})
     if first:
@@ -608,6 +624,106 @@ func TestAStructuredSessionGoesToItsTerminalAndBack(t *testing.T) {
 	}
 	if strings.Join(order, " | ") != "echo: hello | answered in the terminal | echo: back again" {
 		t.Fatalf("the conversation reads %q", order)
+	}
+}
+
+// Before its first prompt, Claude Code has named its conversation (its
+// SessionStart hooks say so) but saved nothing: --resume would find nothing
+// and quit, so the terminal starts it under its ID.
+func TestAStructuredSessionNeverPromptedGoesToItsTerminalAndBack(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("the stand-in Claude needs python3")
+	}
+	bin := t.TempDir()
+	os.WriteFile(filepath.Join(bin, "claude"), []byte(fakeStreamClaude), 0o755)
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
+	exe, _ := os.Executable()
+	states := &Turns{}
+	c, bus := servedBox(t, func(b *Box) {
+		b.Turns = states
+		b.ConversationsDir = conversationsDir(t)
+		b.AgentHost = []string{"env", "BERTH_TEST_AGENT_HOST=1", exe}
+	})
+	states.Attach(bus)
+	repo := gitRepo(t)
+	call(t, c, "POST", "/v1/locations", "", map[string]string{"name": "acme", "path": repo}, nil)
+	var sess Session
+	call(t, c, "POST", "/v1/sessions", "", map[string]any{"location": "acme", "agent": "claude", "driver": "claude"}, &sess)
+	t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+sess.Name, "", nil, nil) })
+	name := sess.Name
+	until := func(what string, ok func() bool) {
+		t.Helper()
+		deadline := time.Now().Add(15 * time.Second)
+		for !ok() {
+			if time.Now().After(deadline) {
+				t.Fatalf("%s never happened", what)
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	screen := func() string {
+		var s struct{ Screen string }
+		call(t, c, "GET", "/v1/sessions/"+name+"/screen", "", nil, &s)
+		return s.Screen
+	}
+	// Until its hooks have named the conversation, there is none to move.
+	var moved Session
+	until("the move to its terminal", func() bool {
+		return call(t, c, "POST", "/v1/sessions/"+name+"/switch", "", map[string]string{"to": "terminal"}, &moved) == 200
+	})
+	until("Claude Code's own screen", func() bool { return strings.Contains(screen(), "Claude Code, new 00000000-0000-4000-8000-0000000000c1") })
+	if s := screen(); strings.Contains(s, "No conversation found") {
+		t.Fatalf("the terminal couldn't open the conversation:\n%s", s)
+	}
+
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/switch", "", map[string]string{"to": "chat"}, &moved); status != 200 {
+		t.Fatalf("to chat: %d", status)
+	}
+	said := func(text string) func() bool {
+		return func() bool {
+			var res transcript.Result
+			call(t, c, "GET", "/v1/sessions/"+name+"/transcript?since=0", "", nil, &res)
+			for _, it := range res.Items {
+				if strings.Contains(it.Text, text) {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	until("the terminal's turn in the chat", said("answered in the terminal"))
+	if status := call(t, c, "POST", "/v1/sessions/"+name+"/send", "", map[string]any{"text": "back again", "when": "now"}, nil); status != 200 {
+		t.Fatalf("send after coming back: %d", status)
+	}
+	until("a reply after coming back", said("echo: back again"))
+}
+
+// A conversation is resumed once something was said in it; before, it
+// starts under its ID.
+func TestAClaudeConversationIsResumedOnlyOnceSomethingWasSaid(t *testing.T) {
+	b := &Box{AgentHost: []string{"berthd", "agent-host"}}
+	dir := t.TempDir()
+	launch := func() string {
+		t.Helper()
+		l, err := b.launchClaudeIn(AgentPreset{ID: "claude", Command: "claude"}, "", "", "", "sid-1", dir, "/tmp/s")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return l.command
+	}
+	log, err := agenthost.OpenLog(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer log.Close()
+	log.Append(agenthost.Entry{Dir: "out", Data: json.RawMessage(`{"type":"system","subtype":"hook_response","session_id":"sid-1"}`)})
+	if cmd := launch(); !strings.Contains(cmd, "--session-id 'sid-1'") || strings.Contains(cmd, "--resume") {
+		t.Fatalf("never prompted, it starts with %q", cmd)
+	}
+	log.Append(agenthost.Entry{Dir: "in", Data: json.RawMessage(`{"type":"user","message":{"role":"user","content":"hi"}}`)})
+	if cmd := launch(); !strings.Contains(cmd, "--resume 'sid-1'") {
+		t.Fatalf("prompted, it starts with %q", cmd)
 	}
 }
 

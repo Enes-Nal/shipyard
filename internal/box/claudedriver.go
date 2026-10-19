@@ -119,7 +119,13 @@ func (b *Box) launchClaudeIn(p AgentPreset, model, effort, mode, resume, dir, so
 		words = append(words, shellQuote(f))
 	}
 	if resume != "" {
-		words = append(words, "--resume", shellQuote(resume))
+		// A conversation never prompted, here or in its terminal, has
+		// nothing saved to resume (toTerminal): it starts under its ID.
+		flag := "--resume"
+		if !prompted(dir) {
+			flag = "--session-id"
+		}
+		words = append(words, flag, shellQuote(resume))
 	}
 	return structuredLaunch{
 		mode: mode, model: model, effort: effort, agent: "claude",

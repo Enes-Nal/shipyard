@@ -24,8 +24,10 @@ import (
 // time:
 //
 //   - To the terminal: the host stops Claude (it ends at its stdin's end),
-//     and the pane runs `claude --resume <its session>`: the full TUI, for
-//     what only it does (/login, /resume, /memory, its own screen).
+//     and the pane runs `claude --resume <its session>` (--session-id
+//     before its first prompt, when Claude has saved nothing yet): the
+//     full TUI, for what only it does (/login, /resume, /memory, its own
+//     screen).
 //   - Back to the chat: the TUI is told /exit, what was said in it is copied
 //     from Claude Code's transcript into berthd's log, and the host starts
 //     again with --resume.
@@ -124,11 +126,21 @@ func (b *Box) toTerminal(r *http.Request, sess Session) error {
 		return httpError{http.StatusConflict, "Claude hasn't started its conversation yet: send it something first"}
 	}
 	// Where its transcript stands now: what the terminal adds is past it.
+	// Claude Code names a conversation at its start (its SessionStart hooks
+	// carry the ID) but saves it only at its first prompt: until then
+	// --resume finds nothing and quits, so the terminal starts it under its
+	// ID instead, and everything it writes there is the terminal's.
 	handoff := ""
 	if _, path, _ := b.transcriptFile(ctx, sess, nil); path != "" {
 		if st, err := os.Stat(path); err == nil {
 			handoff = strconv.FormatInt(st.Size(), 10) + " " + path
 		}
+	}
+	resume := " --resume "
+	if home := b.claudeHomeFor(ctx, sess); claudeFile(home, sess.Dir, sid) == "" {
+		// Where it will write: the folder named by the real path.
+		folders := claudeFolders(home, sess.Dir)
+		resume, handoff = " --session-id ", "0 "+filepath.Join(folders[len(folders)-1], sid+".jsonl")
 	}
 	stopCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -136,7 +148,7 @@ func (b *Box) toTerminal(r *http.Request, sess Session) error {
 		return err
 	}
 	b.claude().forget(sess.Name)
-	command := b.claudePreset(ctx, sess).Command + " --resume " + shellQuote(sid)
+	command := b.claudePreset(ctx, sess).Command + resume + shellQuote(sid)
 	if bypass && os.Getuid() != 0 {
 		command += " --permission-mode bypassPermissions"
 	} else if mode != "default" {
@@ -227,6 +239,23 @@ func (b *Box) importTerminalTurns(ctx context.Context, sess Session) error {
 			return nil
 		}
 	}
+}
+
+// prompted says whether a conversation's log has had anything said in it:
+// a prompt sent to Claude, or turns copied in from its terminal or a past
+// conversation. Before that, Claude Code has saved nothing to resume.
+func prompted(convDir string) bool {
+	found := errors.New("found")
+	err := agenthost.ReadLog(filepath.Join(convDir, agenthost.LogName), 0, func(e agenthost.Entry) error {
+		var l struct {
+			Type string `json:"type"`
+		}
+		if e.Event == "imported" || (e.Dir == "in" && json.Unmarshal(e.Data, &l) == nil && l.Type == "user") {
+			return found
+		}
+		return nil
+	})
+	return errors.Is(err, found)
 }
 
 // lastSessionID is the Claude conversation a log last spoke in.
