@@ -17,6 +17,11 @@ export function agentOf(s: Session): string | undefined {
   return program && AGENTS.includes(program) ? program : undefined;
 }
 
+// atQuestion says an agent shown as waiting waits on a question of its own,
+// on its screen or from its hooks. Turn check's wait (soft_wait) is not one:
+// its question is its last message, and a prompt typed then is a new turn.
+export const atQuestion = (s: Session | undefined, state: string | undefined): boolean => state === "waiting" && !s?.soft_wait;
+
 export function sessionState(s: Session, stats?: Stats): SessionState {
   if (s.exited) return "exited";
   // Never another agent's state in the same worktree.

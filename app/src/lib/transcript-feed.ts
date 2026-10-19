@@ -6,7 +6,7 @@ import { noteSignals } from "@/lib/chat-signals";
 import { keyOf, offOf, useConversations } from "@/lib/conversation-store";
 import { dropOlder, historyApi } from "@/lib/history";
 import { useEventLog } from "@/lib/events";
-import { choicesIn, type Choice, keysOnly, questionFormIn } from "@/lib/screen";
+import { askIn, type Choice } from "@/lib/screen";
 import { useStore } from "@/lib/store";
 import { useTranscriptPings } from "@/lib/transcript-pings";
 import type { Artifact, CrewMember, TranscriptItem } from "@/lib/transcript";
@@ -265,23 +265,11 @@ export function useAsk(box: string, session: string, waiting: boolean, since?: s
       .screen(client, box, session)
       .then((r) => {
         if (!alive) return;
-        const screen = r.screen ?? "";
-        const choices = choicesIn(screen);
-        const form = questionFormIn(screen);
-        if (!choices.length && !form && ++tries < 4) timer = window.setTimeout(() => void read(), 600);
-        const lines = screen.split("\n").map((l) => l.trim());
-        const first = lines.findIndex((l) => /^(?:[❯›>]\s*)?1[.)]\s/.test(l));
-        let detail = "";
         // A screen only keys answer (a trust question) asks nothing in
         // words: its own screen opens for it instead (live-screen.tsx).
-        for (let i = keysOnly(screen) ? -1 : (first < 0 ? lines.length : first) - 1; i >= 0; i--) {
-          const l = lines[i].replace(/^[│|╭╰─\s]+|[│|╮╯─\s]+$/g, "");
-          if (l) {
-            detail = l;
-            break;
-          }
-        }
-        setAsk({ detail, choices, form });
+        const seen = askIn(r.screen ?? "");
+        if (!seen.choices.length && !seen.form && ++tries < 4) timer = window.setTimeout(() => void read(), 600);
+        setAsk(seen);
       })
       .catch(() => alive && setAsk({ detail: "", choices: [] }));
     void read();

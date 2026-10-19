@@ -438,7 +438,7 @@ func (b *Box) enrich(ctx context.Context, all []Session) []Session {
 			s.Turn, s.StateSeq, s.Fidelity = st.Turn, st.Seq, st.Fidelity
 			s.Queued, s.Unfinished, s.Parked = st.Queued, st.Unfinished && s.AgentState == "finished", st.Parked && s.AgentState == "finished"
 			if s.AgentState == "waiting" {
-				s.Ask = st.Ask
+				s.Ask, s.SoftWait = st.Ask, st.SoftWait
 				var choices []AskChoice
 				switch s.Driver {
 				case DriverClaude:

@@ -167,7 +167,10 @@ what looks like a secret is taken out of all three first. An agent that
 asks you something, or is blocked, shows as **Needs you**
 (`agent.waiting` with `source: "turncheck"` and the model's `choice`), and
 notifications follow; it still takes prompts as if done, so held prompts
-and other agents' reports are delivered. Unfinished work that needs
+and other agents' reports are delivered. The session carries
+`soft_wait: true`: its question is in its last message, which you answer
+from the reply box, and the chat draws no question card for it, since its
+screen shows only its prompt. Its mode can still be switched. Unfinished work that needs
 nothing from you is one of two kinds, and neither notifies. **Working**:
 something it started is still running and it acts when that ends (a
 delegated task, a build, a deploy, a test run, or a watcher or background

@@ -65,6 +65,10 @@ type Session struct {
 	// later time ("check again in 24 hours"), and on nothing from you.
 	Unfinished bool `json:"unfinished,omitempty"`
 	Parked     bool `json:"parked,omitempty"`
+	// SoftWait is set on a waiting agent that turn check read as asking in
+	// its last message: the reply box answers it, and its screen shows its
+	// prompt, with no question there to read options from.
+	SoftWait bool `json:"soft_wait,omitempty"`
 	// Service is set on a worktree service's own terminal (a service with
 	// "terminal": true): the service's name, kept as @berth_service. It is
 	// never an agent, whatever it runs.

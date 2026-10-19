@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 
 import { boxApi, type Session } from "@/lib/api";
 import { useEventLog } from "@/lib/events";
-import { type Choice, choicesIn, meaningfulTail } from "@/lib/screen";
+import { askIn, type Choice, meaningfulTail } from "@/lib/screen";
 import { useStore } from "@/lib/store";
 
-export { type Choice, choicesIn, meaningfulTail };
+export { type Choice, meaningfulTail };
 
 // useScreenTail is the last few meaningful lines of a session's screen. It
 // refetches when the session's state changes or an event about it arrives
@@ -29,7 +29,8 @@ export function useScreenTail(box: string, session: Session, count = 3, working 
         .then((r) => {
           if (cancelled) return;
           setTail(meaningfulTail(r.screen ?? "", count));
-          setChoices(choicesIn(r.screen ?? ""));
+          // Options its own menu shows, never a list in its last message.
+          setChoices(askIn(r.screen ?? "").choices);
         })
         .catch(() => {});
     const t = window.setTimeout(fetchTail, 250);

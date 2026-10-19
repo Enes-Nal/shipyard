@@ -196,7 +196,8 @@ func (b *Box) setMode(w http.ResponseWriter, r *http.Request) error {
 	}
 	if b.Turns != nil {
 		// A mode change at a permission prompt can pick an option there.
-		if st, ok := b.Turns.State(name); ok && st.State == "waiting" {
+		// Turn check's wait has none: the agent sits at its prompt.
+		if st, ok := b.Turns.State(name); ok && st.State == "waiting" && !st.SoftWait {
 			return httpError{http.StatusConflict, "the agent is waiting for an answer; answer it first"}
 		}
 	}
