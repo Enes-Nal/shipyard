@@ -118,16 +118,20 @@ function toHtml(text: string, draft: boolean, render: TexRender | undefined): { 
   return { html: out.html, texWanted };
 }
 
-// A picture whose src is a path, not a web address: in a file's Preview
-// its bytes come from the box (files/markdown-view.tsx), so its src waits
-// in data-src rather than asking the app's own origin for it.
-const holdImages = (html: string) => html.replace(/<img src="(?![a-z][a-z0-9+.-]*:|\/\/)([^"]*)"/gi, '<img data-src="$1"');
+// A file's Preview shows its pictures as the page has them, not as a
+// reply's cards: a web picture (a README's badge) loads as it is, and a
+// worktree path waits in data-src for its bytes from the box
+// (files/markdown-view.tsx), rather than asking the app's own origin.
+const pageImages = (html: string) =>
+  html.replace(/<span class="cv-image-slot" data-chat-image="([^"]*)" data-chat-image-alt="([^"]*)"><\/span>/g, (_, src: string, alt: string) =>
+    /^https:\/\//i.test(src) ? `<img src="${src}" alt="${alt}">` : `<img data-src="${src}" alt="${alt}">`,
+  );
 
 export const Markdown = memo(function Markdown({ text, copy = true, draft = false, clipped = false, onLink, localImages = false }: { text: string; copy?: boolean; draft?: boolean; clipped?: boolean; onLink?(href: string): void; localImages?: boolean }) {
   const render = useSyncExternalStore(texSubscribe, texNow);
   const { html, texWanted } = useMemo(() => {
     const out = toHtml(text, draft, render);
-    return localImages ? { ...out, html: holdImages(out.html) } : out;
+    return localImages ? { ...out, html: pageImages(out.html) } : out;
   }, [text, draft, render, localImages]);
   useEffect(() => {
     if (texWanted) loadTex();
