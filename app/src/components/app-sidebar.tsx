@@ -177,13 +177,6 @@ function Places({ prefs, update }: SidebarPrefsProps) {
               </MenuItem>
               <MenuSeparator />
               <MenuGroup>
-                <MenuGroupLabel>Show</MenuGroupLabel>
-                <MenuRadioGroup value={prefs.show} onValueChange={(v) => update({ show: v as typeof prefs.show })}>
-                  <MenuRadioItem value="active">Active worktrees</MenuRadioItem>
-                  <MenuRadioItem value="all">All worktrees</MenuRadioItem>
-                </MenuRadioGroup>
-              </MenuGroup>
-              <MenuGroup>
                 <MenuGroupLabel>Group by</MenuGroupLabel>
                 <MenuRadioGroup value={prefs.groupBy} onValueChange={(v) => update({ groupBy: v as typeof prefs.groupBy })}>
                   <MenuRadioItem value="project">Project</MenuRadioItem>

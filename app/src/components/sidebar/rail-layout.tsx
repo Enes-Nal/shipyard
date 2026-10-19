@@ -1,4 +1,4 @@
-import { EllipsisIcon, FolderPlusIcon, ListFilterIcon, PanelLeftIcon, PanelLeftOpenIcon, PenLineIcon, PlusIcon, SearchIcon, ServerIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, FolderPlusIcon, PanelLeftIcon, PanelLeftOpenIcon, PenLineIcon, PlusIcon, SearchIcon, ServerIcon, SettingsIcon } from "lucide-react";
 import { memo, type ReactNode, useId, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -13,7 +13,7 @@ import { RowLayer } from "@/components/sidebar/row-layer";
 import { SkillsNotices } from "@/components/sidebar/skills-notice";
 import { awayText, BoxesFoot } from "@/components/sidebar/task-parts";
 import { Tip } from "@/components/tip";
-import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { SidebarMenuSub } from "@/components/ui/sidebar";
 import { WhatsNewNudge } from "@/components/whats-new/whats-new-dialog";
 import type { Location, Session } from "@/lib/api";
@@ -417,7 +417,7 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
       </div>
       <div className={cn("flex h-7 shrink-0 items-center pt-3", lanes.content)}>
         <h3 className={cn("flex-1 text-label", ink.faint)}>Worktrees</h3>
-        <ShowMenu prefs={prefs} update={update} />
+        <AddMenu />
       </div>
       {/* One context menu and one tooltip for every row in it. */}
       <RowLayer className={cn("min-h-0 flex-1 overflow-y-auto pt-1.5 pb-3", lanes.box)}>
@@ -435,32 +435,24 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
   );
 }
 
-// ShowMenu is how the worktrees show, and ways to add to them.
-function ShowMenu({ prefs, update }: { prefs: SidebarPrefs; update: Update }) {
+// AddMenu adds a project or a box.
+function AddMenu() {
   return (
     <Menu>
-      <Tip label="Show and add" side="bottom" align="end">
+      <Tip label="Add a project or box" side="bottom" align="end">
         <MenuTrigger
           render={
             <button
               type="button"
-              aria-label="Show and add"
+              aria-label="Add a project or box"
               className={cn("inline-flex size-6 items-center justify-center rounded-md hover:bg-sidebar-accent hover:text-foreground data-popup-open:bg-sidebar-accent [&_svg]:size-3.5", ink.glyph)}
             />
           }
         >
-          <ListFilterIcon strokeWidth={2} />
+          <PlusIcon strokeWidth={2} />
         </MenuTrigger>
       </Tip>
       <MenuPopup align="end" className="min-w-48">
-        <MenuGroup>
-          <MenuGroupLabel>Show</MenuGroupLabel>
-          <MenuRadioGroup value={prefs.show} onValueChange={(v) => update({ show: v as SidebarPrefs["show"] })}>
-            <MenuRadioItem value="active">Active worktrees</MenuRadioItem>
-            <MenuRadioItem value="all">All worktrees</MenuRadioItem>
-          </MenuRadioGroup>
-        </MenuGroup>
-        <MenuSeparator />
         <MenuItem onClick={() => useStore.getState().openAddLocation()}>
           <FolderPlusIcon />
           Add a project…
