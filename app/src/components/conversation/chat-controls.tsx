@@ -67,8 +67,11 @@ export interface ChatControlsProps {
   box: string;
   session: string;
   agent?: string;
-  // The session's state: running, waiting, finished, idle, exited…
+  // The session's state: running, waiting, finished, idle, exited…; asking
+  // when it waits on a question of its own (atQuestion), where Shift+Tab or
+  // a typed command would answer it.
   state?: string;
+  asking: boolean;
   stateSince?: string;
   dir?: string;
   who: string;
@@ -82,7 +85,7 @@ export interface ChatControlsProps {
   children: ReactNode;
 }
 
-export function ChatControls({ box, session, agent, state, stateSince, dir, who, visible, ended, onShowTerminal, onStartAgain, onSend, children }: ChatControlsProps) {
+export function ChatControls({ box, session, agent, state, asking, stateSince, dir, who, visible, ended, onShowTerminal, onStartAgain, onSend, children }: ChatControlsProps) {
   const mock = isMock();
   const supported = useStore((s) => !!s.boxes[box]?.info?.capabilities?.includes("controls")) || mock;
   const sig = useChatSignals(box, session);
@@ -142,9 +145,9 @@ export function ChatControls({ box, session, agent, state, stateSince, dir, who,
         <div className="mt-1.5 flex min-h-6 flex-wrap items-center gap-x-0.5 gap-y-1 px-0.5">
           {chips && agent && (
             <>
-              <ModeChip box={box} session={session} agent={agent} sig={sig} screenMode={controls?.mode} onSwitched={refresh} waiting={state === "waiting"} supported={supported} who={who} />
-              <ModelChip box={box} session={session} agent={agent} sig={sig} screenEffort={controls?.effort} busy={working || state === "waiting"} items={items} />
-              <ContextChip box={box} session={session} sig={sig} busy={working || state === "waiting"} />
+              <ModeChip box={box} session={session} agent={agent} sig={sig} screenMode={controls?.mode} onSwitched={refresh} waiting={asking} supported={supported} who={who} />
+              <ModelChip box={box} session={session} agent={agent} sig={sig} screenEffort={controls?.effort} busy={working || asking} items={items} />
+              <ContextChip box={box} session={session} sig={sig} busy={working || asking} />
               <BackgroundChip box={box} session={session} jobs={sig?.background} who={who} />
             </>
           )}

@@ -212,6 +212,10 @@ export interface Session {
   // and nothing is asked of you while it waits on someone else's reply or
   // a later time ("check again in 24 hours"). The app shows it as idle.
   parked?: boolean;
+  // Set on a waiting agent that turn check read as asking in its last
+  // message: the reply box answers it, and its screen shows only its
+  // prompt, with no question there to read options from.
+  soft_wait?: boolean;
   // What the work is called: the first line of the prompt it started with
   // (or the first it was sent), about 48 characters, or what someone renamed
   // it to. Absent until there is one; api.renameSession names it.

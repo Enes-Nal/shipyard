@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toastManager } from "@/components/ui/toast";
 import type { SessionEntry } from "@/hooks/use-agent-counts";
 import { boxApi } from "@/lib/api";
-import { agentOf } from "@/lib/derive";
+import { agentOf, atQuestion } from "@/lib/derive";
 import { errorMessage } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -69,7 +69,7 @@ export function AgentCard({ entry, selecting, selected, onSelect }: { entry: Ses
   }, []);
 
   const open = () => void focusSession(box, session.name);
-  const asking = state === "waiting" && choices.length > 0;
+  const asking = atQuestion(session, state) && choices.length > 0;
   // The question, without the options the chips below already show.
   const lines = asking ? (tail ?? []).filter((l) => !/^\s*(?:[❯›>]\s*)?\d[.)]\s/.test(l)) : tail;
 

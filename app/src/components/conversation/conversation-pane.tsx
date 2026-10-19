@@ -36,7 +36,7 @@ import { joinDraft, listenForQuotes, type QuoteFill } from "@/lib/chat-quote";
 import { canPickPast } from "@/lib/commands";
 import { resumeWords } from "@/lib/resume-words";
 import { keyOf, useConversations } from "@/lib/conversation-store";
-import { agentLabel, agentOf, firstPrompt, guessAgent, sessionState, worktreeOf } from "@/lib/derive";
+import { agentLabel, agentOf, atQuestion, firstPrompt, guessAgent, sessionState, worktreeOf } from "@/lib/derive";
 import type { NextStep } from "@/lib/errors";
 import { errorMessage } from "@/lib/format";
 import { useNotifications } from "@/lib/notifications";
@@ -89,7 +89,10 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   const state = gone ? "exited" : s ? sessionState(s, stats) : undefined;
   const [attempt, setAttempt] = useState(0);
   const feed = useTranscriptFeed(box, session, s?.dir, visible && !mock && !away, attempt);
-  const ask = useAsk(box, session, !mock && state === "waiting", s?.state_since, s?.ask);
+  // Turn check's wait asks in the agent's last message, which the reply
+  // box answers: its screen, at its prompt, holds no question to read.
+  const asking = atQuestion(s, state);
+  const ask = useAsk(box, session, !mock && asking, s?.state_since, s?.ask);
   const [answered, setAnswered] = useState<{ at?: string; key: string }>();
   // A form of questions the agent asks (Claude Code's AskUserQuestion),
   // from its record: the chat draws it whole and the box fills it in. stuck
@@ -213,9 +216,10 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
       // options matched to Allow, Always allow and Deny.
       const choices = ask ? (permissionChoices(ask.choices) ?? ask.choices) : [];
       out.push({ kind: "ask", id: "live:ask", tool: s.ask.tool, detail: s.ask.input ?? "", why: s.ask.why, structured: true, choices, reading: !ask, decided });
-    } else if (state === "waiting" && ask && !form && (ask.choices.length || s?.ask?.message || ask.detail)) {
-      // A question needs words or options to answer: a screen without
-      // either is not one (never a bare Yes / No).
+    } else if (state === "waiting" && ask && !form && ask.choices.length) {
+      // A question is answered by its options: with none read, there is
+      // nothing to pick (never a made-up Yes / No), and its own screen
+      // opens if it shows one.
       out.push({ kind: "ask", id: "live:ask", tool: "Question", detail: s?.ask?.message || ask.detail, choices: ask.choices, decided });
     }
     return out;
@@ -419,7 +423,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
     // Typed for the person, at once when the agent waits for them, else
     // held until it is idle; the transcript shows it once the agent reads it.
     if (idem.current?.text !== text) idem.current = { text, key: `app-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}` };
-    const r = await boxApi.send(client, box, session, text, true, { ...(state === "waiting" ? { when: "now", force: true } : { when: "idle" }), idem_key: idem.current.key });
+    const r = await boxApi.send(client, box, session, text, true, { ...(asking ? { when: "now", force: true } : { when: "idle" }), idem_key: idem.current.key });
     idem.current = undefined;
     if (r.queued) queue.refresh();
     // A command ("/model", "!ls") shows as itself once the agent runs it;
@@ -432,7 +436,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   // so that asks first (force).
   const sendNow = async (q: QueuedPrompt, force = false) => {
     if (!client) return;
-    if (state === "waiting" && !force) {
+    if (asking && !force) {
       setConfirm(q);
       return;
     }
@@ -584,6 +588,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
             session={session}
             agent={agent}
             state={state}
+            asking={asking}
             stateSince={s?.state_since}
             dir={s?.dir}
             who={who}
@@ -593,7 +598,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
             live={live.show}
             terminal={!!onShowTerminal}
             mode={state === "running" ? "queue" : state === "waiting" ? "answer" : "send"}
-            blocked={(state === "waiting" && atMenu) || live.show}
+            blocked={(asking && atMenu) || live.show}
             hint={live.show ? (liveWhy ?? `${who} is showing its own screen: answer it above`) : wantsWords ? `Tell ${who} what to change, then press Enter` : answerable ? `Answer ${who}'s ${openQ?.questions.length === 1 ? "question" : "questions"} above` : undefined}
             actions={actions}
           />
@@ -636,6 +641,7 @@ const ChatFoot = memo(function ChatFoot({
   session,
   agent,
   state,
+  asking,
   stateSince,
   dir,
   who,
@@ -653,6 +659,7 @@ const ChatFoot = memo(function ChatFoot({
   session: string;
   agent?: string;
   state?: string;
+  asking: boolean;
   stateSince?: string;
   dir?: string;
   who: string;
@@ -668,7 +675,7 @@ const ChatFoot = memo(function ChatFoot({
 }) {
   const attach = useMemo(() => ({ box, session }), [box, session]);
   return (
-    <ChatControls box={box} session={session} agent={agent} state={state} stateSince={stateSince} dir={dir} who={who} visible={visible} ended={ended} onShowTerminal={terminal ? actions.showTerminal : undefined} onStartAgain={actions.again} onSend={actions.reply}>
+    <ChatControls box={box} session={session} agent={agent} state={state} asking={asking} stateSince={stateSince} dir={dir} who={who} visible={visible} ended={ended} onShowTerminal={terminal ? actions.showTerminal : undefined} onStartAgain={actions.again} onSend={actions.reply}>
       {ended ? (
         <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-muted-foreground text-body">
           <StateGlyph state="exited" />
