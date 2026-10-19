@@ -132,6 +132,9 @@ interface State {
   // A line to show once its File tab is up (a path named in a chat): the
   // tab takes it, and it goes.
   goto?: Goto;
+  // How a Markdown File tab shows its file: the rendered page, the source
+  // in the editor, or both side by side.
+  mdView: MdView;
 }
 
 export interface Goto {
@@ -140,14 +143,22 @@ export interface Goto {
   end?: number;
 }
 
+export type MdView = "preview" | "source" | "split";
+
 const RECENT_KEY = "berth.files.recent";
 const WRAP_KEY = "berth.files.wrap";
+const MD_VIEW_KEY = "berth.files.mdView";
 
-export const useFiles = create<State>()(() => ({ docs: {}, pickerOpen: false, recent: load<Record<string, string[]>>(RECENT_KEY, {}), touched: {}, wrap: load<boolean | undefined>(WRAP_KEY, undefined) }));
+export const useFiles = create<State>()(() => ({ docs: {}, pickerOpen: false, recent: load<Record<string, string[]>>(RECENT_KEY, {}), touched: {}, wrap: load<boolean | undefined>(WRAP_KEY, undefined), mdView: load<MdView>(MD_VIEW_KEY, "preview") }));
 
 export function setWrap(wrap: boolean) {
   store(WRAP_KEY, wrap);
   useFiles.setState({ wrap });
+}
+
+export function setMdView(mdView: MdView) {
+  store(MD_VIEW_KEY, mdView);
+  useFiles.setState({ mdView });
 }
 
 // Mock mode starts with a few files "opened before" in checkout-fix.
