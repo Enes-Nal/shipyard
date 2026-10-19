@@ -167,6 +167,7 @@ export function mergeConfig(base: RepoConfig | null | undefined, over: RepoConfi
     hooks: b.hooks?.length || o.hooks?.length ? [...(b.hooks ?? []), ...(o.hooks ?? [])] : undefined,
     // A layer's login replaces the one under it whole.
     login: o.login ?? b.login,
+    keep_main: o.keep_main ?? b.keep_main,
   };
 }
 

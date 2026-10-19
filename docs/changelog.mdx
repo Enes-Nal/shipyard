@@ -9,6 +9,15 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **Main stays up to date.** A new worktree from `main` starts from what
+  `origin` has now, not from whenever the box last pulled: the box fetches
+  `main` first and fast-forwards your local one, so the main checkout and
+  diffs against `main` are current too. It never moves past uncommitted
+  changes or commits of your own. Turn it off per project under **Main
+  branch** in Project settings.
+
 ## v0.3.26
 - **The sidebar is a rail of your projects.** Each project is a tile on a
   narrow rail, with its GitHub owner's picture or a pattern made from its

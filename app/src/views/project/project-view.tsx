@@ -20,6 +20,7 @@ import { mergeConfig } from "@/lib/kits";
 import { KitSection } from "@/views/project/kit-section";
 import { KitLayer, LayeredScript, Section, SourceBadge } from "@/views/project/parts";
 import { LoginSection } from "@/views/project/login-section";
+import { KeepMainSection } from "@/views/project/keep-main-section";
 import { ReviewButtonSection } from "@/views/project/review-button-section";
 import { TeamSuggestLine } from "@/views/project/team-suggest-line";
 import { ServicesSection } from "@/views/project/services-section";
@@ -31,6 +32,7 @@ import { ErrorText } from "@/components/error-note";
 const SECTIONS = [
   { id: "kit", label: "Kit" },
   { id: "scripts", label: "Setup & teardown" },
+  { id: "main", label: "Main branch" },
   { id: "env", label: "Environment" },
   { id: "ports", label: "Ports" },
   { id: "services", label: "Services" },
@@ -188,6 +190,7 @@ export function ProjectView({ box, location }: { box: string; location: string }
                   </div>
                 </Section>
 
+                <KeepMainSection repo={base} draft={draft} setDraft={setDraft} box={box} />
                 <ProjectTeamKeys box={box} location={location} env={{ ...(base?.env ?? {}), ...(draft.env ?? {}) }} onAdd={(keys) => setDraft({ ...draft, env: { ...Object.fromEntries(keys.map((k) => [k, ""])), ...(draft.env ?? {}) } })} />
                 <EnvSection repo={base} draft={draft} setDraft={setDraft} box={box} />
                 <PortsSection repo={base} draft={draft} setDraft={setDraft} box={box} />

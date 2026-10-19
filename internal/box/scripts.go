@@ -65,6 +65,10 @@ type RepoConfig struct {
 	// each pull request opened from the project's worktrees
 	// (reviewbutton.go). Off unless a layer, or the team's team.json, says.
 	ReviewButton *bool `json:"review_button,omitempty"`
+	// KeepMain keeps the default branch current: a new branch from it
+	// fetches it first and fast-forwards the local one (freshbase.go). On
+	// unless a layer says false.
+	KeepMain *bool `json:"keep_main,omitempty"`
 }
 
 // ReadRepoConfig reads repo's .berth/config.json; ok is false without one.
