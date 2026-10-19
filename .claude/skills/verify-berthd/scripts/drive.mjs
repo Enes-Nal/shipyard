@@ -82,6 +82,15 @@ const shot = async (label) => {
   console.log(`  saved ${label}.png`);
 };
 
+// call(path, init) is the laptop agent's API as the app calls it (a box's
+// own under /v1/boxes/<box>/api/), for a live scenario to read a change's
+// effect on the box.
+const call = async (path, init = {}) => {
+  const res = await fetch(`${agent}${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...init.headers } });
+  if (!res.ok) throw new Error(redact(`${init.method ?? "GET"} ${path}: ${res.status} ${await res.text()}`));
+  return res.json();
+};
+
 let ok = true;
 try {
   const params = new URLSearchParams(agent ? { token, agent } : { mock: "1" });
@@ -90,7 +99,7 @@ try {
   step(agent ? `open http://localhost:${port}/ on the agent at ${agent}` : `open http://localhost:${port}/?${params}`);
   await page.goto(`http://localhost:${port}/?${params}`);
   await expect(page.getByTestId("nav-home")).toBeVisible({ timeout: 20_000 });
-  await scenario.run({ page, shot, step, expect });
+  await scenario.run({ page, shot, step, expect, call });
 } catch (err) {
   ok = false;
   failures.push(redact(`scenario failed: ${err.message?.split("\n").slice(0, 6).join("\n")}`));
