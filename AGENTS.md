@@ -22,7 +22,7 @@ npx tsc -p e2e
 (cd docs-site && pnpm build)                 # when docs/ changed
 ```
 
-Browser tests: run the specs you touched, not the whole suite (`E2E_PORT=14xx npx playwright test e2e/x.spec.ts`). CI runs the rest.
+Browser tests: run the specs you touched, not the whole suite (`E2E_PORT=14xx npx playwright test e2e/x.spec.ts`). CI runs the rest, when it runs.
 
 ## Rules that cost a CI run each
 
@@ -40,6 +40,6 @@ Browser tests: run the specs you touched, not the whole suite (`E2E_PORT=14xx np
 
 ## Changes
 
-- **Work on a branch and open a PR** against `main` on `cosscom/shipyard`. CI runs on pull requests. Browser tests report there but don't block yet; Go, shell, the app's checks and build, and the docs build do.
+- **Work on a branch and open a PR** against `main` on `cosscom/shipyard`. CI runs on a pull request only once it has the `run-ci` label (`gh pr edit N --add-label run-ci`), and on every `release/` branch's; a release's tag always runs it all. Browser tests report there but don't block yet; Go, shell, the app's checks and build, and the docs build do.
 - **Commit messages** are lowercase conventional (`feat(app): …`, `fix(box): …`, `test: …`). The subject says what the user gets, in prose.
 - **Releases** are in `.claude/skills/release`. Merging several branches is in `.claude/skills/integrate-branches`. Writing browser tests that don't flake is in `.claude/skills/e2e-tests`.
