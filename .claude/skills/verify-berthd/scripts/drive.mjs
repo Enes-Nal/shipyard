@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// drive.mjs <scenario> --port N [--out DIR]: drive the app's preview build
-// on its mock fixtures through a scenario (scenarios/*.mjs), with the
-// scenario's test plugins loaded as built-ins, and keep the evidence.
+// drive.mjs <scenario> --port N [--out DIR] [--agent URL]: drive the
+// app's preview build on its mock fixtures through a scenario
+// (scenarios/*.mjs), with the scenario's test plugins loaded as built-ins,
+// and keep the evidence. --agent drives a real laptop agent instead (a dev
+// one, never 1377-1379), with its UI token in VERIFY_BERTH_TOKEN.
 // See ../SKILL.md.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -20,12 +22,18 @@ const flag = (name) => {
 };
 const name = args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"));
 const port = flag("--port");
-if (!name || !port) {
-  console.error("usage: drive.mjs <scenario> --port N [--out DIR]");
+const agent = flag("--agent");
+const token = process.env.VERIFY_BERTH_TOKEN;
+if (!name || !port || (agent && !token)) {
+  console.error("usage: drive.mjs <scenario> --port N [--out DIR] [--agent URL, with VERIFY_BERTH_TOKEN set]");
   process.exit(2);
 }
 const file = name.endsWith(".mjs") || name.includes("/") ? resolve(name) : join(here, "scenarios", `${name}.mjs`);
 const scenario = await import(pathToFileURL(isAbsolute(file) ? file : resolve(file)).href);
+if (scenario.live && !agent) {
+  console.error(`${name} drives a real box: give it --agent (see ../features/chat-questions.md)`);
+  process.exit(2);
+}
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const out = resolve(flag("--out") ?? `/tmp/verify-berthd/${name.replace(/.*\//, "").replace(/\.mjs$/, "")}-${stamp}`);
 mkdirSync(out, { recursive: true });
@@ -34,6 +42,11 @@ const log = [];
 const steps = [];
 const failures = [];
 const allow = scenario.allowErrors ?? [];
+// The live agent's token is in the page's address: a browser build takes
+// it only from ?token= (lib/api.ts endpoint, as e2e/live.mjs does). It is
+// a dev agent's on loopback (dev-box.sh), and nothing the driver writes
+// keeps it.
+const redact = (text) => (token ? String(text).replaceAll(token, "<token>") : String(text));
 const step = (text) => {
   steps.push(text);
   console.log(`- ${text}`);
@@ -41,16 +54,16 @@ const step = (text) => {
 
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
-// The laptop agent's ports: a mock run must never reach them.
+// The laptop agent's ports: a run must never reach this machine's own.
 await context.route(/^https?:\/\/(?:[^/]*\.)?(?:localhost|127\.0\.0\.1|\[::1\]):(?:1377|1378|1379)(?:\/|$)/, (r) => r.abort());
 const page = await context.newPage();
 page.on("console", (m) => {
-  log.push(`[${m.type()}] ${m.text()}`);
-  if (m.type() === "error" && !allow.some((re) => re.test(m.text()))) failures.push(`console error: ${m.text()}`);
+  log.push(redact(`[${m.type()}] ${m.text()}`));
+  if (m.type() === "error" && !allow.some((re) => re.test(m.text()))) failures.push(redact(`console error: ${m.text()}`));
 });
 page.on("pageerror", (e) => {
-  log.push(`[pageerror] ${e.message}`);
-  failures.push(`page error: ${e.message}`);
+  log.push(redact(`[pageerror] ${e.message}`));
+  failures.push(redact(`page error: ${e.message}`));
 });
 
 const plugins = scenario.plugins ?? [];
@@ -65,19 +78,22 @@ if (plugins.length) {
 
 const shot = async (label) => {
   await page.screenshot({ path: join(out, `${label}.png`) });
-  writeFileSync(join(out, `${label}.aria.txt`), await page.locator("body").ariaSnapshot());
+  writeFileSync(join(out, `${label}.aria.txt`), redact(await page.locator("body").ariaSnapshot()));
   console.log(`  saved ${label}.png`);
 };
 
 let ok = true;
 try {
-  step(`open http://localhost:${port}/?mock=1`);
-  await page.goto(`http://localhost:${port}/?mock=1`);
+  const params = new URLSearchParams(agent ? { token, agent } : { mock: "1" });
+  for (const [k, v] of Object.entries(scenario.params ?? {})) params.set(k, v);
+  // The token is in the page's address, as the app takes it; never in the log.
+  step(agent ? `open http://localhost:${port}/ on the agent at ${agent}` : `open http://localhost:${port}/?${params}`);
+  await page.goto(`http://localhost:${port}/?${params}`);
   await expect(page.getByTestId("nav-home")).toBeVisible({ timeout: 20_000 });
   await scenario.run({ page, shot, step, expect });
 } catch (err) {
   ok = false;
-  failures.push(`scenario failed: ${err.message?.split("\n").slice(0, 6).join("\n")}`);
+  failures.push(redact(`scenario failed: ${err.message?.split("\n").slice(0, 6).join("\n")}`));
   await page.screenshot({ path: join(out, "failed.png") }).catch(() => {});
 }
 await browser.close();
