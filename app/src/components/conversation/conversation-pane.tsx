@@ -388,11 +388,13 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
   };
 
   // The whole form's answers, filled in on the box; when they don't take,
-  // the agent's own screen opens to finish there, saying why.
+  // the agent's own screen opens under the form, which keeps them, saying
+  // why. A retry that takes closes it.
   const submitQuestions = async (tool: string, answers: QuestionAnswer[]) => {
-    if (!client) throw new Error("Not connected");
     try {
+      if (!client) throw new Error("Not connected");
       await answerQuestions(client, box, session, { tool, answers });
+      setStuck(undefined);
     } catch (err) {
       setStuck({ at: s?.state_since, why: errorMessage(err) });
       setNudge((n) => n + 1);

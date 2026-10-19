@@ -208,9 +208,17 @@ function releaseChat(): TranscriptItem[] {
   ];
 }
 
+// ?scene=answer-stuck: the box can't fill in the form the first time, as
+// when the agent's screen is too short for it, and can when tried again.
+let answerStuck = new URLSearchParams(location.search).get("scene") === "answer-stuck";
+
 // mockAnswer is the box filling in the form (POST …/answer): the question
 // shows its answers, and the agent goes on.
 export function mockAnswer(box: string, session: string, req: { tool: string; answers: QuestionAnswer[] }): { answered: string[] } {
+  if (answerStuck) {
+    answerStuck = false;
+    throw new Error("Claude's screen doesn't show its questions: finish in Claude's screen");
+  }
   const key = keyOf(box, session);
   const q = useConversations.getState().items[key]?.find((it) => it.kind === "question" && it.tool === req.tool);
   if (!q || q.kind !== "question") throw new Error("no question waits for that answer");
