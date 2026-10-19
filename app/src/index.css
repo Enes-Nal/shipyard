@@ -69,6 +69,27 @@
     --spacing-row-pad: var(--row-pad);
     --spacing-row-gap: var(--row-gap);
     --spacing-side-row: var(--side-row);
+    /* The layout grid: every edge and centre line in the app comes from
+       these (scripts/check-grid.mjs keeps it so).
+       h-bar: the window's top band (the sidebar's strip, the tab bar, a
+       view's header). The traffic lights sit on its middle, 20pt down
+       (tauri.conf.json's trafficLightPosition); they are placed once, in
+       points, so the band is 40px at the default text size and smaller,
+       and only grows past it.
+       h-bar-pane: a pane's or panel's own toolbar under it.
+       px-edge: where boxes (rows, fields, cards) start and end in a column.
+       pl-lane: where their content (icons, glyphs, labels) starts, a row's
+       padding further in. px-page: a full-page view's gutter. w-rail: the
+       sidebar's rail; w-rail-folded the sidebar folded away (⌘\): the
+       traffic lights run from 14pt to 74pt, so it is never narrower than
+       88px, 14 clear either side, the lights over its middle. */
+    --spacing-bar: max(40px, 2.5rem);
+    --spacing-bar-pane: 2rem;
+    --spacing-edge: 0.75rem;
+    --spacing-lane: 1.25rem;
+    --spacing-page: 1.5rem;
+    --spacing-rail: 60px;
+    --spacing-rail-folded: max(88px, 5.5rem);
     /* The type scale, Settings' and every page's: text-page-title, text-title,
        text-heading, text-subtitle, text-body, text-section, text-row,
        text-desc, text-label, text-meta, text-tag, text-mono. It is the only

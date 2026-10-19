@@ -11,8 +11,9 @@ import (
 	"github.com/cosscom/shipyard/internal/mcpserver"
 )
 
-// An agent making a task through the berth tools names no driver: once the
-// person turns structured agents on, the agent it starts runs structured.
+// An agent making a task through the berth tools names no driver: the
+// agent it starts runs structured, as the box's default says, even on a
+// box the app has never given one.
 func TestAnAgentsTaskThroughTheBerthToolsFollowsTheDefault(t *testing.T) {
 	c, _ := box.StructuredBox(t)
 	tools := &mcpserver.Server{Box: box.NewClient(c)}
@@ -67,12 +68,22 @@ func TestAnAgentsTaskThroughTheBerthToolsFollowsTheDefault(t *testing.T) {
 		return ""
 	}
 
+	// A box the app never gave its defaults: structured anyway.
+	if d := driver(taskNew("unsaved")); d != box.DriverClaude {
+		t.Fatalf("with nothing saved, the tools' task ran %q", d)
+	}
+	put := func(d box.AgentDefaults) {
+		t.Helper()
+		if err := box.NewClient(c).Call(t.Context(), "PUT", "/v1/agents/defaults", d, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Off (only an older Shipyard sends it): its terminal.
+	put(box.AgentDefaults{})
 	if d := driver(taskNew("off")); d != box.DriverTerminal {
 		t.Fatalf("with the default off, the tools' task ran %q", d)
 	}
-	if err := box.NewClient(c).Call(t.Context(), "PUT", "/v1/agents/defaults", box.AgentDefaults{Structured: true, Mode: "bypassPermissions"}, nil); err != nil {
-		t.Fatal(err)
-	}
+	put(box.AgentDefaults{Structured: true, Mode: "bypassPermissions"})
 	if d := driver(taskNew("on")); d != box.DriverClaude {
 		t.Fatalf("with the default on, the tools' task ran %q", d)
 	}

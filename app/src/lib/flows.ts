@@ -153,6 +153,10 @@ export interface RepoConfig {
   // A "Review in Shipyard" button on each PR opened from the project's
   // worktrees (box/reviewbutton.go). Off unless a layer or team.json says.
   review_button?: boolean;
+  // Keep the default branch current: a new branch from it fetches it first
+  // and fast-forwards the local one (box/freshbase.go). On unless a layer
+  // says false.
+  keep_main?: boolean;
 }
 
 // LoginUser is a seeded user a worktree can be logged in as. The box always

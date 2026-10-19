@@ -23,6 +23,7 @@ guide is in [project config](/guides/project-config).
 | `shots` | object | What `berthd shots compare` [shoots and diffs](#shots) by default. Read from the worktree's own file, trusted or not: it names pages and selectors and runs nothing. |
 | `login` | object | [Dev users](#login) a worktree can be logged in as, and the script that logs one in. |
 | `review_button` | boolean | Add a [Review in Shipyard button](/guides/review-a-pr#the-review-in-shipyard-button) to the description of each PR opened from the project's worktrees. Off by default; from the repository's file it applies once the box trusts it. |
+| `keep_main` | boolean | Keep the default branch current: before a new branch is made from it, fetch it and fast-forward the local one, never past uncommitted changes or local commits ([how](/concepts/projects-and-worktrees)). On by default; `false` turns it off. |
 
 ### `services`
 
@@ -42,7 +43,7 @@ guide is in [project config](/guides/project-config).
 | `name` | string | Shown in the app. |
 | `command` | string | What to run. |
 | `prompt_flag` | string | How the agent takes a first prompt, when it needs a flag (`--prompt`). Empty: the prompt is the last argument. |
-| `acp` | string | What follows `command` to start the agent's Agent Client Protocol server (`acp`, `--acp`). With it the agent can run as a [structured agent](/guides/labs#structured-agents). Given with an `id` and no `command`, it adds that to a built-in agent. |
+| `acp` | string | What follows `command` to start the agent's Agent Client Protocol server (`acp`, `--acp`). With it the agent can [run in chat](/guides/structured-agents). Given with an `id` and no `command`, it adds that to a built-in agent. |
 
 The built-ins are offered when their command is installed on the box:
 `claude`, `codex`, `opencode` (`--prompt`), `gemini` (`-i`), `omp` (oh-my-pi) and
@@ -162,6 +163,7 @@ A location's effective config is the repository's file, then its kit's
 | `hooks` | Added up: the file's, the kit's, then the box's |
 | `login` | Whole: the later one's script and users replace the earlier one's |
 | `review_button` | The later one wins if set (`false` too); with none set, the team's `team.json` decides |
+| `keep_main` | The later one wins if set (`false` too) |
 
 Only the effective flows run: a flow replaced by `id` never does, and a
 replacement with `enabled: false` switches the flow off on that box.

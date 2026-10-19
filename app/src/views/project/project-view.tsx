@@ -20,6 +20,7 @@ import { mergeConfig } from "@/lib/kits";
 import { KitSection } from "@/views/project/kit-section";
 import { KitLayer, LayeredScript, Section, SourceBadge } from "@/views/project/parts";
 import { LoginSection } from "@/views/project/login-section";
+import { KeepMainSection } from "@/views/project/keep-main-section";
 import { ReviewButtonSection } from "@/views/project/review-button-section";
 import { TeamSuggestLine } from "@/views/project/team-suggest-line";
 import { ServicesSection } from "@/views/project/services-section";
@@ -31,6 +32,7 @@ import { ErrorText } from "@/components/error-note";
 const SECTIONS = [
   { id: "kit", label: "Kit" },
   { id: "scripts", label: "Setup & teardown" },
+  { id: "main", label: "Main branch" },
   { id: "env", label: "Environment" },
   { id: "ports", label: "Ports" },
   { id: "services", label: "Services" },
@@ -143,15 +145,15 @@ export function ProjectView({ box, location }: { box: string; location: string }
       />
 
       <div className="flex min-h-0 flex-1">
-        <nav className="hidden w-48 shrink-0 border-r px-3 py-6 lg:block">
+        <nav className="hidden w-48 shrink-0 border-r px-edge py-6 lg:block">
           {SECTIONS.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="block rounded-md px-2.5 py-1.5 text-muted-foreground text-body hover:bg-accent hover:text-foreground">
+            <a key={s.id} href={`#${s.id}`} className="block rounded-md px-2 py-1.5 text-muted-foreground text-body hover:bg-accent hover:text-foreground">
               {s.label}
             </a>
           ))}
         </nav>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl space-y-8 px-8 pt-7 pb-24">
+          <div className="mx-auto w-full max-w-[calc(44rem+2*var(--spacing-page))] space-y-8 px-page pt-7 pb-24">
             {error && <ErrorText className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-destructive-foreground text-body" text={error} />}
             {!config ? (
               <div className="space-y-4">
@@ -188,6 +190,7 @@ export function ProjectView({ box, location }: { box: string; location: string }
                   </div>
                 </Section>
 
+                <KeepMainSection repo={base} draft={draft} setDraft={setDraft} box={box} />
                 <ProjectTeamKeys box={box} location={location} env={{ ...(base?.env ?? {}), ...(draft.env ?? {}) }} onAdd={(keys) => setDraft({ ...draft, env: { ...Object.fromEntries(keys.map((k) => [k, ""])), ...(draft.env ?? {}) } })} />
                 <EnvSection repo={base} draft={draft} setDraft={setDraft} box={box} />
                 <PortsSection repo={base} draft={draft} setDraft={setDraft} box={box} />

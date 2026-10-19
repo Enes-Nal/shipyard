@@ -788,6 +788,7 @@ function Tools({ it, edits }: { it: Extract<TranscriptItem, { kind: "tools" }>; 
       </button>
       <div className="cv-fold" data-closed={open ? undefined : ""}>
         <div>
+          {/* grid-ok: the guide hangs under the tool icon's middle */}
           <ul className="pt-1 pl-[7px]">
             {(it.items ?? []).map((c, i, all) => (
               <ToolRow key={c.id ?? i} c={c} last={i === all.length - 1} Icon={Icon} edits={edits} />

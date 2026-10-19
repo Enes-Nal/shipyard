@@ -370,7 +370,27 @@ export const scenes: Scene[] = [
     },
   },
   {
-    // The two-column sidebar (Settings › Labs): a project picked, its
+    // The rail sidebar, the default: a project picked on the rail, its
+    // worktrees on the sheet beside it.
+    id: "sidebar-rail",
+    async run(app, theme) {
+      await app.open({ theme, prefs: { sidebarLayout: "rail" } });
+      await app.page.locator("[data-testid=rail-project][data-project=shop]").click();
+      await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+    },
+  },
+  {
+    // The rail sidebar folded away (⌘\): the rail alone.
+    id: "sidebar-rail-folded",
+    extra: true,
+    async run(app, theme) {
+      await app.open({ theme, prefs: { version: 4, sidebarLayout: "rail" } });
+      await app.page.getByRole("button", { name: "Hide the sidebar" }).click();
+      await expect(app.page.getByTestId("sidebar-rail").getByTestId("rail-project").first()).toBeVisible();
+    },
+  },
+  {
+    // The two-column sidebar (Settings › Appearance): a project picked, its
     // tasks beside the projects.
     id: "sidebar-columns",
     async run(app, theme) {

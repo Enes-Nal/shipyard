@@ -10,7 +10,62 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Every worktree shows in the sidebar.** Worktrees with nothing going on
+  are no longer folded under "Show N older", so the sidebar's room goes to
+  your worktrees. The Active / All worktrees choice went with it. A
+  project still folds from its header, and a worktree's handed-off
+  children from their count.
 
+## v0.3.27
+
+Keeping main up to date and opening Codex edits need each box's new
+`berthd`: use **Update all** in the status bar, or `berth upgrade BOX`.
+
+- **Main stays up to date.** A new worktree from `main` starts from what
+  `origin` has now, not from whenever the box last pulled: the box fetches
+  `main` first and fast-forwards your local one, so the main checkout and
+  diffs against `main` are current too. It never moves past uncommitted
+  changes or commits of your own. Turn it off per project under **Main
+  branch** in Project settings.
+
+- **Markdown files open as a page.** A `.md` File tab shows the rendered
+  page, its source, or both side by side, from three buttons in its header.
+  Links to other files open them in a tab, and the worktree's pictures
+  show. Pictures from the web, such as a README's badges, now load in the
+  app.
+
+- **Codex edits open again.** In a chat with Codex, opening an edit's
+  **This change** (or a command's output) said "that step is no longer in
+  the conversation". It now shows the change. Edits by Claude keep their
+  line numbers too.
+
+## v0.3.26
+- **The sidebar is a rail of your projects.** Each project is a tile on a
+  narrow rail, with its GitHub owner's picture or a pattern made from its
+  name, and a dot that turns amber when an agent in it needs you and blue
+  while one works. Pick a tile to see that project's worktrees beside it,
+  with search and New task at the top. Review, Automations and your other
+  places sit at the top of the rail, and Settings at its foot. With one
+  project there's no rail. Settings › Appearance › Sidebar switches back
+  to the single list or the two columns.
+- **Everything lines up.** The app is laid out on one grid. The bar
+  across the top is one height on every screen (the sidebar's strip, the
+  tabs, Review and the other full pages), with the window's buttons and
+  everything else in it on one centre line. Every pane's toolbar is one
+  height too. In each sidebar layout, rows, their icons and labels, and
+  their right ends sit on the same lines, and each full page's content
+  starts right under its title. Full pages now title themselves in the top
+  bar, at the size of a window's title.
+- **Agents run in chat, with nothing to turn on.** New Claude Code, Codex,
+  OpenCode, Gemini CLI, Cursor Agent and oh-my-pi agents open as a
+  conversation that the box drives directly, whether Labs is on or off.
+  The *Structured agents* switch is gone from Settings → Labs, and
+  *Permissions* (Bypass or Ask) moved to Settings → Agents and models.
+  Agents that other agents, the CLI, runs and automations start run in chat
+  too, asking for each permission on a box Shipyard hasn't reached yet.
+  Claude Code's own terminal is still one click away in its pane, and a box
+  too old for chat keeps running agents in their terminals until you
+  upgrade it. [Agents in chat](/guides/structured-agents) has the details.
 - **Attempts on a repository GitHub doesn't host finish with your pick.**
   On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
   turned on failed the run at `gh pr create` and left every worktree
@@ -69,9 +124,9 @@ again.
   runs) in a session's folder could mark the session's agent exited when it
   quit; the session then showed as working for good and Stop did nothing.
   Its events are now told apart by its own conversation.
-- **A two-column sidebar, in Labs.** Turn it on in Settings › Labs and your
-  projects sit in one column, with the tasks of the one you pick in the
-  next. A project's row turns amber when something in it needs you and
+- **A two-column sidebar.** Pick it in Settings › Appearance › Sidebar and
+  your projects sit in one column, with the tasks of the one you pick in
+  the next. A project's row turns amber when something in it needs you and
   blue while something works. The tasks column can be resized or folded
   away, and opening a worktree shows its project.
 - **The sidebar is quieter.** Its text is one colour in a few strengths,

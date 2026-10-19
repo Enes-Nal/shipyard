@@ -22,6 +22,7 @@ export function clean(c: RepoConfig): RepoConfig {
   // Not edited here, but kept: saving must not drop the box's own login.
   if (c.login) out.login = c.login;
   if (typeof c.review_button === "boolean") out.review_button = c.review_button;
+  if (typeof c.keep_main === "boolean") out.keep_main = c.keep_main;
   return out;
 }
 

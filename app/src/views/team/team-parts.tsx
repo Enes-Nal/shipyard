@@ -187,7 +187,7 @@ export function OrgHeader({ view, compact, badge, from }: { view: TeamView; comp
   const name = view.setup?.name ?? org.name;
   return (
     <div className="border-b bg-gradient-to-b from-muted/50 to-transparent">
-      <div className={cn("mx-auto max-w-6xl px-8 @max-[819px]:px-5", compact ? "py-4" : "pt-6 pb-5")}>
+      <div className={cn("mx-auto max-w-[calc(68rem+2*var(--spacing-page))] px-page", compact ? "py-4" : "pt-6 pb-5")}>
         {from === "link" && (
           <p className="mb-3 inline-flex max-w-full items-center gap-1.5 truncate rounded-full border bg-card px-2.5 py-0.5 text-muted-foreground text-meta">
             Opened from a link · <span className="truncate font-mono">{link ? `berth://team?src=${source.key}` : `berth://team?org=${org.login}`}</span>

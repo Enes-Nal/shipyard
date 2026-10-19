@@ -82,7 +82,8 @@ export function DiffView({ file, run, base, comments }: { file: FileChange; run:
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b px-3 text-meta">
+      {/* grid-ok: Unified | Split is 32px itself; h-bar-pane would squeeze it */}
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b px-edge text-meta">
         <span className="min-w-0 truncate font-mono">{file.from ? `${file.from} → ${file.path}` : file.path}</span>
         <Badge variant="outline" size="sm" className="shrink-0">
           {describeCode(file.code).label}

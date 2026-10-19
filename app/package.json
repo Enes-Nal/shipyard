@@ -1,7 +1,7 @@
 {
   "name": "berth",
   "private": true,
-  "version": "0.3.25",
+  "version": "0.3.27",
   "type": "module",
   "scripts": {
     "dev": "node scripts/build-plugins.mjs && vite",
@@ -15,6 +15,7 @@
     "typecheck:plugins": "tsc --noEmit -p ../plugins",
     "check:titles": "node scripts/check-titles.mjs",
     "check:type": "node scripts/check-type.mjs",
+    "check:grid": "node scripts/check-grid.mjs",
     "check:plugin-consent": "node scripts/check-plugin-consent.mjs",
     "check:csp": "node scripts/check-csp.mjs",
     "check:themes": "node --experimental-strip-types --test src/themes/contrast.test.ts",

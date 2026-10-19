@@ -50,7 +50,7 @@ export function ShellHooks() {
   return (
     <div className="flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center gap-2 px-6 pt-1 pb-3">
+        <div className="flex shrink-0 items-center gap-2 px-page pt-1 pb-3">
           <p className="min-w-0 flex-1 text-muted-foreground text-body">Shell commands that run when an event happens. Gates run before an action and can stop it.</p>
           <MachineMenu machines={machines} onPick={(m) => add(m)}>
             <PlusIcon />
@@ -58,7 +58,7 @@ export function ShellHooks() {
             <ChevronDownIcon className="opacity-60" />
           </MachineMenu>
         </div>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-3 pb-10">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-page pt-3 pb-10">
           <section>
             <h2 className="mb-2 text-section">Start from</h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">

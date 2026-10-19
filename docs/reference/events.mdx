@@ -77,7 +77,7 @@ tell, Shipyard reads the terminal and sends these itself with
 | --- | --- |
 | `location.added` | `location`, `path`, `url` (when cloned) |
 | `location.removed` | `location` |
-| `worktree.created` | `location`, `name`, `path`, `branch` (origin `detected` when another tool made it); `repo_config`: `untrusted` or `changed` when the repository's config was not run because it is not trusted |
+| `worktree.created` | `location`, `name`, `path`, `branch` (origin `detected` when another tool made it); `repo_config`: `untrusted` or `changed` when the repository's config was not run because it is not trusted; `main`: `{ branch, status, behind?, error? }` when a new branch from the default branch [kept it current](/concepts/projects-and-worktrees), `status` being `current`, `updated`, `changes` (its checkout had uncommitted changes), `ahead` (it has commits origin doesn't) or `failed` |
 | `worktree.removed` | `location`, `name`, `path` |
 | `worktree.renamed` | `location`, `name`, `path`: its display name changed (set or cleared); never the name itself |
 | `worktree.setup.started`, `.finished`, `.failed` | `location`, `name`, `path`, `script`, `log` |

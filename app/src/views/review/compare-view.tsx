@@ -27,7 +27,7 @@ import { openUrl } from "@/lib/open-url";
 export function CompareStrip({ runs, onOpen }: { runs: BoxRun[]; onOpen(r: BoxRun): void }) {
   if (!runs.length) return null;
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 px-6 py-2 text-meta">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 px-page py-2 text-meta">
       <GitCompareArrowsIcon className="size-3.5 text-muted-foreground" />
       <span className="text-muted-foreground">Attempts to compare:</span>
       {runs.map((r) => (
@@ -218,7 +218,7 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
   };
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-3 border-b px-6 py-2.5">
+      <div className="flex shrink-0 items-center gap-3 border-b px-page py-2.5">
         <Button size="sm" variant="ghost" onClick={onClose}>
           <ArrowLeftIcon />
           Review
@@ -237,14 +237,14 @@ export function CompareView({ box, id, onClose }: { box: string; id: string; onC
           </Button>
         )}
       </div>
-      {error && <ErrorText className="px-6 py-3 text-destructive-foreground text-body" text={error} />}
+      {error && <ErrorText className="px-page py-3 text-destructive-foreground text-body" text={error} />}
       {!data && !error && (
         <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-body">
           <Spinner className="size-4" /> Reading the attempts…
         </div>
       )}
       {data && (
-        <div className="min-h-0 flex-1 overflow-auto p-6">
+        <div className="min-h-0 flex-1 overflow-auto p-page">
           {all.map((r) => (
             <PullRequestNote key={`${r.box}/${r.id}`} data={r.data} where={multi ? r.box : undefined} busy={busy} onPublish={(retry) => void publish(r, retry)} />
           ))}

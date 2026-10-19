@@ -111,11 +111,13 @@ func (b *Box) toolDetail(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	agent, path, _ := b.transcriptFile(r.Context(), sess, all)
-	if path == "" {
+	// The file the chat was read from, so its ids are the ones it gave: a
+	// structured session's is berthd's own log, not the agent's.
+	source, path := b.driverFor(sess).Record(r.Context(), sess, all)
+	if path == "" || source == transcript.SourceACPHost {
 		return httpError{http.StatusNotFound, "this session's conversation can't be read"}
 	}
-	d, err := transcript.Detail(agent, path, sess.Dir, r.PathValue("id"))
+	d, err := transcript.Detail(source, path, sess.Dir, r.PathValue("id"))
 	if errors.Is(err, transcript.ErrNoTool) {
 		return httpError{http.StatusNotFound, "that step is no longer in the conversation"}
 	}

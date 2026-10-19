@@ -23,6 +23,7 @@ export function AppearanceSection() {
   const themeId = useStore((s) => s.themeId);
   const density = usePrefs((p) => p.density);
   const uiFontSize = usePrefs((p) => p.uiFontSize);
+  const sidebarLayout = usePrefs((p) => p.sidebarLayout);
   const [query, setQuery] = useState("");
 
   const [all, setAll] = useState(false);
@@ -129,6 +130,17 @@ export function AppearanceSection() {
               ...(uiFontSize < 12 || uiFontSize > 14 ? [{ value: String(uiFontSize), label: `${uiFontSize}px` }] : []),
             ]}
             onChange={(v) => setPrefs({ uiFontSize: Number(v) })}
+          />
+        </SettingsRow>
+        <SettingsRow label="Sidebar" description="A rail of your projects with the one you pick beside it, every project in one list, or projects and tasks in two columns.">
+          <Segmented
+            value={sidebarLayout}
+            options={[
+              { value: "rail", label: "Rail" },
+              { value: "list", label: "List" },
+              { value: "columns", label: "Two columns" },
+            ]}
+            onChange={(sidebarLayout) => setPrefs({ sidebarLayout })}
           />
         </SettingsRow>
         <SettingsRow label="Density" description="How tightly the sidebar and lists are packed.">

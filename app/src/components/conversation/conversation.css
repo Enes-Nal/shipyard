@@ -98,6 +98,18 @@
 .cv-md .cv-math-block > .cv-math-display { margin: 0; }
 .cv-md .katex-display { margin: 0; }
 
+.cv-md img { max-width: 100%; height: auto; border-radius: 6px; vertical-align: middle; }
+.cv-md li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.3em; }
+.cv-md li > input[type="checkbox"] { margin: 0 0.45em 0 0; vertical-align: -0.1em; accent-color: var(--primary); }
+
+/* A Markdown file's Preview (files/markdown-view.tsx): a document, so its
+   headings step down further than a reply's and the top two are ruled, as
+   a README reads on GitHub. */
+.md-doc .cv-md h1 { font-size: 1.75em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+.md-doc .cv-md h2 { font-size: 1.35em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); margin-top: 1.5em; }
+.md-doc .cv-md h3 { font-size: 1.12em; }
+.md-doc .cv-md p, .md-doc .cv-md ul, .md-doc .cv-md ol { margin-bottom: 0.9em; }
+
 /* A code block's frame: a head naming its language, with Copy, over the
    code. The frame is the block's surface (bordered, the composer's radius);
    the code inside it keeps the editor's background. */

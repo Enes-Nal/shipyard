@@ -27,9 +27,9 @@ export function WhatsNewNudge() {
   if (!nudge || !release) return null;
   const [a, b] = release.items;
   return (
-    <div className="flex h-7 shrink-0 items-center gap-0.5 pr-[11px] pl-3.5 text-meta" data-testid="whats-new-nudge" role="region" aria-label="What's new">
+    <div className="flex h-7 shrink-0 items-center gap-0.5 px-edge text-meta" data-testid="whats-new-nudge" role="region" aria-label="What's new">
       <Tip label={`${a.title}, ${b.title.toLowerCase()} and more.`} side="top" align="start">
-        <span className="min-w-0 flex-1 truncate pl-2.5 font-medium text-foreground/80">New in Shipyard {release.version}</span>
+        <span className="min-w-0 flex-1 truncate pl-2 font-medium text-foreground/80">New in Shipyard {release.version}</span>
       </Tip>
       <Button size="xs" variant="ghost" className="shrink-0 px-1.5 font-medium text-foreground" onClick={() => openWhatsNew("update", release)}>
         See what's new

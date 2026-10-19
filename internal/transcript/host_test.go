@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -140,5 +141,20 @@ func TestAHelperIsBackWhenTheStreamSaysSo(t *testing.T) {
 	c := crew(5)
 	if len(c) != 1 || c[0].State != "finished" || c[0].Until != 1792200100000 {
 		t.Fatalf("once the stream says it is back: %+v", c)
+	}
+}
+
+func TestAnEditInAStructuredSessionsLogKeepsItsLineNumbers(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "events.jsonl")
+	hunk := []Hunk{{OldStart: 12, OldLines: 1, NewStart: 12, NewLines: 1, Lines: []string{"-old", "+new"}}}
+	res := user([]m{{"type": "tool_result", "tool_use_id": "toolu_e1", "content": "ok"}})
+	res["tool_use_result"] = m{"structuredPatch": hunk}
+	write(t, path,
+		m{"seq": 1, "dir": "out", "data": assistant(tool("toolu_e1", "Edit", m{"file_path": "/home/dev/acme/notes.txt", "old_string": "old", "new_string": "new"}))},
+		m{"seq": 2, "dir": "out", "data": res},
+	)
+	d, err := Detail(SourceClaudeHost, path, "/home/dev/acme", "toolu_e1")
+	if err != nil || d.File != "notes.txt" || !reflect.DeepEqual(d.Hunks, hunk) {
+		t.Fatalf("detail = %+v, %v", d, err)
 	}
 }

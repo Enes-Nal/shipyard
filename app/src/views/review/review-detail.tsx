@@ -49,7 +49,7 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="flex shrink-0 flex-col gap-3 border-b px-6 pt-4 pb-3">
+      <header className="flex shrink-0 flex-col gap-3 border-b px-page pt-4 pb-3">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function ReviewDetail({ entry, actions }: { entry: ReviewEntry; actions: 
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-4 px-6 py-4">
+        <div className="flex flex-col gap-4 px-page py-4">
           <LastWords entry={entry} />
           {(run || loop) && <LastCheck run={run} loop={loop} />}
           {entry.browser && <AgentBrowserArtifacts entry={entry} />}

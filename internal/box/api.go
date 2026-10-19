@@ -485,6 +485,9 @@ func (b *Box) createWorktree(r *http.Request, loc Location, req WorktreeRequest)
 	if loc.RepoTrust == RepoTrustUntrusted || loc.RepoTrust == RepoTrustChanged {
 		created["repo_config"] = loc.RepoTrust
 	}
+	if wt.MainRefresh != nil {
+		created["main"] = wt.MainRefresh
+	}
 	b.publish(r, "worktree.created", created)
 	if req.NoSetup {
 		if err := b.Locations.setSetupPending(loc.Name, wt.Path, true); err == nil {

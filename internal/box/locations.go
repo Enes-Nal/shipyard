@@ -51,6 +51,9 @@ type Location struct {
 	// KitTeam is the org whose team setup the location's kit comes from,
 	// when it does.
 	KitTeam string `json:"kit_team,omitempty"`
+	// keepMain is the config's keep_main: whether new branches keep the
+	// default branch current (freshbase.go).
+	keepMain bool
 }
 
 type Worktree struct {
@@ -60,6 +63,9 @@ type Worktree struct {
 	Head   string `json:"head,omitempty"`
 	// Main marks the repository's own checkout.
 	Main bool `json:"main,omitempty"`
+	// MainRefresh is what making it did to keep the default branch
+	// current (freshbase.go); only in what a create returns.
+	MainRefresh *BaseRefresh `json:"main_refresh,omitempty"`
 	// SettingUp is true when the tool that made it is still running its
 	// setup; a worktree.setup event follows.
 	SettingUp bool `json:"setting_up,omitempty"`
@@ -301,6 +307,7 @@ func (l *Locations) CreateWorktreeFrom(ctx context.Context, location string, req
 		}
 	}
 	args := []string{"-C", loc.Path, "worktree", "add"}
+	var refresh *BaseRefresh
 	switch {
 	case branchExists(ctx, loc.Path, "refs/heads/"+branch):
 		// An existing branch is checked out as it is, to review or continue.
@@ -308,9 +315,16 @@ func (l *Locations) CreateWorktreeFrom(ctx context.Context, location string, req
 	case branchExists(ctx, loc.Path, "refs/remotes/origin/"+branch):
 		args = append(args, "--track", "-b", branch, path, "origin/"+branch)
 	default:
+		var from string
+		from, refresh = freshBase(ctx, loc, base)
+		if from != base {
+			// Branched from origin's, not tracking it: its upstream is
+			// set by the first push, as a branch from main's would be.
+			args = append(args, "--no-track")
+		}
 		args = append(args, "-b", branch, path)
-		if base != "" {
-			args = append(args, base)
+		if from != "" {
+			args = append(args, from)
 		}
 	}
 	// The add runs to the end even if whoever asked goes away: one killed
@@ -324,10 +338,11 @@ func (l *Locations) CreateWorktreeFrom(ctx context.Context, location string, req
 	}
 	for _, w := range describe(ctx, savedLocation{Name: loc.Name, Path: loc.Path}).Worktrees {
 		if w.Path == path {
+			w.MainRefresh = refresh
 			return w, nil
 		}
 	}
-	return Worktree{Name: name, Path: path, Branch: branch}, nil
+	return Worktree{Name: name, Path: path, Branch: branch, MainRefresh: refresh}, nil
 }
 
 // cleanUpFailedAdd undoes what a failed `git worktree add` left: its
@@ -437,6 +452,7 @@ func describe(ctx context.Context, s savedLocation) Location {
 	}
 	all := layered(repo, s.Kit, local)
 	loc.Agents = all.Agents
+	loc.keepMain = all.KeepMain == nil || *all.KeepMain
 	if all.Check != "" {
 		loc.Check, loc.CheckFrom = all.Check, "config"
 	} else if c := detectCheck(s.Path); c != "" {

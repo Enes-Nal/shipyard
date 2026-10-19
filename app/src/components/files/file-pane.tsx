@@ -1,8 +1,9 @@
-import { ArrowUpRightIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, FileX2Icon, GitCompareArrowsIcon, TriangleAlertIcon, WrapTextIcon, XIcon } from "lucide-react";
+import { ArrowUpRightIcon, BookOpenTextIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CodeXmlIcon, Columns2Icon, FileX2Icon, GitCompareArrowsIcon, TriangleAlertIcon, WrapTextIcon, XIcon } from "lucide-react";
 import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { AgentIcon } from "@/components/agent-glyph";
 import { agentName, FileGlyph, useEditorName } from "@/components/files/file-bits";
+import { MarkdownView } from "@/components/files/markdown-view";
 import { useDiffs } from "@/components/diff/load";
 import { ErrorText } from "@/components/error-note";
 import { Tip } from "@/components/tip";
@@ -11,8 +12,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useActiveTheme } from "@/hooks/use-theme";
 import { agentMarks, conflictLines } from "@/lib/file-marks";
 import { fileName } from "@/lib/file-match";
-import { docKey, type Doc, edit, filesApi, type Goto, isDirty, keepMine, openDoc, openFile, poll, reload, save, setComparing, setWrap, useFiles } from "@/lib/files";
+import { docKey, type Doc, edit, filesApi, type Goto, isDirty, keepMine, type MdView, openDoc, openFile, poll, reload, save, setComparing, setMdView, setWrap, useFiles } from "@/lib/files";
 import { ago } from "@/lib/format";
+import { isMarkdown } from "@/lib/md-links";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useWorktreeRef } from "@/lib/workspaces";
@@ -68,6 +70,9 @@ export function FilePane({ path, owner, visible, onClose }: Props) {
     return () => o.disconnect();
   }, [doc?.state]);
   const wrap = wrapPref ?? narrow;
+  // A Markdown file shows as a page, its source, or both; a narrow pane
+  // has no room for both, so it shows the page.
+  const mdPref = useFiles((s) => s.mdView);
   const [hunk, setHunk] = useState(0);
   const [reveal, setReveal] = useState(0);
   // A line asked for (a path named in a chat) shows instead of the agent's
@@ -108,22 +113,35 @@ export function FilePane({ path, owner, visible, onClose }: Props) {
 
   const dirty = isDirty(doc);
   const showCompare = doc.comparing && doc.conflict?.content !== undefined;
+  const isText = !doc.binary && !doc.tooLarge && doc.state === "ready";
+  const view: MdView | undefined = isText && isMarkdown(path) ? (narrow && mdPref === "split" ? "preview" : mdPref) : undefined;
   let body: React.ReactNode;
   if (doc.state === "error") body = <Refusal path={path} title={`Couldn't open ${fileName(path)}`} detail={<ErrorText text={doc.error} className="items-center text-muted-foreground text-meta" />} retry={() => ref && void openDoc(owner, ref, path)} />;
   else if (doc.state === "gone") body = <Refusal path={path} icon={<FileX2Icon className="size-5 text-muted-foreground" />} title={`${fileName(path)} isn't in this worktree any more`} detail="It was deleted or moved on the box." onClose={onClose} />;
   else if (doc.image && !doc.tooLarge) body = <ImageView doc={doc} />;
   else if (doc.binary || doc.tooLarge) body = <Refusal path={path} title={doc.tooLarge ? "Too large to open here" : "Not a text file"} detail={doc.reason} external />;
   else if (showCompare) body = <CompareMine doc={doc} />;
-  else
-    body = (
+  else if (view === "preview") body = <MarkdownView doc={doc} text={text} className="flex-1" />;
+  else {
+    const editor = (
       <Suspense fallback={<div className="flex flex-1 items-center justify-center"><Spinner className="size-4 text-muted-foreground" /></div>}>
-        <CodeEditor path={path} text={doc.text} onChange={(t) => edit(key, t)} onSave={() => void save(key)} changes={marks} conflictLines={conflicted} revealLine={jump?.line ?? hunks[at]?.from} revealEnd={jump?.end} reveal={reveal} wrap={wrap} className="min-h-0 min-w-0 flex-1" />
+        <CodeEditor path={path} text={doc.text} onChange={(t) => edit(key, t)} onSave={() => void save(key)} changes={marks} conflictLines={conflicted} revealLine={jump?.line ?? hunks[at]?.from} revealEnd={jump?.end} reveal={reveal} wrap={wrap} className="min-h-0 min-w-0 flex-1 basis-0" />
       </Suspense>
     );
+    body =
+      view === "split" ? (
+        <div className="flex min-h-0 min-w-0 flex-1" data-testid="file-split">
+          {editor}
+          <MarkdownView doc={doc} text={text} className="flex-1 basis-0 border-l" />
+        </div>
+      ) : (
+        editor
+      );
+  }
 
   return (
     <div ref={frame} className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-background" data-testid="file-pane" data-state={doc.state} data-path={path} data-wrap={wrap || undefined}>
-      <FileHeader narrow={narrow} doc={doc} dirty={dirty} added={marks?.added} removed={marks?.removed} hunks={hunks.length} at={at} onStep={step} wrap={wrap} text={!doc.binary && !doc.tooLarge && doc.state === "ready"} />
+      <FileHeader narrow={narrow} doc={doc} dirty={dirty} added={marks?.added} removed={marks?.removed} hunks={view === "preview" ? 0 : hunks.length} at={at} onStep={step} wrap={wrap} text={isText} view={view} />
       {doc.conflict && !showCompare && <ConflictBanner doc={doc} />}
       {body}
     </div>
@@ -196,7 +214,7 @@ function SaveState({ doc }: { doc: Doc }) {
   return null;
 }
 
-function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wrap, text }: { narrow?: boolean; doc: Doc; dirty: boolean; added?: number; removed?: number; hunks: number; at: number; onStep(d: number): void; wrap: boolean; text: boolean }) {
+function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wrap, text, view }: { narrow?: boolean; doc: Doc; dirty: boolean; added?: number; removed?: number; hunks: number; at: number; onStep(d: number): void; wrap: boolean; text: boolean; view?: MdView }) {
   const turn = doc.turn;
   const [, tick] = useState(0);
   // "2m ago" keeps up.
@@ -205,7 +223,7 @@ function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wra
     return () => window.clearInterval(id);
   }, []);
   return (
-    <div className="flex h-8 shrink-0 items-center gap-2 border-b px-3" data-testid="file-header">
+    <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b px-edge" data-testid="file-header">
       <Crumbs path={doc.path} dirty={dirty} compact={narrow} />
       <SaveState doc={doc} />
       <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -235,7 +253,8 @@ function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wra
           </span>
         )}
         {turn && text && <span aria-hidden className="mx-0.5 h-3.5 w-px bg-border" />}
-        {text && (
+        {view && <MdViewSwitch view={view} narrow={narrow} />}
+        {text && view !== "preview" && (
           <IconButton label={wrap ? "Don't wrap long lines" : "Wrap long lines"} pressed={wrap} onClick={() => setWrap(!wrap)}>
             <WrapTextIcon className="size-3.5" />
           </IconButton>
@@ -243,6 +262,26 @@ function FileHeader({ narrow, doc, dirty, added, removed, hunks, at, onStep, wra
         <OpenInEditor path={doc.path} />
       </div>
     </div>
+  );
+}
+
+// MdViewSwitch picks how a Markdown file shows: the page, its source, or
+// both (not in a narrow pane, which shows the page instead).
+const MD_VIEWS: { view: MdView; label: string; icon: React.ReactNode }[] = [
+  { view: "preview", label: "Preview", icon: <BookOpenTextIcon className="size-3.5" /> },
+  { view: "source", label: "Source", icon: <CodeXmlIcon className="size-3.5" /> },
+  { view: "split", label: "Source and preview side by side", icon: <Columns2Icon className="size-3.5" /> },
+];
+
+function MdViewSwitch({ view, narrow }: { view: MdView; narrow?: boolean }) {
+  return (
+    <span role="group" aria-label="Show as" className="flex items-center gap-0.5 rounded-md bg-muted/50 p-px" data-testid="md-view">
+      {MD_VIEWS.filter((v) => !(narrow && v.view === "split")).map((v) => (
+        <IconButton key={v.view} label={v.label} pressed={view === v.view} onClick={() => setMdView(v.view)}>
+          {v.icon}
+        </IconButton>
+      ))}
+    </span>
   );
 }
 
@@ -284,7 +323,7 @@ function CompareMine({ doc }: { doc: Doc }) {
   const who = agentName(doc.turn?.agent);
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="file-compare">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-warning/6 px-3 text-meta">
+      <div className="flex h-bar-pane shrink-0 items-center gap-2 border-b bg-warning/6 px-edge text-meta">
         <GitCompareArrowsIcon className="size-3.5 text-muted-foreground" />
         <span className="text-muted-foreground">Yours</span>
         <span className="text-muted-foreground/60">→</span>

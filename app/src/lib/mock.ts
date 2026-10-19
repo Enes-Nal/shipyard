@@ -817,7 +817,7 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
     return delay(session);
   }
   if (key === "POST sessions") {
-    const r = body as { location: string; name?: string; command?: string; agent?: string; prompt?: string; title?: string; open?: string };
+    const r = body as { location: string; name?: string; command?: string; agent?: string; prompt?: string; title?: string; open?: string; driver?: string };
     const [locName, wtName] = r.location.split("/");
     const loc = locations[box].find((l) => l.name === locName)!;
     const wt = loc.worktrees?.find((w) => w.name === (wtName ?? locName)) ?? loc.worktrees![0];
@@ -825,6 +825,9 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
     const agent = ["claude", "codex", "gemini"].includes(command) ? command : undefined;
     const title = titleOf(r.title || r.prompt || "", r.title ? 80 : undefined) || undefined;
     const session: Session = { name: r.name ?? `${wt.name}-${command || "shell"}-${sessions[box].length}`, location: r.location, dir: wt.path, command, created: new Date().toISOString(), attached: 0, exited: false, agent, agent_state: agent ? "running" : undefined, title };
+    // Started in chat (the demo's ?structured box has driver.claude), it
+    // runs through its stream, as on a real box.
+    if (r.driver && r.driver !== "terminal") session.driver = r.driver;
     sessions[box].push(session);
     // Asked to show it, the box says so, as for a task's agent.
     if (r.open) setTimeout(() => emit({ type: "session.open", box, data: { name: session.name, location: session.location, path: wt.path, open: r.open, agent } }), 120);

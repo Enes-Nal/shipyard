@@ -42,7 +42,7 @@ function Notice({ n, onLeave, className, line }: { n: ShownNotice; onLeave?: () 
       data-state={n.installing ? "installing" : f ? "failed" : "idle"}
       // In the open sidebar a notice is one quiet line, its buttons at the
       // end; the rail's popover has room for it to wrap.
-      className={cn(line ? "flex flex-wrap items-center min-h-7 gap-x-1 gap-y-0.5 pr-[11px] pl-6" : "flex flex-col gap-2 px-2.5 py-row-pad", className)}
+      className={cn(line ? "flex flex-wrap items-center min-h-7 gap-x-1 gap-y-0.5 pr-edge pl-lane" : "flex flex-col gap-2 px-2.5 py-row-pad", className)}
     >
       <div className={cn("flex flex-col gap-0.5 text-meta", line && "min-w-0 flex-1")}>
         <Tip label={line ? `${n.box}: ${said(n, !!f)}` : undefined} side="top" align="start">
@@ -122,7 +122,7 @@ export function SkillsNotices() {
           aria-expanded={open}
           data-testid="skills-notices-more"
           onClick={() => setOpen(!open)}
-          className={cn("ml-[42px] flex h-6 w-max shrink-0 items-center gap-1 rounded-md px-1 text-tag outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", ink.faint)}
+          className={cn("ml-[calc(var(--spacing-lane)+18px)] flex h-6 w-max shrink-0 items-center gap-1 rounded-md px-1 text-tag outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", ink.faint)}
         >
           <ChevronDownIcon aria-hidden className={cn("size-3 transition-transform", open && "rotate-180")} />
           {open ? "Show fewer" : `${rest.length} more ${rest.length === 1 ? "box" : "boxes"}`}

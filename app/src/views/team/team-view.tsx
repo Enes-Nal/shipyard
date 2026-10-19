@@ -89,7 +89,7 @@ export function TeamSetupView({ org: initial, from, box: wantBox, update, onBack
 
 function Loading() {
   return (
-    <div className="mx-auto max-w-6xl px-8 pt-8">
+    <div className="mx-auto max-w-[calc(68rem+2*var(--spacing-page))] px-page pt-8">
       <div className="flex items-center gap-4">
         <Skeleton className="size-13 rounded-xl" />
         <div className="space-y-2">
@@ -473,7 +473,7 @@ function OrgPage({ org, from, wantBox, wantUpdate, github, onOrg }: { org: strin
   return (
     <>
       <OrgHeader view={view} from={from} badge={updating ? <span className="rounded-full bg-info/10 px-2.5 py-1 text-info-foreground text-label">Update · {view.update!.from} → {view.update!.to}</span> : undefined} />
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_300px] gap-8 px-8 pt-6 pb-16 @max-[819px]:grid-cols-1 @max-[819px]:gap-4 @max-[819px]:px-5 @max-[819px]:pt-4">
+      <div className="mx-auto grid max-w-[calc(68rem+2*var(--spacing-page))] grid-cols-[minmax(0,1fr)_300px] gap-8 px-page pt-6 pb-16 @max-[819px]:grid-cols-1 @max-[819px]:gap-4 @max-[819px]:pt-4">
         <div className="min-w-0 @max-[819px]:order-2">
           {!live && !updating && <KitChoices view={view} box={box} />}
           <Plan view={(live ? live.onepassword_skipped : skipping) ? { ...view, steps: view.steps?.filter((s) => s.id !== "1password") } : view} skipOP={live ? live.onepassword_skipped : skipping} run={live} box={box} picked={sel} onPick={(id, on) => setPicked((p) => toggled(p, id, on))} onRetry={retry} onOpenTerminal={openTerminal} onOpenSession={openSession} onStartOn={startOn} onFiles={() => setFiles(true)} update={updating ? view.update : undefined} use={use} onUse={onUse} onPull={(x, c) => pull(x.repo, c)} />
@@ -633,7 +633,7 @@ function NoBerth({
   return (
     <>
       <div className="border-b bg-gradient-to-b from-muted/50 to-transparent">
-        <div className="mx-auto flex max-w-6xl items-start gap-4 px-8 pt-6 pb-5 @max-[819px]:px-5">
+        <div className="mx-auto flex max-w-[calc(68rem+2*var(--spacing-page))] items-start gap-4 px-page pt-6 pb-5">
           <OrgAvatar org={view.org} size={48} />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 font-mono text-muted-foreground text-body">
@@ -648,7 +648,7 @@ function NoBerth({
           </div>
         </div>
       </div>
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_300px] gap-8 px-8 pt-6 pb-16 @max-[819px]:grid-cols-1 @max-[819px]:gap-4 @max-[819px]:px-5 @max-[819px]:pt-4">
+      <div className="mx-auto grid max-w-[calc(68rem+2*var(--spacing-page))] grid-cols-[minmax(0,1fr)_300px] gap-8 px-page pt-6 pb-16 @max-[819px]:grid-cols-1 @max-[819px]:gap-4 @max-[819px]:pt-4">
         <div className="min-w-0 @max-[819px]:order-2">
           {live ? (
             <Section title="Repos" aside={`${live.projects.length} cloned as you`}>

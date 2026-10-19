@@ -7,6 +7,7 @@ import { MoreItems, Nav as PlacesNav, RowKeys, rowClass, useArrangedNav } from "
 import { ProjectsColumn, ShowTasks, TasksColumn, usePicked } from "@/components/sidebar/columns";
 import { Projects, useSidebarPrefs } from "@/components/sidebar/projects";
 import { RailAgents } from "@/components/sidebar/rail";
+import { FoldedRail, RailSidebar } from "@/components/sidebar/rail-layout";
 import { SidebarResizeHandle } from "@/components/sidebar/resize-handle";
 import { RowLayer } from "@/components/sidebar/row-layer";
 import { RailSkillsNotices, SkillsNotices } from "@/components/sidebar/skills-notice";
@@ -37,21 +38,25 @@ const alwaysOpen: SidebarContextProps = {
   toggleSidebar: () => {},
 };
 
-// AppSidebar: the window's controls, a short list of places, the tasks in
-// every project on every box, and at its foot the boxes and Settings. With
-// Labs' two-column sidebar, the projects and the tasks of the one picked
-// sit side by side (ColumnsSidebar).
+// AppSidebar: by default a rail of the places and projects with the picked
+// project's worktrees beside it (sidebar/rail-layout.tsx). The list layout
+// has the window's controls, a short list of places, the tasks in every
+// project on every box, and at its foot the boxes and Settings; the
+// two-column one sets the projects and the tasks of the one picked side by
+// side (ColumnsSidebar).
 export function AppSidebar() {
   const [prefs, update] = useSidebarPrefs();
   const context = useMemo(() => alwaysOpen, []);
   const collapsed = usePrefs((p) => p.sidebarCollapsed);
-  const columns = usePrefs((p) => p.sidebarLayout === "columns");
+  const layout = usePrefs((p) => p.sidebarLayout);
 
-  if (collapsed) return <Rail />;
+  if (collapsed) return layout === "rail" ? <FoldedRail /> : <Rail />;
 
   return (
     <SidebarContext.Provider value={context}>
-      {columns ? (
+      {layout === "rail" ? (
+        <RailSidebar prefs={prefs} update={update} places={<Places prefs={prefs} update={update} />} />
+      ) : layout === "columns" ? (
         <ColumnsSidebar prefs={prefs} update={update} />
       ) : (
         // Its width is --sidebar-w (prefs), or --sidebar-live as a drag
@@ -62,7 +67,7 @@ export function AppSidebar() {
           aria-label="Sidebar"
           data-testid="sidebar"
           style={{ width: `clamp(${SIDEBAR_MIN}px, var(--sidebar-live, var(--sidebar-w, ${SIDEBAR_DEFAULT}px)), max(${SIDEBAR_DEFAULT}px, min(${SIDEBAR_MAX}px, 40vw)))` }}
-          className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pt-1.5 pb-2 text-sidebar-foreground", inkScale)}
+          className={cn("@container/side relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pb-2 text-sidebar-foreground", inkScale)}
         >
           <SidebarResizeHandle />
           <WindowStrip />
@@ -71,7 +76,7 @@ export function AppSidebar() {
           <TeamSidebarCard />
 
           {/* One context menu and one tooltip for every row in it. */}
-          <RowLayer className="min-h-0 flex-1 overflow-y-auto pt-5 pr-[11px] pb-3 pl-3.5">
+          <RowLayer className="min-h-0 flex-1 overflow-y-auto px-edge pt-5 pb-3">
             <Projects prefs={prefs} update={update} />
           </RowLayer>
 
@@ -96,7 +101,7 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
   return (
     <aside aria-label="Sidebar" data-testid="sidebar" data-layout="columns" className={cn("relative flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar pb-2 text-sidebar-foreground", inkScale)}>
       <div className="mb-1 flex min-h-0 flex-1 border-sidebar-border border-b">
-        <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col pt-1.5", !folded && !noBoxes && "border-sidebar-border border-r")}>
+        <div data-testid="sidebar-projects" style={{ width: PROJECTS_COLUMN }} className={cn("relative flex shrink-0 flex-col", !folded && !noBoxes && "border-sidebar-border border-r")}>
           <WindowStrip extra={folded && !noBoxes ? <ShowTasks /> : undefined} />
           <Places prefs={prefs} update={update} />
           <TeamSidebarCard />
@@ -119,7 +124,7 @@ function ColumnsSidebar({ prefs, update }: SidebarPrefsProps) {
 // to its tasks).
 function WindowStrip({ extra }: { extra?: React.ReactNode }) {
   return (
-    <div data-tauri-drag-region className="flex h-8 shrink-0 items-center justify-end gap-0.5 pr-[6px] pl-4.5">
+    <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 px-edge">
       {LINUX_ALPHA && <AlphaBadge link className="mr-auto" />}
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       {extra}
@@ -144,7 +149,7 @@ function Places({ prefs, update }: SidebarPrefsProps) {
   const noBoxes = useStore((s) => !!s.status && s.status.boxes.length === 0);
   const labs = usePrefs((p) => p.labs);
   return (
-    <div className="pt-5 pr-[11px] pl-3.5">
+    <div className="px-edge pt-5">
       <PlacesNav
         lead={
           <>
@@ -172,13 +177,6 @@ function Places({ prefs, update }: SidebarPrefsProps) {
               </MenuItem>
               <MenuSeparator />
               <MenuGroup>
-                <MenuGroupLabel>Show</MenuGroupLabel>
-                <MenuRadioGroup value={prefs.show} onValueChange={(v) => update({ show: v as typeof prefs.show })}>
-                  <MenuRadioItem value="active">Active worktrees</MenuRadioItem>
-                  <MenuRadioItem value="all">All worktrees</MenuRadioItem>
-                </MenuRadioGroup>
-              </MenuGroup>
-              <MenuGroup>
                 <MenuGroupLabel>Group by</MenuGroupLabel>
                 <MenuRadioGroup value={prefs.groupBy} onValueChange={(v) => update({ groupBy: v as typeof prefs.groupBy })}>
                   <MenuRadioItem value="project">Project</MenuRadioItem>
@@ -203,7 +201,7 @@ function Foot() {
     <>
       <SkillsNotices />
       <WhatsNewNudge />
-      <div className="flex h-[34px] shrink-0 items-center gap-1 pr-[15px] pl-3.5">
+      <div className="flex h-[34px] shrink-0 items-center gap-1 px-edge">
         <BoxesFoot />
         <Tip label="Settings · ⇧-click for Developer" side="top" align="end">
           <button
@@ -240,7 +238,7 @@ function TopAction({ label, keys, icon, onClick }: { label: string; keys: string
 // Rail is the sidebar folded away (⌘\): the window's controls, the places
 // in the sidebar's own order, the agents by state (sidebar/rail.tsx), and a
 // way back. It keeps clear of the traffic lights like the full one, which is
-// why it is 76px.
+// why it is w-rail-folded, 88px at the least.
 function Rail() {
   const view = useStore((s) => s.view);
   const setView = useStore((s) => s.setView);
@@ -260,9 +258,9 @@ function Rail() {
     </Tip>
   );
   return (
-    <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-19 shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
+    <aside aria-label="Sidebar" data-testid="sidebar-rail" className={cn("relative flex w-rail-folded shrink-0 flex-col items-center border-sidebar-border border-r bg-sidebar", inkScale)}>
       <SidebarResizeHandle folded />
-      <div data-tauri-drag-region className="h-10 w-full shrink-0" />
+      <div data-tauri-drag-region className="h-bar w-full shrink-0" />
       <div className="flex flex-col items-center gap-1">
         {item("Search (⌘K)", <SearchIcon />, false, () => useStore.getState().setPaletteOpen(true))}
         <NotificationBell size="rail" />
