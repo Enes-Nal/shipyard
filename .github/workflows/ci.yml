@@ -1,9 +1,14 @@
 name: ci
 
-# Pull requests are checked; a push to main is not (it was checked as its
-# pull request). Run it on main by hand from the Actions tab if needed.
+# A pull request is checked only once it has the run-ci label (adding the
+# label starts a run; each push after it runs again), or when it is a
+# release's (a release/ branch). A push to main is not checked (it was, as
+# its pull request, if anyone asked). Run it by hand from the Actions tab
+# if needed. A release always runs all of it: release.yml calls it on the
+# tag.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
   # release.yml runs all of this on the tag first, and fails the release on
   # any failure.
@@ -14,9 +19,10 @@ permissions:
 
 # A newer push to a pull request cancels the run still going for the older one.
 # A release's checks (workflow_call) run under the tag's ref, so they are
-# never cancelled by a push to main.
+# never cancelled by a push to main. Adding some other label runs nothing,
+# in a group of its own, so it cancels nothing either.
 concurrency:
-  group: ci-${{ github.workflow_ref }}-${{ github.ref }}
+  group: ci-${{ github.workflow_ref }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'run-ci' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 # Jobs run on omarchy, the owner's self-hosted runner (ci/runner/), when the
@@ -24,6 +30,8 @@ concurrency:
 # everything else, pull requests included, runs on ubuntu-latest.
 jobs:
   go:
+    # Only what was asked for: see "on" above.
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' || github.event.label.name == 'run-ci') && (contains(github.event.pull_request.labels.*.name, 'run-ci') || startsWith(github.head_ref, 'release/'))
     runs-on: ${{ (vars.SELF_HOSTED == 'true' && github.event_name == 'push' && github.actor == github.repository_owner) && fromJSON('["self-hosted","omarchy"]') || 'ubuntu-latest' }}
     steps:
       # omarchy runs only the owner's pushes; its job-started hook
@@ -67,6 +75,8 @@ jobs:
           BERTH_BROWSER_START_TIMEOUT: "90s"
 
   shell:
+    # Only what was asked for: see "on" above.
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' || github.event.label.name == 'run-ci') && (contains(github.event.pull_request.labels.*.name, 'run-ci') || startsWith(github.head_ref, 'release/'))
     runs-on: ${{ (vars.SELF_HOSTED == 'true' && github.event_name == 'push' && github.actor == github.repository_owner) && fromJSON('["self-hosted","omarchy"]') || 'ubuntu-latest' }}
     steps:
       # omarchy runs only the owner's pushes; its job-started hook
@@ -94,6 +104,8 @@ jobs:
       - run: shellcheck -x -S warning scripts/release-test/feed-merge-test.sh && scripts/release-test/feed-merge-test.sh
 
   app:
+    # Only what was asked for: see "on" above.
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' || github.event.label.name == 'run-ci') && (contains(github.event.pull_request.labels.*.name, 'run-ci') || startsWith(github.head_ref, 'release/'))
     runs-on: ${{ (vars.SELF_HOSTED == 'true' && github.event_name == 'push' && github.actor == github.repository_owner) && fromJSON('["self-hosted","omarchy"]') || 'ubuntu-latest' }}
     defaults:
       run:
@@ -193,6 +205,8 @@ jobs:
   # (scripts/linux-release.sh) does the rest. Cached, it takes a few minutes,
   # beside the app job's longer e2e suite.
   linux-app:
+    # Only what was asked for: see "on" above.
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' || github.event.label.name == 'run-ci') && (contains(github.event.pull_request.labels.*.name, 'run-ci') || startsWith(github.head_ref, 'release/'))
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -242,6 +256,8 @@ jobs:
           ls -la "$deb" "$appimage"
 
   docs-site:
+    # Only what was asked for: see "on" above.
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' || github.event.label.name == 'run-ci') && (contains(github.event.pull_request.labels.*.name, 'run-ci') || startsWith(github.head_ref, 'release/'))
     runs-on: ${{ (vars.SELF_HOSTED == 'true' && github.event_name == 'push' && github.actor == github.repository_owner) && fromJSON('["self-hosted","omarchy"]') || 'ubuntu-latest' }}
     defaults:
       run:
