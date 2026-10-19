@@ -147,9 +147,15 @@ func claudeDetail(line []byte, id, dir string, d *ToolDetail) (call, result bool
 			Content json.RawMessage `json:"content"`
 		} `json:"message"`
 		ToolUseResult json.RawMessage `json:"toolUseResult"`
+		// The same, as Claude Code's stream (a structured session's log)
+		// names it.
+		StreamResult json.RawMessage `json:"tool_use_result"`
 	}
 	if json.Unmarshal(line, &l) != nil {
 		return
+	}
+	if len(l.ToolUseResult) == 0 {
+		l.ToolUseResult = l.StreamResult
 	}
 	var blocks []struct {
 		Type      string          `json:"type"`
