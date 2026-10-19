@@ -227,7 +227,8 @@ and, while it waits, `ask` (what its hooks said it asks for). A `finished`
 agent that [turn check](/concepts/sessions-and-agents#agent-state) read as
 unfinished carries `unfinished: true` (something still runs; shown as
 Working) or `parked: true` (it waits on a reply or a later time; shown as
-Idle). `driver`
+Idle); a `waiting` one it read as asking in its last message carries
+`soft_wait: true` (no `ask`: the reply box answers it). `driver`
 says how the box reaches the agent: `terminal` (its own screen in tmux) for
 every agent but a structured one, or `claude` (Claude Code driven through
 its stream); boxes that say it list `driver` in `capabilities`. `POST

@@ -3,6 +3,7 @@ package box
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -145,6 +146,54 @@ func TestTurnCheckMakesATurnThatAsksWait(t *testing.T) {
 	}
 	if res, err := b.sendPrompt(ctx, sess.Name, SendRequest{Text: "And then", When: "now"}, "test", "test"); err != nil || !res.Sent {
 		t.Fatalf("when now: %+v %v", res, err)
+	}
+}
+
+// A turn that asks in its last message waits with nothing on its screen to
+// answer: Claude Code sits at its prompt. The session says the wait is turn
+// check's, with no ask (the app then draws no question card from a screen
+// guess), /rc leaves it as it is, and the mode menu switches its mode. A
+// wait its hooks reported still keeps both from typing at the question.
+func TestTurnChecksWaitIsSaidAndTakesAModeChange(t *testing.T) {
+	b, bus, sess, calls := checkedBox(t, true, "Which flaky tests should move?", "Which ones do you want moved? I'd say 1 and 3.", jevSays("needs_input", 0.92))
+	ctx := context.Background()
+	endTurn(bus, sess)
+	waitCall(t, calls)
+	deadline := time.Now().Add(5 * time.Second)
+	for stateNow(t, b, sess.Name) != "waiting" {
+		if time.Now().After(deadline) {
+			t.Fatal("the verdict was not taken")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	setMode := func() error {
+		r := httptest.NewRequest("POST", "/v1/sessions/"+sess.Name+"/mode", strings.NewReader(`{"mode":"default"}`))
+		r.SetPathValue("name", sess.Name)
+		return b.setMode(httptest.NewRecorder(), r)
+	}
+	soft := func() {
+		t.Helper()
+		if got := b.enrich(ctx, []Session{sess})[0]; got.AgentState != "waiting" || !got.SoftWait || got.Ask != nil {
+			t.Fatalf("the session reads %s, soft wait %v, ask %+v", got.AgentState, got.SoftWait, got.Ask)
+		}
+	}
+	soft()
+	if res, err := b.sendPrompt(ctx, sess.Name, SendRequest{Text: "/rc", When: "idle"}, "test", "test"); err != nil || !res.Sent || res.Turn != "" {
+		t.Fatalf("/rc: %+v %v", res, err)
+	}
+	soft()
+	if err := setMode(); err != nil {
+		t.Fatalf("a mode change at turn check's wait: %v", err)
+	}
+
+	hook(bus, adapters.Started, sess.Name, sess.Dir, "claude", "signal", "prompt")
+	hook(bus, adapters.Waiting, sess.Name, sess.Dir, "claude", "reason", "permission")
+	if got := b.enrich(ctx, []Session{sess})[0]; got.AgentState != "waiting" || got.SoftWait {
+		t.Fatalf("a hooked wait reads %s, soft wait %v", got.AgentState, got.SoftWait)
+	}
+	var he httpError
+	if err := setMode(); !errors.As(err, &he) || he.status != http.StatusConflict {
+		t.Fatalf("a mode change at a permission prompt: %v", err)
 	}
 }
 

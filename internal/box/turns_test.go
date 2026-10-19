@@ -11,6 +11,7 @@ import (
 
 	"github.com/cosscom/shipyard/internal/events"
 	"github.com/cosscom/shipyard/internal/integrations"
+	"github.com/cosscom/shipyard/internal/integrations/adapters"
 )
 
 // ledger is a turn ledger following a sequenced bus, with sessions tracked
@@ -621,6 +622,26 @@ func TestTheScreenEndsTheWaitsItReported(t *testing.T) {
 	}
 	if got, _ := tr.Get(mine.ID); got.State != "finished" || got.Fidelity != "screen" {
 		t.Fatalf("quiet: %+v", got)
+	}
+}
+
+// Screens that ask nothing of a key: Remote Control's menu after /rc,
+// Claude Code's prompt once the mode menu switched it to bypass, and its
+// prompt under a last message that asks in words (its footer ends in
+// "/rc"). A turn the screen settles never waits on them.
+func TestScreensWithNoQuestionAreNoWait(t *testing.T) {
+	for _, f := range []string{"remote-control.ansi", "bypass-switched.ansi", "asked-in-reply.ansi"} {
+		raw := fixture(t, "screens", f)
+		if got := adapters.ScreenState(raw); got != "" {
+			t.Fatalf("%s reads %q", f, got)
+		}
+		tr, bus := ledger(t, Session{Name: "x", Dir: "/w/x", Agent: "aider"})
+		sent := bus.Publish(events.Event{Type: "session.sent", Data: map[string]any{"name": "x"}})
+		mine, _ := tr.ForSent("x", sent.Seq)
+		screenPoll(tr, bus, "x", raw)
+		if got, _ := tr.Get(mine.ID); got.State == "waiting" || len(got.Waits) != 0 {
+			t.Fatalf("%s: %+v", f, got)
+		}
 	}
 }
 

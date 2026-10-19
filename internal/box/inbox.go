@@ -67,7 +67,7 @@ func (b *Box) sendQueued(w http.ResponseWriter, r *http.Request) error {
 		return startupText(agent)
 	}
 	waiting := ""
-	if st := b.enrich(ctx, []Session{sess})[0]; st.AgentState == "waiting" && !b.Turns.SoftWait(name) {
+	if st := b.enrich(ctx, []Session{sess})[0]; st.AgentState == "waiting" && !st.SoftWait {
 		waiting = st.Turn
 	}
 	if waiting != "" && !req.Force {

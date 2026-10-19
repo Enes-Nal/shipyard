@@ -104,6 +104,9 @@ type SessionState struct {
 	// later time, with nothing running and nothing asked of you.
 	Unfinished bool `json:"unfinished,omitempty"`
 	Parked     bool `json:"parked,omitempty"`
+	// SoftWait is a wait turn check read into a finished turn: its last
+	// message asks something, and nothing on its screen waits for a key.
+	SoftWait bool `json:"soft_wait,omitempty"`
 }
 
 func (t Turn) open() bool {
@@ -943,7 +946,7 @@ func (t *Turns) Track(sess Session) SessionState {
 }
 
 func (s *sessTrack) snapshot() SessionState {
-	out := SessionState{Session: s.Name, Agent: s.Agent, State: s.State, Since: s.Since, Seq: s.Seq, Fidelity: s.Fidelity, AgentSessionID: s.AgentSessionID, Queued: len(s.inbox), Unfinished: s.Unfinished, Parked: s.Parked}
+	out := SessionState{Session: s.Name, Agent: s.Agent, State: s.State, Since: s.Since, Seq: s.Seq, Fidelity: s.Fidelity, AgentSessionID: s.AgentSessionID, Queued: len(s.inbox), Unfinished: s.Unfinished, Parked: s.Parked, SoftWait: s.State == "waiting" && s.SoftWait}
 	if tr := s.current(); tr != nil {
 		out.Turn = tr.ID
 		if n := len(tr.Waits); tr.State == "waiting" && n > 0 && tr.Waits[n-1].End.IsZero() && tr.Waits[n-1].Ask != nil {
@@ -961,11 +964,8 @@ func (s *sessTrack) snapshot() SessionState {
 // SoftWait says whether a session waits only by turn check's reading, so a
 // prompt typed now starts a turn rather than answering a question.
 func (t *Turns) SoftWait(name string) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.init()
-	s := t.sess[name]
-	return s != nil && s.State == "waiting" && s.SoftWait
+	st, ok := t.State(name)
+	return ok && st.SoftWait
 }
 
 // State is a session's state, if the ledger knows it.
