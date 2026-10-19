@@ -118,9 +118,17 @@ function toHtml(text: string, draft: boolean, render: TexRender | undefined): { 
   return { html: out.html, texWanted };
 }
 
-export const Markdown = memo(function Markdown({ text, copy = true, draft = false, clipped = false }: { text: string; copy?: boolean; draft?: boolean; clipped?: boolean }) {
+// A picture whose src is a path, not a web address: in a file's Preview
+// its bytes come from the box (files/markdown-view.tsx), so its src waits
+// in data-src rather than asking the app's own origin for it.
+const holdImages = (html: string) => html.replace(/<img src="(?![a-z][a-z0-9+.-]*:|\/\/)([^"]*)"/gi, '<img data-src="$1"');
+
+export const Markdown = memo(function Markdown({ text, copy = true, draft = false, clipped = false, onLink, localImages = false }: { text: string; copy?: boolean; draft?: boolean; clipped?: boolean; onLink?(href: string): void; localImages?: boolean }) {
   const render = useSyncExternalStore(texSubscribe, texNow);
-  const { html, texWanted } = useMemo(() => toHtml(text, draft, render), [text, draft, render]);
+  const { html, texWanted } = useMemo(() => {
+    const out = toHtml(text, draft, render);
+    return localImages ? { ...out, html: holdImages(out.html) } : out;
+  }, [text, draft, render, localImages]);
   useEffect(() => {
     if (texWanted) loadTex();
   }, [texWanted]);
@@ -163,7 +171,8 @@ export const Markdown = memo(function Markdown({ text, copy = true, draft = fals
           const href = a?.getAttribute("href");
           if (!href) return;
           e.preventDefault();
-          if (/^https?:\/\//.test(href)) void openUrl(href);
+          if (onLink) onLink(href);
+          else if (/^https?:\/\//.test(href)) void openUrl(href);
         }}
       />
       <InlineImages body={body} html={html} draft={draft} />

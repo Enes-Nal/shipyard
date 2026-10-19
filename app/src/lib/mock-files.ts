@@ -250,6 +250,40 @@ cart becomes an order when the provider's webhook says so.
 - \`claimEvent\` records each event id once; a retry is answered \`ok\` and ignored.
 `;
 
+const SHOP_README = `# Shop
+
+The storefront and checkout for the shop: a Next.js app over a Postgres
+database, paid through the provider's hosted element.
+
+![The shop's logo](apps/web/public/logo.png)
+
+## Set up & run
+
+\`\`\`sh
+pnpm install
+pnpm db:migrate
+pnpm dev
+\`\`\`
+
+The app is on port 3000. Payments run against the provider's test mode.
+
+## Where things are
+
+| Folder | What's in it |
+| --- | --- |
+| \`apps/web\` | The storefront, checkout and webhook routes |
+| \`packages/money\` | Amounts in minor units, and formatting them |
+| \`docs\` | How [payments](docs/payments.md) and the checkout flow work |
+
+## Before a release
+
+- [x] Webhooks are idempotent (see [Payments](docs/payments.md#webhooks))
+- [ ] Refunds reach the order page
+- [ ] Back to [the top](#shop)
+
+> Read [Set up & run](#set-up--run) first.
+`;
+
 // What the agent did this turn: each file before (none: it made it) and
 // after, and how many minutes ago.
 interface Touched {
@@ -319,6 +353,7 @@ function initial(loc: string, wt: string, path: string): string {
   if (path.endsWith("createOrder.ts")) return CREATE_ORDER;
   if (path.endsWith("checkout-form.tsx")) return CHECKOUT_FORM;
   if (path === "docs/payments.md") return PAYMENTS_DOC;
+  if (path === "README.md" && isShop(loc)) return SHOP_README;
   if (path.endsWith(".md")) return `# ${path.split("/").pop()!.replace(/\.md$/, "")}\n\nNotes for the ${isShop(loc) ? "shop's checkout" : "project"}.\n`;
   if (path.endsWith(".json")) return `{\n  "name": "${path.split("/").slice(-2, -1)[0] ?? loc}",\n  "private": true\n}\n`;
   if (path.endsWith(".yml") || path.endsWith(".yaml")) return `name: ci\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm test\n`;
