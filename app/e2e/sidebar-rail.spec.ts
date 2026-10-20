@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, mockOnly, test } from "./fixtures";
 
 // The rail sidebar, the default layout (components/sidebar/rail-layout.tsx):
@@ -6,6 +8,15 @@ import { expect, mockOnly, test } from "./fixtures";
 // an agent waiting for you, evals one at work, and notes nothing going on.
 
 const rail = { sidebarLayout: "rail" };
+
+// Switching to notes, where no agent is at work, opens a new task in it
+// (lib/project-landing); closeNewTask checks that and closes it.
+async function closeNewTask(page: Page, project: string) {
+  const dialog = page.getByRole("dialog", { name: "New task" });
+  await expect(dialog.getByRole("button", { name: `Project: ${project}` })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+}
 
 test("every project is a tile on the rail that says when it needs you or works", async ({ app }) => {
   mockOnly();
@@ -24,6 +35,8 @@ test("every project is a tile on the rail that says when it needs you or works",
 test("picking a tile shows that project's worktrees beside the rail", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: rail });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
   const page = app.page;
   const shop = page.locator("[data-testid=rail-project][data-project=shop]");
   await shop.click();
@@ -35,14 +48,69 @@ test("picking a tile shows that project's worktrees beside the rail", async ({ a
   await expect(app.worktree("gpu/judge-v2")).toHaveCount(0);
 
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).getByTestId("tasks-empty")).toContainText("No tasks here yet.");
+});
+
+test("switching to a tile lands on its agent that worked last", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
+  const page = app.page;
+  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+
+  // Of shop's agents at work or waiting, qa-deck's changed state last.
+  await page.locator("[data-testid=rail-project][data-project=shop]").click();
+  await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+  await expect(page.getByRole("tab", { name: /^Build the QA deck for the release/, selected: true })).toBeVisible();
+  await expect(page.getByTestId("nav-home")).not.toHaveAttribute("aria-current", "page");
+
+  // evals has an agent at work in judge-v2.
+  await page.locator("[data-testid=rail-project][data-project=evals]").click();
+  await expect(app.worktree("gpu/judge-v2")).toHaveAttribute("data-active", "true");
+  await expect(page.getByRole("tab", { name: /^Tune the judge prompt/, selected: true })).toBeVisible();
+});
+
+test("switching to a tile with no agent at work opens a new task in its project", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
+  const page = app.page;
+  await page.locator("[data-testid=rail-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
+  await expect(page.locator("[data-testid=rail-project][data-project=notes]")).toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+});
+
+test("picking the tile already picked leaves the main area as it was", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
+  const page = app.page;
+  const shop = page.locator("[data-testid=rail-project][data-project=shop]");
+  await shop.click();
+  await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+
+  await page.getByTestId("project-rail").getByTestId("nav-home").click();
+  await expect(page.getByTestId("project-rail").getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+  await shop.click();
+  await expect(shop).toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("sidebar").getByRole("region", { name: "shop", exact: true })).toBeVisible();
+  await expect(page.getByTestId("project-rail").getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("opening a worktree from elsewhere picks its project on the rail", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: rail });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 
   // From ⌘K.
@@ -70,6 +138,7 @@ test("folded away, the rail keeps its projects, the traffic lights over its midd
   // The traffic lights (14pt to 74pt) sit over its middle whatever the text size.
   await expect.poll(async () => (await folded.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(88);
   await folded.locator("[data-testid=rail-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 });
 

@@ -30,11 +30,12 @@ import type { BoxStatus, Location, Session } from "@/lib/api";
 import type { SessionState } from "@/lib/derive";
 import { usePrefs } from "@/lib/prefs";
 import { type Project, useProjects } from "@/lib/project-groups";
+import { landingAgent } from "@/lib/project-landing";
 import { nextRow, pickedColumn } from "@/lib/sidebar-columns";
 import { clampTasks, draggedTasks, PROJECTS_COLUMN, TASKS_DEFAULT, TASKS_MAX, TASKS_MIN, tasksMax, steppedTasks } from "@/lib/sidebar-width";
 import { NONE, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { homeBox, refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
+import { homeBox, openSession, refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
 
 // The two-column sidebar (Settings › Labs): the places and the projects in
 // the first column, one quiet row each, and the tasks of the project picked
@@ -97,9 +98,26 @@ export function usePicked(groupBy: SidebarPrefs["groupBy"]): Picked | undefined 
 }
 
 // pickProject shows a project's tasks, unfolding the tasks column if it was
-// folded away; the main area stays as it is.
-function pickProject(key: string) {
+// folded away. Switching to it from another lands the main area there too
+// (switchTo); picking the one shown again leaves it as it is.
+function pickProject(key: string, places: Place[], newTask: Place | undefined, switching: boolean) {
   usePrefs.setState({ sidebarPick: key, tasksFolded: false });
+  if (switching) switchTo(places, newTask);
+}
+
+type Place = { box: BoxStatus; loc: Location };
+
+// switchTo lands on a project just switched to (lib/project-landing): the
+// agent in it that worked last, in its worktree; with none working or
+// waiting on you, a new task in it, on newTask's box. The rail's tiles do
+// the same.
+export function switchTo(places: Place[], newTask: Place | undefined) {
+  const { boxes, openNewWorktree } = useStore.getState();
+  const hit = landingAgent(
+    places.filter((m) => m.box.state === "online").map((m) => ({ box: m.box.name, loc: m.loc, sessions: boxes[m.box.name]?.sessions ?? [], stats: boxes[m.box.name]?.stats })),
+  );
+  if (hit) openSession(hit.box, hit.session);
+  else if (newTask && newTask.box.state === "online") openNewWorktree({ box: newTask.box.name, location: newTask.loc.name });
 }
 
 // mostUrgent is the state a project's row says: amber while an agent in it
@@ -163,7 +181,7 @@ function ProjectColumnRow({ project: p, selected }: { project: Project; selected
       tip={<PlaceTip name={`${p.name}${p.slug ? ` (${p.slug})` : ""}`} lines={[...p.members.map((m) => `${m.box.name}: ${m.loc.path}`), ...p.members.filter((m) => m.box.state !== "online").map((m) => `${m.box.name} is ${awayText(m.box)}`)]} />}
       items={() => projectGroupActions(p)}
       marks={<TeamSuggestMark places={p.members.map((m) => ({ box: m.box.name, location: m.loc.name }))} />}
-      onPick={() => pickProject(p.id)}
+      onPick={() => pickProject(p.id, p.members, def, !selected)}
       onNew={online ? () => useStore.getState().openNewWorktree({ box: def.box.name, location: def.loc.name }) : undefined}
       newLabel={p.members.length > 1 ? `New task on ${p.defaultBox}` : `New task in ${p.name}`}
       drag={p.id}
@@ -185,7 +203,7 @@ function RepoColumnRow({ repo, selected }: { repo: Repo; selected: boolean }) {
       tip={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path, ...(online ? [] : [`${box.name} is ${awayText(box)}`])]} />}
       items={() => projectActions(box.name, loc)}
       marks={<TeamSuggestMark places={[{ box: box.name, location: loc.name }]} />}
-      onPick={() => pickProject(repo.key)}
+      onPick={() => pickProject(repo.key, [repo], repo.main ? repo : undefined, !selected)}
       onNew={online && repo.main ? () => useStore.getState().openNewWorktree({ box: box.name, location: loc.name }) : undefined}
       newLabel={`New task in ${loc.name}`}
     />

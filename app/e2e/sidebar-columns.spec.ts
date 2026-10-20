@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, mockOnly, test } from "./fixtures";
 
 // The two-column sidebar (Settings › Appearance, components/sidebar/columns.tsx):
@@ -6,6 +8,15 @@ import { expect, mockOnly, test } from "./fixtures";
 // waiting for you, evals one at work, and notes nothing going on.
 
 const columns = { sidebarLayout: "columns" };
+
+// Switching to notes, where no agent is at work, opens a new task in it
+// (lib/project-landing); closeNewTask checks that and closes it.
+async function closeNewTask(page: Page, project: string) {
+  const dialog = page.getByRole("dialog", { name: "New task" });
+  await expect(dialog.getByRole("button", { name: `Project: ${project}` })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+}
 
 test("picking two columns in Appearance gives two columns, and the list brings the single list back", async ({ app }) => {
   mockOnly();
@@ -32,9 +43,11 @@ test("picking two columns in Appearance gives two columns, and the list brings t
   expect(((await app.stored("berth.prefs")) as { sidebarLayout: string }).sidebarLayout).toBe("list");
 });
 
-test("picking a project shows its tasks and leaves the main area as it was", async ({ app }) => {
+test("switching to a project shows its tasks and lands on its agent that worked last", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: columns });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
 
@@ -46,15 +59,50 @@ test("picking a project shows its tasks and leaves the main area as it was", asy
   await expect(tasks.locator('[data-testid=worktree-row][data-worktree="devl/checkout-fix"]')).toBeVisible();
   // Children hang under their parent on the guide, as in the list.
   await expect(tasks.getByTestId("worktree-children").first()).toBeVisible();
-  // Still Home in front.
-  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+  // Of shop's agents at work or waiting, qa-deck's changed state last.
+  await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+  await expect(page.getByRole("tab", { name: /^Build the QA deck for the release/, selected: true })).toBeVisible();
+  await expect(page.getByTestId("nav-home")).not.toHaveAttribute("aria-current", "page");
 
-  // A project with nothing going on says so, with ways to start.
+  // On to evals, where an agent is at work in judge-v2.
+  await page.locator("[data-testid=column-project][data-project=evals]").click();
+  await expect(app.worktree("gpu/judge-v2")).toHaveAttribute("data-active", "true");
+  await expect(page.getByRole("tab", { name: /^Tune the judge prompt/, selected: true })).toBeVisible();
+});
+
+test("switching to a project with no agent at work opens a new task in it", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: columns });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("column-project")).toHaveCount(3);
+  const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
+
+  // Its tasks column says there is nothing yet, with ways to start.
   const empty = page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).getByTestId("tasks-empty");
   await expect(empty).toContainText("No tasks here yet.");
   await expect(empty.getByRole("button", { name: "New task" })).toBeVisible();
   await expect(empty.getByRole("button", { name: "Open the main checkout" })).toBeVisible();
+});
+
+test("picking the project already picked leaves the main area as it was", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: columns });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("column-project")).toHaveCount(3);
+  const page = app.page;
+  const shop = page.locator("[data-testid=column-project][data-project=shop]");
+  await shop.click();
+  await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+
+  await page.getByTestId("nav-home").first().click();
+  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+  await shop.click();
+  await expect(shop).toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("sidebar").getByRole("region", { name: "shop", exact: true })).toBeVisible();
+  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("rows in the tasks column open, rename and have their menus as in the list", async ({ app }) => {
@@ -77,8 +125,11 @@ test("rows in the tasks column open, rename and have their menus as in the list"
 test("opening a worktree from elsewhere picks its project", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: columns });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 
   // From the rail, with the sidebar folded away.
@@ -108,6 +159,9 @@ test("the project list goes by ↑ and ↓", async ({ app }) => {
   await app.open({ prefs: columns });
   const page = app.page;
   const rows = page.getByTestId("column-project");
+  // Every box's projects in first: evals comes with gpu's and goes first,
+  // which would move the rows under the keys.
+  await expect(rows).toHaveCount(3);
   await rows.first().focus();
   await page.keyboard.press("ArrowDown");
   await expect(rows.nth(1)).toBeFocused();
@@ -148,8 +202,11 @@ test("the tasks column folds away and comes back, and is sized by its edge", asy
 test("the choice and the picked project survive a reload", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: columns });
+  // Every box's projects in, so the first listed (picked until you pick one) is settled.
+  await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
+  await closeNewTask(page, "notes");
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("sidebar-projects")).toBeVisible();
