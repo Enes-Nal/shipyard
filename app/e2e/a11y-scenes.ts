@@ -359,8 +359,14 @@ export const scenes: Scene[] = [
     id: "sidebar-rail",
     async run(app, theme) {
       await app.open({ theme, prefs: { sidebarLayout: "rail" } });
+      await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
       await app.page.locator("[data-testid=rail-project][data-project=shop]").click();
       await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+      // Switching to shop lands on its agent that worked last (qa-deck's);
+      // back Home, as the scene was before switching landed anywhere.
+      await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+      await app.page.getByTestId("nav-home").first().click();
+      await expect(app.page.getByTestId("nav-home").first()).toHaveAttribute("aria-current", "page");
     },
   },
   {
@@ -379,8 +385,14 @@ export const scenes: Scene[] = [
     id: "sidebar-columns",
     async run(app, theme) {
       await app.open({ theme, prefs: { sidebarLayout: "columns" } });
+      await expect(app.page.getByTestId("column-project")).toHaveCount(3);
       await app.page.locator("[data-testid=column-project][data-project=shop]").click();
       await expect(app.worktree("devl/checkout-fix")).toBeVisible();
+      // Switching to shop lands on its agent that worked last (qa-deck's);
+      // back Home, as the scene was before switching landed anywhere.
+      await expect(app.worktree("devl/qa-deck")).toHaveAttribute("data-active", "true");
+      await app.page.getByTestId("nav-home").first().click();
+      await expect(app.page.getByTestId("nav-home").first()).toHaveAttribute("aria-current", "page");
     },
   },
   {

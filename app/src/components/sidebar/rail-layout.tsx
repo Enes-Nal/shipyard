@@ -4,7 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { NotificationBell } from "@/components/notifications/notification-center";
 import { ContextRow, DotsMenu, projectGroupActions } from "@/components/sidebar/actions";
-import { usePicked } from "@/components/sidebar/columns";
+import { switchTo, usePicked } from "@/components/sidebar/columns";
 import { ink, inkScale } from "@/components/sidebar/ink";
 import { MoreItems, type NavItem, useArrangedNav } from "@/components/sidebar/nav";
 import { AwayWord, PlaceTip, ProjectTreeRows, RowButton, type SidebarPrefs, summary, useProjectTree } from "@/components/sidebar/projects";
@@ -294,8 +294,13 @@ const ProjectTile = memo(function ProjectTile({ project: p, selected, shared, fo
           data-state={state}
           aria-label={what.length ? `${p.name}, ${what.join(", ")}` : p.name}
           aria-current={selected ? "true" : undefined}
-          // Folded away, a tile opens the sheet again on its project.
-          onClick={() => usePrefs.setState({ sidebarPick: p.id, tasksFolded: false, ...(folded ? { sidebarCollapsed: false } : {}) })}
+          // Folded away, a tile opens the sheet again on its project. Switching
+          // to it from another lands on its agent that worked last, or a new
+          // task in it (switchTo).
+          onClick={() => {
+            usePrefs.setState({ sidebarPick: p.id, tasksFolded: false, ...(folded ? { sidebarCollapsed: false } : {}) });
+            if (!selected) switchTo(p.members, p.members.find((m) => m.box.name === p.defaultBox) ?? p.members[0]);
+          }}
           className={cn(
             "relative flex size-9 items-center justify-center rounded-[10px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
             selected ? "border border-sidebar-border bg-background shadow-xs" : "hover:bg-sidebar-accent",
