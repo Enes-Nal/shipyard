@@ -1,6 +1,6 @@
 [package]
 name = "berth"
-version = "0.3.28"
+version = "0.3.29"
 description = "Shipyard: agents on your boxes"
 authors = ["Sean Brydon"]
 edition = "2021"
