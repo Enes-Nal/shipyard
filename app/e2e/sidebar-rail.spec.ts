@@ -209,3 +209,14 @@ test("the sheet's top edge carries on the tab bar's bottom line", async ({ app }
   await expect.poll(() => app.stored("berth.prefs").then((p) => (p as { uiFontSize: number }).uiFontSize)).toBe(15);
   await expect.poll(lined).toBe(true);
 });
+
+test("the sheet's + next to Worktrees opens a new worktree in that project", async ({ app }) => {
+  mockOnly();
+  await app.open({ prefs: rail });
+  const page = app.page;
+  await page.locator("[data-testid=rail-project][data-project=shop]").click();
+  await page.getByRole("button", { name: "New worktree in shop" }).click();
+  const dialog = page.getByRole("dialog", { name: "New worktree" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Project: shop" })).toBeVisible();
+});
