@@ -268,6 +268,9 @@ func serve(b boxHome, args []string) error {
 		// A plist from an older install gives launchd's bare PATH, without
 		// Homebrew's tmux; find it anyway.
 		service.AugmentPATH()
+		if _, err := service.Migrate(daemonService(b, "")); err != nil {
+			fmt.Fprintf(os.Stderr, "berthd: updating its launchd plist: %v\n", err)
+		}
 	}
 	utf8Locale()
 	if *listen == "" {

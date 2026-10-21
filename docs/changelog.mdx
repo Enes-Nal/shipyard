@@ -10,6 +10,13 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+- **Agents on a Mac run at full speed.** Shipyard's login agents (the
+  Mac app's agent, and `berthd` on a Mac box) used to ask macOS to run
+  them as background work, which slows their CPU and disk, and with them
+  every agent and build they start. They now run as interactive work.
+  Updating the app applies it to this Mac right away. A Mac box updated
+  with **Update all** gets it the next time it restarts or you log in
+  there; running the install command again applies it at once.
 - **Back and Forward, as in a browser.** The arrows at the top of the
   sidebar, ⌘[ and ⌘] (also in the Go menu and ⌘K), and a mouse's back and
   forward buttons take you through the places you've been: a page such as
@@ -22,7 +29,6 @@ again.
   beside the rail, it now opens New worktree for that project, instead of
   a menu to add a project or a box. Those stay on the rail's own + and
   the boxes row at the bottom of the sidebar.
-
 
 ## v0.3.29
 
