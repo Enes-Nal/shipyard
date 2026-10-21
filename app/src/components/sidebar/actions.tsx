@@ -25,7 +25,7 @@ import { ago, errorMessage } from "@/lib/format";
 import { plainError } from "@/lib/errors";
 import { scheduleRefresh, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { removeWorktreeOnBox } from "@/lib/remove-worktree";
+import { queueRemoval, removeWorktreeOnBox } from "@/lib/remove-worktree";
 import { addGroup, isShown, refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
 import { ToneItems } from "@/components/workspace/tab-group";
 import { openWorktreePicker } from "@/components/workspace/worktree-picker";
@@ -408,7 +408,7 @@ export function worktreeActions(box: string, loc: Location, wt: Worktree): Actio
   }
   if (!wt.main) {
     danger.push(item("Archive…", <ArchiveIcon />, () => archiveWorktree(box, loc, wt)));
-    danger.push(item("Remove worktree…", <Trash2Icon />, () => removeWorktree(box, loc, wt), { destructive: true }));
+    danger.push(item("Remove worktree", <Trash2Icon />, () => removeWorktree(box, loc, wt), { destructive: true }));
   }
   if (danger.length) items.push(sep, ...danger);
   return items;
@@ -432,7 +432,7 @@ export function archiveWorktree(box: string, loc: Location, wt: Worktree) {
       try {
         res = await removeWorktreeOnBox(client, box, loc.name, wt, "archive");
       } catch (err) {
-        if (/modified|untracked|uncommitted|contains/i.test(errorMessage(err))) throw new Error(`${wt.name} has uncommitted changes, so it was left as it is. Commit them first, or use Remove worktree… to discard them.`);
+        if (/modified|untracked|uncommitted|contains/i.test(errorMessage(err))) throw new Error(`${wt.name} has uncommitted changes, so it was left as it is. Commit them first, or use Remove worktree to discard them.`);
         throw err;
       }
       if (res.archive) toastManager.add({ title: `Archiving ${wt.name}`, description: "Its archive script is running on the box; the worktree goes when it finishes.", type: "info" });
@@ -441,45 +441,10 @@ export function archiveWorktree(box: string, loc: Location, wt: Worktree) {
   });
 }
 
-// removeWorktree asks, then removes a worktree: the sidebar's "Remove
-// worktree…" and the dashboard's "Stop and remove worktree…".
+// removeWorktree removes a worktree without asking: the sidebar's "Remove
+// worktree" and the dashboard's "Stop and remove worktree".
 export function removeWorktree(box: string, loc: Location, wt: Worktree) {
-  confirm({
-    title: `Remove ${worktreeLabel(wt)}?`,
-    description: `Its folder on ${box} is deleted. The repository's teardown script runs first, and the worktree's services and sessions stop.`,
-    detail: (
-      <>
-        {wt.path}
-        {wt.branch && (
-          <>
-            <br />
-            branch {wt.branch}
-          </>
-        )}
-      </>
-    ),
-    confirm: "Remove worktree",
-    destructive: true,
-    options: [
-      ...(wt.branch ? [{ id: "branch", label: `Also delete branch ${wt.branch}` }] : []),
-      { id: "force", label: "Remove even with uncommitted changes", hint: "Without this, git refuses when there is work it would lose." },
-    ],
-    run: async (checked) => {
-      const client = useStore.getState().client;
-      if (!client) throw new Error("not connected");
-      let res: { archive?: string };
-      try {
-        res = await removeWorktreeOnBox(client, box, loc.name, wt, "remove", { force: checked.force, branch: checked.branch });
-      } catch (err) {
-        const m = errorMessage(err);
-        // git's own words for work it would lose.
-        if (/modified|untracked|uncommitted|contains/i.test(m) && !checked.force) throw new Error(`${wt.name} has uncommitted changes. Tick "Remove even with uncommitted changes" to remove it anyway.`);
-        throw err;
-      }
-      if (res.archive) toastManager.add({ title: `Removing ${wt.name}`, description: "The repo's archive script runs on the box first; the worktree goes when it finishes.", type: "info" });
-      else toastManager.add({ title: `Removed ${wt.name}`, description: box, type: "success" });
-    },
-  });
+  queueRemoval(box, loc.name, wt);
 }
 
 // RunItems are a worktree's services, loaded when the Run submenu opens.

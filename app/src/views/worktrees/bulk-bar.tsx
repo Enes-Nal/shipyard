@@ -55,7 +55,7 @@ export function BulkBar({
 
   const shell = "pointer-events-auto flex max-w-[calc(100%-2rem)] flex-col gap-2 rounded-xl border bg-popover px-3 py-2 shadow-lg/10";
 
-  if (summary && summary.action.kind !== "delete") {
+  if (summary) {
     const states = summary.rows.map((r) => progress[r.key]);
     const count = (s: RowProgress["state"]) => states.filter((p) => p?.state === s).length;
     const done = count("ok") + count("failed") + count("conflict") + count("skipped");
@@ -205,7 +205,7 @@ export function BulkBar({
         <Hint text={deletable ? (deletable < selected.length ? `Main checkouts are skipped (${selected.length - deletable})` : undefined) : "Main checkouts can't be deleted"}>
           <Button size="xs" variant="outline" className="text-destructive-foreground" disabled={!deletable} onClick={onDelete}>
             <Trash2Icon />
-            {counted(deletable) !== undefined ? `Delete ${deletable}…` : "Delete…"}
+            {counted(deletable) !== undefined ? `Delete ${deletable}` : "Delete"}
           </Button>
         </Hint>
         <span className="h-5 w-px bg-border" />

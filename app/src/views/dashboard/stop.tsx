@@ -134,7 +134,7 @@ export function StopMenuItems({ entry }: { entry: SessionEntry }) {
         // uncommitted work unless told to.
         <MenuItem variant="destructive" onClick={() => removeWorktree(entry.box, where.location, where.worktree)}>
           <Trash2Icon />
-          <span className="flex-1">Stop and remove worktree…</span>
+          <span className="flex-1">Stop and remove worktree</span>
           {others > 0 && <span className="text-muted-foreground text-meta">+{others} more</span>}
         </MenuItem>
       )}

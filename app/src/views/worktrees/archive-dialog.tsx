@@ -3,31 +3,21 @@ import { useEffect, useState } from "react";
 
 import { AlertDialog, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
-import type { BulkAction, RowProgress } from "@/views/worktrees/use-bulk";
+import type { RowProgress } from "@/views/worktrees/use-bulk";
 import type { Row } from "@/views/worktrees/use-worktrees";
 
-// DeleteDialog removes several worktrees after one confirmation that names
-// every one, then stays open with each one's outcome.
-// With archive, it archives them instead: each one's archive script runs,
-// then it goes, and its branch stays.
-export function DeleteDialog({ rows, progress, running, onRun, onClose, archive }: { rows?: Row[]; progress: Record<string, RowProgress>; running: boolean; onRun(a: BulkAction): void; onClose(): void; archive?: boolean }) {
-  const [branch, setBranch] = useState(false);
-  const [force, setForce] = useState(false);
+// ArchiveDialog archives several worktrees after one confirmation that names
+// every one, then stays open with each one's outcome: each one's archive
+// script runs, then it goes, and its branch stays.
+export function ArchiveDialog({ rows, progress, running, onRun, onClose }: { rows?: Row[]; progress: Record<string, RowProgress>; running: boolean; onRun(): void; onClose(): void }) {
   const [started, setStarted] = useState(false);
   useEffect(() => {
-    if (rows) {
-      setBranch(false);
-      setForce(false);
-      setStarted(false);
-    }
+    if (rows) setStarted(false);
   }, [rows]);
 
   const targets = (rows ?? []).filter((r) => !r.main);
   const skipped = (rows ?? []).length - targets.length;
-  const dirty = targets.filter((r) => r.changed || r.untracked).length;
   const done = started && !running;
   const failed = targets.filter((r) => progress[r.key]?.state === "failed").length;
 
@@ -36,27 +26,19 @@ export function DeleteDialog({ rows, progress, running, onRun, onClose, archive 
       <AlertDialogPopup className="sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {done
-              ? failed
-                ? `${archive ? "Archived" : "Removed"} ${targets.length - failed} of ${targets.length}`
-                : `${archive ? "Archived" : "Removed"} ${targets.length} worktree${targets.length === 1 ? "" : "s"}`
-              : `${archive ? "Archive" : "Delete"} ${targets.length} worktree${targets.length === 1 ? "" : "s"}?`}
+            {done ? (failed ? `Archived ${targets.length - failed} of ${targets.length}` : `Archived ${targets.length} worktree${targets.length === 1 ? "" : "s"}`) : `Archive ${targets.length} worktree${targets.length === 1 ? "" : "s"}?`}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {done
               ? failed
                 ? "The rest were left as they were."
-                : archive
-                  ? "Their branches are kept; their folders, services and sessions are gone."
-                  : "Their folders, services and sessions are gone."
-              : archive
-                ? "Each one's sessions and services stop, the repo's archive script runs, then its folder goes. Branches stay, so nothing committed is lost; one with uncommitted work is left as it is."
-                : "Each folder is deleted after the repo's teardown runs, and its services and sessions stop."}
+                : "Their branches are kept; their folders, services and sessions are gone."
+              : "Each one's sessions and services stop, the repo's archive script runs, then its folder goes. Branches stay, so nothing committed is lost; one with uncommitted work is left as it is."}
             {skipped > 0 && !done && ` Main checkouts are skipped (${skipped}).`}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <ul className="mx-6 max-h-64 divide-y divide-border/60 overflow-y-auto rounded-lg border">
+        <ul className="mx-6 mb-2 max-h-64 divide-y divide-border/60 overflow-y-auto rounded-lg border">
           {targets.map((r) => {
             const p = progress[r.key];
             return (
@@ -91,24 +73,6 @@ export function DeleteDialog({ rows, progress, running, onRun, onClose, archive 
           })}
         </ul>
 
-        {!started && !archive && (
-          <div className="mx-6 mt-3 mb-2 space-y-2.5">
-            <label className="flex items-start gap-2.5 text-body">
-              <Checkbox checked={branch} onCheckedChange={(v) => setBranch(!!v)} className="mt-0.5" />
-              Also delete their branches
-            </label>
-            <label className="flex items-start gap-2.5 text-body">
-              <Checkbox checked={force} onCheckedChange={(v) => setForce(!!v)} className="mt-0.5" />
-              <span>
-                Even with uncommitted changes
-                <span className={cn("block text-meta text-muted-foreground", dirty && !force && "text-warning-foreground")}>
-                  {dirty ? `${dirty} ${dirty === 1 ? "has" : "have"} work git would lose; without this, ${dirty === 1 ? "it is" : "they are"} kept.` : "Without this, git refuses when there is work it would lose."}
-                </span>
-              </span>
-            </label>
-          </div>
-        )}
-
         <AlertDialogFooter>
           {done ? (
             <Button onClick={onClose}>Done</Button>
@@ -118,15 +82,14 @@ export function DeleteDialog({ rows, progress, running, onRun, onClose, archive 
                 Cancel
               </Button>
               <Button
-                variant={archive ? "default" : "destructive"}
                 loading={running}
                 disabled={!targets.length}
                 onClick={() => {
                   setStarted(true);
-                  onRun(archive ? { kind: "archive" } : { kind: "delete", force, branch });
+                  onRun();
                 }}
               >
-                {archive ? "Archive" : "Delete"} {targets.length}
+                Archive {targets.length}
               </Button>
             </>
           )}
