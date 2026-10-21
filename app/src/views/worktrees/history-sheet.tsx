@@ -161,7 +161,7 @@ export function HistorySheet({ row, progress, busy, onClose, onAction, onDelete,
                       </MenuItem>
                       <MenuItem variant="destructive" disabled={busy} onClick={onDelete}>
                         <Trash2Icon />
-                        Delete…
+                        Delete
                       </MenuItem>
                     </>
                   )}
