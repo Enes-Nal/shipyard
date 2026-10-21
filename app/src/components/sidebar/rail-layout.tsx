@@ -1,9 +1,10 @@
-import { EllipsisIcon, FolderPlusIcon, PanelLeftIcon, PanelLeftOpenIcon, PenLineIcon, PlusIcon, SearchIcon, ServerIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, PanelLeftIcon, PanelLeftOpenIcon, PenLineIcon, PlusIcon, SearchIcon, SettingsIcon } from "lucide-react";
 import { memo, type ReactNode, useId, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { NotificationBell } from "@/components/notifications/notification-center";
 import { ContextRow, DotsMenu, projectGroupActions } from "@/components/sidebar/actions";
+import { BackForward } from "@/components/sidebar/back-forward";
 import { switchTo, usePicked } from "@/components/sidebar/columns";
 import { ink, inkScale } from "@/components/sidebar/ink";
 import { MoreItems, type NavItem, useArrangedNav } from "@/components/sidebar/nav";
@@ -13,7 +14,7 @@ import { RowLayer } from "@/components/sidebar/row-layer";
 import { SkillsNotices } from "@/components/sidebar/skills-notice";
 import { awayText, BoxesFoot } from "@/components/sidebar/task-parts";
 import { Tip } from "@/components/tip";
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { SidebarMenuSub } from "@/components/ui/sidebar";
 import { WhatsNewNudge } from "@/components/whats-new/whats-new-dialog";
 import type { Location, Session } from "@/lib/api";
@@ -23,9 +24,9 @@ import { usePrefs } from "@/lib/prefs";
 import { avatarUrl, githubOwner } from "@/lib/project-avatar";
 import { type Project, useProjects } from "@/lib/project-groups";
 import { SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN } from "@/lib/sidebar-width";
+import { openComposer } from "@/lib/composer";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { openAddBox } from "@/views/onboarding/add-box-dialog";
 import { TeamSidebarCard } from "@/views/team/team-entry";
 
 // The rail sidebar, the default layout: a narrow rail of the places and
@@ -87,11 +88,12 @@ export function RailSidebar({ prefs, update, places }: { prefs: SidebarPrefs; up
 }
 
 // TopStrip is the window's strip over both: room for the traffic lights,
-// then the notifications and the way to fold the sidebar. It drags the
-// window.
+// then Back and Forward, the notifications and the way to fold the sidebar.
+// It drags the window.
 function TopStrip() {
   return (
     <div data-tauri-drag-region className="flex h-bar shrink-0 items-center justify-end gap-0.5 px-edge">
+      <BackForward />
       <NotificationBell className="size-7 rounded-lg [&_svg]:size-4" />
       <Tip label={"Hide the sidebar (⌘\\)"} side="bottom" align="end">
         <button
@@ -384,6 +386,7 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
   const count = p.members.reduce((n, m) => n + (m.loc.worktrees?.filter((w) => !w.main).length ?? 0), 0);
   const boxes = p.members.map((m) => m.box.name).join(", ");
   const onNew = online ? () => useStore.getState().openNewWorktree({ box: def.box.name, location: def.loc.name }) : undefined;
+  const onWorktree = online ? () => openComposer({ noAgent: true, box: def.box.name, location: def.loc.name }) : undefined;
   return (
     <section aria-labelledby={id} data-testid="sidebar-tasks" className="flex min-h-0 flex-1 flex-col">
       <ContextRow items={() => projectGroupActions(p)} className="group/row relative shrink-0 rounded-none data-popup-open:bg-transparent">
@@ -422,7 +425,18 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
       </div>
       <div className={cn("flex h-7 shrink-0 items-center pt-3", lanes.content)}>
         <h3 className={cn("flex-1 text-label", ink.faint)}>Worktrees</h3>
-        <AddMenu />
+        {onWorktree && (
+          <Tip label={`New worktree in ${p.name}`} side="bottom" align="end">
+            <button
+              type="button"
+              aria-label={`New worktree in ${p.name}`}
+              onClick={onWorktree}
+              className={cn("inline-flex size-6 items-center justify-center rounded-md hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-3.5", ink.glyph)}
+            >
+              <PlusIcon strokeWidth={2} />
+            </button>
+          </Tip>
+        )}
       </div>
       {/* One context menu and one tooltip for every row in it. */}
       <RowLayer className={cn("min-h-0 flex-1 overflow-y-auto pt-1.5 pb-3", lanes.box)}>
@@ -437,37 +451,6 @@ function ProjectSheet({ project: p, prefs, update }: { project: Project; prefs: 
         )}
       </RowLayer>
     </section>
-  );
-}
-
-// AddMenu adds a project or a box.
-function AddMenu() {
-  return (
-    <Menu>
-      <Tip label="Add a project or box" side="bottom" align="end">
-        <MenuTrigger
-          render={
-            <button
-              type="button"
-              aria-label="Add a project or box"
-              className={cn("inline-flex size-6 items-center justify-center rounded-md hover:bg-sidebar-accent hover:text-foreground data-popup-open:bg-sidebar-accent [&_svg]:size-3.5", ink.glyph)}
-            />
-          }
-        >
-          <PlusIcon strokeWidth={2} />
-        </MenuTrigger>
-      </Tip>
-      <MenuPopup align="end" className="min-w-48">
-        <MenuItem onClick={() => useStore.getState().openAddLocation()}>
-          <FolderPlusIcon />
-          Add a project…
-        </MenuItem>
-        <MenuItem onClick={openAddBox}>
-          <ServerIcon />
-          Add a box…
-        </MenuItem>
-      </MenuPopup>
-    </Menu>
   );
 }
 
