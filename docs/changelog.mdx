@@ -9,6 +9,16 @@ upgrades with `berth upgrade BOX`, or by running the
 [install command](/getting-started/add-a-box#with-the-install-command)
 again.
 
+## Unreleased
+
+- **Agents on a Mac run at full speed.** Shipyard's login agents (the
+  Mac app's agent, and `berthd` on a Mac box) used to ask macOS to run
+  them as background work, which slows their CPU and disk, and with them
+  every agent and build they start. They now run as interactive work.
+  Updating the app applies it to this Mac right away. A Mac box updated
+  with **Update all** gets it the next time it restarts or you log in
+  there; running the install command again applies it at once.
+
 ## v0.3.29
 
 - **Removing a worktree no longer asks first.** Remove worktree in the

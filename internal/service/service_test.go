@@ -44,6 +44,7 @@ func TestUnitsRestartOnlyAfterFailure(t *testing.T) {
 		"<key>RunAtLoad</key><true/>",
 		"<string>/opt/berth/bin/berth</string>\n<string>agent</string>",
 		"<key>BERTH_HOME</key><string>/Users/alex/Library/Application Support/berth</string>",
+		"<key>ProcessType</key><string>Interactive</string>",
 	} {
 		if !strings.Contains(string(plist), want) {
 			t.Errorf("plist missing %q:\n%s", want, plist)
@@ -325,5 +326,46 @@ func TestPreflightOnAMacNeedsALoginSession(t *testing.T) {
 	}
 	if err := Preflight(); err == nil || !strings.Contains(err.Error(), "no login session") {
 		t.Errorf("without a GUI session: %v", err)
+	}
+}
+
+func TestMigrateBringsAnOlderPlistUpToDateWithoutReloading(t *testing.T) {
+	home, calls := stub(t, "darwin")
+	plist, err := Render(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := strings.Replace(string(plist), "<string>Interactive</string>", "<string>Background</string>", 1)
+	path := filepath.Join(home, "Library", "LaunchAgents", spec.Name+".plist")
+	os.MkdirAll(filepath.Dir(path), 0o755)
+	os.WriteFile(path, []byte(old), 0o644)
+
+	other := spec
+	other.Program = "/somewhere/else/berth"
+	if changed, err := Migrate(other); err != nil || changed {
+		t.Fatalf("another program's plist: changed=%v err=%v", changed, err)
+	}
+	if Installed(spec) {
+		t.Fatal("an older plist counts as installed before Migrate")
+	}
+	if changed, err := Migrate(spec); err != nil || !changed {
+		t.Fatalf("changed=%v err=%v", changed, err)
+	}
+	if !Installed(spec) {
+		data, _ := os.ReadFile(path)
+		t.Fatalf("after Migrate the plist is not what Render writes:\n%s", data)
+	}
+	if changed, err := Migrate(spec); err != nil || changed {
+		t.Fatalf("a second Migrate: changed=%v err=%v", changed, err)
+	}
+	if len(*calls) != 0 {
+		t.Fatalf("Migrate ran %v; it must not reload the service", *calls)
+	}
+}
+
+func TestMigrateWithoutAPlist(t *testing.T) {
+	stub(t, "darwin")
+	if changed, err := Migrate(spec); err != nil || changed {
+		t.Fatalf("changed=%v err=%v", changed, err)
 	}
 }
