@@ -203,7 +203,7 @@ function RepoColumnRow({ repo, selected }: { repo: Repo; selected: boolean }) {
       name={loc.name}
       selected={selected}
       state={state}
-      onWork={state === "running" && sum?.onWork}
+      onWork={sum?.onWork}
       away={online ? undefined : [box]}
       tip={<PlaceTip name={`${loc.name} on ${box.name}`} lines={[loc.path, ...(online ? [] : [`${box.name} is ${awayText(box)}`])]} />}
       items={() => projectActions(box.name, loc)}
