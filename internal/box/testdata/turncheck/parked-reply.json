@@ -1,5 +1,5 @@
 {
-  "request_sha256": "a0919319b68a32b2fae1e7460d418334bf2ff378fbb3eccb8136976cd6c76253",
+  "request_sha256": "9c59cda6e57a7b9838dbfa0149c94baf53a9dfe7da6b727c9bfae17110976ac4",
   "answer": {
     "answers": {
       "status": {
@@ -7,21 +7,21 @@
         "choice": "parked",
         "probabilities": {
           "blocked": 0,
-          "done": 0.01,
+          "done": 0,
           "idle": 0.01,
-          "needs_input": 0.08,
-          "parked": 0.66,
+          "needs_input": 0.1,
+          "parked": 0.69,
           "ready_to_ship": 0,
-          "working": 0.24
+          "working": 0.2
         },
-        "confidence": 0.6
+        "confidence": 0.64
       }
     },
     "model": "typesafe-ai/jev",
     "providerMetadata": {
       "typesafe": {
         "confidence": {
-          "status": 0.6
+          "status": 0.64
         }
       },
       "gateway": {
@@ -45,8 +45,8 @@
                   "provider": "typesafe-ai",
                   "credentialType": "system",
                   "success": true,
-                  "startTime": 1792668575958,
-                  "endTime": 1792668576158,
+                  "startTime": 1792796744102,
+                  "endTime": 1792796744291,
                   "statusCode": 200
                 }
               ]
@@ -54,18 +54,18 @@
           ],
           "totalProviderAttemptCount": 1
         },
-        "cost": "0.00005943",
-        "marketCost": "0.00005943",
+        "cost": "0.0000651",
+        "marketCost": "0.0000651",
         "surchargeCost": "0",
-        "gatewayCost": "0.00005943",
-        "inferenceCost": "0.00005943",
-        "inputInferenceCost": "0.00005943",
+        "gatewayCost": "0.0000651",
+        "inferenceCost": "0.0000651",
+        "inputInferenceCost": "0.0000651",
         "outputInferenceCost": "0",
-        "generationId": "gen_01M5HNZA5F8TWGPY8XSPAA12CB"
+        "generationId": "gen_01M5NG6PB8WX0JVVBEQZNJ39GW"
       }
     },
     "usage": {
-      "inputTokens": 1415,
+      "inputTokens": 1550,
       "outputTokens": 71
     }
   }

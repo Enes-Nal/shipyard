@@ -1,5 +1,5 @@
 {
-  "request_sha256": "506e77aaf96ab4db15c8e4aa4a6fd1f27c690b8904ad5471c6858271b18da369",
+  "request_sha256": "19439a454b12c8120d58901b59d5d9455826a6304e6b90e7e4e0763fd2cb8189",
   "answer": {
     "answers": {
       "status": {
@@ -7,21 +7,21 @@
         "choice": "done",
         "probabilities": {
           "blocked": 0,
-          "done": 0.71,
+          "done": 0.68,
           "idle": 0,
           "needs_input": 0,
           "parked": 0.01,
           "ready_to_ship": 0,
-          "working": 0.28
+          "working": 0.31
         },
-        "confidence": 0.66
+        "confidence": 0.63
       }
     },
     "model": "typesafe-ai/jev",
     "providerMetadata": {
       "typesafe": {
         "confidence": {
-          "status": 0.66
+          "status": 0.63
         }
       },
       "gateway": {
@@ -45,8 +45,8 @@
                   "provider": "typesafe-ai",
                   "credentialType": "system",
                   "success": true,
-                  "startTime": 1792668514986,
-                  "endTime": 1792668515160,
+                  "startTime": 1792796746154,
+                  "endTime": 1792796746296,
                   "statusCode": 200
                 }
               ]
@@ -54,18 +54,18 @@
           ],
           "totalProviderAttemptCount": 1
         },
-        "cost": "0.000080136",
-        "marketCost": "0.000080136",
+        "cost": "0.000085806",
+        "marketCost": "0.000085806",
         "surchargeCost": "0",
-        "gatewayCost": "0.000080136",
-        "inferenceCost": "0.000080136",
-        "inputInferenceCost": "0.000080136",
+        "gatewayCost": "0.000085806",
+        "inferenceCost": "0.000085806",
+        "inputInferenceCost": "0.000085806",
         "outputInferenceCost": "0",
-        "generationId": "gen_01M5HNXEME9GXA6HMA4WQMDD1Z"
+        "generationId": "gen_01M5NG6RBYWPFBPHPFEN5A3XJA"
       }
     },
     "usage": {
-      "inputTokens": 1908,
+      "inputTokens": 2043,
       "outputTokens": 70
     }
   }

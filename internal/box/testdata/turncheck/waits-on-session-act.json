@@ -1,5 +1,5 @@
 {
-  "request_sha256": "42d2de4ed302d6d354db5933d3a04693e12b5b8c8c9f11f63f2e5a0143960c1e",
+  "request_sha256": "a8b4650e3538b91bf9846315e68215575a3205261733403435018be738e4e6b7",
   "answer": {
     "answers": {
       "status": {
@@ -45,8 +45,8 @@
                   "provider": "typesafe-ai",
                   "credentialType": "system",
                   "success": true,
-                  "startTime": 1792668513027,
-                  "endTime": 1792668513243,
+                  "startTime": 1792796747175,
+                  "endTime": 1792796747321,
                   "statusCode": 200
                 }
               ]
@@ -54,18 +54,18 @@
           ],
           "totalProviderAttemptCount": 1
         },
-        "cost": "0.000058842",
-        "marketCost": "0.000058842",
+        "cost": "0.000064512",
+        "marketCost": "0.000064512",
         "surchargeCost": "0",
-        "gatewayCost": "0.000058842",
-        "inferenceCost": "0.000058842",
-        "inputInferenceCost": "0.000058842",
+        "gatewayCost": "0.000064512",
+        "inferenceCost": "0.000064512",
+        "inputInferenceCost": "0.000064512",
         "outputInferenceCost": "0",
-        "generationId": "gen_01M5HNXCNRP6EHWKNMX4SB17TP"
+        "generationId": "gen_01M5NG6SC3VAHA4SZTDZP6KAJN"
       }
     },
     "usage": {
-      "inputTokens": 1401,
+      "inputTokens": 1536,
       "outputTokens": 70
     }
   }
