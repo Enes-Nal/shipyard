@@ -30,7 +30,7 @@ import type { BoxStatus, Location, Session } from "@/lib/api";
 import type { SessionState } from "@/lib/derive";
 import { usePrefs } from "@/lib/prefs";
 import { type Project, useProjects } from "@/lib/project-groups";
-import { landingAgent } from "@/lib/project-landing";
+import { landingAgent, landingWorktree } from "@/lib/project-landing";
 import { nextRow, pickedColumn } from "@/lib/sidebar-columns";
 import { clampTasks, draggedTasks, PROJECTS_COLUMN, TASKS_DEFAULT, TASKS_MAX, TASKS_MIN, tasksMax, steppedTasks } from "@/lib/sidebar-width";
 import { NONE, useStore } from "@/lib/store";
@@ -100,24 +100,26 @@ export function usePicked(groupBy: SidebarPrefs["groupBy"]): Picked | undefined 
 // pickProject shows a project's tasks, unfolding the tasks column if it was
 // folded away. Switching to it from another lands the main area there too
 // (switchTo); picking the one shown again leaves it as it is.
-function pickProject(key: string, places: Place[], newTask: Place | undefined, switching: boolean) {
+function pickProject(key: string, places: Place[], home: Place | undefined, switching: boolean) {
   usePrefs.setState({ sidebarPick: key, tasksFolded: false });
-  if (switching) switchTo(places, newTask);
+  if (switching) switchTo(places, home);
 }
 
 type Place = { box: BoxStatus; loc: Location };
 
 // switchTo lands on a project just switched to (lib/project-landing): the
 // agent in it that worked last, in its worktree; with none working or
-// waiting on you, a new task in it, on newTask's box. The rail's tiles do
-// the same.
-export function switchTo(places: Place[], newTask: Place | undefined) {
-  const { boxes, openNewWorktree } = useStore.getState();
-  const hit = landingAgent(
-    places.filter((m) => m.box.state === "online").map((m) => ({ box: m.box.name, loc: m.loc, sessions: boxes[m.box.name]?.sessions ?? [], stats: boxes[m.box.name]?.stats })),
-  );
-  if (hit) openSession(hit.box, hit.session);
-  else if (newTask && newTask.box.state === "online") openNewWorktree({ box: newTask.box.name, location: newTask.loc.name });
+// waiting on you, the worktree of it you were in last, else its main
+// checkout on home's box. It never opens a new task: switching is only
+// switching. The rail's tiles do the same.
+export function switchTo(places: Place[], home: Place | undefined) {
+  const { boxes } = useStore.getState();
+  const online = places.filter((m) => m.box.state === "online").map((m) => ({ box: m.box.name, loc: m.loc, sessions: boxes[m.box.name]?.sessions ?? [], stats: boxes[m.box.name]?.stats }));
+  const hit = landingAgent(online);
+  if (hit) return void openSession(hit.box, hit.session);
+  const { spaces } = useWorkspaces.getState();
+  const to = landingWorktree(online, (box, path) => spaces[wsKey(box, path)]?.visitedAt, home?.box.name);
+  if (to) selectWorktree(refOf(to.box, to.loc, to.wt));
 }
 
 // mostUrgent is the state a project's row says: amber while an agent in it

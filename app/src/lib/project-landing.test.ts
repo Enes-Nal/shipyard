@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import type { Location, Session } from "@berth/plugin";
 
-import { landingAgent } from "./project-landing.ts";
+import { landingAgent, landingWorktree } from "./project-landing.ts";
 
 const loc = { name: "shop", path: "/src/shop", repo: true, scripts: {}, worktrees: [{ path: "/src/shop", main: true }, { path: "/wt/shop-a" }, { path: "/wt/shop-b" }] } as unknown as Location;
 
@@ -31,7 +31,7 @@ test("across the project's boxes", () => {
   );
 });
 
-test("an agent done, idle, exited or elsewhere, a shell or a service doesn't count: a new task then", () => {
+test("an agent done, idle, exited or elsewhere, a shell or a service doesn't count", () => {
   const sessions = [
     agent("done", "/wt/shop-a", { agent_state: "finished" }),
     agent("idle", "/wt/shop-a", { agent_state: "idle" }),
@@ -47,4 +47,31 @@ test("an agent done, idle, exited or elsewhere, a shell or a service doesn't cou
 test("with no state change on record, by when it started", () => {
   const sessions = [agent("old", "/wt/shop-a", { created: "2026-10-20T08:00:00Z" }), agent("new", "/src/shop", { created: "2026-10-20T09:30:00Z" })];
   assert.equal(landingAgent([{ box: "mini", loc, sessions }])?.session.name, "new");
+});
+
+test("with no agent at work, lands on the worktree you were in last", () => {
+  const visited: Record<string, number> = { "mini:/wt/shop-a": 100, "studio:/wt/shop-b": 200 };
+  const to = landingWorktree(
+    [
+      { box: "mini", loc },
+      { box: "studio", loc },
+    ],
+    (box, path) => visited[`${box}:${path}`],
+  );
+  assert.equal(to?.box, "studio");
+  assert.equal(to?.wt.path, "/wt/shop-b");
+});
+
+test("never visited, on the main checkout on the home box", () => {
+  const to = landingWorktree(
+    [
+      { box: "mini", loc },
+      { box: "studio", loc },
+    ],
+    () => undefined,
+    "studio",
+  );
+  assert.equal(to?.box, "studio");
+  assert.equal(to?.wt.path, "/src/shop");
+  assert.equal(landingWorktree([], () => undefined), undefined);
 });

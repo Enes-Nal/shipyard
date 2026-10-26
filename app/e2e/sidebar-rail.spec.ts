@@ -9,13 +9,11 @@ import { expect, mockOnly, test } from "./fixtures";
 
 const rail = { sidebarLayout: "rail" };
 
-// Switching to notes, where no agent is at work, opens a new task in it
-// (lib/project-landing); closeNewTask checks that and closes it.
-async function closeNewTask(page: Page, project: string) {
-  const dialog = page.getByRole("dialog", { name: "New task" });
-  await expect(dialog.getByRole("button", { name: `Project: ${project}` })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
+// Switching to notes, where no agent is at work, shows its main checkout and
+// never opens a new task (lib/project-landing); landsOnMain checks that.
+async function landsOnMain(page: Page) {
+  await expect(page.getByTestId("nav-home")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("dialog", { name: "New task" })).toHaveCount(0);
 }
 
 test("every project is a tile on the rail that says when it needs you or works", async ({ app }) => {
@@ -48,8 +46,8 @@ test("picking a tile shows that project's worktrees beside the rail", async ({ a
   await expect(app.worktree("gpu/judge-v2")).toHaveCount(0);
 
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
-  await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).getByTestId("tasks-empty")).toContainText("No tasks here yet.");
+  await landsOnMain(page);
+  await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).locator('[data-testid=worktree-row][data-worktree="devl/notes"]')).toHaveAttribute("data-active", "true");
 });
 
 test("switching to a tile lands on its agent that worked last", async ({ app }) => {
@@ -72,16 +70,15 @@ test("switching to a tile lands on its agent that worked last", async ({ app }) 
   await expect(page.getByRole("tab", { name: /^Tune the judge prompt/, selected: true })).toBeVisible();
 });
 
-test("switching to a tile with no agent at work opens a new task in its project", async ({ app }) => {
+test("switching to a tile with no agent at work shows its main checkout, not a new task", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: rail });
   // Every box's projects in, so the first listed (picked until you pick one) is settled.
   await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
+  await landsOnMain(page);
   await expect(page.locator("[data-testid=rail-project][data-project=notes]")).toHaveAttribute("aria-current", "true");
-  await expect(page.getByTestId("nav-home")).toHaveAttribute("aria-current", "page");
 });
 
 test("picking the tile already picked leaves the main area as it was", async ({ app }) => {
@@ -110,7 +107,7 @@ test("opening a worktree from elsewhere picks its project on the rail", async ({
   await expect(app.page.getByTestId("rail-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=rail-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
+  await landsOnMain(page);
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 
   // From ⌘K.
@@ -138,7 +135,7 @@ test("folded away, the rail keeps its projects, the traffic lights over its midd
   // The traffic lights (14pt to 74pt) sit over its middle whatever the text size.
   await expect.poll(async () => (await folded.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(88);
   await folded.locator("[data-testid=rail-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
+  await landsOnMain(page);
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 });
 

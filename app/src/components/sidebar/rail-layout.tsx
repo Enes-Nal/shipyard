@@ -297,8 +297,8 @@ const ProjectTile = memo(function ProjectTile({ project: p, selected, shared, fo
           aria-label={what.length ? `${p.name}, ${what.join(", ")}` : p.name}
           aria-current={selected ? "true" : undefined}
           // Folded away, a tile opens the sheet again on its project. Switching
-          // to it from another lands on its agent that worked last, or a new
-          // task in it (switchTo).
+          // to it from another lands on its agent that worked last, or the
+          // worktree of it you were in last (switchTo).
           onClick={() => {
             usePrefs.setState({ sidebarPick: p.id, tasksFolded: false, ...(folded ? { sidebarCollapsed: false } : {}) });
             if (!selected) switchTo(p.members, p.members.find((m) => m.box.name === p.defaultBox) ?? p.members[0]);
