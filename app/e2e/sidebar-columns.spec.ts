@@ -9,13 +9,11 @@ import { expect, mockOnly, test } from "./fixtures";
 
 const columns = { sidebarLayout: "columns" };
 
-// Switching to notes, where no agent is at work, opens a new task in it
-// (lib/project-landing); closeNewTask checks that and closes it.
-async function closeNewTask(page: Page, project: string) {
-  const dialog = page.getByRole("dialog", { name: "New task" });
-  await expect(dialog.getByRole("button", { name: `Project: ${project}` })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
+// Switching to notes, where no agent is at work, shows its main checkout and
+// never opens a new task (lib/project-landing); landsOnMain checks that.
+async function landsOnMain(page: Page) {
+  await expect(page.getByTestId("nav-home")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("dialog", { name: "New task" })).toHaveCount(0);
 }
 
 test("picking two columns in Appearance gives two columns, and the list brings the single list back", async ({ app }) => {
@@ -70,20 +68,15 @@ test("switching to a project shows its tasks and lands on its agent that worked 
   await expect(page.getByRole("tab", { name: /^Tune the judge prompt/, selected: true })).toBeVisible();
 });
 
-test("switching to a project with no agent at work opens a new task in it", async ({ app }) => {
+test("switching to a project with no agent at work shows its main checkout, not a new task", async ({ app }) => {
   mockOnly();
   await app.open({ prefs: columns });
   // Every box's projects in, so the first listed (picked until you pick one) is settled.
   await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
-
-  // Its tasks column says there is nothing yet, with ways to start.
-  const empty = page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).getByTestId("tasks-empty");
-  await expect(empty).toContainText("No tasks here yet.");
-  await expect(empty.getByRole("button", { name: "New task" })).toBeVisible();
-  await expect(empty.getByRole("button", { name: "Open the main checkout" })).toBeVisible();
+  await landsOnMain(page);
+  await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true }).locator('[data-testid=worktree-row][data-worktree="devl/notes"]')).toHaveAttribute("data-active", "true");
 });
 
 test("picking the project already picked leaves the main area as it was", async ({ app }) => {
@@ -129,7 +122,7 @@ test("opening a worktree from elsewhere picks its project", async ({ app }) => {
   await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
+  await landsOnMain(page);
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
 
   // From the rail, with the sidebar folded away.
@@ -206,7 +199,7 @@ test("the choice and the picked project survive a reload", async ({ app }) => {
   await expect(app.page.getByTestId("column-project")).toHaveCount(3);
   const page = app.page;
   await page.locator("[data-testid=column-project][data-project=notes]").click();
-  await closeNewTask(page, "notes");
+  await landsOnMain(page);
   await expect(page.getByTestId("sidebar").getByRole("region", { name: "notes", exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("sidebar-projects")).toBeVisible();
