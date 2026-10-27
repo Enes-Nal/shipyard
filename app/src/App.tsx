@@ -34,6 +34,7 @@ import { BoxPicker } from "@/components/box-picker";
 import { FakeTrafficLights, ZenBar } from "@/components/workspace/zen";
 import { Announcer } from "@/components/announcer";
 import { WindowsTitlebar } from "@/components/window-titlebar";
+import { TerminalTutorial } from "@/components/terminal-tutorial";
 import { fakeTrafficLights, hasTrafficLights } from "@/lib/api";
 import { useBerthConnection } from "@/hooks/use-berth-connection";
 import { useShortcuts } from "@/hooks/use-shortcuts";
@@ -258,6 +259,7 @@ export default function App() {
             <DemoGuide />
           </Suspense>
         )}
+        {!__BERTH_DEMO__ && <TerminalTutorial />}
       </ToastProvider>
     </TooltipProvider>
   );

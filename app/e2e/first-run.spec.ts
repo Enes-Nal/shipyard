@@ -63,12 +63,38 @@ test("a new account with no boxes is shown onboarding", async ({ app }) => {
   await expect(app.page.locator("main")).toContainText(/box/i);
 });
 
-test("Windows without a native agent offers a working sample instead of a missing command", async ({ app }) => {
+test("Windows without a native agent opens a guided workspace instead of a missing command", async ({ app }) => {
   mockOnly("the missing Windows helper is a mock startup state");
   await app.page.goto("/?mock=offline&binary=missing&platform=windows");
   await expect(app.page.getByText("The Terminal agent isn't running", { exact: true })).toBeVisible();
-  await expect(app.page.getByRole("button", { name: "Open sample workspace" })).toBeVisible();
+  await expect(app.page.getByRole("button", { name: "Open guided workspace" })).toBeVisible();
   await expect(app.page.getByRole("button", { name: "Copy command" })).toHaveCount(0);
-  await app.page.getByRole("button", { name: "Open sample workspace" }).click();
+  await app.page.getByRole("button", { name: "Open guided workspace" }).click();
   await expect(app.page.getByRole("heading", { name: "What should your agents work on?" })).toBeVisible();
+  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Show project activity" }).click();
+  await expect(app.page.getByRole("heading", { name: "Project activity" })).toBeVisible();
+  await expect(app.page.getByRole("heading", { name: "Connect your GitLab project" })).toBeVisible();
+});
+
+test("the Terminal tutorial explains the GitLab branch workflow and can be reopened", async ({ app }) => {
+  mockOnly("the guided workspace uses the normal mock fixtures");
+  await app.page.goto("/?mock=1&tutorial=1");
+
+  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
+  await expect(app.page.getByText("Terminal turns repository branches into a simple workflow you can scan without reading terminal logs.")).toBeVisible();
+  await expect(app.page.getByText("This practice workspace is safe to explore. Actions stay here and do not change a real repository.")).toBeVisible();
+  await app.page.getByRole("button", { name: "Show project activity" }).click();
+  await expect(app.page.getByRole("heading", { name: "Connect your GitLab project" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Read the Todo board" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Follow every push and pull" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Guide the agent to done" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Finish" }).click();
+  await expect(app.page.getByRole("heading", { name: "Guide the agent to done" })).toHaveCount(0);
+
+  await app.page.getByRole("button", { name: "Tutorial" }).click();
+  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
 });

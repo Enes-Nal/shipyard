@@ -83,14 +83,14 @@ function AgentOffline({ error }: { error?: string }) {
           <EmptyTitle>The Terminal agent isn't running</EmptyTitle>
           <EmptyDescription>
             {binary === null && IS_WINDOWS
-              ? "The native agent isn't available in this Windows build yet. Open a sample workspace to explore Terminal without installing anything."
+              ? "The native agent isn't available in this Windows build yet. Open the guided workspace to learn Terminal without installing anything."
               : binary === null
               ? "The local helper isn't available to this window yet. Copy the setup command, paste it into a terminal, and this window will connect automatically."
               : "It keeps your boxes connected while this window is closed, and keeps running after you quit Terminal."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          {binary === null && (IS_WINDOWS ? <WindowsSample /> : <TerminalCommand />)}
+          {binary === null && (IS_WINDOWS ? <WindowsGuide /> : <TerminalCommand />)}
           {binary && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button className="w-full" disabled={busy} onClick={() => void start()}>
@@ -134,10 +134,11 @@ function AgentOffline({ error }: { error?: string }) {
   );
 }
 
-function WindowsSample() {
+function WindowsGuide() {
   const open = () => {
     const url = new URL(location.href);
     url.searchParams.set("mock", "1");
+    url.searchParams.set("tutorial", "1");
     url.searchParams.delete("binary");
     location.assign(url);
   };
@@ -145,9 +146,9 @@ function WindowsSample() {
     <div className="flex w-full flex-col items-center gap-2">
       <Button className="w-full" onClick={open}>
         <PanelsTopLeftIcon />
-        Open sample workspace
+        Open guided workspace
       </Button>
-      <p className="text-center text-meta text-muted-foreground">Uses synthetic projects and agents; nothing on this computer is changed.</p>
+      <p className="text-center text-meta text-muted-foreground">Practice the full workflow safely; nothing on this computer is changed.</p>
     </div>
   );
 }
