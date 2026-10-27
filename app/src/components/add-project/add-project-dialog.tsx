@@ -2,7 +2,7 @@ import { ArrowRightIcon, CheckIcon, ChevronRightIcon, CloudDownloadIcon, FolderG
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { FolderBrowser } from "@/components/add-project/folder-browser";
-import { dirname } from "@/components/add-project/intent";
+import { dirname, hasTrailingPathSeparator, trimTrailingPathSeparators } from "@/components/add-project/intent";
 import { mergeProgress, type RunResult, runPlan } from "@/components/add-project/run";
 import { shortPath, uniqueName } from "@/components/add-project/unique-name";
 import { type Destination, type Plan, type Row, usePlan } from "@/components/add-project/use-plan";
@@ -205,7 +205,7 @@ export function AddProjectBody({ startBox }: { startBox?: string }) {
     return (
       <>
         <StepHeader onBack={() => setBrowsing(false)} title="Browse folders" description={`Pick a repository or folder on ${box}.`} />
-        <FolderBrowser box={box} start={intent.kind === "path" ? (input.trim().endsWith("/") ? input.trim().replace(/(.)\/+$/, "$1") : dirname(input.trim())) : undefined} onAdded={(loc: Location) => finish({ loc, extras: [] }, { do: "add", path: loc.path, name: loc.name, git: loc.repo })} />
+        <FolderBrowser box={box} start={intent.kind === "path" ? (hasTrailingPathSeparator(input.trim()) ? trimTrailingPathSeparators(input.trim()) : dirname(input.trim())) : undefined} onAdded={(loc: Location) => finish({ loc, extras: [] }, { do: "add", path: loc.path, name: loc.name, git: loc.repo })} />
       </>
     );
   }

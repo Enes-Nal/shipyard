@@ -1,6 +1,7 @@
-import { ArrowUpIcon, FolderIcon, GitBranchIcon, LoaderIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowUpIcon, ChevronRightIcon, FolderIcon, GitBranchIcon, LoaderIcon, TriangleAlertIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { basename, isWindowsPath, join } from "@/components/add-project/intent";
 import { shortPath, uniqueName } from "@/components/add-project/unique-name";
 import { Button } from "@/components/ui/button";
 import { DialogFooter, DialogPanel } from "@/components/ui/dialog";
@@ -8,6 +9,7 @@ import { Frame, FramePanel } from "@/components/ui/frame";
 import type { Location } from "@/lib/api";
 import { plainError } from "@/lib/errors";
 import { type FsEntry, type FsListing, projectsApi } from "@/lib/projects";
+import { IS_WINDOWS } from "@/lib/platform";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ErrorText } from "@/components/error-note";
@@ -36,7 +38,7 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
         setTyped(shortPath(l.path, l.home));
         setActive(l.entries.length ? 0 : -1);
       } catch (err) {
-        if (fallback) return go(fallback);
+        if (fallback !== undefined) return go(fallback);
         setError(plainError(err));
       } finally {
         setLoading(false);
@@ -45,10 +47,10 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
     [box],
   );
 
-  // Start where the field pointed, else ~/work, where projects usually
-  // live; home when it is not there.
+  // An empty path lets the box choose its conventional project folder;
+  // fall back to home when it does not have one.
   useEffect(() => {
-    void (start ? go(start, "~/work") : go("~/work", "~"));
+    void (start ? go(start, "") : go("", "~"));
     // Only where it starts; browsing moves on from there.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [go]);
@@ -60,7 +62,7 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
   const entries = listing?.entries ?? [];
   const selected: FsEntry | undefined = entries[active];
   // What Add adds: the selected folder, or the one being shown.
-  const target: FsEntry | undefined = selected ?? (listing ? { name: listing.path.split("/").pop() ?? "", path: listing.path } : undefined);
+  const target: FsEntry | undefined = selected ?? (listing ? { name: basename(listing.path), path: listing.path } : undefined);
 
   const projects = useStore((st) => st.boxes[box]?.locations);
   const existing = (e?: FsEntry) => (e ? projects?.find((l) => l.path === e.path) : undefined);
@@ -120,7 +122,7 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
           <nav aria-label="Folder" className="flex h-7 min-w-0 items-center gap-1 overflow-hidden px-2.5 text-muted-foreground text-meta">
             {crumbs.map((c, i) => (
               <span key={c.path} className="flex min-w-0 items-center gap-1">
-                {i > 0 && <span className="text-muted-foreground/48">/</span>}
+                {i > 0 && (IS_WINDOWS ? <ChevronRightIcon className="size-3 text-muted-foreground/48" /> : <span className="text-muted-foreground/48">/</span>)}
                 <button type="button" onClick={() => void go(c.path)} className={cn("truncate hover:text-foreground", i === crumbs.length - 1 && "font-medium text-foreground")}>
                   {c.label}
                 </button>
@@ -169,7 +171,7 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
         {error && <ErrorText className="text-destructive text-body" text={error} />}
       </DialogPanel>
       <DialogFooter className="items-center px-5 py-3 sm:justify-between">
-        <span className="min-w-0 truncate text-desc text-muted-foreground">↵ opens a folder or adds a repository</span>
+        <span className="min-w-0 truncate text-desc text-muted-foreground">{IS_WINDOWS ? "Enter" : "↵"} opens a folder or adds a repository</span>
         <Button className="shrink-0" loading={adding} disabled={!target || loading} onClick={() => target && void add(target)}>
           {existing(target) ? "Go to" : "Add"} {target?.name ? <span className="max-w-40 truncate">{target.name}</span> : "this folder"}
         </Button>
@@ -179,6 +181,19 @@ export function FolderBrowser({ box, start, onAdded }: { box: string; start?: st
 }
 
 function crumbsFor(l: FsListing): { label: string; path: string }[] {
+  if (isWindowsPath(l.path)) {
+    const drive = /^([A-Za-z]:)[\\/]/.exec(l.path);
+    const unc = /^(\\\\[^\\/]+[\\/][^\\/]+)/.exec(l.path);
+    const root = drive ? `${drive[1]}\\` : (unc?.[1] ?? "\\");
+    const rest = l.path.slice(root.length).split(/[\\/]/).filter(Boolean);
+    const out = [{ label: root.replace(/[\\/]$/, ""), path: root }];
+    let at = root;
+    for (const part of rest) {
+      at = join(at, part);
+      out.push({ label: part, path: at });
+    }
+    return out;
+  }
   const underHome = l.path === l.home || l.path.startsWith(`${l.home}/`);
   const root = underHome ? l.home : "";
   const rest = (underHome ? l.path.slice(l.home.length) : l.path).split("/").filter(Boolean);

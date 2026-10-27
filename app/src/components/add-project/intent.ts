@@ -1,4 +1,7 @@
 import { locationName, repoName } from "@/lib/projects";
+import { basename, dirname, hasTrailingPathSeparator, isPathRoot, isWindowsPath, join, pathSeparator, trimTrailingPathSeparators } from "@/lib/box-path";
+
+export { basename, dirname, hasTrailingPathSeparator, isPathRoot, isWindowsPath, join, pathSeparator, trimTrailingPathSeparators };
 
 // What someone typed into Add a project, before the box has looked:
 //
@@ -31,7 +34,7 @@ const HOSTED = /^(?:(https?|ssh|git):\/\/)?(?:[\w.-]+@)?([\w-]+(?:\.[\w-]+)+(?::
 export function classify(raw: string): Intent {
   const t = raw.trim();
   if (!t) return { kind: "empty" };
-  if (t === "~" || /^(~\/|\/|\.\.?\/)/.test(t)) return { kind: "path", text: t };
+  if (t === "~" || /^(?:~[\\/]|[\\/]|\.\.?[\\/]|[A-Za-z]:[\\/])/.test(t)) return { kind: "path", text: t };
 
   const scp = SCP.exec(t);
   if (scp) return repo(t, scp[1], scp[2]);
@@ -72,16 +75,6 @@ function linkIn(url: string): Link | undefined {
   if (issue) return { kind: "issue", n: Number(issue[1]), url };
   return undefined;
 }
-
-// Paths, the way the box's folder listing takes them.
-export const dirname = (p: string) => {
-  const t = p.replace(/\/+$/, "");
-  if (t === "~" || t === "") return t === "~" ? "~" : "/";
-  const i = t.lastIndexOf("/");
-  return i <= 0 ? (t.startsWith("/") ? "/" : "~") : t.slice(0, i);
-};
-export const basename = (p: string) => p.replace(/\/+$/, "").split("/").pop() ?? "";
-export const join = (dir: string, name: string) => `${dir.replace(/\/+$/, "")}/${name}`;
 
 // A folder name the box accepts for clone and create.
 export const validFolder = (s: string) => /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(s);

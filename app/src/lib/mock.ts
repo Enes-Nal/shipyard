@@ -34,6 +34,7 @@ import { mockHistoryCall } from "@/lib/mock-history";
 import { BENCH, benchFleet, benchTerm, noisyTerm, seedBenchChats } from "@/lib/mock-bench";
 import { mockAnswer, mockToolDetailSync, WEBHOOK_TEST } from "@/lib/mock-conversation";
 import { crowd } from "@/lib/mock-crowd";
+import { IS_WINDOWS } from "@/lib/platform";
 
 // Mock mode (?mock=1) runs the whole UI on fixtures, so it can be worked on
 // without an agent or a box. State is mutable: new tasks and sessions appear,
@@ -382,7 +383,7 @@ const checksRun: Record<string, number> = {};
 // mockProjects is a box's folders, branches and the resolver: enough to
 // browse, clone, create, and make worktrees from names, branches, PRs and
 // issues.
-const mockFolders: Record<string, { git?: boolean; slug?: string }> = {
+const posixFolders: Record<string, { git?: boolean; slug?: string }> = {
   "/home/me": {},
   "/home/me/work": {},
   "/home/me/work/shop": { git: true, slug: "acme/shop" },
@@ -396,27 +397,60 @@ const mockFolders: Record<string, { git?: boolean; slug?: string }> = {
   "/home/me/orca/projects": {},
   "/home/me/orca/projects/bean-app": { git: true, slug: "me/bean-app" },
 };
+const windowsFolders: Record<string, { git?: boolean; slug?: string }> = {
+  "C:\\": {},
+  "C:\\Users": {},
+  "C:\\Users\\dev": {},
+  "C:\\Users\\dev\\Projects": {},
+  "C:\\Users\\dev\\Projects\\shop": { git: true, slug: "acme/shop" },
+  "C:\\Users\\dev\\Projects\\notes": { git: true, slug: "me/notes" },
+  "C:\\Users\\dev\\Projects\\terminal-app": { git: true, slug: "me/terminal-app" },
+  "C:\\Users\\dev\\Projects\\drafts": {},
+  "C:\\Users\\dev\\Documents": {},
+  "C:\\Users\\dev\\Downloads": {},
+};
+const mockFolders = IS_WINDOWS ? windowsFolders : posixFolders;
 const mockBranches = ["main", "me/checkout-fix", "me/qa-deck", "me/search-perf", "feat/qa-app", "feat/pr-previews", "fix/cart-badge"];
 const HOME = "/home/me";
-const expand = (p: string) => (p === "~" ? HOME : p.startsWith("~/") ? `${HOME}${p.slice(1)}` : p.replace(/\/+$/, "") || "/");
+const FOLDER_HOME = IS_WINDOWS ? "C:\\Users\\dev" : HOME;
+const FOLDER_SEP = IS_WINDOWS ? "\\" : "/";
+const DEFAULT_PROJECTS = IS_WINDOWS ? "~/Projects" : "~/work";
+const trimFolder = (p: string) => {
+  if (IS_WINDOWS && /^[A-Za-z]:[\\/]*$/.test(p)) return `${p.slice(0, 2)}\\`;
+  const trimmed = p.replace(/[\\/]+$/, "");
+  return trimmed || FOLDER_SEP;
+};
+const expand = (p: string) => {
+  if (p === "~") return FOLDER_HOME;
+  if (/^~[\\/]/.test(p)) return `${FOLDER_HOME}${FOLDER_SEP}${p.slice(2).replace(/[\\/]/g, FOLDER_SEP)}`;
+  return trimFolder(p);
+};
+const folderJoin = (dir: string, name: string) => `${trimFolder(dir)}${trimFolder(dir).endsWith(FOLDER_SEP) ? "" : FOLDER_SEP}${name}`;
+const folderParent = (p: string) => {
+  const at = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  const rootLength = IS_WINDOWS ? 3 : 1;
+  if (IS_WINDOWS && p.length > rootLength && at < rootLength) return `${p.slice(0, 2)}\\`;
+  return at < rootLength ? undefined : (p.slice(0, at) || FOLDER_SEP);
+};
 
 function mockProjects(box: string, method: string, path: string, body?: unknown): Promise<unknown> | undefined {
   const [route, query = ""] = path.split("?");
   if (method === "GET" && route === "fs") {
-    const dir = expand(new URLSearchParams(query).get("path") ?? "~");
+    const dir = expand(new URLSearchParams(query).get("path") || DEFAULT_PROJECTS);
     if (!(dir in mockFolders)) return Promise.reject(new Error(`${dir}: no such folder`));
+    const childPrefix = dir.endsWith(FOLDER_SEP) ? dir : `${dir}${FOLDER_SEP}`;
     const entries = Object.keys(mockFolders)
-      .filter((p) => p.startsWith(`${dir}/`) && !p.slice(dir.length + 1).includes("/"))
+      .filter((p) => p !== dir && p.startsWith(childPrefix) && !/[\\/]/.test(p.slice(childPrefix.length)))
       .sort()
-      .map((p) => ({ name: p.split("/").pop()!, path: p, ...mockFolders[p] }));
-    return delay({ path: dir, parent: dir === "/" ? undefined : dir.split("/").slice(0, -1).join("/") || "/", home: HOME, entries });
+      .map((p) => ({ name: p.split(/[\\/]/).pop()!, path: p, ...mockFolders[p] }));
+    return delay({ path: dir, parent: folderParent(dir), home: FOLDER_HOME, entries });
   }
   if (method === "POST" && route === "locations/new") {
     // sample: the box writes its sample project (examples/hello) in.
     const r = body as { name?: string; parent?: string; sample?: string };
     if (r.sample && r.sample !== "hello") return Promise.reject(new ApiError(`there is no sample named "${r.sample}"`, 400));
     r.name ||= r.sample ?? "";
-    const dir = `${expand(r.parent ?? "~/work")}/${r.name}`;
+    const dir = folderJoin(expand(r.parent ?? DEFAULT_PROJECTS), r.name);
     if (locations[box]?.some((l) => l.name === r.name)) return Promise.reject(new Error(`a location named ${r.name} already exists`));
     mockFolders[dir] = { git: true };
     const loc: Location = { name: r.name, path: dir, repo: true, scripts: {}, default_branch: "main", worktrees: [{ name: r.name, path: dir, branch: "main", main: true }] };
@@ -1315,7 +1349,7 @@ async function mockStream(method: string, path: string, body: unknown, onValue: 
     }
     for (const pct of [12, 47, 83, 100]) await say(`Receiving objects: ${pct}% (${pct * 41}/4100), ${(pct * 0.31).toFixed(1)} MiB | 18.2 MiB/s`, 350);
     await say("Resolving deltas: 100% (2210/2210), done.", 400);
-    const dir = `${expand(r.parent ?? "~/work")}/${name}`;
+    const dir = folderJoin(expand(r.parent ?? DEFAULT_PROJECTS), name);
     mockFolders[dir] = { git: true };
     const loc: Location = { name, path: dir, repo: true, scripts: {}, default_branch: "main", slug: r.url.replace(/^.*[:/]([^/:]+\/[^/]+?)(\.git)?$/, "$1"), worktrees: [{ name, path: dir, branch: "main", main: true }] };
     locations[box] = [...(locations[box] ?? []), loc];
