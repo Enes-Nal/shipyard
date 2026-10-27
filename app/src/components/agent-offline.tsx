@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, PlayIcon, RotateCwIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlayIcon, RotateCwIcon, SquareTerminalIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Scene } from "@/components/art/scenes";
@@ -83,7 +83,7 @@ function AgentOffline({ error }: { error?: string }) {
           <EmptyTitle>The Terminal agent isn't running</EmptyTitle>
           <EmptyDescription>
             {binary === null
-              ? "It keeps your boxes connected while this window is closed. Run this in a terminal to start it; Terminal connects as soon as it is up."
+              ? "The local helper isn't available to this window yet. Copy the setup command, paste it into a terminal, and this window will connect automatically."
               : "It keeps your boxes connected while this window is closed, and keeps running after you quit Terminal."}
           </EmptyDescription>
         </EmptyHeader>
@@ -135,8 +135,14 @@ function AgentOffline({ error }: { error?: string }) {
 function TerminalCommand() {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="flex w-full items-center gap-2 rounded-lg border bg-muted/50 py-1 pr-1 pl-3 text-left">
-      <code className="flex-1 font-mono text-foreground text-mono">{START}</code>
+    <div className="flex w-full items-center gap-3 rounded-lg border bg-muted/50 p-2 text-left">
+      <span className="grid size-8 shrink-0 place-items-center rounded-md bg-background text-muted-foreground shadow-sm ring-1 ring-border">
+        <SquareTerminalIcon className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium text-body text-foreground">Start from a terminal</span>
+        <span className="block text-meta text-muted-foreground">Copy, paste, then return here.</span>
+      </span>
       <Button
         size="sm"
         variant="outline"
@@ -147,7 +153,7 @@ function TerminalCommand() {
         }}
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
-        {copied ? "Copied" : "Copy"}
+        {copied ? "Copied" : "Copy command"}
       </Button>
     </div>
   );
