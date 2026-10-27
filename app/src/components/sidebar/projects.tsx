@@ -4,6 +4,7 @@ import {
   GitBranchIcon,
   HomeIcon,
   PencilIcon,
+  PinIcon,
   PlusIcon,
   RefreshCwIcon,
   ServerIcon,
@@ -38,6 +39,7 @@ import { removalLabel, removalOf, useRemoval, useRemovals } from "@/lib/removing
 import { WorktreeNameField } from "@/components/sidebar/rename-worktree";
 import { renameKey, startRenamingWorktree, stopRenamingWorktree, useRenamingWorktree, worktreeLabel } from "@/lib/worktree-names";
 import { below, MAX_INDENT, nest, prune, size, type TreeNode } from "@/lib/worktree-tree";
+import { isPinned, pinKey, pinnedFirst, usePinned } from "@/lib/pinned-worktrees";
 
 // Projects lists repositories, as Orca does: one group per repository on a
 // box (the same repository on two boxes is two groups, told apart by the
@@ -114,6 +116,7 @@ export function Projects({ prefs, update }: { prefs: SidebarPrefs; update(p: Par
 
   return (
     <>
+      <PinnedWorktrees />
       {prefs.groupBy === "project" ? (
         <>
           <ProjectSections prefs={prefs} update={update} />
@@ -214,6 +217,7 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
   const removals = useRemovals((s) => s.byKey);
   const current = useWorkspaces((s) => s.current);
   const inWorkspace = useStore((s) => s.view.kind === "workspace");
+  const pins = usePinned((s) => s.keys);
   const online = box.state === "online";
   const collapsed = prefs.collapsed[repo.key] ?? false;
   const all = prefs.show === "all";
@@ -221,7 +225,8 @@ function RepoGroup({ repo, chip, prefs, update }: { repo: Repo; chip: boolean; p
 
   const mainSessions = main ? worktreeSessions(data?.sessions, main) : [];
   const mainSel = !!main && inWorkspace && current === wsKey(box.name, main.path);
-  const rows: TreeRow[] = worktrees.map((wt) => ({
+  // Pinned ones are at the top of the sidebar instead (PinnedWorktrees).
+  const rows: TreeRow[] = worktrees.filter((wt) => !isPinned(box.name, wt.path, pins)).map((wt) => ({
     key: wt.path,
     box: box.name,
     loc,
@@ -330,6 +335,8 @@ interface WorktreeRowProps {
   onOpen(): void;
   // Shown when the project spans boxes, to tell its copies apart.
   chip?: BoxStatus;
+  // Its project's name, for a row shown away from its project (pinned).
+  project?: string;
   // The row's box when it is not online. The row stays, dimmed and marked,
   // so the worktree you have open never vanishes from under you; what it
   // last ran is not shown, since the box cannot say whether it still runs.
@@ -348,12 +355,13 @@ const sameRow = (a: WorktreeRowProps, b: WorktreeRowProps) =>
   a.wt === b.wt &&
   a.selected === b.selected &&
   a.away === b.away &&
+  a.project === b.project &&
   a.chip?.name === b.chip?.name &&
   a.chip?.state === b.chip?.state &&
   a.data?.stats?.agents === b.data?.stats?.agents &&
   sameList(a.sessions, b.sessions);
 
-const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, selected, onOpen, chip, away }: WorktreeRowProps) {
+const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, selected, onOpen, chip, project, away }: WorktreeRowProps) {
   // Its agents by what they work on ("Fix checkout webhook · Claude Code").
   const agents = away ? [] : sessions.filter((s) => agentOf(s) && !s.exited).map((s) => sessionName(s, { sessions, agent: true }));
   // A renamed worktree's tip says its own name and branch under the title.
@@ -411,6 +419,7 @@ const WorktreeRow = memo(function WorktreeRow({ box, loc, wt, sessions, data, se
             <span className={cn("min-w-0 truncate", away && "opacity-70")}>{name}</span>
             {/* Its own name beside the title, when the sidebar is wide enough. */}
             {!wt.main && wt.title && <span data-testid="worktree-row-name" className="hidden min-w-0 max-w-max grow basis-0 truncate font-mono text-[10px] text-muted-foreground @min-[17rem]/side:inline">{wt.name}</span>}
+            {project && <span data-testid="worktree-row-project" className="min-w-0 max-w-max shrink grow basis-0 truncate text-[11px] text-muted-foreground">{project}</span>}
             {/* On screen beside another worktree: its colour. */}
             <WtDot wsKey={key} className="size-1.5" />
             {/* Narrower than the default the name needs the room more; the
@@ -657,6 +666,68 @@ function RowButton({ label, ...props }: React.ComponentProps<"button"> & { label
   );
 }
 
+// PinnedWorktrees heads the list: the worktrees pinned from their menus, in
+// the order they were pinned, each with its project's name. They show
+// whether or not anything runs in them, and leave their project's list
+// while pinned; a worktree handed off from one stays under its project.
+function PinnedWorktrees() {
+  const keys = usePinned((s) => s.keys);
+  const boxes = useStore((s) => s.status?.boxes ?? NONE);
+  const data = useStore((s) => s.boxes);
+  const current = useWorkspaces((s) => s.current);
+  const inWorkspace = useStore((s) => s.view.kind === "workspace");
+  const pinned = new Set(keys);
+  const rows = pinnedFirst(
+    boxes.flatMap((b) =>
+      (data[b.name]?.locations ?? []).flatMap((loc) =>
+        (loc.worktrees ?? [])
+          .filter((wt) => !wt.main && pinned.has(pinKey(b.name, wt.path)))
+          .map(
+            (wt): TreeRow => ({
+              key: pinKey(b.name, wt.path),
+              box: b.name,
+              loc,
+              wt,
+              data: data[b.name],
+              sessions: worktreeSessions(data[b.name]?.sessions, wt),
+              selected: inWorkspace && current === wsKey(b.name, wt.path),
+              chip: boxes.length > 1 ? b : undefined,
+              away: b.state === "online" ? undefined : b,
+            }),
+          ),
+      ),
+    ),
+    (r) => r.key,
+    keys,
+  );
+  if (!rows.length) return null;
+  return (
+    <div data-testid="pinned-worktrees" className="mb-2">
+      <div className="flex h-7 items-center gap-1 pl-1.5 font-medium text-[11px] text-muted-foreground">
+        <PinIcon className="size-3" />
+        Pinned
+      </div>
+      <SidebarMenuSub className="mx-0 translate-x-0 gap-px border-l-0 px-0 py-0">
+        {rows.map((r) => (
+          <WorktreeRow
+            key={r.key}
+            box={r.box}
+            loc={r.loc}
+            wt={r.wt}
+            sessions={r.sessions}
+            data={r.data}
+            selected={r.selected}
+            chip={r.chip}
+            project={r.loc.name}
+            away={r.away}
+            onOpen={() => selectWorktree(refOf(r.box, r.loc, r.wt))}
+          />
+        ))}
+      </SidebarMenuSub>
+    </div>
+  );
+}
+
 // ProjectSections lists projects under their sections (Work, Personal…);
 // projects in none come first. Drag a project onto a section to move it.
 function ProjectSections({ prefs, update }: { prefs: SidebarPrefs; update(p: Partial<SidebarPrefs>): void }) {
@@ -753,6 +824,7 @@ function ProjectGroup({ project: p, chips, prefs, update }: { project: Project; 
   const removals = useRemovals((s) => s.byKey);
   const current = useWorkspaces((s) => s.current);
   const inWorkspace = useStore((s) => s.view.kind === "workspace");
+  const pins = usePinned((s) => s.keys);
   const key = `project:${p.id}`;
   const collapsed = prefs.collapsed[key] ?? false;
   const all = prefs.show === "all";
@@ -765,7 +837,7 @@ function ProjectGroup({ project: p, chips, prefs, update }: { project: Project; 
   const rows = p.members.flatMap((m) => {
     const data = boxes[m.box.name];
     return (m.loc.worktrees ?? [])
-      .filter((w) => (multi ? true : !w.main))
+      .filter((w) => (multi ? true : !w.main) && !isPinned(m.box.name, w.path, pins))
       .sort((a, b) => Number(!!b.main) - Number(!!a.main) || worktreeLabel(a).localeCompare(worktreeLabel(b)))
       .map(
         (wt): TreeRow => ({

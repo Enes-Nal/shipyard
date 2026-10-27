@@ -11,6 +11,8 @@ import {
   MergeIcon,
   PackageIcon,
   PencilIcon,
+  PinIcon,
+  PinOffIcon,
   PlusIcon,
   ServerIcon,
   SplitIcon,
@@ -58,6 +60,7 @@ import { errorMessage } from "@/lib/format";
 import { plainError } from "@/lib/errors";
 import { scheduleRefresh, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { isPinned, pinWorktree, unpinWorktree } from "@/lib/pinned-worktrees";
 import { removeWorktreeOnBox } from "@/lib/remove-worktree";
 import { addGroup, isShown, refOf, selectWorktree, useWorkspaces, wsKey } from "@/lib/workspaces";
 import { ToneItems } from "@/components/workspace/tab-group";
@@ -373,9 +376,14 @@ export function worktreeActions(box: string, loc: Location, wt: Worktree): Actio
   if (agentSession) items.push({ type: "sub", label: "Orchestrate", icon: <WorkflowIcon />, items: () => <SessionActionItems box={box} session={agentSession.name} /> });
   // A branch's pull request can fix its own CI and review comments.
   if (!wt.main && wt.branch && boxHasRuns(box)) items.push({ type: "sub", label: "Auto-fix this PR", icon: <WrenchIcon />, items: () => <AutoFixItems box={box} path={wt.path} /> });
-  // A display name for it; the branch and folder keep theirs.
+  // A display name for it; the branch and folder keep theirs. Pinned, it
+  // sits at the top of the sidebar (lib/pinned-worktrees).
   if (!wt.main) {
-    items.push(sep, item("Rename…", <PencilIcon />, () => openRenameWorktree(box, loc, wt), { shortcut: "F2" }));
+    items.push(
+      sep,
+      isPinned(box, wt.path) ? item("Unpin", <PinOffIcon />, () => unpinWorktree(box, wt.path)) : item("Pin to top", <PinIcon />, () => pinWorktree(box, wt.path)),
+      item("Rename…", <PencilIcon />, () => openRenameWorktree(box, loc, wt), { shortcut: "F2" }),
+    );
     if (wt.title) items.push(item(`Show as ${wt.name}`, <span className="size-4" />, () => void renameWorktree(box, loc, wt, "")));
   }
   items.push(sep, item("Copy path", <CopyIcon />, () => copy(wt.path, "path")));
@@ -429,6 +437,7 @@ export function archiveWorktree(box: string, loc: Location, wt: Worktree) {
         if (/modified|untracked|uncommitted|contains/i.test(errorMessage(err))) throw new Error(`${wt.name} has uncommitted changes, so it was left as it is. Commit them first, or use Remove worktree… to discard them.`);
         throw err;
       }
+      unpinWorktree(box, wt.path);
       if (res.archive) toastManager.add({ title: `Archiving ${wt.name}`, description: "Its archive script is running on the box; the worktree goes when it finishes.", type: "info" });
       else toastManager.add({ title: `Archived ${wt.name}`, description: wt.branch ? `Branch ${wt.branch} is kept.` : box, type: "success" });
     },
@@ -470,6 +479,7 @@ export function removeWorktree(box: string, loc: Location, wt: Worktree) {
         if (/modified|untracked|uncommitted|contains/i.test(m) && !checked.force) throw new Error(`${wt.name} has uncommitted changes. Tick "Remove even with uncommitted changes" to remove it anyway.`);
         throw err;
       }
+      unpinWorktree(box, wt.path);
       if (res.archive) toastManager.add({ title: `Removing ${wt.name}`, description: "The repo's archive script runs on the box first; the worktree goes when it finishes.", type: "info" });
       else toastManager.add({ title: `Removed ${wt.name}`, description: box, type: "success" });
     },
