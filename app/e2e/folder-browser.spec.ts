@@ -23,3 +23,19 @@ test("the Windows folder browser uses Windows paths and controls", async ({ app 
   await expect(page.getByLabel("Path")).toHaveValue("C:\\");
   await expect(page.getByRole("option", { name: "Users" })).toBeVisible();
 });
+
+test("the Windows folder browser can switch drives", async ({ app }) => {
+  const { page } = app;
+  await app.open({ params: { platform: "windows" } });
+
+  await page.getByTestId("nav-more").click();
+  await page.getByRole("menuitem", { name: "Add a project…" }).click();
+  await page.getByRole("button", { name: "Browse" }).click();
+
+  await page.getByLabel("Path").fill("E:\\Code");
+  await page.getByLabel("Path").press("Enter");
+
+  await expect(page.getByRole("option", { name: "New folder me/new-folder" })).toBeVisible();
+  await expect(page.getByLabel("Path")).toHaveValue("E:\\Code");
+  await expect(page.getByRole("navigation", { name: "Folder" }).getByRole("button").allTextContents()).resolves.toEqual(["E:", "Code"]);
+});

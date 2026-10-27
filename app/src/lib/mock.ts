@@ -408,6 +408,9 @@ const windowsFolders: Record<string, { git?: boolean; slug?: string }> = {
   "C:\\Users\\dev\\Projects\\drafts": {},
   "C:\\Users\\dev\\Documents": {},
   "C:\\Users\\dev\\Downloads": {},
+  "E:\\": {},
+  "E:\\Code": {},
+  "E:\\Code\\New folder": { git: true, slug: "me/new-folder" },
 };
 const mockFolders = IS_WINDOWS ? windowsFolders : posixFolders;
 const mockBranches = ["main", "me/checkout-fix", "me/qa-deck", "me/search-perf", "feat/qa-app", "feat/pr-previews", "fix/cart-badge"];
