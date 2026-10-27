@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     this.setState({ stack: info.componentStack ?? undefined });
     // Kept for anyone who does have a console attached, such as a dev build.
-    console.error(`Shipyard: ${this.props.scope ?? "the app"} hit an error it could not render through:`, error, info.componentStack);
+    console.error(`Shipkit: ${this.props.scope ?? "the app"} hit an error it could not render through:`, error, info.componentStack);
   }
 
   render() {
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (compact) {
       return (
         <div role="alert" className={cn("flex min-w-0 items-center gap-2 px-2 text-meta", className)}>
-          <span className="shrink-0 font-medium">{scope ? `Something in ${scope} broke` : "Shipyard hit an error"}</span>
+          <span className="shrink-0 font-medium">{scope ? `Something in ${scope} broke` : "Shipkit hit an error"}</span>
           <span className="min-w-0 truncate text-muted-foreground">{error.message || String(error)}</span>
           <span className="ml-auto flex shrink-0 items-center gap-1">
             {rescues}
@@ -87,9 +87,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <EmptyMedia>
               <Scene name="storm" />
             </EmptyMedia>
-            <EmptyTitle>{scope ? `Something in ${scope} broke` : "Shipyard hit an error"}</EmptyTitle>
+            <EmptyTitle>{scope ? `Something in ${scope} broke` : "Shipkit hit an error"}</EmptyTitle>
             <EmptyDescription>
-              {scope ? "The rest of Shipyard still works. " : ""}
+              {scope ? "The rest of Shipkit still works. " : ""}
               {error.message || String(error)}
             </EmptyDescription>
           </EmptyHeader>

@@ -185,7 +185,7 @@ function Body({ target }: { target: Target }) {
 }
 
 // KitChoices is the Team setup page's second way, for each repo that is a
-// Shipyard project on the box already and gets its setup from a kit: the
+// Shipkit project on the box already and gets its setup from a kit: the
 // whole setup (the page as it is), or just that project's kit.
 export function KitChoices({ view, box }: { view: TeamView; box?: string }) {
   if (!box || view.state !== "found") return null;

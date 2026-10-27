@@ -46,7 +46,7 @@ function BarYAxisLabel({
           opacity: 0.7,
           color: "var(--chart-label, var(--color-zinc-500))",
         }}
-        // Shipyard: room for the longer names a margin.left makes room for.
+        // Shipkit: room for the longer names a margin.left makes room for.
         style={{ maxWidth: 160 }}
         transition={{ duration: 0.15 }}
       >

@@ -31,7 +31,11 @@ export function HomeView() {
               <Scene name="dawn" width={136} />
             </div>
           )}
-          <h1 className={cn("mb-4 text-balance text-center font-heading text-page-title", band && "[text-shadow:0_0_6px_var(--background),0_0_16px_var(--background)]")}>What should your agents work on?</h1>
+          <div className="mb-4 text-center">
+            <p className="mb-1 text-warning-foreground text-label">SHIPKIT</p>
+            <h1 className={cn("text-balance font-heading text-page-title", band && "[text-shadow:0_0_6px_var(--background),0_0_16px_var(--background)]")}>What will you ship?</h1>
+            <p className="mt-1.5 text-balance text-muted-foreground text-desc">Describe the outcome. Auto chooses the best available agent, model and effort.</p>
+          </div>
           <TaskComposer autoFocus />
           <button type="button" onClick={() => setSwitchboardOpen(true)} className="mt-3 inline-flex items-center gap-2 rounded-lg border bg-background/80 px-3 py-1.5 text-meta text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground">
             <Layers3Icon className="size-3.5" /> Open Switchboard <span className="ml-2 font-mono">{platformKeys("⌘⇧K")}</span>

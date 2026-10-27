@@ -1,5 +1,5 @@
 // Restoring the saved workspaces (berth.workspaces) at launch. What was
-// saved may come from an older Shipyard, a write cut short or a hand edit,
+// saved may come from an older Shipkit, a write cut short or a hand edit,
 // and it is read before anything draws: a throw here leaves the window
 // empty on every launch after (#137). So nothing here throws. A workspace,
 // tab or pane the app can't draw is dropped, a Compare tab whose shape is

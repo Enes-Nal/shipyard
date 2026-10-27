@@ -35,10 +35,10 @@ export interface KindSpec {
   word?(body?: string): string;
   // The one-line headline from the content.
   gist?(art: Art, body: string): Gist | undefined;
-  // Drawn by Shipyard itself, or a sandboxed page.
+  // Drawn by Shipkit itself, or a sandboxed page.
   drawn: "berth" | "sandbox";
   // What the tab's header says about where it comes from, when more than
-  // "Drawn by Shipyard".
+  // "Drawn by Shipkit".
   drawnLabel?: string;
   View: LazyExoticComponent<ComponentType<ViewProps>>;
   // A row under the headline on a card or tile: what needs a look.
@@ -129,7 +129,7 @@ registerKind({
     return v ? vdiffGist(v) : undefined;
   },
   drawn: "berth",
-  drawnLabel: "Shot on the box · drawn by Shipyard",
+  drawnLabel: "Shot on the box · drawn by Shipkit",
   View: lazy(() => import("@/components/art/views/vdiff-view")),
   Chips: lazy(() => import("@/components/art/views/vdiff-chips")),
   wide: true,

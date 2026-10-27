@@ -90,10 +90,10 @@ function Shown({ art }: { art: Art }) {
                 <span className="min-w-0 truncate font-mono">{art.file}</span>
               </>
             )}
-            <Tip label={sandboxed ? "Runs on its own origin in a sandbox: no network, no access to Shipyard" : "Drawn by Shipyard from its data: no code of the agent's runs"}>
+            <Tip label={sandboxed ? "Runs on its own origin in a sandbox: no network, no access to Shipkit" : "Drawn by Shipkit from its data: no code of the agent's runs"}>
               <span className="ml-auto inline-flex shrink-0 items-center gap-1">
                 <LockIcon className="size-3" aria-hidden />
-                {sandboxed ? "Sandboxed page" : (kind.drawnLabel ?? "Drawn by Shipyard")}
+                {sandboxed ? "Sandboxed page" : (kind.drawnLabel ?? "Drawn by Shipkit")}
               </span>
             </Tip>
           </div>

@@ -22,7 +22,7 @@ export interface BoxBrowser {
   memory: number;
   started?: string;
   exe?: string;
-  // False for a browser Shipyard didn't start (the box user's own).
+  // False for a browser Shipkit didn't start (the box user's own).
   stoppable: boolean;
 }
 
@@ -79,11 +79,11 @@ export function memory(n: number): string {
 
 // OWNER_WORDS says who started a browser, for its tag.
 export const OWNER_WORDS: Record<BrowserOwner, string> = {
-  agent: "Shipyard",
+  agent: "Shipkit",
   "agent-browser": "agent-browser",
   session: "Session",
   orphan: "Left behind",
-  other: "Not Shipyard's",
+  other: "Not Shipkit's",
 };
 
 // busy says a browser is worth a look: a core or more of CPU, or left by

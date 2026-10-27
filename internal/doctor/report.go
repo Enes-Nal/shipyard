@@ -93,9 +93,9 @@ var marks = map[Status]string{OK: "✓", Warn: "!", Fail: "✗", Info: "·"}
 func FormatReport(d Diagnostics) string {
 	var l []string
 	add := func(s string) { l = append(l, s) }
-	add("Shipyard diagnostics · " + stamp(d.Generated))
+	add("Shipkit diagnostics · " + stamp(d.Generated))
 	if a := d.App; a == nil {
-		add("App: not recorded (open Shipyard once)")
+		add("App: not recorded (open Shipkit once)")
 	} else {
 		line := "App: " + or(a.Version, "unknown")
 		if a.Build != "" {

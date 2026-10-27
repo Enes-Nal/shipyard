@@ -6,6 +6,7 @@ import type { HomeLayout } from "@/lib/home-layout";
 import { clampTasks, clampWidth, defaultWidth, SIDEBAR_DEFAULT, SIDEBAR_NARROW_DEFAULT, TASKS_DEFAULT } from "@/lib/sidebar-width";
 import { load, save } from "@/lib/storage";
 import { DEFAULT_TERMINAL_PREFS, type TerminalPrefs } from "@/lib/terminal";
+import { DEFAULT_ROUTING_POLICY, normalizeRoutingPolicy, type RoutingPolicy } from "@/lib/routing";
 
 // The person's preferences, kept on this computer.
 
@@ -62,7 +63,7 @@ export interface Prefs {
   // Labs: zen (⌘.): no sidebar or status bar, a switcher for a tab strip,
   // agents as conversations.
   zen: boolean;
-  // Update a box's berthd as soon as Shipyard ships a newer one
+  // Update a box's berthd as soon as Shipkit ships a newer one
   // (lib/outdated.ts). Off: the status bar offers it instead.
   autoUpdateBoxes: boolean;
   // The picture behind conversations and its effects (Settings ›
@@ -92,6 +93,9 @@ export interface Prefs {
   // The newest version whose What's new card was shown, or that was
   // running when the card had nothing to show (lib/whats-new.ts).
   whatsNewSeen: string | null;
+  // Shipkit Auto's local policy. Provider credentials stay with their CLI
+  // or the local gateway; preferences never contain secrets.
+  routing: RoutingPolicy;
 }
 
 export type ChatWidth = "narrow" | "default" | "wide" | "xwide" | "full";
@@ -132,6 +136,7 @@ const DEFAULTS: Prefs = {
   home: null,
   installAgents: null,
   whatsNewSeen: null,
+  routing: { ...DEFAULT_ROUTING_POLICY, automatic: load("berth.routing.auto.v1", true) },
 };
 
 // PREFS_VERSION counts changes of default that saved prefs are moved to
@@ -141,7 +146,7 @@ const PREFS_VERSION = 4;
 
 type Saved = Partial<Prefs> & { version?: number };
 
-// migrate brings prefs saved by an older Shipyard up to date. Prefs are saved
+// migrate brings prefs saved by an older Shipkit up to date. Prefs are saved
 // whole, so a "keep" saved before version 2 is only the old default unless
 // the person chose it, which closeAgentsChosen records from now on.
 export function migratePrefs(saved: Saved): Saved {
@@ -178,6 +183,7 @@ export const usePrefs = create<Prefs>()(() => ({
   systemThemes: { ...DEFAULTS.systemThemes, ...saved.systemThemes },
   chatBackground: normalizeChatBackground(saved.chatBackground),
   headerPicture: normalizeHeaderPicture(saved.headerPicture),
+  routing: normalizeRoutingPolicy(saved.routing ?? DEFAULTS.routing),
   // 240px was the default before the task sidebar: a saved 240 is a sidebar
   // never dragged, so it starts at today's default for this window.
   sidebarLayout: saved.sidebarLayout === "columns" || saved.sidebarLayout === "list" ? saved.sidebarLayout : "rail",

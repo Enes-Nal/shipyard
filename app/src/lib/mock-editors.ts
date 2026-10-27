@@ -15,7 +15,7 @@ let written = false;
 
 const conf = (box: string, addr: string, net?: string) =>
   `# Written by berth ssh-config for the box ${box}; berth rewrites it.\nHost berth-${box}\n  HostName ${addr}\n  User me\n` +
-  (net ? `  ProxyCommand /Applications/Shipyard.app/Contents/MacOS/berth network proxy ${net} %h %p\n` : "");
+  (net ? `  ProxyCommand /Applications/Shipkit.app/Contents/MacOS/berth network proxy ${net} %h %p\n` : "");
 
 const plus = (s: string) =>
   s

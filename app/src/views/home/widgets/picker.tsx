@@ -16,7 +16,7 @@ import { WidgetBoundary, WidgetHeading } from "./card";
 import { GAP, HomeWidgetProvider, ROW } from "./env";
 import { CATEGORIES, type WidgetDef } from "./registry";
 
-// "Add widget": every widget there is, Shipyard's by what they're about and
+// "Add widget": every widget there is, Shipkit's by what they're about and
 // each plugin's under the plugin's name, with the one picked drawn live at
 // the size chosen, and where its data comes from. Built-in plugins that are
 // off but add widgets are offered too, a click from on.

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
-// "Install the berth command" in Settings → General. Shipyard.app carries the
+// "Install the berth command" in Settings → General. Shipkit.app carries the
 // berth CLI as Contents/MacOS/berth-cli; this links ~/.local/bin/berth to it,
 // so a terminal gets the same berth the app runs, and it updates with the
 // app. Nothing happens until the person asks, and the screen says first
@@ -11,10 +11,10 @@ use std::path::{Path, PathBuf};
 pub struct CliLink {
     // Where the link goes: ~/.local/bin/berth.
     link: String,
-    // The CLI inside this copy of Shipyard.app, or None in a dev build, which
+    // The CLI inside this copy of Shipkit.app, or None in a dev build, which
     // has none to link to.
     bundled: Option<String>,
-    // Why the bundled CLI cannot be linked yet: Shipyard is running from the
+    // Why the bundled CLI cannot be linked yet: Shipkit is running from the
     // disk image or from a quarantined copy macOS moved aside.
     blocked: Option<String>,
     // What is at the link now: "missing", "linked" (to this app's CLI),
@@ -56,10 +56,10 @@ fn bundled_in_app() -> Option<PathBuf> {
 fn blocked(p: &Path) -> Option<String> {
     let s = p.to_string_lossy();
     if s.starts_with("/Volumes/") {
-        return Some("Shipyard is running from its disk image. Drag it to Applications, open it from there, then install the command.".into());
+        return Some("Shipkit is running from its disk image. Drag it to Applications, open it from there, then install the command.".into());
     }
     if s.contains("/AppTranslocation/") {
-        return Some("macOS is running Shipyard from a temporary copy. Move Shipyard to Applications, open it from there, then install the command.".into());
+        return Some("macOS is running Shipkit from a temporary copy. Move Shipkit to Applications, open it from there, then install the command.".into());
     }
     None
 }
@@ -98,7 +98,7 @@ pub fn cli_link_status() -> Result<CliLink, String> {
 // kept beside it as berth.previous, not deleted.
 #[tauri::command]
 pub fn install_cli_link() -> Result<CliLink, String> {
-    let src = bundled().ok_or("this build of Shipyard carries no berth command to link to")?;
+    let src = bundled().ok_or("this build of Shipkit carries no berth command to link to")?;
     if let Some(why) = blocked(&src) {
         return Err(why);
     }

@@ -4,7 +4,7 @@ import { type BrowserContext, portUrl } from "./browser-url.ts";
 
 // What runs in a worktree, as the box sees it (GET services: what listens
 // in the worktree's folder or port block, with its command line), named for
-// people: its dev server (the port Shipyard gave it, $BERTH_PORT), the tools
+// people: its dev server (the port Shipkit gave it, $BERTH_PORT), the tools
 // dev servers bring along, known by command or usual port, and the rest:
 // helpers (an agent's headless Chrome, language servers, inspectors) that
 // listen without being anything to open.
@@ -30,7 +30,7 @@ type Kind = LiveService["kind"];
 const BY_COMMAND: [RegExp, string, Kind][] = [
   [/--remote-debugging-port|\bchrom(e|ium)\b|headless_shell/i, "Chrome (DevTools)", "other"],
   [/agent-browser/i, "Agent browser", "other"],
-  [/(^|\/)berthd?(\s|$)/i, "Shipyard", "other"],
+  [/(^|\/)berthd?(\s|$)/i, "Shipkit", "other"],
   [/language-?server|tsserver|\bgopls\b|rust-analyzer|pyright|eslint_d|copilot|\bvscode/i, "Language server", "other"],
   [/--inspect\b|--inspect=/i, "Node inspector", "other"],
   [/prisma(\.js)?\s+studio|prisma-studio/i, "Prisma Studio", "web"],

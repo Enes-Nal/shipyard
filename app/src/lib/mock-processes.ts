@@ -19,7 +19,7 @@ function browsersFor(box: string): BoxBrowser[] {
     b({ id: "b-39007-1", owner: "orphan", label: "Puppeteer left by ended session order-export-claude", via: "Puppeteer", session: "order-export-claude", processes: 5, cpu_percent: 22.4, memory: 610 * MB, started: ago(190) }),
     b({ id: "b-40211-1", owner: "agent", label: "Agent browser for shop/checkout-fix", location: "shop", worktree: "checkout-fix", cpu_percent: 2.6, memory: 380 * MB, started: ago(6) }),
     b({ id: "b-1201-1", owner: "agent-browser", engine: "Headless Chrome", label: 'agent-browser "qa" of shop/qa-deck', via: "agent-browser", session: "qa-deck-codex", location: "shop/qa-deck", processes: 3, cpu_percent: 0.8, memory: 290 * MB, started: ago(9) }),
-    b({ id: "b-777-1", owner: "other", engine: "Chrome", label: "Chrome, not started by Shipyard", processes: 6, cpu_percent: 0.4, memory: 520 * MB, started: ago(2900), stoppable: false }),
+    b({ id: "b-777-1", owner: "other", engine: "Chrome", label: "Chrome, not started by Shipkit", processes: 6, cpu_percent: 0.4, memory: 520 * MB, started: ago(2900), stoppable: false }),
   ];
 }
 
@@ -45,7 +45,7 @@ export function processesCall(box: string, method: string, path: string, emit: (
     const id = decodeURIComponent(stop[1]);
     const b = browsersFor(box).find((x) => x.id === id && !stopped.has(x.id));
     if (!b) throw new Error("no such browser or session on this box now; it may have ended");
-    if (!b.stoppable) throw new Error("Shipyard didn't start this browser, so it leaves it alone; stop it on the box if you mean to");
+    if (!b.stoppable) throw new Error("Shipkit didn't start this browser, so it leaves it alone; stop it on the box if you mean to");
     stopped.add(id);
     const text = `Stopped ${b.label} (${b.processes} processes)`;
     emit({ type: "process.stopped", box, data: { id, text } });

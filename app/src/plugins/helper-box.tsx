@@ -143,7 +143,7 @@ async function turnOn(berth: BerthPluginContext, box: string): Promise<void> {
 // nothing restarts them, so the caller says which.
 async function turnOff(berth: BerthPluginContext, box: string, purge = false): Promise<HelperService[]> {
   const key = keyOf(berth, box);
-  // A Shipyard from before remove() answered resolves with nothing.
+  // A Shipkit from before remove() answered resolves with nothing.
   const was = (await berth.helper.remove(box, { purge })) as HelperStatus | undefined;
   const attached = was?.attached ?? NONE;
   // A helper that was already off answers with none: the services it left
@@ -310,7 +310,7 @@ function HelperPanel({ berth, box, copy, onAbout, testId = "helper" }: HelperBox
       </div>
     );
   }
-  if (view.old) return <Notice testId={testId} icon={<CircleAlert className={mark} />} title={`Shipyard on this computer is older than ${copy.name} needs`} body="Its agent can't install a plugin's program on a box yet. Update Shipyard, then reload plugins in Settings → Plugins." />;
+  if (view.old) return <Notice testId={testId} icon={<CircleAlert className={mark} />} title={`Shipkit on this computer is older than ${copy.name} needs`} body="Its agent can't install a plugin's program on a box yet. Update Shipkit, then reload plugins in Settings → Plugins." />;
   if (!s) {
     return (
       <Notice
@@ -497,7 +497,7 @@ function HelperRow({ berth, box, copy, online = true, active = true, testId = "h
         {!online ? (
           "Its helper can't be reached until the box is back."
         ) : view.old ? (
-          `Shipyard on this computer is older than ${copy.name} needs: its agent can't install a plugin's program on a box yet. Update Shipyard.`
+          `Shipkit on this computer is older than ${copy.name} needs: its agent can't install a plugin's program on a box yet. Update Shipkit.`
         ) : !s ? (
           view.fault ? (
             <span className="text-destructive-foreground">

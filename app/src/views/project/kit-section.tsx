@@ -211,7 +211,7 @@ function SaveKitDialog({ open, onOpenChange, box, location, existing }: { open: 
               </div>
               <ol start={2} className="list-decimal space-y-1.5 pl-5 text-muted-foreground text-meta">
                 <li>
-                  Send them the repository's link, or a Shipyard link like <code className="font-mono">berth://kit?src=https://github.com/acme/kits/tree/main/{saved.id}</code>. Opening it in Shipyard
+                  Send them the repository's link, or a Shipkit link like <code className="font-mono">berth://kit?src=https://github.com/acme/kits/tree/main/{saved.id}</code>. Opening it in Shipkit
                   shows them everything the kit does before they apply it.
                 </li>
                 <li>Check its environment for secrets before you push: the kit carries this box's values.</li>

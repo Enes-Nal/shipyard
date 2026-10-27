@@ -13,7 +13,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 // BoxRoutes is how this computer reaches a box: its paired address, SSH,
-// other addresses. Shipyard sends new requests over the fastest one that
+// other addresses. Shipkit sends new requests over the fastest one that
 // works; this line says which, and opens BoxRouteList, where the person
 // adds routes or turns them off.
 export function BoxRoutes({ box, open, onOpenChange }: { box: BoxStatus; open: boolean; onOpenChange(open: boolean): void }) {

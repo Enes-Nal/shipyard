@@ -407,7 +407,7 @@ function fileJson(path: string, e: Entry, withContent: boolean) {
   const out: Record<string, unknown> = { path, etag: etagOf(e), mtime: e.mtime, size: e.size ?? e.content?.length ?? 0 };
   if (e.kind === "image") Object.assign(out, { binary: true, image: "image/png" });
   else if (e.kind === "binary") Object.assign(out, { binary: true, reason: `${name} isn't text, so the editor can't show it. Open it in your editor.` });
-  else if (e.kind === "large") Object.assign(out, { too_large: true, reason: `${name} is ${sizeWords(e.size ?? 0)}, more than the 2.0 MB Shipyard opens. Open it in your editor.` });
+  else if (e.kind === "large") Object.assign(out, { too_large: true, reason: `${name} is ${sizeWords(e.size ?? 0)}, more than the 2.0 MB Shipkit opens. Open it in your editor.` });
   else if (withContent) out.content = e.content;
   return out;
 }

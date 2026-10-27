@@ -5,7 +5,7 @@ import { errorMessage } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 // The tailnets Add a box lists machines from: this computer's own, through
-// the Tailscale app, and the ones Shipyard signed in to itself (networks). Both
+// the Tailscale app, and the ones Shipkit signed in to itself (networks). Both
 // are read once when the flow is on its way (onboarding's welcome, opening
 // the dialog), so the screen is laid out once, with the answer in hand.
 
@@ -52,7 +52,7 @@ export function prefetchTailnets(client: Client | undefined, force = false) {
   return cached;
 }
 
-// discoverNetwork lists the machines on one of Shipyard's own networks.
+// discoverNetwork lists the machines on one of Shipkit's own networks.
 export function discoverNetwork(client: Client, name: string, force = false): Promise<Discovery> {
   const hit = byNetwork.get(name);
   if (!force && hit && Date.now() - hit.at < FRESH_MS) return hit.found;
@@ -104,11 +104,11 @@ export function useTailnets() {
   return { ready: waited || (!!system && !!networks), system, networks: networks ?? [], refresh };
 }
 
-// A tailnet the list can show: this computer's, or one of Shipyard's networks.
+// A tailnet the list can show: this computer's, or one of Shipkit's networks.
 export interface TailnetSource {
   key: string;
   label: string;
-  // The Shipyard network to reach it through; none for this computer's own.
+  // The Shipkit network to reach it through; none for this computer's own.
   network?: string;
 }
 

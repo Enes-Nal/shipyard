@@ -14,7 +14,7 @@ import { BoxesWidget, ServicesWidget } from "./fleet";
 import { GitWidget } from "./git";
 import { HarbourWidget } from "./harbour";
 
-// Home's widgets: Shipyard's own, and every one a plugin adds with
+// Home's widgets: Shipkit's own, and every one a plugin adds with
 // berth.addHomeWidget, in one list so the grid and the picker never tell
 // them apart. A widget says what it shows, the sizes it takes and where
 // its data comes from; the card around it (heading, menu, error boundary)
@@ -179,7 +179,7 @@ function defOf(c: Contribution<HomeWidget>, name: string): WidgetDef {
   return def;
 }
 
-// useWidgets is every widget there is now: Shipyard's, then the plugins'.
+// useWidgets is every widget there is now: Shipkit's, then the plugins'.
 export function useWidgets(): WidgetDef[] {
   const contributed = useRegistry((s) => s.homeWidgets);
   const plugins = useRegistry((s) => s.plugins);

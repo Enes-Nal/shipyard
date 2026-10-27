@@ -9,7 +9,7 @@ export function Checkbox({
   ...props
 }: CheckboxPrimitive.Root.Props): React.ReactElement {
   return (
-    // Shipyard: off, its border is drawn from the foreground in dark themes,
+    // Shipkit: off, its border is drawn from the foreground in dark themes,
     // where --input sits too close to the background to see.
     <CheckboxPrimitive.Root
       className={cn(

@@ -85,7 +85,7 @@ export function DeveloperSection() {
   return (
     <SettingsPage
       title="Developer"
-      description="For working on Shipyard itself. Resets clear only this window's memory; your boxes stay as they are."
+      description="For working on Shipkit itself. Resets clear only this window's memory; your boxes stay as they are."
     >
       <SettingsGroup title="Reset">
         <SettingsRow label="Reset workspaces" description="Forget open tabs, splits and each worktree's layout. Sessions keep running on their boxes.">
@@ -146,7 +146,7 @@ export function DeveloperSection() {
           </Button>
         </SettingsRow>
         {isTauri() && (
-          <SettingsRow label="Developer tools" description="The Web Inspector for Shipyard's own window. A Browser tab's page has its own: Inspect in its toolbar.">
+          <SettingsRow label="Developer tools" description="The Web Inspector for Shipkit's own window. A Browser tab's page has its own: Inspect in its toolbar.">
             <Button
               size="xs"
               variant="outline"

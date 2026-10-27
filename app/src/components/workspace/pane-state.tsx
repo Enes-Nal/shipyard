@@ -90,12 +90,12 @@ export function RetryLine({ box, className }: { box: string; className?: string 
 }
 
 // BoxOffline sits over the dimmed screen: the session is still running on
-// the box, and Shipyard reattaches on its own when the box is back.
+// the box, and Shipkit reattaches on its own when the box is back.
 export function BoxOffline({ box, state, onRetry }: { box: string; state?: string; onRetry(): void }) {
   const title = state === "connecting" ? `Connecting to ${box}…` : state === "untrusted" ? `${box} is unreachable` : `Reconnecting to ${box}…`;
   const detail =
     state === "untrusted"
-      ? "It answered with a different identity than when it was paired, so Shipyard won't talk to it. Pair it again if it was rebuilt."
+      ? "It answered with a different identity than when it was paired, so Shipkit won't talk to it. Pair it again if it was rebuilt."
       : "The session keeps running there, and this terminal comes back as it was.";
   return (
     <PaneState

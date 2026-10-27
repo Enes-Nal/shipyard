@@ -24,7 +24,7 @@ export function openRenameWorktree(box: string, loc: Location, wt: Worktree, { i
   const suggestion = suggestedTitle(box, wt);
   confirm({
     title: `Rename ${wt.title || wt.name}`,
-    description: `A display name for every device you use Shipyard on. ${branchHint(box, wt)} Leave it empty to show ${wt.name} again.`,
+    description: `A display name for every device you use Shipkit on. ${branchHint(box, wt)} Leave it empty to show ${wt.name} again.`,
     input: { label: "Display name", initial: wt.title ?? "", placeholder: suggestion ?? wt.name },
     confirm: "Rename",
     run: async (_c, value) => {

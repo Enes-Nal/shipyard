@@ -2,7 +2,7 @@ import type { Theme } from "@/lib/api";
 import { contrast, fromOklch, oklab, readable } from "@/themes/color";
 
 // The theme as an artifact sees it. bklit's charts read their colours from
-// --chart-* variables (ui.bklit.com/docs/theming); Shipyard sets them from the
+// --chart-* variables (ui.bklit.com/docs/theming); Shipkit sets them from the
 // active theme, so every chart reads right in all 23 themes without
 // per-theme work. A page gets the same, plus --berth-* for its surfaces,
 // in its URL's fragment (the proxy's page script applies them).

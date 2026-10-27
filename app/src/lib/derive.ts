@@ -180,7 +180,7 @@ export function restartCommand(command?: string): string | undefined {
   return command.replace(/(?:\s+(?:--prompt|-i))?\s+'(?:[^']|'\\'')*'\s*$/, "");
 }
 
-// firstPrompt is that prompt, unquoted, for a session Shipyard started with
+// firstPrompt is that prompt, unquoted, for a session Shipkit started with
 // an agent preset (whose command it wrote); undefined for anything else.
 export function firstPrompt(s?: Pick<Session, "command" | "preset">): string | undefined {
   if (!s?.preset || !s.command) return undefined;

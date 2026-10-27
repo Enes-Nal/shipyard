@@ -70,7 +70,7 @@ export function PluginConsentDialog() {
             {again ? `${name} has changed` : `Allow ${name}?`}
           </DialogTitle>
           <DialogDescription>
-            {again ? `Its code is different from the version you allowed, so it's off until you review it again.` : `This plugin isn't part of Shipyard.`} Plugins aren't sandboxed: once on, it runs inside Shipyard with the
+            {again ? `Its code is different from the version you allowed, so it's off until you review it again.` : `This plugin isn't part of Shipkit.`} Plugins aren't sandboxed: once on, it runs inside Shipkit with the
             app's own access.
           </DialogDescription>
         </DialogHeader>
@@ -127,7 +127,7 @@ export function PluginConsentDialog() {
               {held} Allowing this version keeps it running. To stop it instead, choose Stop it beside {name} in Settings → Plugins.
             </p>
           )}
-          <p className="text-muted-foreground text-meta">Allow only plugins you trust. Shipyard asks again whenever the plugin's code changes, and you can turn it off in Settings → Plugins.</p>
+          <p className="text-muted-foreground text-meta">Allow only plugins you trust. Shipkit asks again whenever the plugin's code changes, and you can turn it off in Settings → Plugins.</p>
           {error && <ErrorText className="text-destructive-foreground text-meta" text={error} />}
         </DialogPanel>
         <DialogFooter>

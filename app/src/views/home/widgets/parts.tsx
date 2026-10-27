@@ -9,7 +9,7 @@ import { useHomeWidget } from "./env";
 
 // The pieces Home's widgets are drawn with, shared with plugins through
 // @berth/plugin/ui (WidgetRow, WidgetEmpty, WidgetSkeleton), so a plugin's
-// widget reads like Shipyard's own.
+// widget reads like Shipkit's own.
 
 // WidgetRow is one line of a widget: 36px, full width, a button when it
 // does something.

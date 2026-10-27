@@ -2,8 +2,8 @@
 // stop Chromium from starting its own sandbox, so the agent's browser on such
 // a box can't start. The box says so cheaply (GET /v1/browser/health), and
 // the app offers the two ways out: the owner allows it with sudo, in a
-// terminal on the box where Shipyard has typed the command and the person
-// presses Enter (Shipyard never asks for, types or keeps a password), or the
+// terminal on the box where Shipkit has typed the command and the person
+// presses Enter (Shipkit never asks for, types or keeps a password), or the
 // box runs Chromium without its sandbox. Kept free of the app's imports, so
 // node can test it as it is.
 
@@ -63,7 +63,7 @@ export interface SandboxCopy {
   body: string;
 }
 
-export const TRADE_OFF = "Without its sandbox, a page that broke into Chromium would run as you on the box. Shipyard's proxy still confines it to the worktree's own pages.";
+export const TRADE_OFF = "Without its sandbox, a page that broke into Chromium would run as you on the box. Shipkit's proxy still confines it to the worktree's own pages.";
 
 // sandboxCopy is what the card says, in plain words.
 export function sandboxCopy(state: SandboxCardState, box: string, h: BrowserHealth | undefined): SandboxCopy {
@@ -73,7 +73,7 @@ export function sandboxCopy(state: SandboxCardState, box: string, h: BrowserHeal
       return {
         title: h?.likely ? `The agent's browser won't start on ${box}` : `The agent's browser can't start on ${box}`,
         body: sysctl
-          ? `Ubuntu's sandbox setting stops Chromium from starting its own sandbox. Allowing it takes one command with your password on ${box}; Shipyard types it in a terminal for you and never sees the password.`
+          ? `Ubuntu's sandbox setting stops Chromium from starting its own sandbox. Allowing it takes one command with your password on ${box}; Shipkit types it in a terminal for you and never sees the password.`
           : `Chromium couldn't start its own sandbox on ${box}. You can run it without its sandbox instead.`,
       };
     case "fixing":
@@ -94,7 +94,7 @@ export function sandboxCopy(state: SandboxCardState, box: string, h: BrowserHeal
     case "no-sandbox":
       return {
         title: `The agent's browser runs without Chromium's sandbox on ${box}`,
-        body: h?.no_sandbox_from === "env" ? "BERTH_BROWSER_NO_SANDBOX=1 is set where berthd runs, and wins over this setting. Shipyard's proxy still confines it to the worktree's own pages." : TRADE_OFF,
+        body: h?.no_sandbox_from === "env" ? "BERTH_BROWSER_NO_SANDBOX=1 is set where berthd runs, and wins over this setting. Shipkit's proxy still confines it to the worktree's own pages." : TRADE_OFF,
       };
     default:
       return { title: "", body: "" };

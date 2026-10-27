@@ -109,7 +109,7 @@ export function SpotlightCard({ open, release }: { open: boolean; release: Relea
           <div className="flex w-[248px] shrink-0 flex-col border-r bg-muted/40 max-sm:hidden">
             <DialogHeader className="gap-1 px-5 pt-5 pb-4">
               <DialogTitle className="text-heading">What's new</DialogTitle>
-              <DialogDescription className="font-mono text-mono">Shipyard {release.version}</DialogDescription>
+              <DialogDescription className="font-mono text-mono">Shipkit {release.version}</DialogDescription>
             </DialogHeader>
             <TabsPrimitive.List activateOnFocus aria-label="Highlights" className="flex flex-col gap-px px-2.5">
               {items.map((it, i) => (
@@ -130,7 +130,7 @@ export function SpotlightCard({ open, release }: { open: boolean; release: Relea
             </DialogClose>
             <div className="hidden px-5 pt-5 max-sm:block">
               <span className="text-row">What's new</span>
-              <span className="ml-2 font-mono text-muted-foreground text-mono">Shipyard {release.version}</span>
+              <span className="ml-2 font-mono text-muted-foreground text-mono">Shipkit {release.version}</span>
             </div>
             {items.map((it, i) => (
               <TabsPrimitive.Panel key={it.id} value={i} className="flex flex-col gap-5 px-8 pt-12 pb-2 outline-none max-sm:px-5 max-sm:pt-4" aria-label={it.title}>

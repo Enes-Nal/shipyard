@@ -194,7 +194,7 @@ function Places({ prefs, update }: SidebarPrefsProps) {
 }
 
 // Foot is the sidebar's foot. Notices are a quiet line each, above it and
-// never over the list: a box whose Shipyard skills aren't installed or are
+// never over the list: a box whose Shipkit skills aren't installed or are
 // out of date, and what's new. Then the boxes and Settings.
 function Foot() {
   const view = useStore((s) => s.view);

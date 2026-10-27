@@ -19,7 +19,7 @@ export function GeneralSection() {
   const port = proxy?.url_port ?? 1377;
 
   return (
-    <SettingsPage title="General" description="How Shipyard behaves here. Box settings live under Machines.">
+    <SettingsPage title="General" description="How Shipkit behaves here. Box settings live under Machines.">
       <SettingsGroup title="Closing tabs">
         <SettingsRow
           label="When you close an agent's tab"
@@ -59,11 +59,11 @@ export function GeneralSection() {
         <SettingsRow
           label={
             <span className="flex items-center gap-2">
-              <span className="text-muted-foreground">Open Shipyard</span>
+              <span className="text-muted-foreground">Open Shipkit</span>
               <Badge variant="secondary">Coming soon</Badge>
             </span>
           }
-          description="Closing Shipyard never stops your boxes or their agents."
+          description="Closing Shipkit never stops your boxes or their agents."
         >
           <Switch checked={false} disabled />
         </SettingsRow>
@@ -82,7 +82,7 @@ export function GeneralSection() {
           label="Port"
           description={
             port === 80 ? (
-              "URLs have no port: port 80 here points at Shipyard."
+              "URLs have no port: port 80 here points at Shipkit."
             ) : (
               <>
                 URLs end in <Code>:{port}</Code>. <Code>berth setup port80</Code> drops it, if nothing else uses port 80. It asks for your password once.
@@ -99,7 +99,7 @@ export function GeneralSection() {
 
 const LINK = "~/.local/bin/berth";
 
-// CommandLineGroup puts the berth CLI that Shipyard.app carries on the PATH, as
+// CommandLineGroup puts the berth CLI that Shipkit.app carries on the PATH, as
 // a link at ~/.local/bin/berth, so a terminal runs the same berth as the app
 // and it updates with the app. It asks first, and says what it replaces.
 function CommandLineGroup() {
@@ -114,13 +114,13 @@ function CommandLineGroup() {
   if (!cli?.bundled) {
     description = (
       <>
-        The Shipyard app carries its own <Code>berth</Code>; this build has none. From a clone, run <Code>bin/berth</Code> after <Code>make all</Code>.
+        The Shipkit app carries its own <Code>berth</Code>; this build has none. From a clone, run <Code>bin/berth</Code> after <Code>make all</Code>.
       </>
     );
   } else if (cli.state === "linked") {
     description = (
       <>
-        <Code>{LINK}</Code> runs the copy inside Shipyard.app, so it updates with the app. If a terminal can't find <Code>berth</Code>, add <Code>~/.local/bin</Code> to your <Code>PATH</Code>.
+        <Code>{LINK}</Code> runs the copy inside Shipkit.app, so it updates with the app. If a terminal can't find <Code>berth</Code>, add <Code>~/.local/bin</Code> to your <Code>PATH</Code>.
       </>
     );
     control = <Value>Installed</Value>;
@@ -139,7 +139,7 @@ function CommandLineGroup() {
       ) : null;
     description = cli.blocked ?? (
       <>
-        Links <Code>{LINK}</Code> to the copy inside Shipyard.app, so <Code>berth</Code> in a terminal is the one the app runs, and updates with it.{replaces}
+        Links <Code>{LINK}</Code> to the copy inside Shipkit.app, so <Code>berth</Code> in a terminal is the one the app runs, and updates with it.{replaces}
       </>
     );
     control = (
@@ -156,7 +156,7 @@ function CommandLineGroup() {
         onConfirm={async () => {
           try {
             setCli(await installCliLink());
-            toastManager.add({ title: "Installed the berth command", description: `${LINK} now runs Shipyard's copy.`, type: "success" });
+            toastManager.add({ title: "Installed the berth command", description: `${LINK} now runs Shipkit's copy.`, type: "success" });
           } catch (e) {
             toastManager.add({ title: "Could not install the berth command", description: errorMessage(e), type: "error" });
           }

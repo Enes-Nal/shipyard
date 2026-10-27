@@ -12,7 +12,7 @@ test("Copy diagnostics copies a short, redacted report", async ({ app }) => {
   const text = await app.page.evaluate(() => navigator.clipboard.readText());
 
   const lines = text.trimEnd().split("\n");
-  expect(lines[0]).toMatch(/^Shipyard diagnostics · \d{4}-\d\d-\d\d \d\d:\d\d UTC$/);
+  expect(lines[0]).toMatch(/^Shipkit diagnostics · \d{4}-\d\d-\d\d \d\d:\d\d UTC$/);
   expect(lines.length).toBeLessThanOrEqual(70);
   for (const section of [/^App: /m, /^Agent: running/m, /^Terminal: /m, /^Look: theme berth-dark · Labs on/m, /^Laptop \(berth doctor\)$/m, /^Boxes \(\d+\)$/m, /^Recent errors/m, /^Recent toasts/m]) expect(text).toMatch(section);
   // Nothing that identifies the person or opens their accounts.

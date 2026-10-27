@@ -22,7 +22,7 @@ const RELEASES = "https://github.com/cosscom/shipyard/releases";
 export function AboutSection() {
   const version = useAppVersion();
   return (
-    <SettingsPage badge={LINUX_ALPHA && <AlphaBadge />} title="About Shipyard" description="Agents on your own boxes, watched from here.">
+    <SettingsPage badge={LINUX_ALPHA && <AlphaBadge />} title="About Shipkit" description="Route and run coding agents end to end.">
       <Hero version={version} />
       <RunningGroup />
       <HelpGroup />
@@ -43,7 +43,7 @@ function Hero({ version }: { version: string }) {
       <div className={cn("flex items-center gap-4 bg-background px-5 py-4", picture && "border-t")}>
         <img src={`${import.meta.env.BASE_URL}berth-mark.svg`} alt="" className="size-12 shrink-0 rounded-xl shadow-sm" />
         <div className="min-w-0 flex-1">
-          <div className="text-heading">Shipyard{plain ? "" : ` ${version}`}</div>
+          <div className="text-heading">Shipkit{plain ? "" : ` ${version}`}</div>
           <div className="mt-0.5 flex items-center gap-1.5 text-desc text-muted-foreground">
             {u.dot && <span className={cn("size-1.5 shrink-0 rounded-full", u.dot)} />}
             <span className="truncate">{plain ? `${version} build · ${u.line}` : u.line}</span>
@@ -62,12 +62,12 @@ function Hero({ version }: { version: string }) {
   );
 }
 
-// useUpdates says where the app's own updates stand. Shipyard checks when it
+// useUpdates says where the app's own updates stand. Shipkit checks when it
 // opens and every few hours, and downloads quietly; the only step left to
 // the person is the restart (lib/updater.ts).
 function useUpdates(): { line: string; dot?: string; action?: ReactNode } {
   const u = useUpdater();
-  if (!updatesSupported()) return { line: "Updates come with the Shipyard app" };
+  if (!updatesSupported()) return { line: "Updates come with the Shipkit app" };
   const busy = u.status === "checking" || u.status === "downloading" || u.status === "installing";
   const check = (
     <Button size="sm" variant="outline" loading={u.status === "checking"} disabled={busy} onClick={() => void checkForUpdate({ manual: true })}>

@@ -85,31 +85,31 @@ export function explain(err: unknown, ctx: { box?: string } = {}): Explained {
   if (code === "box_outdated" || code === "unsupported" || /^404 page not found$|doesn't have this yet|too old to|needs a newer berthd/i.test(raw))
     return out(`${box ?? "This box"} needs an update`, "It runs an older berthd that doesn't have this yet. Updating keeps its agents running.", "update-box");
   // A box without tmux answers 503 too: it is there, but can't run agents.
-  if (code === "tmux_missing" || /tmux is not installed/.test(raw)) return out(`tmux isn't installed${on}`, "Shipyard runs agents inside tmux. Install it on the box, then try again.", "retry");
+  if (code === "tmux_missing" || /tmux is not installed/.test(raw)) return out(`tmux isn't installed${on}`, "Shipkit runs agents inside tmux. Install it on the box, then try again.", "retry");
   // The plugin listing (Settings → Plugins → Browse), which the agent reads
   // from the web: these come before the boxes' 502, which they are not.
-  if (code === "registry_unreachable") return out("Can't reach the plugin listing", "Shipyard couldn't reach the plugin listing. This computer may be offline; try again in a moment.", "retry");
-  if (code === "registry_invalid") return out("The plugin listing can't be read", "The plugin listing isn't one Shipyard can read. Details has what it said.");
+  if (code === "registry_unreachable") return out("Can't reach the plugin listing", "Shipkit couldn't reach the plugin listing. This computer may be offline; try again in a moment.", "retry");
+  if (code === "registry_invalid") return out("The plugin listing can't be read", "The plugin listing isn't one Shipkit can read. Details has what it said.");
   if (code === "plugin_mismatch") return out("The download didn't match the listing", "What was downloaded isn't what the listing describes, so nothing was installed. Try again in a moment.", "retry");
-  if (code === "plugin_invalid") return out("That plugin can't be installed", "The listing describes it wrongly, so Shipyard left it alone. Details has what's wrong.");
+  if (code === "plugin_invalid") return out("That plugin can't be installed", "The listing describes it wrongly, so Shipkit left it alone. Details has what's wrong.");
   if (code === "listing_changed") return out("The listing changed", "It has another version than the one shown here. Look at it again, then install.");
   if (code === "plugin_by_hand") return out("That folder is your own", "A plugin with this id is in ~/.berth/plugins that the listing didn't install, or that changed since. Replace it from Browse, or remove the folder yourself.");
   // A plugin's helper (internal/agent/helpers.go): the agent downloads its
   // program and hands it to a box, and the box relays requests to it. These
   // are 502s that say nothing about whether the box can be reached.
-  if (code === "helper_download") return out("Couldn't download the plugin's program", "Shipyard couldn't fetch it from the address the plugin gives, so nothing was installed. Try again in a moment.", "retry");
+  if (code === "helper_download") return out("Couldn't download the plugin's program", "Shipkit couldn't fetch it from the address the plugin gives, so nothing was installed. Try again in a moment.", "retry");
   if (code === "helper_mismatch") return out("The download didn't match the plugin", "What was downloaded isn't the program the plugin's checksum names, so nothing was installed.");
-  if (code === "helper_unreachable") return out("The plugin's program isn't answering", `It is installed${on} but didn't answer. Shipyard starts it again on its own; try again in a moment.`, "retry");
+  if (code === "helper_unreachable") return out("The plugin's program isn't answering", `It is installed${on} but didn't answer. Shipkit starts it again on its own; try again in a moment.`, "retry");
   // A read that got no answer in time (lib/net.ts): the link is slow or
   // has just dropped; the agent says which once it has checked.
   if (code === "box_timeout" || status === 504)
-    return out(`${box ?? "The box"} isn't answering`, "The connection may be slow or down. Shipyard keeps trying; try again in a moment.", "retry");
+    return out(`${box ?? "The box"} isn't answering`, "The connection may be slow or down. Shipkit keeps trying; try again in a moment.", "retry");
   // The laptop can't get through.
   if (code === "box_unreachable" || status === 502 || status === 503 || /dial tcp|i\/o timeout|connection refused|no route to host|network is unreachable|connection reset|broken pipe|context deadline exceeded|is offline|unexpected EOF|^EOF$/i.test(raw))
-    return out(`Can't reach ${it}`, "It may be asleep or offline. Shipyard reconnects on its own when it's back.", "reconnect");
+    return out(`Can't reach ${it}`, "It may be asleep or offline. Shipkit reconnects on its own when it's back.", "reconnect");
   if (/failed to fetch|networkerror|load failed|no agent token/i.test(raw))
-    return out("Can't reach Shipyard's agent", "The app lost its connection to the agent on this computer. It reconnects on its own.", "reconnect");
-  if (code === "box_unknown" || /^no paired box named/.test(raw)) return out("That box isn't paired", "Shipyard doesn't know a box by that name any more. Add it again from Settings → Boxes.");
+    return out("Can't reach Shipkit's agent", "The app lost its connection to the agent on this computer. It reconnects on its own.", "reconnect");
+  if (code === "box_unknown" || /^no paired box named/.test(raw)) return out("That box isn't paired", "Shipkit doesn't know a box by that name any more. Add it again from Settings → Boxes.");
   if (code === "too_many" || status === 429) return out("Too many tries", "Wait a minute, then try again.", "retry");
   if (code === "refused" || /hook stopped/.test(raw)) {
     const said = raw.split(": ").slice(1).join(": ").trim();
@@ -124,7 +124,7 @@ export function explain(err: unknown, ctx: { box?: string } = {}): Explained {
   // says how to unlock it, which Details keeps whole.
   if (/ is locked \(git worktree lock/.test(raw)) {
     const why = /with the reason "([^"]*)"/.exec(raw)?.[1];
-    return out("It's locked", `Someone locked it with git worktree lock${why ? ` ("${why}")` : ""}, so Shipyard left it as it is. Details has how to unlock it.`);
+    return out("It's locked", `Someone locked it with git worktree lock${why ? ` ("${why}")` : ""}, so Shipkit left it as it is. Details has how to unlock it.`);
   }
   // git, in its own words.
   if (code === "git_failed" || /^git |fatal: /.test(raw)) {
@@ -144,9 +144,9 @@ export function explain(err: unknown, ctx: { box?: string } = {}): Explained {
     }
     return out(`${box ?? "The box"} couldn't run that`, "Details has what it said.", "retry");
   }
-  if (status === 401) return out("Shipyard's agent didn't accept the app", "Restart Shipyard to connect again.", "reconnect");
-  if (looksRaw(raw)) return out("Something went wrong", `Shipyard couldn't finish that${on}.`, "retry");
-  return { title: "Something went wrong", message: sentence(raw) || "Shipyard couldn't finish that.", code, box };
+  if (status === 401) return out("Shipkit's agent didn't accept the app", "Restart Shipkit to connect again.", "reconnect");
+  if (looksRaw(raw)) return out("Something went wrong", `Shipkit couldn't finish that${on}.`, "retry");
+  return { title: "Something went wrong", message: sentence(raw) || "Shipkit couldn't finish that.", code, box };
 }
 
 // The friendly sentence for each raw text, for the inline errors that keep

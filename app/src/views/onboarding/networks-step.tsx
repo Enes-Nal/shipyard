@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { ErrorText } from "@/components/error-note";
 
 // NetworksStep reaches boxes on a tailnet this computer is not part of, such
-// as a personal one while the Mac is on work's: Shipyard joins it with its own
+// as a personal one while the Mac is on work's: Shipkit joins it with its own
 // node after a browser sign-in, then lists that tailnet's machines.
 export function NetworksStep({ onPick }: { onPick(network: string): void }) {
   const client = useStore((s) => s.client);
@@ -99,7 +99,7 @@ function SignIn({ existing, onJoined }: { existing: string[]; onJoined(network: 
   return (
     <div className="border-t pt-5">
       <div className="text-row">Sign in to a tailnet</div>
-      <p className="mt-0.5 text-muted-foreground text-meta">Name it however you like; it's how Shipyard refers to that tailnet. A Tailscale sign-in page opens in your browser.</p>
+      <p className="mt-0.5 text-muted-foreground text-meta">Name it however you like; it's how Shipkit refers to that tailnet. A Tailscale sign-in page opens in your browser.</p>
       {state === "waiting" ? (
         <div className="mt-3 flex items-center gap-3 text-body">
           <Spinner className="size-4" />
@@ -136,7 +136,7 @@ function SignIn({ existing, onJoined }: { existing: string[]; onJoined(network: 
           </Tip>
         </form>
       )}
-      {duplicate && state !== "waiting" && <p className="mt-2 text-destructive-foreground text-meta">Shipyard already joined a tailnet called {name.trim()}. Browse it above, or pick another name.</p>}
+      {duplicate && state !== "waiting" && <p className="mt-2 text-destructive-foreground text-meta">Shipkit already joined a tailnet called {name.trim()}. Browse it above, or pick another name.</p>}
       {error && <p className={cn("mt-2 text-destructive-foreground text-meta")}>{error}</p>}
     </div>
   );

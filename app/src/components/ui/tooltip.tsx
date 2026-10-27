@@ -10,7 +10,7 @@ export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
 export const TooltipProvider: typeof TooltipPrimitive.Provider =
   TooltipPrimitive.Provider;
 
-// Shipyard: a tooltip opens on focus only when the keyboard moved focus there
+// Shipkit: a tooltip opens on focus only when the keyboard moved focus there
 // (Tab, arrows). Focus put back by code (a popover closing onto its
 // trigger, a sheet's first button) leaves it shut, so it never covers what
 // just appeared.

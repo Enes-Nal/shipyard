@@ -150,7 +150,7 @@ export interface RepoConfig {
   // (lib/login-url.ts). Only from trusted layers: the kit, the box's own
   // config, or the committed config once trusted.
   login?: LoginConfig;
-  // A "Review in Shipyard" button on each PR opened from the project's
+  // A "Review in Shipkit" button on each PR opened from the project's
   // worktrees (box/reviewbutton.go). Off unless a layer or team.json says.
   review_button?: boolean;
   // Keep the default branch current: a new branch from it fetches it first

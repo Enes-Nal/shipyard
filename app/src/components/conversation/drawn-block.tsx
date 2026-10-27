@@ -21,7 +21,7 @@ export default function Drawn({ block }: { block: Block }) {
   if (!drawn) return null;
   if (drawn.kind === "flowchart") return <FlowchartBlock block={block} chart={drawn.chart} />;
   if (drawn.kind === "diff") return <DiffBlock block={block} shape={drawn.shape} patch={drawn.patch} />;
-  return createPortal(<span className="cv-pre-note">Shown as written: Shipyard draws flowcharts</span>, block.slot);
+  return createPortal(<span className="cv-pre-note">Shown as written: Shipkit draws flowcharts</span>, block.slot);
 }
 
 // ---- Mermaid ----

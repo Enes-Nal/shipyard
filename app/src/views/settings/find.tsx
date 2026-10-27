@@ -16,6 +16,7 @@ const INDEX: { id: SettingsSectionId; title: string; words: string }[] = [
   { id: "computers", title: "Computers", words: "laptops this mac join link pair remove" },
   { id: "phone", title: "Phone", words: "mobile qr code pairing ntfy push" },
   { id: "agents", title: "Agents", words: "claude code codex models skills turn check cli install permissions bypass ask approvals allow chat" },
+  { id: "routing", title: "Routing", words: "auto model provider subscription claude codex gemini openrouter fallback tokens usage quality allowlist privacy learn history" },
   { id: "integrations", title: "Integrations", words: "linear github slack webhooks connect" },
   { id: "plugins", title: "Plugins", words: "marketplace install built in extensions allow" },
   { id: "shortcuts", title: "Shortcuts", words: "keyboard keys bindings hotkeys" },

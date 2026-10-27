@@ -77,7 +77,7 @@ useStore.subscribe((s, prev) => {
 
 const call = <T>(method: string, path: string, body?: unknown) => {
   const c = useStore.getState().client;
-  if (!c) return Promise.reject(new Error("not connected to the Shipyard agent"));
+  if (!c) return Promise.reject(new Error("not connected to the Shipkit agent"));
   return c.laptop<T>(method, path, body);
 };
 

@@ -198,7 +198,7 @@ function Invalid({ raw }: { raw: string }) {
   return (
     <>
       <SheetHeader className="border-b pb-4">
-        <SheetTitle>This isn't a review link Shipyard can open</SheetTitle>
+        <SheetTitle>This isn't a review link Shipkit can open</SheetTitle>
         <SheetDescription>
           A review link names a repository and a PR number, and nothing else: berth://review?repo=OWNER/NAME&amp;pr=N. This one has something else in it, so it was set aside unread.
         </SheetDescription>
@@ -220,7 +220,7 @@ function Invalid({ raw }: { raw: string }) {
 }
 
 function Refused({ plan }: { plan: ReviewSheet }) {
-  const [head, ...rest] = (plan.verdict.reason ?? "Shipyard can't review this one for you").split(": ");
+  const [head, ...rest] = (plan.verdict.reason ?? "Shipkit can't review this one for you").split(": ");
   return (
     <div data-testid="pr-review-refused" data-code={plan.verdict.code} className="flex items-start gap-3 rounded-lg border bg-muted/40 px-3.5 py-3">
       <HandIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -234,8 +234,8 @@ function Refused({ plan }: { plan: ReviewSheet }) {
 }
 
 const REFUSED_WHY: Record<string, string> = {
-  fork: "Shipyard sets up reviews only for branches in the repository itself, since a fork's code would run on your box with your team's keys.",
-  outsider: "Shipyard sets up reviews only for PRs by members and collaborators, since the PR's code runs on your box with your team's keys.",
+  fork: "Shipkit sets up reviews only for branches in the repository itself, since a fork's code would run on your box with your team's keys.",
+  outsider: "Shipkit sets up reviews only for PRs by members and collaborators, since the PR's code runs on your box with your team's keys.",
   not_a_project: "Review links work for your team's projects, and for projects already on one of your boxes.",
   closed: "There is nothing left to review.",
   no_box: "The review runs in a worktree of the project on your box.",
@@ -416,7 +416,7 @@ function OnYourBox({ plan, picked, onPick }: { plan: ReviewSheet; picked: Review
           <p className="px-3.5 py-2 text-desc text-muted-foreground">
             Nothing from this PR's own .berth/ runs, and git hooks are off while it's checked out.
             {s.matches_default === false ? ` This box's main checkout has a .berth/config.json other than ${s.default_branch ?? "the default branch"}'s; the one you trusted here is used.` : ""} Its
-            dev server is reachable only through Shipyard's private URL
+            dev server is reachable only through Shipkit's private URL
             {s.hooks > 0 ? `, and the project's ${s.hooks} ${s.hooks === 1 ? "hook runs" : "hooks run"} as in any worktree` : ""}.
           </p>
         </div>

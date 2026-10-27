@@ -5,7 +5,7 @@ import { kitSrcFromLink } from "@/lib/kits";
 import { useStore } from "@/lib/store";
 import { openKitLink } from "@/views/kits/kits-store";
 
-// A kit link someone shares, berth://kit?src=…, opens Shipyard on the kit's
+// A kit link someone shares, berth://kit?src=…, opens Shipkit on the kit's
 // review. In the browser build, ?kit=<src> in the app's URL does the same,
 // for trying it out.
 

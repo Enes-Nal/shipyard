@@ -3,7 +3,7 @@ import type { StoredImageInfo } from "@/lib/chat-background";
 
 // The picture across the top of a new chat, the launcher and Home
 // (Settings › Appearance › Header picture): the harbour by the time of day,
-// as Shipyard always had, one of the painted plates, a picture of the
+// as Shipkit always had, one of the painted plates, a picture of the
 // person's own, or none. The choice is kept with the prefs (lib/prefs.ts,
 // headerPicture); a picture of their own is kept with the chat
 // background's (lib/chat-background.ts), in this webview's IndexedDB, and
@@ -41,7 +41,7 @@ const BUILTIN_IDS: readonly string[] = ["harbour", ...PLATES.map((p) => p.id)];
 
 // normalizeHeaderPicture keeps what is valid of a saved choice and fills the
 // rest with defaults. Prefs from before there was a choice have none, and
-// get the harbour, as they always had; so does a plate Shipyard no longer
+// get the harbour, as they always had; so does a plate Shipkit no longer
 // ships.
 export function normalizeHeaderPicture(saved: unknown): HeaderPicture {
   const s = (saved && typeof saved === "object" ? saved : {}) as Record<string, unknown>;

@@ -5,7 +5,7 @@ import { useRender } from "@base-ui/react/use-render";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
-// Cards in Shipyard: one outline per section.
+// Cards in Shipkit: one outline per section.
 // - A section of a page is one Card, or a Frame with variant="card": its
 //   header row and its rows sit directly inside, divided by border-t (or
 //   divide-y on a list). Never put a bordered card inside another card.

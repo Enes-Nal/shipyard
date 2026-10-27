@@ -8,7 +8,7 @@ import { whereFrom } from "@/views/team/team-parts";
 import { cn } from "@/lib/utils";
 
 // TeamFiles is "Read every command": the .berth repo's own files at the
-// commit Shipyard will use, read only, with the lines that call sudo marked.
+// commit Shipkit will use, read only, with the lines that call sudo marked.
 
 export function TeamFiles({ view, open, onOpenChange }: { view: TeamView; open: boolean; onOpenChange(open: boolean): void }) {
   const files = view.files ?? [];

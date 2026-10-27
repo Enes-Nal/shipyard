@@ -10,7 +10,7 @@ import type { BerthReport, TranscriptItem } from "@/lib/transcript";
 import { cn } from "@/lib/utils";
 import { openSession } from "@/lib/workspaces";
 
-// A report is Shipyard telling this agent that work it started has ended,
+// A report is Shipkit telling this agent that work it started has ended,
 // needs a person, or reached a gate: what the box typed into the session as
 // a <berth-notification> (internal/box/notify_text.go). It reads as a
 // compact card, "checkout-fix finished · +12 −2 · 4m12s", with the other
@@ -47,7 +47,7 @@ export function reportWord(r: BerthReport): string {
 }
 
 // The chip each status gets: the same family as an agent's message
-// (agent-message), so Shipyard's reports and other agents' read as one kind.
+// (agent-message), so Shipkit's reports and other agents' read as one kind.
 const CHIP: Record<Tone, Chip> = {
   done: { word: "Finished", Icon: CheckIcon, tone: "good" },
   needs: { word: "Needs you", Icon: CircleDotIcon, tone: "ask" },
@@ -77,7 +77,7 @@ export function ReportCard({ it }: { it: Extract<TranscriptItem, { kind: "report
     <div
       data-report={r.status}
       role="group"
-      aria-label={`Shipyard: ${name} ${word}`}
+      aria-label={`Shipkit: ${name} ${word}`}
       className={cn(
         "cv-in flex w-[min(100%,40rem)] min-w-0 flex-col self-start overflow-hidden rounded-lg border bg-card text-desc shadow-xs/5 @container",
         tone === "needs" && "border-warning/45",
@@ -100,7 +100,7 @@ export function ReportCard({ it }: { it: Extract<TranscriptItem, { kind: "report
           )
         }
         took={r.duration}
-        tip={`Shipyard reported back on ${about}, which this agent started, and sent it to the agent. You didn't type it.`}
+        tip={`Shipkit reported back on ${about}, which this agent started, and sent it to the agent. You didn't type it.`}
         open={
           session &&
           box && (

@@ -15,12 +15,12 @@ test("a saved choice keeps what is valid", () => {
   assert.deepEqual(normalizeHeaderPicture({ source: "builtin", builtin: "meadow" }), { source: "builtin", builtin: "meadow", image: undefined, position: "center" });
   assert.deepEqual(normalizeHeaderPicture({ source: "none", builtin: "meadow" }).source, "none");
   assert.deepEqual(normalizeHeaderPicture({ source: "image", image, position: "top" }), { source: "image", builtin: "harbour", image, position: "top" });
-  // Other fields, as a later Shipyard might save, are dropped.
+  // Other fields, as a later Shipkit might save, are dropped.
   assert.equal("extra" in normalizeHeaderPicture({ source: "none", extra: 1 }), false);
 });
 
 test("what isn't valid falls back to the harbour", () => {
-  // A plate Shipyard no longer ships.
+  // A plate Shipkit no longer ships.
   assert.equal(normalizeHeaderPicture({ source: "builtin", builtin: "volcano" }).builtin, "harbour");
   assert.equal(normalizeHeaderPicture({ source: "sky" }).source, "builtin");
   // A picture of your own without the picture.

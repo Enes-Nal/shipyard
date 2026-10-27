@@ -25,7 +25,7 @@ export function KeepMainSection({ repo, draft, setDraft, box }: { repo: RepoConf
             {source && <SourceBadge source={source} box={box} />}
           </div>
           <p className="mt-0.5 text-desc text-muted-foreground">
-            Before a new branch is made from the default branch, Shipyard fetches it and fast-forwards the local one, so diffs against main compare with current history. A main checkout with uncommitted changes, or with commits origin doesn't have, is left as it is.
+            Before a new branch is made from the default branch, Shipkit fetches it and fast-forwards the local one, so diffs against main compare with current history. A main checkout with uncommitted changes, or with commits origin doesn't have, is left as it is.
           </p>
         </div>
         {own !== undefined && below !== undefined ? (

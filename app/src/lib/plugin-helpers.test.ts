@@ -49,7 +49,7 @@ test("with nothing running, nothing is said to stop", () => {
   assert.equal(stopNote("berth-leadline", { ...fleet, boxes: [{ box: "gpu", state: "off" }] }), "Its program, berth-leadline, isn't running on any box, so nothing is stopped.");
   assert.equal(
     stopNote("berth-leadline", { ...fleet, boxes: [{ box: "gpu", state: "off" }, { box: "old-vps", state: "offline" }, { box: "lab", state: "offline" }] }),
-    "Its program, berth-leadline, isn't running on a box Shipyard can reach. old-vps and lab are offline: if it runs there, it's stopped when each next connects.",
+    "Its program, berth-leadline, isn't running on a box Shipkit can reach. old-vps and lab are offline: if it runs there, it's stopped when each next connects.",
   );
 });
 

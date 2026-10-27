@@ -39,7 +39,7 @@ fn token_path() -> Result<PathBuf, String> {
 fn ui_endpoint() -> Result<Endpoint, String> {
     let path = token_path()?;
     let token = std::fs::read_to_string(&path)
-        .map_err(|e| format!("the Shipyard agent has not started yet ({}: {e})", path.display()))?;
+        .map_err(|e| format!("the Shipkit agent has not started yet ({}: {e})", path.display()))?;
     Ok(Endpoint {
         url: AGENT_URL.to_string(),
         token: token.trim().to_string(),
@@ -55,7 +55,7 @@ fn open_devtools(webview: tauri::Webview) -> Result<(), String> {
     Ok(())
 }
 
-// restart_app relaunches Shipyard, after the webview has installed a
+// restart_app relaunches Shipkit, after the webview has installed a
 // downloaded update (Settings → About, or the status bar's "Restart to
 // update"). Only ever on that click: agents run on their boxes, so a
 // restart stops none of them, but it still closes the window.

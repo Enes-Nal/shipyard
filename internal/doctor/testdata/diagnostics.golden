@@ -1,4 +1,4 @@
-Shipyard diagnostics · 2026-10-05 17:41 UTC
+Shipkit diagnostics · 2026-10-05 17:41 UTC
 App: 0.3.6 (build d05a0df) · macOS 26.3 arm64
 Agent: online · berth 0.3.6 (build 4f1c2a9e0b7d)
 Terminal: xterm.js (ghostty-web failed: WebAssembly.compile(): refused by Content Security Policy)

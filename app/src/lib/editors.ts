@@ -120,7 +120,7 @@ export class SSHSetupNeeded extends Error {
 export async function openInEditor(c: Client, req: Omit<OpenRequest, "editor"> & { editor?: EditorId }): Promise<OpenResult> {
   const editors = await installedEditors(c);
   const ed = req.editor ? editors.find((e) => e.id === req.editor && e.installed) : pickEditor(editors, read());
-  if (!ed) throw new Error("No supported editor is installed. Shipyard opens Cursor, VS Code, Windsurf and Zed.");
+  if (!ed) throw new Error("No supported editor is installed. Shipkit opens Cursor, VS Code, Windsurf and Zed.");
   try {
     return await editorsApi.open(c, { ...req, editor: ed.id });
   } catch (err) {

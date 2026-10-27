@@ -94,7 +94,7 @@ export function OnboardingView() {
             {step.kind === "box" && (
               <AddBoxFlow
                 variant="page"
-                intro={{ title: "Connect a box", description: "Any VPS or dev machine. Shipyard runs one small daemon there, berthd; your code and agents stay as they are." }}
+                intro={{ title: "Connect a box", description: "Any VPS or dev machine. Shipkit runs one small daemon there, berthd; your code and agents stay as they are." }}
                 onStage={setBoxStage}
                 onDone={(box) => setStep({ kind: "repo", box })}
                 onExit={() => setStep({ kind: "welcome" })}

@@ -11,7 +11,7 @@
 //   gauge     Gauge                                   value of max
 //   pie       PieChart + PieSlice, PieCenter          rows of {label, value}
 //   ring      RingChart + Ring, RingCenter            rows of {label, value}, each of the total
-//   heatmap   Shipyard's own matrix in bklit's scale     one row per cell; x, row, z keys
+//   heatmap   Shipkit's own matrix in bklit's scale     one row per cell; x, row, z keys
 //             colours (--chart-scale-01..05): bklit's HeatmapChart is a
 //             calendar, and an endpoint × hour grid isn't one
 //

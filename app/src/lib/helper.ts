@@ -33,7 +33,7 @@ export const helperApi = {
 
 // helperError gives a helper's own refusal the shape every other error has.
 // The box passes a helper's answer through as it is, and a helper may say
-// what went wrong as {"error": {"code", "message", "hint"}} where Shipyard's
+// what went wrong as {"error": {"code", "message", "hint"}} where Shipkit's
 // own APIs say {"error": "…", "code": "…"}: the message and the code are
 // lifted out, and the hint stays in detail.
 export function helperError(err: unknown): unknown {

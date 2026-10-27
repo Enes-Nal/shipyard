@@ -30,7 +30,7 @@ export function Connecting({ state, error }: { state: string; error?: string }) 
             <EmptyMedia>
               <Scene name="lighthouse" />
             </EmptyMedia>
-            <EmptyTitle>Finding the Shipyard agent…</EmptyTitle>
+            <EmptyTitle>Finding the Shipkit agent…</EmptyTitle>
           </EmptyHeader>
         </Empty>
       </div>
@@ -55,7 +55,7 @@ function AgentOffline({ error }: { error?: string }) {
   useEffect(() => {
     if (phase.kind !== "waiting") return;
     const t = window.setTimeout(
-      () => setPhase({ kind: "failed", message: "The agent started, but Shipyard can't reach it on 127.0.0.1:1378. Its log, agent.log in Shipyard's state folder, says why." }),
+      () => setPhase({ kind: "failed", message: "The agent started, but Shipkit can't reach it on 127.0.0.1:1378. Its log, agent.log in Shipkit's state folder, says why." }),
       ANSWER_TIMEOUT,
     );
     return () => window.clearTimeout(t);
@@ -80,11 +80,11 @@ function AgentOffline({ error }: { error?: string }) {
           <EmptyMedia>
             <Scene name="offline" />
           </EmptyMedia>
-          <EmptyTitle>The Shipyard agent isn't running</EmptyTitle>
+          <EmptyTitle>The Shipkit agent isn't running</EmptyTitle>
           <EmptyDescription>
             {binary === null
-              ? "It keeps your boxes connected while this window is closed. Run this in a terminal to start it; Shipyard connects as soon as it is up."
-              : "It keeps your boxes connected while this window is closed, and keeps running after you quit Shipyard."}
+              ? "It keeps your boxes connected while this window is closed. Run this in a terminal to start it; Shipkit connects as soon as it is up."
+              : "It keeps your boxes connected while this window is closed, and keeps running after you quit Shipkit."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -93,7 +93,7 @@ function AgentOffline({ error }: { error?: string }) {
             <div className="flex w-full flex-col items-center gap-3">
               <Button className="w-full" disabled={busy} onClick={() => void start()}>
                 {busy ? <Spinner /> : <PlayIcon />}
-                {phase.kind === "starting" ? "Starting the Shipyard agent…" : phase.kind === "waiting" ? "Connecting…" : "Start the Shipyard agent"}
+                {phase.kind === "starting" ? "Starting the Shipkit agent…" : phase.kind === "waiting" ? "Connecting…" : "Start the Shipkit agent"}
               </Button>
               <label className="flex w-full items-start gap-2.5 text-left text-body">
                 <Checkbox className="mt-0.5" checked={atLogin} disabled={busy} onCheckedChange={(v) => setAtLogin(!!v)} />
@@ -123,7 +123,7 @@ function AgentOffline({ error }: { error?: string }) {
             <details className="w-full text-left text-muted-foreground text-meta">
               <summary className="cursor-default select-none hover:text-foreground">Details</summary>
               <pre className="mt-2 rounded-md bg-muted p-2 font-mono whitespace-pre-wrap">{error}</pre>
-              {binary && <p className="mt-2">Shipyard starts it with {binary.path}</p>}
+              {binary && <p className="mt-2">Shipkit starts it with {binary.path}</p>}
             </details>
           )}
         </EmptyContent>

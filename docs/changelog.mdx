@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: What changed in each Shipyard release, newest first.
+description: What changed in each Shipkit release, newest first.
 ---
 
 Releases are on [GitHub](https://github.com/cosscom/shipyard/releases).
@@ -10,6 +10,17 @@ upgrades with `berth upgrade BOX`, or by running the
 again.
 
 ## Unreleased
+
+- **Shipkit begins with Auto routing.** New threads can choose the best
+  installed coding agent, available model and reasoning effort from the task
+  before they start. The recommendation is visible and can be turned off for
+  a manual choice. Routing settings control the quality/usage objective,
+  provider and model allowlists, local decision history and safe fallback
+  policy. Gemini and OpenRouter keys can stay in a private local gateway,
+  whose live model catalog powers an OpenAI-compatible `shipkit/auto` model,
+  Chat Completions and the Responses API used by Codex. The app now carries
+  its new Shipkit name and icon while existing `berth` commands, data and box
+  connections stay compatible.
 
 - **Stopping several agents can archive their worktrees too.** The Agent
   Dashboard's Stop and Clean up dialogs have a box, **Archive their

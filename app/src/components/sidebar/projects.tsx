@@ -1029,7 +1029,7 @@ function SetupMark({ box, wt }: { box: string; wt: Worktree }) {
   if (wt.setting_up) return <span className={cn("shrink-0 text-tag", ink.faint)}>{WORKTREE_WORDS["setting-up"].lower}</span>;
   if (wt.setup_on_open && !failed) {
     return (
-      <Tip label="It was there before Shipyard set this repo up. Its setup runs the first time you open a terminal or start an agent in it; its files are as you left them.">
+      <Tip label="It was there before Shipkit set this repo up. Its setup runs the first time you open a terminal or start an agent in it; its files are as you left them.">
         <span data-testid="setup-on-open" className={cn("shrink-0 text-tag", ink.faint)}>
           set up on first open
         </span>

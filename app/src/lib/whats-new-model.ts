@@ -62,7 +62,7 @@ export interface Decision {
 // decide is what happens as the app starts. A first install (no prefs saved
 // before) shows nothing and counts as having seen this version. After an
 // update, the newest release the running app includes, newer than the last
-// one seen, shows once. Prefs from a Shipyard older than the card (no
+// one seen, shows once. Prefs from a Shipkit older than the card (no
 // version seen) count as an update.
 export function decide({ firstRun, seen, current, releases }: { firstRun: boolean; seen: string | null | undefined; current: string; releases: Release[] }): Decision {
   if (firstRun) return { seen: current };

@@ -1,5 +1,5 @@
 // After the window has been in the background for a while (another app in
-// front, Shipyard still on screen beside it), the app's endless decorative
+// front, Shipkit still on screen beside it), the app's endless decorative
 // animations hold still: an agent's spinner, a live dot's ping, a working
 // line's shimmer. They show the same state, unmoving, and start again the
 // moment the window comes to the front or the pointer moves over it. At

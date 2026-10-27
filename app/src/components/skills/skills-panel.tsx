@@ -21,7 +21,7 @@ const agentNames: Record<SkillAgent, string> = {
   codex: "Codex",
 };
 
-// SkillsPanel shows Shipyard's skills on one box, for its user or, with a
+// SkillsPanel shows Shipkit's skills on one box, for its user or, with a
 // location, inside that repository, and installs, updates or removes them.
 // hideTitle drops the panel's own title where the page around it already
 // names it, as Settings → Agents does.
@@ -91,7 +91,7 @@ export function SkillsPanel({ box, location, className, hideTitle }: { box: stri
           </CardFrameTitle>
         )}
         <CardFrameDescription className="text-meta">
-          {location ? "Only agents working in this repository learn them." : "Every agent the box's user runs learns them."} They teach Claude Code and Codex to use Shipyard.
+          {location ? "Only agents working in this repository learn them." : "Every agent the box's user runs learns them."} They teach Claude Code and Codex to use Shipkit.
         </CardFrameDescription>
         <CardFrameAction>
           <Button size="xs" variant={pending ? "default" : "outline"} disabled={!report || !pending || !!busy} onClick={() => change("all", true, { skills: "all", agent: "all" })}>

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // was shot (or smaller, to fit), with what changed on top. Every overlay is
 // placed in the shot's own pixels as percentages, so it scales with it.
 // The marks sit on screenshots, which are the app's own colours, not
-// Shipyard's: they keep one blue, one red and one amber in either theme.
+// Shipkit's: they keep one blue, one red and one amber in either theme.
 
 export type StageMode = "slider" | "side" | "flicker" | "onion";
 

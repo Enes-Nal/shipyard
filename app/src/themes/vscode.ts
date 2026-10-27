@@ -1,8 +1,8 @@
 import type { Theme } from "@/lib/api";
 
-// Ports of popular VS Code themes, mapped onto Shipyard's tokens from each
+// Ports of popular VS Code themes, mapped onto Shipkit's tokens from each
 // theme's own palette (its VS Code colours and terminal ANSI 16). Where a
-// colour fell short of the contrast Shipyard's themes keep (contrast.ts), it
+// colour fell short of the contrast Shipkit's themes keep (contrast.ts), it
 // was moved in lightness only, hue and chroma kept; the notes say which.
 // Sources, authors and licences: THIRD_PARTY_THEMES.md at the repository's
 // root. All are MIT.

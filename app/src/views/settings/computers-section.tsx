@@ -21,7 +21,7 @@ import { Code, SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings
 import { ErrorText } from "@/components/error-note";
 import { BoxError } from "@/components/upgrade-box";
 
-// ComputersSection is Shipyard on more than one computer: add another (a join
+// ComputersSection is Shipkit on more than one computer: add another (a join
 // link), join from another, and the computers each box trusts, with a way to
 // remove one.
 export function ComputersSection() {
@@ -33,7 +33,7 @@ export function ComputersSection() {
       title="Computers"
       description={
         <>
-          Use Shipyard on more than one computer. Each pairs with your boxes with its own key.
+          Use Shipkit on more than one computer. Each pairs with your boxes with its own key.
         </>
       }
     >
@@ -275,7 +275,7 @@ function InviteLink({ invite, again, onBack, onAgain, onClose }: { invite: Invit
         title="Open this on the other computer"
         description={
           <>
-            In Shipyard there, choose <span className="text-foreground">I already use Shipyard on another computer</span> (or Settings → Computers → Use a join link) and paste it. In a terminal: <Code>berth join '…'</Code>.
+            In Shipkit there, choose <span className="text-foreground">I already use Shipkit on another computer</span> (or Settings → Computers → Use a join link) and paste it. In a terminal: <Code>berth join '…'</Code>.
           </>
         }
         onBack={onBack}

@@ -328,7 +328,7 @@ export function useSecondsLeft(iso?: string): number {
   return iso ? secondsLeft(iso, now) : 0;
 }
 
-// JoinStep is onboarding's "I already use Shipyard on another computer".
+// JoinStep is onboarding's "I already use Shipkit on another computer".
 export function JoinStep({ onDone, onExit, onStage }: { onDone(): void; onExit(): void; onStage(stage: JoinStage): void }) {
   // A beat on the moored scene before moving on, as connecting a box has.
   const [leaving, setLeaving] = useState(false);

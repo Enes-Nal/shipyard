@@ -15,11 +15,11 @@ import { Code, SettingsGroup, SettingsPage, SettingsRow } from "@/views/settings
 // Where Linear makes personal API keys.
 const LINEAR_KEYS = "https://linear.app/settings/account/security";
 
-// IntegrationsSection is the services Shipyard reads from as you: for now,
+// IntegrationsSection is the services Shipkit reads from as you: for now,
 // Linear, by a personal API key the laptop keeps.
 export function IntegrationsSection() {
   return (
-    <SettingsPage title="Integrations" description="Services Shipyard reads from as you. Their keys never leave this computer.">
+    <SettingsPage title="Integrations" description="Services Shipkit reads from as you. Their keys never leave this computer.">
       <LinearGroup />
     </SettingsPage>
   );
@@ -106,7 +106,7 @@ function LinearGroup() {
       )}
       <ErrorText text={error} className="py-2.5 text-destructive-foreground text-meta" />
       {status && !status.connected && (
-        <SettingsRow label="Where to make one" description="Linear → Settings → Security & access → Personal API keys. Read access is enough to list issues; add write access to comment from Shipyard.">
+        <SettingsRow label="Where to make one" description="Linear → Settings → Security & access → Personal API keys. Read access is enough to list issues; add write access to comment from Shipkit.">
           <Button size="xs" variant="outline" onClick={() => void openUrl(LINEAR_KEYS)}>
             <ExternalLinkIcon className="size-3" />
             Open Linear

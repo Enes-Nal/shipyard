@@ -86,7 +86,7 @@ export default function App() {
   useBerthConnection();
   useShortcuts();
   useWindowTitle();
-  // Checks for a newer Shipyard on launch and every few hours (lib/updater.ts).
+  // Checks for a newer Shipkit on launch and every few hours (lib/updater.ts).
   useEffect(startUpdater, []);
   // Spinners and shimmers hold still while the window is in the background.
   useEffect(watchStillness, []);
@@ -101,7 +101,7 @@ export default function App() {
   // Agents started without the app (another agent, the CLI, a run) follow
   // the Labs setting too (lib/box-defaults.ts).
   useEffect(() => (connectedToAgent ? startBoxDefaultsSync() : undefined), [connectedToAgent]);
-  // Which boxes' Shipyard skills aren't installed or are out of date, for
+  // Which boxes' Shipkit skills aren't installed or are out of date, for
   // the sidebar's notice (lib/skills-notice.ts).
   useEffect(() => (connectedToAgent ? startSkillsNoticeWatch() : undefined), [connectedToAgent]);
   useKitDeepLinks();

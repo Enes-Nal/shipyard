@@ -407,7 +407,7 @@ function foldTurns(items: TranscriptItem[], c: FoldCache = newFoldCache()): Bloc
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     // A command typed to the agent is the person's, like a prompt; a report
-    // from Shipyard starts a turn too, as does a message from another agent or
+    // from Shipkit starts a turn too, as does a message from another agent or
     // Claude Code: each is something the agent answers.
     if (it.kind === "user" || it.kind === "command" || it.kind === "report" || it.kind === "agent-message" || it.kind === "ping") {
       flush(i, false);

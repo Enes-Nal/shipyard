@@ -68,8 +68,8 @@ export function BoxesSection() {
       </SettingsGroup>
       {boxes.length > 0 && (
         <SettingsGroup>
-          <SettingsRow label="Update boxes automatically when Shipyard updates" description="Each box gets the berthd this Shipyard ships as soon as it's online. Agents keep running through an update.">
-            <Switch checked={auto} onCheckedChange={(autoUpdateBoxes) => usePrefs.setState({ autoUpdateBoxes })} aria-label="Update boxes automatically when Shipyard updates" />
+          <SettingsRow label="Update boxes automatically when Shipkit updates" description="Each box gets the berthd this Shipkit ships as soon as it's online. Agents keep running through an update.">
+            <Switch checked={auto} onCheckedChange={(autoUpdateBoxes) => usePrefs.setState({ autoUpdateBoxes })} aria-label="Update boxes automatically when Shipkit updates" />
           </SettingsRow>
         </SettingsGroup>
       )}
@@ -249,7 +249,7 @@ function LinkNotes({ box }: { box: BoxStatus }) {
       {relay && (
         <div data-testid="box-relayed">
           {relay}
-          {box.route && box.route !== "paired" && activeRoute(box) ? `; Shipyard goes ${viaRoute(box)} instead` : ""}.{" "}
+          {box.route && box.route !== "paired" && activeRoute(box) ? `; Shipkit goes ${viaRoute(box)} instead` : ""}.{" "}
           <button type="button" onClick={() => void openDocs(RELAYED_DOCS)} className="underline underline-offset-2 hover:text-foreground">
             Learn more
           </button>

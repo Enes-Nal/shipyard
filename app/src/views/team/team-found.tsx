@@ -6,7 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { type ExistingClone, plural } from "@/lib/team";
 import { cn } from "@/lib/utils";
 
-// Clones the box already has of a repo, found by their origin: a Shipyard
+// Clones the box already has of a repo, found by their origin: a Shipkit
 // project, or a folder in the usual places (~/code, ~/work, …). The page
 // decides which one a repo uses, or a fresh clone; nothing found is used
 // without a choice here, but for the one clean clone it starts on.
@@ -55,7 +55,7 @@ export function FoundClones({
               , a clone of <span className="font-mono">{repo}</span> ({c.branch ? <>on branch <span className="font-mono text-foreground">{c.branch}</span></> : c.head ? <>at <span className="font-mono">{c.head}</span></> : null}
               {c.branch || c.head ? ", " : ""}
               {c.dirty ? plural(c.dirty, "uncommitted change") : "no uncommitted changes"})
-              {c.location && <> · the Shipyard project {c.location}</>}
+              {c.location && <> · the Shipkit project {c.location}</>}
             </span>
           </span>
           <span className="ml-auto flex items-center gap-1">
@@ -90,7 +90,7 @@ export function FoundClones({
           </li>
           {chosen.dirty > 0 && <li className="text-foreground">Your uncommitted changes stay as they are.</li>}
           <li>Its branch stays {chosen.branch ? <span className="font-mono">{chosen.branch}</span> : "as it is"}: nothing is checked out, stashed, reset or pulled, and an existing .env keeps its values.</li>
-          {chosen.location && <li>It is the Shipyard project {chosen.location} already: its worktrees and settings stay.</li>}
+          {chosen.location && <li>It is the Shipkit project {chosen.location} already: its worktrees and settings stay.</li>}
           {!!chosen.worktrees && <li>{chosen.worktrees === 1 ? "Its other worktree shows in the sidebar, set up the first time you open it." : `Its ${chosen.worktrees} other worktrees show in the sidebar, each set up the first time you open it.`}</li>}
           {!!chosen.behind && onPull && (
             <li className="flex flex-wrap items-center gap-2">

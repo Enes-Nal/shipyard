@@ -55,7 +55,7 @@ export const DEFAULT_CHAT_BACKGROUND: ChatBackground = {
 // The effects alone, for Reset effects.
 export const EFFECTS = ["strength", "dither", "tone", "original", "fit", "position"] as const;
 
-// What a picture of your own starts with: Shipyard's style, dithered in the
+// What a picture of your own starts with: Shipkit's style, dithered in the
 // theme's ink at a low contrast.
 export const PICTURE_PRESET: Partial<ChatBackground> = { strength: 0.35, dither: "fine", tone: "ink", original: false };
 
@@ -65,7 +65,7 @@ export const BUILTIN_PRESET: Partial<ChatBackground> = { strength: DEFAULT_CHAT_
 const pick = <T extends string>(v: unknown, all: readonly T[], d: T): T => (all.includes(v as T) ? (v as T) : d);
 
 // normalizeChatBackground keeps what is valid of a saved choice (one from an
-// older Shipyard may hold other fields) and fills the rest with defaults.
+// older Shipkit may hold other fields) and fills the rest with defaults.
 export function normalizeChatBackground(saved: unknown): ChatBackground {
   const s = (saved && typeof saved === "object" ? saved : {}) as Record<string, unknown>;
   const d = DEFAULT_CHAT_BACKGROUND;
@@ -156,7 +156,7 @@ export async function keepImage(file: Blob, meta: { name: string; prompt?: strin
   try {
     bmp = await createImageBitmap(file);
   } catch {
-    throw new Error("That file isn't a picture Shipyard can read. Try a PNG, JPEG or WebP.");
+    throw new Error("That file isn't a picture Shipkit can read. Try a PNG, JPEG or WebP.");
   }
   const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const w = Math.max(1, Math.round(bmp.width * scale));

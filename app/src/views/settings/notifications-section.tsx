@@ -59,7 +59,7 @@ export function NotificationsSection() {
   const columns: [keyof Channels, string, string][] = [
     ["centre", "Centre", "Kept in the notification centre"],
     ["toast", "Toast", "A toast in the window"],
-    ["system", mac ? "macOS" : "System", mac ? "A macOS notification while Shipyard is in the background" : "A system notification while Shipyard is in the background"],
+    ["system", mac ? "macOS" : "System", mac ? "A macOS notification while Shipkit is in the background" : "A system notification while Shipkit is in the background"],
   ];
   // The commonest kinds first; the rest behind Show more.
   const [all, setAll] = useState(false);
@@ -173,7 +173,7 @@ export function NotificationsSection() {
             Send a test
           </Button>
         </SettingsRow>
-        <SettingsRow label="History" description={`${count} kept on this computer, up to 500. Only what happened while Shipyard was open.`}>
+        <SettingsRow label="History" description={`${count} kept on this computer, up to 500. Only what happened while Shipkit was open.`}>
           <Button size="sm" variant="outline" onClick={() => setNotificationsOpen(true)}>
             <BellIcon />
             Open centre

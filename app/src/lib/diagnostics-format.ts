@@ -59,9 +59,9 @@ const MARKS: Record<string, string> = { ok: "✓", warn: "!", fail: "✗", info:
 export function formatDiagnostics(d: Diagnostics): string {
   const l: string[] = [];
   const add = (s: string) => l.push(s);
-  add(`Shipyard diagnostics · ${stamp(d.generated)}`);
+  add(`Shipkit diagnostics · ${stamp(d.generated)}`);
   const a = d.app ?? undefined;
-  if (!a) add("App: not recorded (open Shipyard once)");
+  if (!a) add("App: not recorded (open Shipkit once)");
   else {
     let line = `App: ${or(a.version, "unknown")}`;
     if (a.build) line += ` (build ${a.build})`;

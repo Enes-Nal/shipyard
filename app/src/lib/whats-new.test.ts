@@ -31,7 +31,7 @@ test("a release the app doesn't include yet isn't shown", () => {
   assert.equal(decide({ firstRun: false, seen: "0.3.8", current: "0.3.9", releases }).show, undefined);
 });
 
-test("prefs from a Shipyard older than the card count as an update", () => {
+test("prefs from a Shipkit older than the card count as an update", () => {
   assert.equal(decide({ firstRun: false, seen: undefined, current: "0.3.10", releases }).show?.version, "0.3.10");
 });
 

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 import "./scenes.css";
 
-// Scenes are Shipyard's small line drawings for quiet states, all in one
+// Scenes are Shipkit's small line drawings for quiet states, all in one
 // drawing language: a 160 x 52 harbour, lines in currentColor (muted unless
 // the caller says otherwise), and exactly one amber point, the logo's dot, as
 // a buoy, a lamp or the sun. Motion is CSS only (transforms and opacity),

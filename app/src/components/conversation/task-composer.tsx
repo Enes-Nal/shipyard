@@ -10,6 +10,7 @@ import { withDefaults } from "@/components/prompts/shared";
 import { RepoWants, trustRepo, useRepoTrustFor } from "@/components/repo-trust";
 import { RequirementsCard, useRequirementsCard } from "@/components/requirements-card";
 import { AttachmentChips, type Attachments, useAttachments } from "@/components/conversation/attachments";
+import { RoutePreview, RoutingControl } from "@/components/conversation/routing-control";
 import { type ComposerMenu, useComposerMenu } from "@/components/conversation/command-menu";
 import { ErrorText, toastError } from "@/components/error-note";
 import { Tip } from "@/components/tip";
@@ -24,6 +25,9 @@ import { type AttachTarget, withAttachments } from "@/lib/attachments";
 import { type ComposerDraft, openComposer } from "@/lib/composer";
 import { agentLabel, agentOf, sessionName, sessionState } from "@/lib/derive";
 import { plainError } from "@/lib/errors";
+import { recommendRoute } from "@/lib/routing";
+import { recordRoutingDecision } from "@/lib/routing-history";
+import { setPrefs, usePrefs } from "@/lib/prefs";
 import { sessionLocation } from "@/lib/orchestrate";
 import { handoffPrompt, reviewPrompt } from "@/lib/orchestrate";
 import { loadProjects, projectActions, useProjects } from "@/lib/project-groups";
@@ -156,6 +160,7 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
   const location = useStore((s) => (pinned ? s.boxes[pinned.box]?.locations?.find((l) => l.name === pinned.location) : undefined)) ?? project?.places.find((m) => m.box.name === box)?.loc;
   const locName = pinned?.location ?? location?.name ?? "";
   const presets = box ? agentPresets(box, locName) : [];
+  const routingPolicy = usePrefs((p) => p.routing);
 
   // Where: a new worktree or the main checkout; beside the session or a new
   // worktree for a hand-off; the worktree itself when it is fixed.
@@ -178,6 +183,7 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
     return saved.length === 1 ? toChosen(saved) : {};
   };
   const [chosen, setChosen] = useState<Chosen>(initialAgents);
+  const [automatic, setAutomatic] = useState(() => (draft.agents?.length ? false : routingPolicy.automatic));
   const agentsTouched = useRef(false);
   const agentPlace = `${box}/${locName}/${presets.map((p) => p.id).join(",")}/${fromSession ? agentOf(fromSession) : ""}`;
   useEffect(() => {
@@ -191,8 +197,10 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
   };
   const [copies, setCopies] = useState(1);
   const [noAgent, setNoAgent] = useState(!!draft.noAgent);
-  const live: Chosen = Object.fromEntries(Object.entries(chosen).filter(([id, c]) => c.models.length && presets.some((p) => p.id === id)));
-  const sel: Chosen = Object.keys(live).length ? live : presets[0] ? { [presets[0].id]: { models: [""], effort: "" } } : {};
+  const route = useMemo(() => recommendRoute(text, presets, routingPolicy), [text, presets, routingPolicy]);
+  const routed = automatic ? (route ? toChosen([route.pick]) : {}) : chosen;
+  const live: Chosen = Object.fromEntries(Object.entries(routed).filter(([id, c]) => c.models.length && presets.some((p) => p.id === id)));
+  const sel: Chosen = Object.keys(live).length ? live : !automatic && presets[0] ? { [presets[0].id]: { models: [""], effort: "" } } : {};
   const picks = noAgent ? [] : expand(sel, from ? 1 : copies).slice(0, from ? 1 : undefined);
   const attempts = picks.length > 1;
   useEffect(() => onKind?.(noAgent ? "worktree" : attempts ? "attempts" : "start"), [onKind, noAgent, attempts]);
@@ -246,6 +254,7 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
     if (!template) return;
     if (template.agent) {
       setChosen({ [template.agent]: { models: [""], effort: "" } });
+      setAutomatic(false);
       setNoAgent(false);
     }
     setWt((v) => ({ ...v, branch: template.branch ?? v.branch, base: template.base ?? v.base, vars: Object.fromEntries(variables.map((x) => [x.id, v.vars[x.id] ?? x.default ?? ""])) }));
@@ -316,6 +325,8 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
       : "Waiting for a box"
     : !locName
       ? "Choose a project"
+      : automatic && presets.length > 0 && !route
+        ? "No agent is enabled in Routing settings"
       : reqCard === "tmux"
         ? `tmux isn't installed on ${box}`
         : !noAgent && (!picks.length || reqCard === "agent")
@@ -390,6 +401,7 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
       save(LAST_PROJECT, project.id);
       save(lastBoxKey(project.id), box);
     }
+    if (automatic && route && routingPolicy.rememberDecisions) recordRoutingDecision(route, { box, location: locName, prompt: text });
     touched.current = false;
     setText("");
     files.clear();
@@ -540,6 +552,7 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
       options={options}
       notice={
         <>
+          {automatic && !noAgent && <RoutePreview route={route} />}
           {box && <RequirementsCard box={box} agent={reqAgent} noAgent={noAgent} className="mx-1 mt-1" />}
           {pendingTrust?.wants && fresh && (
             <Alert variant="warning" className="mt-1">
@@ -608,17 +621,33 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
           )}
           {(!pinned || from?.kind === "handoff") && !attempts && <Pick label="Where" icon={<GitBranchIcon />} value={where} options={whereOptions} onPick={(v) => setWhere(v as "new" | "main" | "here")} />}
           <div className="ml-auto flex min-w-0 items-center gap-1">
-            <AgentsPicker
-              presets={presets}
-              sel={sel}
-              copies={copies}
-              none={noAgent}
-              single={!!from}
-              allowNone={fresh && !from && !fixed}
-              onChange={pickAgents}
-              onCopies={setCopies}
-              onNone={setNoAgent}
-            />
+            {!noAgent && (
+              <RoutingControl
+                automatic={automatic}
+                route={route}
+                onAutomatic={(on) => {
+                  setAutomatic(on);
+                  setNoAgent(false);
+                  setPrefs({ routing: { ...routingPolicy, automatic: on } });
+                }}
+              />
+            )}
+            {!automatic && (
+              <AgentsPicker
+                presets={presets}
+                sel={sel}
+                copies={copies}
+                none={noAgent}
+                single={!!from}
+                allowNone={fresh && !from && !fixed}
+                onChange={pickAgents}
+                onCopies={setCopies}
+                onNone={(on) => {
+                  setNoAgent(on);
+                  if (on) setAutomatic(false);
+                }}
+              />
+            )}
             <SendButton label={action} dialog={dialog} blocker={blocker} busy={busy} onClick={() => void submit()} />
           </div>
         </>

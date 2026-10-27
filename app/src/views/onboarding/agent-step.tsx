@@ -29,7 +29,7 @@ export function AgentStep({ box, location, sample, onFinish }: { box: string; lo
         title="Start your first agent"
         description={
           <>
-            It works in a new worktree of <span className="text-foreground">{location}</span> on <span className="text-foreground">{local ? thisComputer("this Mac") : box}</span>, keeps going if you close Shipyard, and tells you
+            It works in a new worktree of <span className="text-foreground">{location}</span> on <span className="text-foreground">{local ? thisComputer("this Mac") : box}</span>, keeps going if you close Shipkit, and tells you
             when it needs you.{sample ? " The task below is a small one to start with; change it, or press Enter." : ""}
           </>
         }

@@ -1,4 +1,4 @@
-# Acme team setup for Shipyard (example)
+# Acme team setup for Shipkit (example)
 
 An example of a [team setup](../../../docs/guides/team-setup.mdx) for Acme,
 a made-up org. Its one repository, `acme/shop`, is a Node app with
@@ -10,7 +10,7 @@ the box's system software, Docker with Postgres and Redis, Node and Yarn,
 then `acme/shop` cloned, migrated and seeded, with the shop's kit giving
 every worktree its own database, `.env` and ports.
 
-Shipyard reads an org's team setup from `<org>/.berth/team.json`, so an org
+Shipkit reads an org's team setup from `<org>/.berth/team.json`, so an org
 publishes one like this by copying the folder's contents to the root of its
 `.berth` repository. Every script here also runs by hand.
 
@@ -37,7 +37,7 @@ box/init-shop.sh                the main shop checkout's one-time setup
 
 **Versions** live in one place, `box.settings` in `team.json`
 (`SHOP_POSTGRES_VERSION`, `SHOP_REDIS_VERSION`), so a bump is a one-line
-change. Shipyard passes them to `box/setup.sh` as `BERTH_SETTING_SHOP_POSTGRES_VERSION`
+change. Shipkit passes them to `box/setup.sh` as `BERTH_SETTING_SHOP_POSTGRES_VERSION`
 and `BERTH_SETTING_SHOP_REDIS_VERSION`; run by hand, it reads them from
 `team.json`, and the environment can override them. After a bump, Redis
 moves to the new image with its data; Postgres does not, since a new major
@@ -48,7 +48,7 @@ Both containers restart unless you stop them, so they come back after a
 reboot, and listen on localhost only. Postgres takes the user `postgres`
 with no password, as the shop's `.env.example` expects.
 
-Then Shipyard's own steps. **Claude Code and Codex on the box**, from
+Then Shipkit's own steps. **Claude Code and Codex on the box**, from
 `"agents"` in `team.json`: `berthd agents install --integrations claude
 codex`, into `~/.local/bin` without sudo (Claude Code with its native
 installer, Codex from its pinned release, sha256 checked), then their hooks
@@ -57,11 +57,11 @@ the box**: `gh auth login` on the box, with a device code you enter on your
 laptop. The box clones with a credential of its own, which you can revoke
 on its own; your laptop's token never goes to the box. **1Password on the
 box**, since the shared keys are `op://` references: op signs in, in the
-box's terminal, so Shipyard can read those keys when a worktree needs them,
+box's terminal, so Shipkit can read those keys when a worktree needs them,
 without ever asking in a service's terminal.
 
 **The docker group.** The `docker` step adds you to the `docker` group. A
-process only gets a new group at a new login, so Shipyard starts what comes
+process only gets a new group at a new login, so Shipkit starts what comes
 after it (the remaining steps, `init-shop.sh`, terminals, services) with
 the group, through `sg`; nothing needs restarting.
 
@@ -87,9 +87,9 @@ where. `init-shop.sh` reads it again from the checkout itself.
 
 ## Using it
 
-### With Shipyard
+### With Shipkit
 
-Where Shipyard asks for an org (**Add a box → Set this box up for a team**),
+Where Shipkit asks for an org (**Add a box → Set this box up for a team**),
 type `acme`, or open `berth://team?org=acme`. Before it is published in
 `acme/.berth`, paste a link to the folder on a branch instead, such as
 `github.com/<you>/<repo>/tree/<branch>/<folder>`; `berth team show <link>`
@@ -127,7 +127,7 @@ Settings, all optional: `SHOP_PG_PORT` (5433), `SHOP_REDIS_PORT` (6379),
 ## Safe to run again
 
 Every step checks first and skips what is done, so running it again changes
-nothing. Running `all` twice, or Shipyard's **Retry from**, starts where it got
+nothing. Running `all` twice, or Shipkit's **Retry from**, starts where it got
 to.
 
 ## Your password and your keys
@@ -135,20 +135,20 @@ to.
 - **sudo.** The four sudo steps call `sudo` themselves, in the terminal in
   front of you. The first asks for your password once, with a plain message
   saying why; sudo remembers it in that terminal for a few minutes, so the
-  others don't ask again. Nothing stores it, Shipyard never sees it, and the
+  others don't ask again. Nothing stores it, Shipkit never sees it, and the
   scripts refuse to run as root.
 - **No secrets in git.** `team.json` lists keys, never values:
   - *shared* keys (Stripe test keys, a maps API key) are 1Password
     references, `op://vault/item/field`, read on the box with your own
     1Password when a worktree needs them;
-  - *asked* keys (`MAIL_API_KEY`) are yours alone: Shipyard asks once and
+  - *asked* keys (`MAIL_API_KEY`) are yours alone: Shipkit asks once and
     keeps them on your box, in the project's own config.
-- **Env stays light.** Shipyard sets ports, URLs and databases; every other
+- **Env stays light.** Shipkit sets ports, URLs and databases; every other
   value stays as the shop's `.env.example` has it.
 
 ## Updates
 
-When this changes in `acme/.berth`, Shipyard shows **Acme's setup changed ·
+When this changes in `acme/.berth`, Shipkit shows **Acme's setup changed ·
 Review update** with what changed. It never runs by itself; reviewing and
 pressing **Update** runs it, and steps whose checks pass are skipped.
 
@@ -167,7 +167,7 @@ Acme is made up, and so is everything named after it:
   placeholders for your own.
 - **The project's id** is `shop`: it names the project on the box and is
   part of every worktree's URL (`<worktree>.shop.<box>.localhost`), so
-  Shipyard refuses an id with a dot (for a repo named like `acme.com`, use
+  Shipkit refuses an id with a dot (for a repo named like `acme.com`, use
   another id and keep the folder with `path`).
 - **1Password names.** The vault (`dev`) and item names in `keys` are
   placeholders, as is the `contact` channel.

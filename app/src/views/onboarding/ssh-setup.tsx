@@ -15,7 +15,7 @@ import { InstallCommand } from "@/views/onboarding/install-command";
 type Suggestion = { value: string; label: string; detail: string; os?: string; network?: string };
 export type Failure = SshFailure | { kind: "plain"; message: string };
 
-// SshSetup is the other way to add a box: Shipyard connects over SSH once from
+// SshSetup is the other way to add a box: Shipkit connects over SSH once from
 // this computer, with the person's own keys and agent, uploads berthd, runs
 // the same `berthd install` the install command does, and pairs. One field
 // takes user@host; Tab completes from ~/.ssh/config and the tailnet.
@@ -134,7 +134,7 @@ export function SshSetup({
         </Button>
       </form>
 
-      {/* What Shipyard will use, before it connects: a wrong agent is obvious here. */}
+      {/* What Shipkit will use, before it connects: a wrong agent is obvious here. */}
       <div aria-live="polite" className="mt-2 flex min-h-5 min-w-0 items-center gap-1.5 text-muted-foreground text-meta">
         {host.trim() ? (
           plan === "loading" ? (
@@ -164,7 +164,7 @@ export function SshSetup({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="after its hostname"
-                  aria-label="Name in Shipyard"
+                  aria-label="Name in Shipkit"
                   spellCheck={false}
                   disabled={running}
                   className="h-5 w-32 border-input border-b bg-transparent px-0.5 text-foreground outline-none placeholder:text-muted-foreground/72 focus:border-ring"
@@ -173,7 +173,7 @@ export function SshSetup({
             </>
           ) : null
         ) : (
-          <span>Uses your SSH keys and agent (1Password and the like) once, to install. After that Shipyard never needs SSH for this box.</span>
+          <span>Uses your SSH keys and agent (1Password and the like) once, to install. After that Shipkit never needs SSH for this box.</span>
         )}
       </div>
 
@@ -259,7 +259,7 @@ export function FailurePanel({
               <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={onSignIn}>
                 sign in to that tailnet
               </button>{" "}
-              and Shipyard tries again.
+              and Shipkit tries again.
             </p>
           )}
         </>

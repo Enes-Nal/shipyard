@@ -16,7 +16,7 @@ export async function openEditor(req: { box: string; path?: string; location?: s
     if (err instanceof SSHSetupNeeded) {
       toastManager.add({
         title: "Set up SSH for editors",
-        description: `Your editor reaches boxes over SSH, as berth-${req.box}. Shipyard can write those hosts for you.`,
+        description: `Your editor reaches boxes over SSH, as berth-${req.box}. Shipkit can write those hosts for you.`,
         type: "warning",
         actionProps: { children: "Set up", onClick: () => openSettings("boxes") },
       });

@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, BellIcon, BotIcon, CableIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
+import { ArrowLeftIcon, BellIcon, BotIcon, CableIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, LaptopIcon, PaletteIcon, PuzzleIcon, RouteIcon, ServerIcon, SlidersHorizontalIcon, SmartphoneIcon, SquareTerminalIcon, WrenchIcon } from "lucide-react";
 import { type ComponentType, useEffect } from "react";
 
 import { ink, inkScale } from "@/components/sidebar/ink";
@@ -18,6 +18,7 @@ import { LabsSection } from "@/views/settings/labs-section";
 import { NotificationsSection } from "@/views/settings/notifications-section";
 import { PhoneSection } from "@/views/settings/phone-section";
 import { PluginsSection } from "@/views/settings/plugins-section";
+import { RoutingSection } from "@/views/settings/routing-section";
 import { ShortcutsSection } from "@/views/settings/shortcuts-section";
 import { TerminalSection } from "@/views/settings/terminal-section";
 
@@ -34,6 +35,7 @@ const SECTIONS: { id: SettingsSectionId; title: string; icon: ComponentType<{ cl
   { id: "computers", title: "Computers", icon: LaptopIcon, Component: ComputersSection },
   { id: "phone", title: "Phone", icon: SmartphoneIcon, Component: PhoneSection },
   { id: "agents", title: "Agents", icon: BotIcon, Component: AgentsSection },
+  { id: "routing", title: "Routing", icon: RouteIcon, Component: RoutingSection },
   { id: "integrations", title: "Integrations", icon: CableIcon, Component: IntegrationsSection },
   { id: "plugins", title: "Plugins", icon: PuzzleIcon, Component: PluginsSection },
   { id: "shortcuts", title: "Shortcuts", icon: KeyboardIcon, Component: ShortcutsSection },
@@ -45,8 +47,8 @@ const SECTIONS: { id: SettingsSectionId; title: string; icon: ComponentType<{ cl
 // The nav groups the sections by what they're about; the quieter ones
 // (Labs, Developer, About) sit at the bottom.
 const GROUPS: { title?: string; ids: SettingsSectionId[] }[] = [
-  { title: "Shipyard", ids: ["general", "appearance", "notifications", "shortcuts"] },
-  { title: "Agents", ids: ["agents", "terminal", "integrations", "plugins"] },
+  { title: "Shipkit", ids: ["general", "appearance", "notifications", "shortcuts"] },
+  { title: "Agents", ids: ["agents", "routing", "terminal", "integrations", "plugins"] },
   { title: "Machines", ids: ["boxes", "computers", "phone"] },
 ];
 const BOTTOM: SettingsSectionId[] = ["labs", "developer", "about"];

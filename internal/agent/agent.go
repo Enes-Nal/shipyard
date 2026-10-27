@@ -126,6 +126,10 @@ type Config struct {
 	SSHFinder   *sshsetup.Finder
 	SSHHosts    func() []string
 	RouteTiming wire.RouteTiming
+	// GatewayHTTP sends requests from Shipkit's local model gateway. Tests
+	// replace it with a client aimed at fake providers.
+	GatewayHTTP      *http.Client
+	GatewayEndpoints GatewayEndpoints
 }
 
 // Networks is the set of other tailnets the agent can dial through.
@@ -176,6 +180,17 @@ func (c *Config) defaults() {
 		// Round(0) drops the monotonic reading: on macOS the monotonic clock
 		// stops during sleep, so only wall-clock time reveals that it happened.
 		c.Now = func() time.Time { return time.Now().Round(0) }
+	}
+	if c.GatewayHTTP == nil {
+		// Streaming completions may legitimately run for a long time. Each
+		// catalog request has its own short context deadline instead.
+		c.GatewayHTTP = &http.Client{}
+	}
+	if c.GatewayEndpoints.OpenRouter == "" {
+		c.GatewayEndpoints.OpenRouter = "https://openrouter.ai/api/v1"
+	}
+	if c.GatewayEndpoints.Gemini == "" {
+		c.GatewayEndpoints.Gemini = "https://generativelanguage.googleapis.com/v1beta/openai"
 	}
 }
 
@@ -262,6 +277,9 @@ type Agent struct {
 	// helperLedger is the helpers this computer is to remove from boxes,
 	// and the removals not done yet (helpercleanup.go).
 	helperLedger helperLedger
+	// gateway holds only short-lived catalog caches. Provider credentials are
+	// read from the private state file when needed and never kept in app prefs.
+	gateway gatewayState
 
 	// ctx lives as long as the agent; forwards added through the API run under
 	// it rather than under the request that created them.

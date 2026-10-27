@@ -65,17 +65,17 @@ test("skills an absent agent lacks don't count", () => {
   assert.equal(noticeFor(online, ["claude"], r), undefined);
   const n = noticeFor(online, both, r)!;
   assert.deepEqual([n.kind, n.agents, n.without, n.missing], ["missing", ["claude", "codex"], ["codex"], 7]);
-  assert.equal(noticeText(n), "Shipyard's skills aren't installed for Codex");
+  assert.equal(noticeText(n), "Shipkit's skills aren't installed for Codex");
 });
 
 test("nothing installed says which agents have none", () => {
   const n = noticeFor(online, both, none)!;
   assert.equal(n.kind, "missing");
-  assert.equal(noticeText(n), "Shipyard's skills aren't installed for Claude Code or Codex");
+  assert.equal(noticeText(n), "Shipkit's skills aren't installed for Claude Code or Codex");
   assert.equal(actionLabel(n), "Install now");
   const one = noticeFor(online, ["claude"], none)!;
   assert.deepEqual(one.agents, ["claude"]);
-  assert.equal(noticeText(one), "Shipyard's skills aren't installed for Claude Code");
+  assert.equal(noticeText(one), "Shipkit's skills aren't installed for Claude Code");
 });
 
 test("older copies are out of date, counted once per skill", () => {
@@ -93,13 +93,13 @@ test("after an upgrade, a skill that is new counts beside the ones that are olde
   const n = noticeFor(online, both, r)!;
   assert.deepEqual([n.kind, n.outdated, n.missing], ["outdated", 6, 1]);
   assert.equal(noticeText(n), "6 skills are out of date");
-  assert.equal(noticeDetail(n), "Updates all of Shipyard's skills for devl's user, for Claude Code and Codex. 1 skill isn't installed yet.");
+  assert.equal(noticeDetail(n), "Updates all of Shipkit's skills for devl's user, for Claude Code and Codex. 1 skill isn't installed yet.");
 });
 
 test("the button's tooltip says what it does, for the agents the box has", () => {
-  assert.equal(noticeDetail(noticeFor(online, ["claude"], none)!), "Installs all of Shipyard's skills for devl's user, for Claude Code.");
+  assert.equal(noticeDetail(noticeFor(online, ["claude"], none)!), "Installs all of Shipkit's skills for devl's user, for Claude Code.");
   const older = report({ claude: "installed", codex: "installed" }, { berth: { claude: "outdated" } });
-  assert.equal(noticeDetail(noticeFor(online, both, older)!), "Updates all of Shipyard's skills for devl's user, for Claude Code and Codex.");
+  assert.equal(noticeDetail(noticeFor(online, both, older)!), "Updates all of Shipkit's skills for devl's user, for Claude Code and Codex.");
 });
 
 test("some skills never installed, none older, is not installed", () => {
@@ -114,8 +114,8 @@ test("an agent with none comes before another's older copies", () => {
   const r = report({ claude: "outdated", codex: "missing" });
   const n = noticeFor(online, both, r)!;
   assert.deepEqual([n.kind, n.missing, n.outdated], ["missing", 7, 7]);
-  assert.equal(noticeText(n), "Shipyard's skills aren't installed for Codex");
-  assert.equal(noticeDetail(n), "Installs all of Shipyard's skills for devl's user, for Claude Code and Codex. 7 skills are out of date, too.");
+  assert.equal(noticeText(n), "Shipkit's skills aren't installed for Codex");
+  assert.equal(noticeDetail(n), "Installs all of Shipkit's skills for devl's user, for Claude Code and Codex. 7 skills are out of date, too.");
 });
 
 test("copies inside a project never count", () => {

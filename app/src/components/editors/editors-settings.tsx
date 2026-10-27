@@ -15,7 +15,7 @@ import { Code, SettingsGroup, SettingsRow } from "@/views/settings/rows";
 import { ErrorText } from "@/components/error-note";
 
 // EditorsSettings is Settings → Boxes' editor part: which editor opens
-// worktrees, and the SSH hosts editors use to reach boxes. Shipyard shows the
+// worktrees, and the SSH hosts editors use to reach boxes. Shipkit shows the
 // exact lines it would write, and writes them only when asked.
 export function EditorsSettings() {
   const client = useStore((s) => s.client);
@@ -77,7 +77,7 @@ export function EditorsSettings() {
         </div>
       )}
       {editors && (
-        <SettingsRow label="Open in" description={installed.length ? "Picking another in any Open in menu changes this too." : "Install Cursor, VS Code, Windsurf or Zed to open worktrees from Shipyard."}>
+        <SettingsRow label="Open in" description={installed.length ? "Picking another in any Open in menu changes this too." : "Install Cursor, VS Code, Windsurf or Zed to open worktrees from Shipkit."}>
           {installed.length > 0 && (
             <PickOne
               label="Preferred editor"
@@ -105,7 +105,7 @@ export function EditorsSettings() {
                   </span>
                 ) : (
                   <>
-                    Your editor reaches each box as <Code>berth-&lt;box&gt;</Code>; boxes on another tailnet go through Shipyard's own connection. This adds the files
+                    Your editor reaches each box as <Code>berth-&lt;box&gt;</Code>; boxes on another tailnet go through Shipkit's own connection. This adds the files
                     below and one Include line at the top of <Code>~/.ssh/config</Code>, which is backed up first.
                   </>
                 )}

@@ -13,7 +13,7 @@ test("agents always run structured, in the mode Permissions names", () => {
   assert.deepEqual(agentDefaultsFor(ask), { structured: true, mode: "default" });
 });
 
-test("prefs an older Shipyard saved don't turn it off", () => {
+test("prefs an older Shipkit saved don't turn it off", () => {
   // The Labs switch and Labs itself, saved off, no longer have a say.
   const old = { ...bypass, labs: false, structuredClaude: false };
   assert.deepEqual(agentDefaultsFor(old), { structured: true, mode: "bypassPermissions" });
@@ -29,7 +29,7 @@ test("a box is sent the default only when it differs", () => {
   assert.deepEqual(defaultsToPut(bypass, caps, undefined), { structured: true, mode: "bypassPermissions" });
   assert.deepEqual(defaultsToPut(bypass, caps, { structured: false }), { structured: true, mode: "bypassPermissions" });
   assert.equal(defaultsToPut(bypass, caps, { structured: true, mode: "bypassPermissions" }), undefined);
-  // A box turned to its terminal by an older Shipyard is turned back.
+  // A box turned to its terminal by an older Shipkit is turned back.
   assert.deepEqual(defaultsToPut(ask, caps, { structured: false, mode: "bypassPermissions" }), { structured: true, mode: "default" });
   // Permissions changed: the mode goes too.
   assert.deepEqual(defaultsToPut(ask, caps, { structured: true, mode: "bypassPermissions" }), { structured: true, mode: "default" });

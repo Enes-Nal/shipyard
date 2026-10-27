@@ -16,7 +16,7 @@ export interface LocalBoxStatus {
   supported: boolean;
   available: boolean;
   reason?: string;
-  // A berthd service is installed for this user; owned: Shipyard installed it
+  // A berthd service is installed for this user; owned: Shipkit installed it
   // (rather than the install script).
   installed: boolean;
   owned: boolean;

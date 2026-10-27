@@ -89,7 +89,7 @@ fn fill<R: Runtime>(
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let table = table();
-    // "Shipyard", as the window and the Dock name it, not the crate's "berth".
+    // "Shipkit", as the window and the Dock name it, not the crate's "berth".
     let name = app
         .config()
         .product_name

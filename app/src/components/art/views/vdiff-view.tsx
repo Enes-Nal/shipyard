@@ -10,7 +10,7 @@ import { acceptBaseline, useAccepted } from "@/lib/art/vdiff-accept";
 import { allClear, baseName, type Change, changes, firstPage, flags, frame, overflow, parseVdiff, pct, type Scheme, schemeOf, schemes, sizeName, sortedPages, thumbShot, type VdPage, type VdShot, type VisualDiff, worstShot } from "@/lib/art/vdiff";
 import { cn } from "@/lib/utils";
 
-// A visual diff, drawn by Shipyard from the box's berth.visualdiff/v1
+// A visual diff, drawn by Shipkit from the box's berth.visualdiff/v1
 // manifest. Full size it is the slider-first view: one page large, a
 // before/after wipe, sizes as tabs with each one's change, the heatmap and
 // numbered regions on top; "All shots" puts every page × size in a grid in
