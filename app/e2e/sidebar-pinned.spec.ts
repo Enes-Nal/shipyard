@@ -41,3 +41,20 @@ test("pinned from its menu, a worktree moves to the top and stays there after a 
   await expect(app.worktree("devl/checkout-fix")).toBeVisible();
   await expect(app.worktree("devl/order-export")).toBeVisible();
 });
+
+test("a pinned worktree's pin goes once the box says the worktree went", async ({ app }) => {
+  mockOnly();
+  await app.open();
+  const page = app.page;
+  const row = app.worktree("devl/search-perf");
+  await row.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Pin to top" }).click();
+  await expect(page.getByTestId("pinned-worktrees").locator('[data-worktree="devl/search-perf"]')).toBeVisible();
+
+  await row.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Remove worktree…" }).click();
+  await page.getByRole("button", { name: "Remove worktree" }).click();
+  await expect(row).toHaveCount(0);
+  await expect(page.getByTestId("pinned-worktrees")).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("berth.pinnedWorktrees"))).toBe("[]");
+});

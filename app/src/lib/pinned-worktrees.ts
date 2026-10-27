@@ -2,7 +2,9 @@ import { create } from "zustand";
 
 // Pinned worktrees sit in their own list at the top of the sidebar, in the
 // order they were pinned, whatever their project and whether or not
-// anything runs in them. They are kept on this computer, by box and path.
+// anything runs in them. They are kept on this computer, by box and path,
+// and a pin goes with its worktree once the box says it went
+// (lib/remove-worktree).
 //
 // No value imports from "@/": pnpm test runs this file in plain node.
 
@@ -29,6 +31,9 @@ function save(keys: string[]) {
 }
 
 export const usePinned = create<{ keys: string[] }>()(() => ({ keys: load() }));
+
+// Another window's pins replace this one's, so neither saves over the other.
+if (typeof window !== "undefined") window.addEventListener("storage", (e) => e.key === KEY && usePinned.setState({ keys: load() }));
 
 const set = (keys: string[]) => {
   usePinned.setState({ keys });

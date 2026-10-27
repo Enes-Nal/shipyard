@@ -437,7 +437,6 @@ export function archiveWorktree(box: string, loc: Location, wt: Worktree) {
         if (/modified|untracked|uncommitted|contains/i.test(errorMessage(err))) throw new Error(`${wt.name} has uncommitted changes, so it was left as it is. Commit them first, or use Remove worktree… to discard them.`);
         throw err;
       }
-      unpinWorktree(box, wt.path);
       if (res.archive) toastManager.add({ title: `Archiving ${wt.name}`, description: "Its archive script is running on the box; the worktree goes when it finishes.", type: "info" });
       else toastManager.add({ title: `Archived ${wt.name}`, description: wt.branch ? `Branch ${wt.branch} is kept.` : box, type: "success" });
     },
@@ -479,7 +478,6 @@ export function removeWorktree(box: string, loc: Location, wt: Worktree) {
         if (/modified|untracked|uncommitted|contains/i.test(m) && !checked.force) throw new Error(`${wt.name} has uncommitted changes. Tick "Remove even with uncommitted changes" to remove it anyway.`);
         throw err;
       }
-      unpinWorktree(box, wt.path);
       if (res.archive) toastManager.add({ title: `Removing ${wt.name}`, description: "The repo's archive script runs on the box first; the worktree goes when it finishes.", type: "info" });
       else toastManager.add({ title: `Removed ${wt.name}`, description: box, type: "success" });
     },
