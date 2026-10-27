@@ -62,3 +62,13 @@ test("a new account with no boxes is shown onboarding", async ({ app }) => {
   await expect(app.page.getByTestId("nav-home")).toHaveCount(0);
   await expect(app.page.locator("main")).toContainText(/box/i);
 });
+
+test("Windows without a native agent offers a working sample instead of a missing command", async ({ app }) => {
+  mockOnly("the missing Windows helper is a mock startup state");
+  await app.page.goto("/?mock=offline&binary=missing&platform=windows");
+  await expect(app.page.getByText("The Terminal agent isn't running", { exact: true })).toBeVisible();
+  await expect(app.page.getByRole("button", { name: "Open sample workspace" })).toBeVisible();
+  await expect(app.page.getByRole("button", { name: "Copy command" })).toHaveCount(0);
+  await app.page.getByRole("button", { name: "Open sample workspace" }).click();
+  await expect(app.page.getByRole("heading", { name: "What should your agents work on?" })).toBeVisible();
+});

@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, PlayIcon, RotateCwIcon, SquareTerminalIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PanelsTopLeftIcon, PlayIcon, RotateCwIcon, SquareTerminalIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Scene } from "@/components/art/scenes";
@@ -8,7 +8,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Spinner } from "@/components/ui/spinner";
 import { type AgentBinary, findAgentBinary, retryConnection, startAgent } from "@/lib/agent-start";
 import { plainError } from "@/lib/errors";
-import { thisComputer } from "@/lib/platform";
+import { IS_WINDOWS, thisComputer } from "@/lib/platform";
 
 // Any berth command starts the agent when it is not running.
 const START = "berth status";
@@ -82,13 +82,15 @@ function AgentOffline({ error }: { error?: string }) {
           </EmptyMedia>
           <EmptyTitle>The Terminal agent isn't running</EmptyTitle>
           <EmptyDescription>
-            {binary === null
+            {binary === null && IS_WINDOWS
+              ? "The native agent isn't available in this Windows build yet. Open a sample workspace to explore Terminal without installing anything."
+              : binary === null
               ? "The local helper isn't available to this window yet. Copy the setup command, paste it into a terminal, and this window will connect automatically."
               : "It keeps your boxes connected while this window is closed, and keeps running after you quit Terminal."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          {binary === null && <TerminalCommand />}
+          {binary === null && (IS_WINDOWS ? <WindowsSample /> : <TerminalCommand />)}
           {binary && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button className="w-full" disabled={busy} onClick={() => void start()}>
@@ -128,6 +130,24 @@ function AgentOffline({ error }: { error?: string }) {
           )}
         </EmptyContent>
       </Empty>
+    </div>
+  );
+}
+
+function WindowsSample() {
+  const open = () => {
+    const url = new URL(location.href);
+    url.searchParams.set("mock", "1");
+    url.searchParams.delete("binary");
+    location.assign(url);
+  };
+  return (
+    <div className="flex w-full flex-col items-center gap-2">
+      <Button className="w-full" onClick={open}>
+        <PanelsTopLeftIcon />
+        Open sample workspace
+      </Button>
+      <p className="text-center text-meta text-muted-foreground">Uses synthetic projects and agents; nothing on this computer is changed.</p>
     </div>
   );
 }

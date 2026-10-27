@@ -41,6 +41,12 @@ fn is_executable(path: &Path) -> bool {
     }
 }
 
+// executable_in names a command inside dir. Keeping this in one place makes
+// repository and bundled sidecars follow the platform's executable naming.
+fn executable_in(dir: &Path, name: &str) -> PathBuf {
+    dir.join(format!("{name}{}", std::env::consts::EXE_SUFFIX))
+}
+
 // find_berth looks for the berth CLI: in a release build, only the bundled
 // sidecar (bundled_sidecar); in a debug build, BERTH_CLI first, and the
 // repository's and installed copies after the bundled one.
@@ -56,7 +62,10 @@ pub fn find_berth() -> Option<(PathBuf, &'static str)> {
     #[cfg(debug_assertions)]
     {
         // app/src-tauri is two levels below the repository; make puts berth in bin/.
-        let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin/berth");
+        let p = executable_in(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin"),
+            "berth",
+        );
         if is_executable(&p) {
             return Some((p.canonicalize().unwrap_or(p), "repository"));
         }
@@ -94,7 +103,7 @@ fn bundled_beside_app() -> Option<PathBuf> {
     if !dir.ends_with("Contents/MacOS") {
         return None;
     }
-    let p = dir.join(SIDECAR);
+    let p = executable_in(dir, SIDECAR);
     if !is_executable(&p) {
         return None;
     }
@@ -222,12 +231,25 @@ pub async fn restart_stale_agent() -> Result<String, String> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn uses_the_platform_executable_name() {
+        let path = executable_in(Path::new("bin"), "berth");
+        assert_eq!(
+            path.file_name().unwrap(),
+            format!("berth{}", std::env::consts::EXE_SUFFIX).as_str()
+        );
+    }
+
     // In a debug build the repository's bin/berth is found (make build puts
     // it there), and `berth agent start` starts an agent that outlives the
     // call. It runs in its own BERTH_HOME so it cannot touch a real agent.
+    #[cfg(unix)]
     #[test]
     fn starts_the_agent_from_the_repository() {
-        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin/berth");
+        let repo = executable_in(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin"),
+            "berth",
+        );
         if !is_executable(&repo) {
             eprintln!("skipped: no bin/berth (run make build)");
             return;
@@ -261,7 +283,10 @@ mod tests {
 
     #[test]
     fn run_reports_why_berth_failed() {
-        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin/berth");
+        let repo = executable_in(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bin"),
+            "berth",
+        );
         if !is_executable(&repo) {
             return;
         }

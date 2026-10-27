@@ -14,6 +14,7 @@ export interface AgentBinary {
 }
 
 const mockOffline = () => new URLSearchParams(location.search).get("mock") === "offline";
+const mockMissingBinary = () => mockOffline() && new URLSearchParams(location.search).get("binary") === "missing";
 let mockStarted = false;
 
 // mockAgentDown is true while ?mock=offline has not "started" its agent.
@@ -23,7 +24,7 @@ export const mockAgentDown = () => mockOffline() && !mockStarted;
 // null when there is none to run.
 export async function findAgentBinary(): Promise<AgentBinary | null> {
   if (isTauri()) return invoke<AgentBinary | null>("agent_binary");
-  if (mockOffline()) return { path: "/Applications/Terminal.app/Contents/MacOS/berth-cli", source: "bundled" };
+  if (mockOffline()) return mockMissingBinary() ? null : { path: "/Applications/Terminal.app/Contents/MacOS/berth-cli", source: "bundled" };
   return null;
 }
 
