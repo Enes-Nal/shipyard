@@ -86,7 +86,7 @@ TESTS="$SRC_TREE/scripts"
 # The tests check the dmg was built from this commit, and print it.
 export BERTH_RELEASE_TEST_REV=$REV
 {
-	echo "# Shipyard release checks"
+	echo "# Terminal release checks"
 	echo
 	echo "Commit tested: \`$TESTED\` ($(git -C "$REPO_DIR" log -1 --format='%s' "$REV"))"
 	echo

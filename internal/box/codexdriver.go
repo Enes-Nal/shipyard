@@ -381,7 +381,7 @@ func (c *codexConv) apply(e agenthost.Entry, live bool) {
 		default:
 			if live {
 				say = append(say, func() {
-					c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": r.ID, "error": map[string]any{"code": -32601, "message": "Shipyard doesn't answer " + r.Method}})
+					c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": r.ID, "error": map[string]any{"code": -32601, "message": "Terminal doesn't answer " + r.Method}})
 				})
 			}
 		}
@@ -612,7 +612,7 @@ func (c *codexConv) handshake() {
 		}
 	}
 	if _, err := c.request(ctx, "initialize", map[string]any{
-		"clientInfo":   map[string]any{"name": "shipyard", "title": "Shipyard", "version": "1"},
+		"clientInfo":   map[string]any{"name": "shipyard", "title": "Terminal", "version": "1"},
 		"capabilities": map[string]any{"experimentalApi": true},
 	}, 30*time.Second); err != nil {
 		c.mu.Lock()

@@ -1,7 +1,7 @@
 #!/bin/sh
 # A synthetic 1Password CLI for scripts/team-setup-test.sh: no account, no
 # network. Like the real op, it asks at the terminal (/dev/tty) when it isn't
-# signed in and has one to ask on; Shipyard must never give it one.
+# signed in and has one to ask on; Terminal must never give it one.
 S="$HOME/.fake-op"
 mkdir -p "$S"
 signed() { [ -n "${OP_SESSION_acme:-}" ] && [ "$OP_SESSION_acme" = "$(cat "$S/token" 2>/dev/null)" ]; }

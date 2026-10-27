@@ -11,7 +11,7 @@ The screen shows how many tokens Claude Code and Codex used on your boxes. Pick 
 - by project or worktree;
 - by session.
 
-Each session has **Open** if it is still running in Shipyard, or **Resume** (`claude --resume <id>`, `codex resume <id>`) in its worktree.
+Each session has **Open** if it is still running in Terminal, or **Resume** (`claude --resume <id>`, `codex resume <id>`) in its worktree.
 
 **All boxes** is the default; the box picker remembers your last choice.
 
@@ -63,7 +63,7 @@ You finish signing in yourself; the plugin never reads or stores credentials. It
 
 Choosing the default account removes the variable. Running sessions keep the account they started with. The screen shows which account each running session uses, read from its tmux environment.
 
-**Add account…** also installs Shipyard's hooks and skills in the new folder, when the box has them for that agent: without them, the box could only guess from the screen when a session on that account is working, done or needs you. berthd installs them in every account folder it knows (the default, every folder under `~/.berth/accounts`, and the folders `env.json` and the projects pick), and in the folder a new session's `CLAUDE_CONFIG_DIR` or `CODEX_HOME` names, before its agent starts. Codex reads skills from `~/.agents/skills` on every account. `berthd integrations` lists them per account; see [Agent integrations](../../docs/guides/agent-integrations.mdx#every-account).
+**Add account…** also installs Terminal's hooks and skills in the new folder, when the box has them for that agent: without them, the box could only guess from the screen when a session on that account is working, done or needs you. berthd installs them in every account folder it knows (the default, every folder under `~/.berth/accounts`, and the folders `env.json` and the projects pick), and in the folder a new session's `CLAUDE_CONFIG_DIR` or `CODEX_HOME` names, before its agent starts. Codex reads skills from `~/.agents/skills` on every account. `berthd integrations` lists them per account; see [Agent integrations](../../docs/guides/agent-integrations.mdx#every-account).
 
 `CODEX_HOME` is Codex's documented home folder. `CLAUDE_CONFIG_DIR` is the variable Claude Code reads for its config folder. On a Linux box each folder keeps its own login. On a Mac box, Claude Code keeps its credentials in the keychain; check that a second account really signs in on its own before relying on it.
 

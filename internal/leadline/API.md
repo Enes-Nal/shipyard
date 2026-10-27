@@ -4,7 +4,7 @@
 records what their code did: every database query, grouped by shape and
 checked for N+1s; the traces of their requests; their logs. It is
 [Leadline](https://github.com/sean-brydon/leadline)'s collector, rebuilt to
-live inside Shipyard: one static program with no cgo, one SQLite file.
+live inside Terminal: one static program with no cgo, one SQLite file.
 
 This file is everything a UI, or the box daemon, needs to use it: how to run
 it, how an app is pointed at it, and every HTTP route with its parameters and
@@ -87,7 +87,7 @@ starting, and each would pair statements without the other's half.
 A **service** is a name telemetry is filed under: the `service.name` of an
 app's OpenTelemetry resource, or the label a proxy was opened with.
 
-A **source** is a Shipyard worktree. It is the service of its name and the
+A **source** is a Terminal worktree. It is the service of its name and the
 services under it:
 
 | service | source |
@@ -101,7 +101,7 @@ The rule is all there is to it: a service's source is its name up to the
 first `:`. The names are made by the [attach helper](#the-attach-helper-go),
 which takes `/`, `:`, `\` and white space out of a project's or a worktree's
 name (each becomes `-`) so the two joins stay readable. A service that was
-not named by Shipyard (an app with its own `OTEL_SERVICE_NAME`) is a source
+not named by Terminal (an app with its own `OTEL_SERVICE_NAME`) is a source
 of its own, by the same rule.
 
 Every list route takes `source=NAME` and keeps what belongs to that worktree:
@@ -229,9 +229,9 @@ and the pairs in flight when the helper restarts, are counted twice.
 - **Origins.** A request with an `Origin` header (from a page) is answered,
   with CORS headers, only for loopback origins (`http://localhost:*`,
   `http://127.0.0.1:*`) and `tauri://` ones. Others are a `403`.
-- **Only Shipyard's window changes things.** A request under `/api/` that is
+- **Only Terminal's window changes things.** A request under `/api/` that is
   not a `GET` is taken from a caller with no `Origin` at all (the box daemon,
-  `curl`) or from Shipyard's own window: `tauri://*`,
+  `curl`) or from Terminal's own window: `tauri://*`,
   `http://tauri.localhost`, `http://localhost:1420`, `http://127.0.0.1:1420`,
   and any origin listed, comma separated, in `BERTH_LEADLINE_APP_ORIGINS`.
   From any other page it is a `403`: the app being debugged is also a page on
@@ -307,7 +307,7 @@ one, is what to try. `code` is for the caller to branch on:
 | `bad_request` | 400 | a parameter or the body cannot be read, or is missing, or is out of range |
 | `capture_remote` | 400 | a proxy was asked for in front of a server that is not on this machine |
 | `too_many` | 400 | there are already 200 proxies |
-| `forbidden` | 403 | the `Host` is not loopback, the origin is not allowed, or a page other than Shipyard's tried to change something |
+| `forbidden` | 403 | the `Host` is not loopback, the origin is not allowed, or a page other than Terminal's tried to change something |
 | `not_found` | 404 | no such trace, proxy or route |
 | `port_in_use`, `no_port` | 409 | the proxy's port cannot be had |
 | `shutting_down` | 503 | the helper is stopping |
@@ -451,7 +451,7 @@ made to be polled.
         "worktree": "fix-orders",
         "branch": "fix/orders-n-plus-one",
         "box": "devbox",
-        "label": "from Shipyard, worktree fix-orders"
+        "label": "from Terminal, worktree fix-orders"
       },
       "via": ["otlp", "postgres-proxy"],
       "through": [
@@ -489,7 +489,7 @@ made to be polled.
         "worktree": "fix-orders",
         "branch": "fix/orders-n-plus-one",
         "box": "devbox",
-        "label": "from Shipyard, worktree fix-orders"
+        "label": "from Terminal, worktree fix-orders"
       },
       "connections_open": 0,
       "connections_total": 1,
@@ -542,7 +542,7 @@ service name and counted there.
 | `via` | `"shipyard"` |
 | `service` | the service or the label it describes |
 | `project`, `worktree`, `branch`, `box` | as on a source; each left out when unknown |
-| `label` | a few words to show as they are: `"from Shipyard, worktree fix-orders"`, `"from Shipyard, project acme"`, `"the helper's --pg flag"` |
+| `label` | a few words to show as they are: `"from Terminal, worktree fix-orders"`, `"from Terminal, project acme"`, `"the helper's --pg flag"` |
 
 ### GET /api/queries
 
@@ -1507,7 +1507,7 @@ Every proxy, oldest first.
         "worktree": "fix-orders",
         "branch": "fix/orders-n-plus-one",
         "box": "devbox",
-        "label": "from Shipyard, worktree fix-orders"
+        "label": "from Terminal, worktree fix-orders"
       },
       "connections_open": 0,
       "connections_total": 1,
@@ -1584,7 +1584,7 @@ worktree and server.
       "worktree": "fix-orders",
       "branch": "fix/orders-n-plus-one",
       "box": "devbox",
-      "label": "from Shipyard, worktree fix-orders"
+      "label": "from Terminal, worktree fix-orders"
     },
     "connections_open": 0,
     "connections_total": 0,
@@ -1639,7 +1639,7 @@ POST /api/attach
 
 | field | default | what |
 | --- | --- | --- |
-| `project` | required | The repository, as Shipyard names it. |
+| `project` | required | The repository, as Terminal names it. |
 | `worktree` | `""` | The worktree's name; empty for the project's main checkout. |
 | `branch`, `box` | none | For showing with the source. |
 | `path` | none | Where the worktree is. Taken and not used. |
@@ -1701,7 +1701,7 @@ environment, over what it has.
 **Asking again is safe**, and so is not asking: nothing is recorded of the
 call itself. A missing `project` is a `400` (`bad_request`). Like every
 route that changes something, it is taken from the box daemon and from
-Shipyard's own window, not from another page.
+Terminal's own window, not from another page.
 
 ### POST /api/detach
 

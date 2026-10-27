@@ -2,12 +2,12 @@ import { invoke } from "@tauri-apps/api/core";
 
 import { isTauri } from "@/lib/api";
 
-// The berth command in a terminal: Shipyard.app carries the CLI, and Settings →
+// The berth command in a terminal: Terminal.app carries the CLI, and Settings →
 // General can link ~/.local/bin/berth to it (src-tauri/src/cli_link.rs).
 
 export interface CliLink {
   link: string;
-  // The CLI inside this copy of Shipyard.app; null in a dev build or a browser.
+  // The CLI inside this copy of Terminal.app; null in a dev build or a browser.
   bundled: string | null;
   // Why it cannot be linked yet (running from the disk image, say).
   blocked: string | null;

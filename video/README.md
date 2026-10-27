@@ -1,12 +1,12 @@
-# Shipyard launch video
+# Terminal launch video
 
-A 33.5-second launch video for Shipyard, built as code so it can be rendered
+A 33.5-second launch video for Terminal, built as code so it can be rendered
 again: one HTML page with inline SVG, put at time `t` by `window.seek(t)`,
 stepped frame by frame in headless Chrome and encoded with ffmpeg. It is cut
 to the beats of a CC0 track (see [MUSIC.md](MUSIC.md)).
 
 The design follows the brand board (`design/brand/index.html`): the
-landing page's daylight harbour drawn in line, Shipyard Dark's quiet neutrals,
+landing page's daylight harbour drawn in line, Terminal Dark's quiet neutrals,
 Inter for words and JetBrains Mono for commands, hosts and branches, and
 amber only for the one light that means "needs you" (or the logo's dot).
 

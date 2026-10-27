@@ -4,8 +4,8 @@ import type { Fault } from "./api";
 
 // A worktree's database, found in its own .env files.
 //
-// The helper learns of a database when Shipyard starts one of the worktree's
-// services. A project whose dev servers Shipyard does not start never gets
+// The helper learns of a database when Terminal starts one of the worktree's
+// services. A project whose dev servers Terminal does not start never gets
 // there: its DATABASE_URL is in the worktree's .env, which the dev server
 // loads itself. So when the tab opens and the helper knows no database for
 // the worktree, the panel has the box look in those files
@@ -26,7 +26,7 @@ export interface Told {
 export type Look = HelperEnvLook<Told>;
 
 // How a look went: it was made; it can't be, on this box or in this
-// Shipyard, and the panel is as it was before there were looks; or it was
+// Terminal, and the panel is as it was before there were looks; or it was
 // tried and went wrong.
 export type Looked = { kind: "looked"; look: Look } | { kind: "old" } | { kind: "failed"; message: string };
 

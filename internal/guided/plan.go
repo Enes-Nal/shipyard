@@ -53,7 +53,7 @@ type Options struct {
 	BundledTmux bool
 }
 
-// Probe is what Shipyard found on the box after connecting.
+// Probe is what Terminal found on the box after connecting.
 type Probe struct {
 	OS   string `json:"os"`
 	Arch string `json:"arch"`
@@ -230,7 +230,7 @@ func CommandLines(steps [][]string, brew bool) []string {
 }
 
 // toolsNeed is what the tools step installs on a probed box: tmux from
-// Shipyard's own build where it can, everything else with the package
+// Terminal's own build where it can, everything else with the package
 // manager.
 func toolsNeed(o Options, p Probe) (upload bool, pkgs []string) {
 	if !p.Tmux {
@@ -246,7 +246,7 @@ func toolsNeed(o Options, p Probe) (upload bool, pkgs []string) {
 	return upload, pkgs
 }
 
-// TmuxName is Shipyard's tmux for a Linux box's architecture.
+// TmuxName is Terminal's tmux for a Linux box's architecture.
 func TmuxName(arch string) string { return "tmux-linux-" + arch }
 
 // Plan is what will run. With probe nil (before connecting, as the app's
@@ -273,7 +273,7 @@ func Plan(o Options, p *Probe) []Step {
 	}
 	steps := []Step{{
 		ID: StepConnect, Title: "Connect to " + o.Target, Where: "laptop",
-		Detail:   "Over SSH, with your own keys and agent, this once. After this Shipyard never needs SSH for the box.",
+		Detail:   "Over SSH, with your own keys and agent, this once. After this Terminal never needs SSH for the box.",
 		Commands: []string{"ssh " + o.Target},
 	}}
 
@@ -284,10 +284,10 @@ func Plan(o Options, p *Probe) []Step {
 		install += " --keep-listen"
 	}
 	berthd := Step{ID: StepBerthd, Title: "Install berthd", Where: "box",
-		Detail:   "Shipyard's daemon, in ~/.local/bin, running as your own user service. No root.",
+		Detail:   "Terminal's daemon, in ~/.local/bin, running as your own user service. No root.",
 		Commands: []string{"upload " + daemon + " → ~/.local/bin/berthd", install}}
 	if p != nil && p.OS == "darwin" {
-		berthd.Detail = "Shipyard's daemon, in ~/.local/bin, running as your launch agent. No root."
+		berthd.Detail = "Terminal's daemon, in ~/.local/bin, running as your launch agent. No root."
 	}
 	steps = append(steps, berthd)
 
@@ -305,7 +305,7 @@ func Plan(o Options, p *Probe) []Step {
 	tools := Step{ID: StepTools, Title: "tmux and git", Where: "box",
 		Detail: "Every terminal and agent runs in tmux, and worktrees are git's."}
 	if p == nil {
-		tmuxLine := "upload Shipyard's tmux (tmux-linux-<arch>) → ~/.local/bin/tmux"
+		tmuxLine := "upload Terminal's tmux (tmux-linux-<arch>) → ~/.local/bin/tmux"
 		if !o.BundledTmux {
 			tmuxLine = "sudo <package manager> install tmux"
 		}
@@ -317,12 +317,12 @@ func Plan(o Options, p *Probe) []Step {
 	} else {
 		upload, pkgs := toolsNeed(o, *p)
 		if upload {
-			tools.Commands = append(tools.Commands, "upload "+TmuxName(p.Arch)+" → ~/.local/bin/tmux   (Shipyard's own build: no sudo)")
+			tools.Commands = append(tools.Commands, "upload "+TmuxName(p.Arch)+" → ~/.local/bin/tmux   (Terminal's own build: no sudo)")
 		}
 		if len(pkgs) > 0 {
 			ps, brew := PackageSteps(p.Manager, pkgs)
 			if ps == nil {
-				tools.Commands = append(tools.Commands, "install "+strings.Join(pkgs, " and ")+" with your package manager (Shipyard knows none on this box)")
+				tools.Commands = append(tools.Commands, "install "+strings.Join(pkgs, " and ")+" with your package manager (Terminal knows none on this box)")
 			} else {
 				tools.Commands = append(tools.Commands, CommandLines(ps, brew)...)
 				tools.Sudo = !brew && !(p.UID == 0)
@@ -361,7 +361,7 @@ func Plan(o Options, p *Probe) []Step {
 
 	if !o.NoIntegrations {
 		in := Step{ID: StepIntegrations, Title: "Agent integrations", Where: "box",
-			Detail:   "Hooks that tell Shipyard when an agent is working, done or needs you, and Shipyard's skills.",
+			Detail:   "Hooks that tell Terminal when an agent is working, done or needs you, and Terminal's skills.",
 			Commands: []string{"~/.local/bin/berthd integrations install present"}}
 		steps = append(steps, in)
 	}

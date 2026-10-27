@@ -161,7 +161,7 @@ export function database(berth: BerthPluginContext) {
     // have not been started since the helper was turned on, or use no
     // database the helper can reach.
     connections: (box: string, source: string) => berth.helper.request<{ connections: Connection[] }>(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
-    // Whether this Shipyard can have a box look in a worktree's .env files.
+    // Whether this Terminal can have a box look in a worktree's .env files.
     canLook: typeof berth.helper.attachEnv === "function",
     // The box looks in the worktree's .env files and tells the helper of
     // the database it finds there (dotenv.ts). worktree "" is the main

@@ -16,7 +16,7 @@ several laptops. Each box has a name on your laptop (`devl`, `gpu`,
 
 - **Locations**: named directories, usually git repositories, and their
   worktrees. See [projects and worktrees](/concepts/projects-and-worktrees).
-- **Sessions**: programs (usually agents) running in Shipyard's own tmux
+- **Sessions**: programs (usually agents) running in Terminal's own tmux
   server. See [sessions and agents](/concepts/sessions-and-agents).
 - **Services**: each worktree's dev servers and workers, from the
   repository's config, kept running by the service manager.
@@ -84,22 +84,22 @@ berth upgrade devl           # or --check to only report whether it runs a diffe
 ```
 
 The laptop uploads the berthd build that ships beside its `berth`, over
-Shipyard's own connection, with no SSH. The box checks that the new binary runs
+Terminal's own connection, with no SSH. The box checks that the new binary runs
 and reports the box's own fingerprint, swaps it in and re-executes in place,
 so sessions and services keep running. Public shares stop.
 
-The app notices on its own. When a box runs an older berthd than this Shipyard
+The app notices on its own. When a box runs an older berthd than this Terminal
 ships, the status bar and **Settings → Boxes** say so ("2 boxes run an older
 berthd") with **Update all**, which updates each box in turn and shows its
 progress. A feature that needs a newer berthd (the conversation view, runs,
 Review) offers **Update** right where it is missing. To skip the step
-altogether, turn on **Update boxes automatically when Shipyard updates** in
-Settings → Boxes: each box is updated once for every build Shipyard ships, as
+altogether, turn on **Update boxes automatically when Terminal updates** in
+Settings → Boxes: each box is updated once for every build Terminal ships, as
 soon as it is online.
 
 A box is in one of four states, the same everywhere in the app: **online**,
 **outdated** (online, with an older berthd), **offline** (not answering;
-Shipyard reconnects on its own) or **unreachable** (it answers, but Shipyard can't
+Terminal reconnects on its own) or **unreachable** (it answers, but Terminal can't
 use it, such as a box whose identity changed).
 
 ## Health
@@ -112,7 +112,7 @@ berth doctor devl    # git, tmux, cloudflared, agent CLIs, listen address, linge
 
 Click a box's memory meter in the status bar for the
 [browsers running on it](/guides/agent-browser#every-browser-on-a-box), who
-started each and what it costs, with **Stop** for the ones Shipyard or its
+started each and what it costs, with **Stop** for the ones Terminal or its
 sessions started; `berth ps devl` lists them in a terminal. A session's
 processes [go with it](/concepts/sessions-and-agents#sessions-clean-up-after-themselves)
 when it ends.

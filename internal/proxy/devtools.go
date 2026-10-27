@@ -10,7 +10,7 @@ import (
 )
 
 // The Browser tab's Console drawer reads the page's console through a small
-// script, devtools.js. In the Shipyard app the page is a native webview, which
+// script, devtools.js. In the Terminal app the page is a native webview, which
 // runs the script itself (src-tauri/src/browser.rs includes this same
 // file). Where the page is an iframe instead (a plain browser, or the native
 // view failed), the app asks for the page with ?__berth_devtools=1 and

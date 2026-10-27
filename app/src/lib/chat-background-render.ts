@@ -85,7 +85,7 @@ export function render(out: HTMLCanvasElement, src: Source, w: number, h: number
     } else {
       // Dithered, a picture of your own keeps its forms, not its detail: it
       // is softened to about a seventh first, so a busy photo reads as light
-      // and shade. Shipyard's own scenes are calm already and keep theirs.
+      // and shade. Terminal's own scenes are calm already and keep theirs.
       const soft = o.source === "image" ? softened(src.img, ww, wh, o, bg) : placed(src.img, ww, wh, o, bg);
       ink(data, ww, wh, imageField(soft, ww * wh, theme.dark), o, theme, (p, c) => mixInto(c, fg, [soft[p * 4], soft[p * 4 + 1], soft[p * 4 + 2]], 0.6));
     }

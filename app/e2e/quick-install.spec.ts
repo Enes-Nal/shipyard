@@ -47,7 +47,7 @@ async function addBox(app: App, host: string) {
   await app.open();
   await app.openSettings("boxes");
   await page.getByRole("button", { name: "Add a box" }).first().click();
-  await page.getByText("Or let Shipyard set it up over SSH").click();
+  await page.getByText("Or let Terminal set it up over SSH").click();
   await page.getByLabel("SSH host, like me@my-box").fill(host);
   await watchTerminal(page);
   await page.getByTestId("ssh-set-up").click();
@@ -131,11 +131,11 @@ test("the agents are chosen inline, Claude Code first, and remembered for the ne
   await app.open();
   await app.openSettings("boxes");
   await page.getByRole("button", { name: "Add a box" }).first().click();
-  await page.getByText("Or let Shipyard set it up over SSH").click();
+  await page.getByText("Or let Terminal set it up over SSH").click();
   const agents = page.getByTestId("inline-agents");
   await expect(agents.getByTestId("inline-agent-claude")).toHaveAttribute("data-checked", "true");
   await expect(agents.getByTestId("inline-agent-codex")).not.toHaveAttribute("data-checked", "true");
-  // Gemini needs Node, which Shipyard doesn't install: it isn't offered here.
+  // Gemini needs Node, which Terminal doesn't install: it isn't offered here.
   await expect(agents.getByTestId("inline-agent-gemini")).toHaveCount(0);
   await agents.getByTestId("inline-agent-codex").getByRole("checkbox").click();
   expect(((await app.stored("berth.prefs")) as { installAgents: string[] }).installAgents).toEqual(["claude", "codex"]);

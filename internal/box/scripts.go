@@ -61,7 +61,7 @@ type RepoConfig struct {
 	// Login logs a worktree in as a dev user: a script that prints the
 	// session's cookies, and the users it may log in (login.go).
 	Login *LoginConfig `json:"login,omitempty"`
-	// ReviewButton adds a "Review in Shipyard" button to the description of
+	// ReviewButton adds a "Review in Terminal" button to the description of
 	// each pull request opened from the project's worktrees
 	// (reviewbutton.go). Off unless a layer, or the team's team.json, says.
 	ReviewButton *bool `json:"review_button,omitempty"`

@@ -5,7 +5,7 @@ import type { Agent } from "./box";
 import { AGENT_NAME, compact } from "./data";
 
 // Colors follow the thing they stand for, in both themes, and were checked
-// for color blindness against Shipyard's surfaces. Agents: Claude Code orange,
+// for color blindness against Terminal's surfaces. Agents: Claude Code orange,
 // Codex blue.
 export const SERIES: Record<Agent, { fill: string; dot: string }> = {
   claude: { fill: "fill-[#eb6834] dark:fill-[#d95926]", dot: "bg-[#eb6834] dark:bg-[#d95926]" },

@@ -63,10 +63,10 @@ export function LeadlineScreen({ berth }: ScreenProps) {
         <FramePanel>
           <ol className="space-y-3 text-sm">
             <Step n={1} title="Start the app as a service of its worktree">
-              With Leadline on for a box, Shipyard sets the variables that point an app at it (<code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code> and their like) for the services it starts: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to get them. A server you start by hand in a terminal isn't given them.
+              With Leadline on for a box, Terminal sets the variables that point an app at it (<code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code> and their like) for the services it starts: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to get them. A server you start by hand in a terminal isn't given them.
             </Step>
             <Step n={2} title="Queries need nothing more">
-              When a service's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> names a Postgres on the box itself, Shipyard routes it through Leadline, which records every statement as it goes by: no SDK, in any language. A database on another machine, or a URL that insists on TLS, is left alone.
+              When a service's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> names a Postgres on the box itself, Terminal routes it through Leadline, which records every statement as it goes by: no SDK, in any language. A database on another machine, or a URL that insists on TLS, is left alone.
             </Step>
             <Step n={3} title="Traces and logs need an OpenTelemetry SDK in the app">
               Any OpenTelemetry SDK reads those variables and sends its traces and logs to Leadline. Without one, Queries still fills in, but Leadline can't tell which request ran a query: Endpoints stays empty and an N+1 goes unflagged.

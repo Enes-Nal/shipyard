@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import "@/components/conversation/conversation.css";
 import "@/components/pixel-loader.css";
 
-// PixelLoader is Shipyard's wait: a 3×3 grid of pixels with a chevron of light
+// PixelLoader is Terminal's wait: a 3×3 grid of pixels with a chevron of light
 // driving across it, in the dithered harbour's grain, beside what is
 // happening ("Reading the conversation…") and, once it has taken a moment,
 // how long it has taken. The grid is in the text's own colour, so it sits

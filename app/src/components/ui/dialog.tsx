@@ -74,7 +74,7 @@ export function DialogPopup({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   bottomStickOnMobile?: boolean;
-  // Shipyard: pinned 12vh from the top instead of centred, for a dialog whose
+  // Terminal: pinned 12vh from the top instead of centred, for a dialog whose
   // height changes (steps, sections that open), so its title stays put.
   anchored?: boolean;
   closeProps?: DialogPrimitive.Close.Props;

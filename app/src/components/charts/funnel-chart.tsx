@@ -622,7 +622,7 @@ function SegmentLabel({
   align?: "center" | "start" | "end";
 }) {
   const display = stage.displayValue ?? formatValue(stage.value);
-  // Shipyard: with Reduce motion the labels are there at once, not faded in
+  // Terminal: with Reduce motion the labels are there at once, not faded in
   // (MotionConfig's reducedMotion keeps opacity animations).
   const still = useReducedMotion();
 

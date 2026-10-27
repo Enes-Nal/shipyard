@@ -38,7 +38,7 @@ func manifestHelper(t *testing.T, plugin string) HelperManifest {
 }
 
 // The whole of it for a project that keeps its database's address in the
-// worktree's .env and nowhere Shipyard assembles an environment from, with
+// worktree's .env and nowhere Terminal assembles an environment from, with
 // the real berth-database and berth-leadline and a real Postgres:
 //
 //   - the Database tab's look finds the worktree's database in .env, and
@@ -46,7 +46,7 @@ func manifestHelper(t *testing.T, plugin string) HelperManifest {
 //   - a look after the file changed replaces what the last one found;
 //   - a database said by hand is taken when it is on this machine, beside
 //     the file's, and taken back on its own;
-//   - the worktree's service, started with no DATABASE_URL of Shipyard's
+//   - the worktree's service, started with no DATABASE_URL of Terminal's
 //     own, is given Leadline's proxy in front of the file's database, and a
 //     statement it runs is among Leadline's queries, while the editor's
 //     connection is the database itself;
@@ -113,7 +113,7 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 	proxyPort := free.Addr().(*net.TCPAddr).Port
 	free.Close()
 
-	// A project with a service and no environment of Shipyard's own.
+	// A project with a service and no environment of Terminal's own.
 	r := newEnvRig(t, nil)
 	const source = "acme%2Ffix-orders"
 	install := func(plugin string, program []byte, args ...string) {
@@ -323,7 +323,7 @@ func TestADatabaseKeptOnlyInDotenvShowsInTheEditorAndIsRecordedByLeadline(t *tes
 		t.Fatalf("the connection that was taken back still answers: %d", status)
 	}
 
-	// ---- The worktree's service starts. Shipyard's environment for it has
+	// ---- The worktree's service starts. Terminal's environment for it has
 	// no DATABASE_URL; the file's is shown to both helpers, and the service
 	// is given Leadline's proxy in front of it.
 	if status, body := helperCall(t, r.c, "POST", "/v1/locations/acme/worktrees/fix-orders/services/web/start", nil, nil); status != 200 {

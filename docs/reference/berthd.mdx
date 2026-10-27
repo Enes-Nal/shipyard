@@ -31,7 +31,7 @@ flows, skills) can drive it directly. `berthd help` prints this list.
 | `berthd doctor [--json]` | Check this box's setup and how to fix it. It looks for the agent CLIs afresh, and names each one's version, path and how it was installed |
 | `berthd version` | Print this build's version |
 | `berthd session attach NAME` | Attach to a session in this terminal |
-| `berthd mcp` | A stdio MCP server of Shipyard's tools for agents on this box, talking to its socket; `integrations install` adds it to Claude Code, Codex, Gemini CLI and oh-my-pi ([runs](/guides/runs#from-an-agent-mcp)) |
+| `berthd mcp` | A stdio MCP server of Terminal's tools for agents on this box, talking to its socket; `integrations install` adds it to Claude Code, Codex, Gemini CLI and oh-my-pi ([runs](/guides/runs#from-an-agent-mcp)) |
 | `berthd headless --agent A --out FILE.jsonl --prompt-file FILE [--read-only] [--add-dir D]` | One non-interactive agent turn, as runs start in tmux for judges and reviewers |
 
 `~/.berth/runs.json` on the box sets `max_concurrent_runs` (10),
@@ -51,13 +51,13 @@ starts.
 | `berthd location config NAME [--json] [--trust HASH\|--untrust]` | The repo's, the box's and the effective config; trust the repo's to run it |
 | `berthd services [--json]` | Which worktree each running server belongs to |
 | `berthd service list\|start\|stop\|restart\|log LOC/WORKTREE [SERVICE]` | A worktree's services from the repo's config |
-| `berthd preview [LOC/WORKTREE] [PORT] [--path /x]` | Open a worktree's page in the Shipyard app |
+| `berthd preview [LOC/WORKTREE] [PORT] [--path /x]` | Open a worktree's page in the Terminal app |
 | `berthd worktree new LOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME] [--no-setup]` | Create a git worktree and run its setup; `--pr` checks out that pull request (pass its head branch as `--branch`; a fork's head comes from `--ref`, by default `pull/N/head`); `--parent` nests it under another worktree of the location; `--no-setup` skips setup and autostart services, and the worktree shows `setup_pending` in `locations --json` |
 | `berthd worktree setup LOC/NAME [--wait]` | Run the location's setup script and autostart services in a worktree, for one made with `--no-setup`. `--wait` blocks until setup finishes and exits non-zero if it fails |
 | `berthd worktree rm LOC/NAME [--force]` | Remove a worktree |
 | `berthd worktree rename LOC/NAME [TITLE]` | Give a worktree a display name (no TITLE clears it) |
 | `berthd reviews [--idle-days N] [--json]` | The [pull requests opened for review](/guides/review-a-pr) here; `--idle-days` sets how long one may sit unused before it is cleaned up (`0`: never; default 7) |
-| `berthd review-button [LOC/WT] [--as EMAIL] [--path /x] [--clear] [--json]` | The [Review in Shipyard button](/guides/review-a-pr#the-review-in-shipyard-button) on the worktree's PR: whether the project has it on, and whether the PR has it. `--as` (one of the project's login users) and `--path` set what it opens with; berthd puts the new link in place on its next look. `--clear` drops both |
+| `berthd review-button [LOC/WT] [--as EMAIL] [--path /x] [--clear] [--json]` | The [Review in Terminal button](/guides/review-a-pr#the-review-in-terminal-button) on the worktree's PR: whether the project has it on, and whether the PR has it. `--as` (one of the project's login users) and `--path` set what it opens with; berthd puts the new link in place on its next look. `--clear` drops both |
 | `berthd login users [LOC[/WT]] [--json]` | The users the project's worktrees can be logged in as, from its trusted login config: what a review link's `as` may name |
 
 `berthd preview` with no arguments uses the worktree it runs in (from
@@ -84,7 +84,7 @@ asks the app to open the page as a browser tab beside the agent; the
 | `berthd browser tabs [LOC/WT]` | The browser's tabs, what each shows, and which is busy |
 | `berthd browser open [LOC/WT] --as EMAIL [--path /x]` | Log the agent browser in as one of the project's [dev users](/guides/kits#personas-logging-in-as-a-dev-user) (the worktree's login script runs, its cookies go in for the worktree's address), then open the page: `--path`, else where the login says |
 | `berthd browser list`, `berthd browser allow ORIGIN`, `berthd browser install` | Browsers running; allow a public origin; download a Chromium |
-| `berthd browser reap [--dry-run] [--json]` | Close the [agent-browser](/guides/agent-browser#agent-browser) sessions (Vercel's CLI) that Shipyard sessions which have ended left running; `--dry-run` only lists them. `berthd doctor` reports them too |
+| `berthd browser reap [--dry-run] [--json]` | Close the [agent-browser](/guides/agent-browser#agent-browser) sessions (Vercel's CLI) that Terminal sessions which have ended left running; `--dry-run` only lists them. `berthd doctor` reports them too |
 | `berthd shots compare [LOC/WT] [--pages / /login] [--sizes 375 768 1280] [--base main\|turn-start\|accepted\|NAME] [--mask SEL]... [--color-scheme light\|dark\|both] [--as EMAIL] [--title T] [--note N] [--new]` | Screenshot the worktree's pages and the base's, diff them, and keep a [visual diff](/guides/visual-diffs); a re-run is its next version. Prints what changed, in about 450 tokens. `--as` logs both sides in as a [dev user](/guides/kits#personas-logging-in-as-a-dev-user), each with its own login |
 | `berthd shots baseline [LOC/WT] [--name turn-start] [--pages …] [--sizes …] [--color-scheme …]` | Save the worktree's pages as a baseline to compare with later |
 | `berthd shots accept [LOC/WT] ID` | Keep a visual diff's after-shots as the worktree's `accepted` baseline (the app's **Accept as baseline**) |
@@ -176,7 +176,7 @@ How berthd runs a helper:
   helpers on, each is shown the service's variables as the project has
   them, not as another helper changed them.
 - **Shown the worktree's `.env` too.** A variable a helper's manifest names
-  that Shipyard's environment for the service does not have is taken from
+  that Terminal's environment for the service does not have is taken from
   the worktree's dotenv files (`.env`, `.env.development`, `.env.local`,
   `.env.development.local`, a later one winning) and shown to the helper
   as the service's own; the project's own setting always wins, and a
@@ -225,7 +225,7 @@ refuse a helper, and a `before:helper.attach` gate a look in a worktree's
 
 | Command | What it does |
 | --- | --- |
-| `berthd skills [list\|install\|uninstall] [SKILL...] [--agent claude\|codex\|all] [--target user\|project] [--location LOC] [--commit]` | Teach Claude Code and Codex to use Shipyard |
+| `berthd skills [list\|install\|uninstall] [SKILL...] [--agent claude\|codex\|all] [--target user\|project] [--location LOC] [--commit]` | Teach Claude Code and Codex to use Terminal |
 | `berthd secret test REF` | Check this box can resolve `op://vault/item/field` or `env://NAME` (prints the value's length, never the value) |
 | `berthd secret exec [--socket PATH] -- PROGRAM [ARGS...]` | Used by sessions and services: resolves secret references, then runs the program. See [secrets](/guides/secrets#how-values-are-handled). |
 | `berthd secret signin [--check]` | Signs the box's `op` in to 1Password in this terminal (`op signin`) and keeps its session for berthd's `op://` reads; a team setup's 1Password step runs it. `--check` asks nothing and exits 0 when berthd can read 1Password now. See [secrets](/guides/secrets#setting-up-1password-on-a-box). |
@@ -236,9 +236,9 @@ refuse a helper, and a `before:helper.attach` gate a look in a worktree's
 
 | Command | What it does |
 | --- | --- |
-| `berthd integrations [status]` | Where Shipyard's hooks and skills are for each agent CLI on this box, per Claude Code and Codex account (`Claude Code: hooks and 7 skills in ~/.claude, ~/.berth/accounts/claude/personal`), and the command that adds them where they're missing |
-| `berthd integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all\|present` | Install Shipyard's skills and agent hooks for a tool (`present`: every agent CLI on this box, quietly skipping the rest), and `berthd mcp` as an MCP server for Claude Code, Codex, Gemini CLI and oh-my-pi. Claude Code and Codex get them in [every account folder](/guides/agent-integrations#every-account) |
-| `berthd hook TOOL EVENT [PAYLOAD]` | What those hooks run: turns a tool's hook into a Shipyard event (`agent.finished`, `agent.waiting`), naming the session from `$BERTH_SESSION`. While berthd is down it keeps the event in `~/.berth/box/spool/`, published when berthd starts |
+| `berthd integrations [status]` | Where Terminal's hooks and skills are for each agent CLI on this box, per Claude Code and Codex account (`Claude Code: hooks and 7 skills in ~/.claude, ~/.berth/accounts/claude/personal`), and the command that adds them where they're missing |
+| `berthd integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all\|present` | Install Terminal's skills and agent hooks for a tool (`present`: every agent CLI on this box, quietly skipping the rest), and `berthd mcp` as an MCP server for Claude Code, Codex, Gemini CLI and oh-my-pi. Claude Code and Codex get them in [every account folder](/guides/agent-integrations#every-account) |
+| `berthd hook TOOL EVENT [PAYLOAD]` | What those hooks run: turns a tool's hook into a Terminal event (`agent.finished`, `agent.waiting`), naming the session from `$BERTH_SESSION`. While berthd is down it keeps the event in `~/.berth/box/spool/`, published when berthd starts |
 
 See [agent integrations](/guides/agent-integrations) for what the hooks and
 skills do, and [the berth CLI](/reference/cli) for the laptop's side.

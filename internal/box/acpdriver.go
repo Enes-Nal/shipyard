@@ -452,7 +452,7 @@ func (c *acpConv) apply(e agenthost.Entry, live bool) {
 		if live {
 			id, method := m.ID, m.Method
 			say = append(say, func() {
-				c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": id, "error": map[string]any{"code": -32601, "message": "Shipyard doesn't answer " + method}})
+				c.write(context.Background(), map[string]any{"jsonrpc": "2.0", "id": id, "error": map[string]any{"code": -32601, "message": "Terminal doesn't answer " + method}})
 			})
 		}
 		return

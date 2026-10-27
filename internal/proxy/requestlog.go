@@ -255,7 +255,7 @@ func noteFailure(w http.ResponseWriter, why string) {
 	}
 }
 
-// stripFlags takes Shipyard's own query flags off a logged path: the page
+// stripFlags takes Terminal's own query flags off a logged path: the page
 // never sees them either.
 func stripFlags(path *string) {
 	if !strings.Contains(*path, "__berth_") {

@@ -19,7 +19,7 @@ test("a fresh install gets the project rail", async ({ app }) => {
   expect(((await app.stored("berth.prefs")) as { sidebarLayout?: string }).sidebarLayout).toBe("rail");
 });
 
-test("prefs an older Shipyard saved move to this version's defaults", async ({ app }) => {
+test("prefs an older Terminal saved move to this version's defaults", async ({ app }) => {
   // Version 2 saved Labs off and "keep" only as the defaults of the day.
   await app.open({ prefs: { labs: false, closeAgents: "keep", agentCloseTips: 2, version: 2 } });
   await expect.poll(() => app.stored("berth.prefs")).toMatchObject({ labs: true, version: 4 });

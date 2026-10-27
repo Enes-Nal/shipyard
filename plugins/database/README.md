@@ -44,11 +44,11 @@ its main checkout: the same rule as Leadline's helper, copied into
 The helper is told of a database by the box, never by the panel directly,
 in one of three ways:
 
-- **A service Shipyard starts.** Before the box starts one of the
+- **A service Terminal starts.** Before the box starts one of the
   worktree's services it calls the helper's `/api/attach` with the
   service's `DATABASE_URL` and `POSTGRES_URL` (the manifest's
   `attach_env`), and the service's name as `command`.
-- **The worktree's `.env` files.** A project whose dev servers Shipyard
+- **The worktree's `.env` files.** A project whose dev servers Terminal
   does not start never gets there. So when the panel opens and
   `db/connections` is empty for the worktree, it asks the box to look:
   `berth.helper.attachEnv(box, { location, worktree })`, which is
@@ -84,7 +84,7 @@ found nothing to show. The box sends file and variable names, never a
 value.
 
 A box whose `berthd` is from before the route answers `box_outdated`, and
-a Shipyard from before `attachEnv` has no such function: in both the panel
+a Terminal from before `attachEnv` has no such function: in both the panel
 is as it was, with no error.
 
 What the panel holds to, from `API.md`:

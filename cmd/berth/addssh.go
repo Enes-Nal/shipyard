@@ -259,7 +259,7 @@ func addSSHSteps(l laptop, args []string) error {
 		return connectFailed(err)
 	}
 	if probe.UID == 0 {
-		return connectFailed(fmt.Errorf("you logged in to %s as root. Shipyard installs as the user your agents will run as, never root: log in as that user (make one with: adduser me && usermod -aG sudo me) and set the box up again", host))
+		return connectFailed(fmt.Errorf("you logged in to %s as root. Terminal installs as the user your agents will run as, never root: log in as that user (make one with: adduser me && usermod -aG sudo me) and set the box up again", host))
 	}
 	daemon, err := daemonFor(probe.OS + " " + map[string]string{"amd64": "x86_64", "arm64": "aarch64"}[probe.Arch])
 	if err != nil {
@@ -278,7 +278,7 @@ func addSSHSteps(l laptop, args []string) error {
 	// without one needs a choice, which only a person can make.
 	if !probe.Tailnet && *listen == "" && probe.Listen == "" {
 		if !interactive {
-			return connectFailed(fmt.Errorf("%s has no tailnet (Tailscale) address, so Shipyard won't choose where berthd listens. Install Tailscale on it, or set it up again with --listen 0.0.0.0:7444 to listen on every interface (only laptops you pair can connect: both keys are pinned)", host))
+			return connectFailed(fmt.Errorf("%s has no tailnet (Tailscale) address, so Terminal won't choose where berthd listens. Install Tailscale on it, or set it up again with --listen 0.0.0.0:7444 to listen on every interface (only laptops you pair can connect: both keys are pinned)", host))
 		}
 		if *guidedFlag {
 			printPlan(rep, steps, rep.color)
@@ -329,7 +329,7 @@ func addSSHSteps(l laptop, args []string) error {
 		}
 	}
 	if has(guided.StepTools) && tmux != nil {
-		fmt.Fprintf(rep, "    Uploading Shipyard's tmux for %s/%s (%d MB) to ~/.local/bin/tmux\r\n", probe.OS, probe.Arch, max(1, len(tmux)>>20))
+		fmt.Fprintf(rep, "    Uploading Terminal's tmux for %s/%s (%d MB) to ~/.local/bin/tmux\r\n", probe.OS, probe.Arch, max(1, len(tmux)>>20))
 		if _, err := ssh(tmux, upload("tmux")); err != nil {
 			rep.fail(guided.StepTools, err.Error())
 			return err
@@ -718,7 +718,7 @@ func readDaemon(exe, daemon string) ([]byte, error) {
 			return b, nil
 		}
 	}
-	// Shipyard.app carries one universal berthd for Macs (the one Use this Mac
+	// Terminal.app carries one universal berthd for Macs (the one Use this Mac
 	// runs), not one per architecture, and make build puts this Mac's own in
 	// bin/: either serves a Mac box it can run on.
 	if arch, ok := strings.CutPrefix(daemon, "berthd-darwin-"); ok && runtime.GOOS == "darwin" {

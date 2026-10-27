@@ -22,7 +22,7 @@ import (
 	"github.com/cosscom/shipyard/internal/team"
 )
 
-// Team suggestions: someone who added acme/web to Shipyard by hand is told
+// Team suggestions: someone who added acme/web to Terminal by hand is told
 // that acme publishes a team setup, quietly, to review when they like.
 //
 // The laptop collects the GitHub owners of the projects on its paired boxes

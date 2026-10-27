@@ -1,4 +1,4 @@
-# Shipyard for macOS, as a Homebrew cask. This repository is its own tap:
+# Terminal for macOS, as a Homebrew cask. This repository is its own tap:
 #
 #   brew tap cosscom/shipyard https://github.com/cosscom/shipyard
 #   brew install --cask cosscom/shipyard/shipyard
@@ -12,15 +12,15 @@ cask "shipyard" do
   sha256 :no_check
 
   url "https://github.com/cosscom/shipyard/releases/latest/download/Berth-macos-universal.dmg"
-  name "Shipyard"
+  name "Terminal"
   desc "Run coding agents on your dev boxes"
   homepage "https://www.berthd.app/"
 
   depends_on :macos
 
-  app "Shipyard.app"
+  app "Terminal.app"
   # The app's own berth CLI, so `berth` updates with the app.
-  binary "#{appdir}/Shipyard.app/Contents/MacOS/berth-cli", target: "berth"
+  binary "#{appdir}/Terminal.app/Contents/MacOS/berth-cli", target: "berth"
 
   # Uninstalling keeps the laptop agent and this Mac's box (their launchd
   # jobs) and ~/.berth, so an upgrade or a reinstall carries on where it left

@@ -56,7 +56,7 @@ func TestASessionOnAFreshAccountHasTheHooksWhenItStarts(t *testing.T) {
 	})
 	seen, stop := bus.Subscribe()
 	defer stop()
-	// The user installed Shipyard's integrations for their default account.
+	// The user installed Terminal's integrations for their default account.
 	if status := call(t, c, "POST", "/v1/integrations/install", "", map[string]string{"tool": "claude"}, nil); status != 200 {
 		t.Fatalf("install: %d", status)
 	}
@@ -142,7 +142,7 @@ func TestDoctorAndTheReportListEachAccount(t *testing.T) {
 	// A new account shows as missing its hooks until berthd puts them there.
 	other := filepath.Join(home, ".berth", "accounts", "claude", "other")
 	os.MkdirAll(other, 0o700)
-	if ch := claudeCheck(); ch.Status != doctor.Warn || !strings.HasSuffix(ch.Detail, "none in ~/.berth/accounts/claude/other, so Shipyard cannot show when an agent on those accounts is done or needs you") {
+	if ch := claudeCheck(); ch.Status != doctor.Warn || !strings.HasSuffix(ch.Detail, "none in ~/.berth/accounts/claude/other, so Terminal cannot show when an agent on those accounts is done or needs you") {
 		t.Fatalf("new account: %+v", ch)
 	}
 }

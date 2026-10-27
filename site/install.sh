@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install berthd, Shipyard's box daemon, on this machine, start it as a service,
+# Install berthd, Terminal's box daemon, on this machine, start it as a service,
 # and print a link to pair your laptop with it:
 #
 #   curl -fsSL https://berthd.app/install | sh
@@ -182,13 +182,13 @@ no_release() {
 	{
 		say ""
 		if [ "$version" = latest ]; then
-			say "${bold}There's no Shipyard release yet${reset}, so there's no berthd to download."
+			say "${bold}There's no Terminal release yet${reset}, so there's no berthd to download."
 		else
-			say "${bold}Shipyard $version isn't released${reset}, so there's no berthd to download."
+			say "${bold}Terminal $version isn't released${reset}, so there's no berthd to download."
 			say "Releases: https://github.com/$repo/releases"
 		fi
 		say ""
-		say "Instead, build Shipyard on your laptop (Go 1.27) and let it install berthd on"
+		say "Instead, build Terminal on your laptop (Go 1.27) and let it install berthd on"
 		say "this box over SSH. It uploads berthd, starts it and pairs, in one step:"
 		say ""
 		say "  git clone https://github.com/$repo"
@@ -285,21 +285,21 @@ if [ -n "$tools" ]; then
 	them=them
 	case $tools in *" "*) ;; *) them=it ;; esac
 	case $tools_cmd in
-	"") die "Shipyard needs $tools_say on this box, and there is no package manager this knows: install $them, then run this again" ;;
+	"") die "Terminal needs $tools_say on this box, and there is no package manager this knows: install $them, then run this again" ;;
 	sudo\ *)
 		if [ "$uid" = 0 ] || { command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; }; then
 			say "  $tools_say: not installed; installing $them with the service"
 		elif can_ask; then
 			say ""
-			say "Shipyard needs $tools_say on this box: every terminal and agent runs in tmux, and"
+			say "Terminal needs $tools_say on this box: every terminal and agent runs in tmux, and"
 			say "worktrees are git's. Installing $them needs root, so sudo asks for your password."
 			if ask "Install $them now? (runs: $tools_cmd)" y; then
 				sh -c "$tools_cmd" </dev/tty || die "could not install $tools_say. Run this, then run the install again: $tools_cmd"
 			else
-				die "stopped before installing. Shipyard needs $tools_say; run this, then run the install again: $tools_cmd"
+				die "stopped before installing. Terminal needs $tools_say; run this, then run the install again: $tools_cmd"
 			fi
 		else
-			die "Shipyard needs $tools_say on this box, and installing $them needs sudo's password, which this can't ask for (--yes, or no terminal). Run this, then run the install again: $tools_cmd"
+			die "Terminal needs $tools_say on this box, and installing $them needs sudo's password, which this can't ask for (--yes, or no terminal). Run this, then run the install again: $tools_cmd"
 		fi
 		;;
 	*) say "  $tools_say: not installed; installing $them with the service ($tools_cmd)" ;;
@@ -371,7 +371,7 @@ if [ -z "$link" ]; then
 fi
 dial=$(printf '%s\n' "$pairing" | sed -n 's/^Laptops will dial \([^;]*\);.*/\1/p')
 say ""
-say "${bold}berthd $new_version is running.${reset} Paste this link into Shipyard on your laptop"
+say "${bold}berthd $new_version is running.${reset} Paste this link into Terminal on your laptop"
 say "(Add a box). It works once, for ten minutes:"
 say ""
 say "  ${bold}$link${reset}"

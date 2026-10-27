@@ -44,7 +44,7 @@ export function approveCommand(e: ReviewEntry, mode: ApproveMode, message: strin
   if (mode !== "commit") parts.push("git push -u origin HEAD 2>&1");
   if (mode === "pr" && openPR) {
     const [subject, ...rest] = (msg || e.commits[0]?.subject || e.branch || e.worktree).split("\n");
-    const body = rest.join("\n").trim() || `Opened from Shipyard after ${agentLabel(e.agent)} finished in ${e.worktree}.`;
+    const body = rest.join("\n").trim() || `Opened from Terminal after ${agentLabel(e.agent)} finished in ${e.worktree}.`;
     parts.push(`printf %s '${b64(body)}' | base64 -d | gh pr create --title ${quote(subject.trim())} --body-file - --base ${quote(baseBranch(e))} 2>&1`);
   }
   return parts.join(" && ");

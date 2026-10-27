@@ -349,7 +349,7 @@ func chartValue(v any) string {
 	return fmt.Sprint(v)
 }
 
-// Secrets. Shipyard has no secret scanner of its own elsewhere (the Team
+// Secrets. Terminal has no secret scanner of its own elsewhere (the Team
 // setup refuses a shared key that isn't a reference, op:// or env://, and
 // doctor reports redact by pattern), so artifacts get a simple pattern
 // check of their own: well-known token formats, private keys, and

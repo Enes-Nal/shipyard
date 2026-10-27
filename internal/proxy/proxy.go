@@ -91,7 +91,7 @@ func (p *Proxy) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		detail := "Use http://PORT.BOX.localhost or http://WORKTREE.LOCATION.BOX.localhost"
 		if why == "" {
-			why = "Shipyard doesn't know this address"
+			why = "Terminal doesn't know this address"
 		} else if nothing, ok := strings.CutPrefix(why, nothingRunning); ok {
 			why = "Nothing is running in " + nothing + " yet"
 			detail = "Start its dev server in the worktree's terminal (npm start, npm run dev…) on $BERTH_PORT: berth sets PORT to it there, and a server started in the worktree's folder shows up here within seconds. Any other port on the box is http://PORT.BOX.localhost."
@@ -302,6 +302,6 @@ func page(w http.ResponseWriter, status int, title, detail string) {
 	noteFailure(w, title)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	fmt.Fprintf(w, `<!doctype html><html lang="en"><meta charset="utf-8"><title>%s</title>%s<body><h1>%s</h1><p>%s</p><footer>%d %s · Shipyard</footer>`,
+	fmt.Fprintf(w, `<!doctype html><html lang="en"><meta charset="utf-8"><title>%s</title>%s<body><h1>%s</h1><p>%s</p><footer>%d %s · Terminal</footer>`,
 		html.EscapeString(title), PageStyle, html.EscapeString(title), html.EscapeString(detail), status, html.EscapeString(http.StatusText(status)))
 }

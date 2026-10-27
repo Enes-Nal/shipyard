@@ -59,7 +59,7 @@ func TestEnsureTools(t *testing.T) {
 	// to run.
 	ran = nil
 	err := ensureTools(io.Discard, p, false, func() bool { return false }, run)
-	if err == nil || len(ran) != 0 || !strings.Contains(err.Error(), "Shipyard needs tmux and git on this box, and they aren't installed") ||
+	if err == nil || len(ran) != 0 || !strings.Contains(err.Error(), "Terminal needs tmux and git on this box, and they aren't installed") ||
 		!strings.HasSuffix(err.Error(), "\n  sudo apt-get update -q && sudo apt-get install -y -q tmux git") {
 		t.Fatalf("%v %v", err, ran)
 	}

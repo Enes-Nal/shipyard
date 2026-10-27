@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { JoinTeamCard } from "@/views/team/team-entry";
 import { thisComputer } from "@/lib/platform";
 
-// WelcomeStep says what Shipyard is in a line and offers the quickest way in:
+// WelcomeStep says what Terminal is in a line and offers the quickest way in:
 // this Mac as the box, a sample project on it and a first task, in about a
 // minute. A remote box is the other choice, one click away. onJoin, when
 // given, is the way in for a second computer: its boxes are already set up
@@ -18,9 +18,9 @@ export function WelcomeStep({ local, onThisMac, onRemote, onJoin }: { local?: bo
     <div>
       {/* The title starts where every step's does; the scene (dawn) is the
           page's, above the progress. */}
-      <h1 className="text-title">Welcome to Shipyard</h1>
+      <h1 className="text-title">Welcome to Terminal</h1>
       <p className="mt-2 text-muted-foreground text-subtitle">
-        Shipyard runs coding agents on your own machines, each in a worktree of its own, and shows you which need you, which are working and what they built.
+        Terminal runs coding agents on your own machines, each in a worktree of its own, and shows you which need you, which are working and what they built.
       </p>
       <div className="mt-6 flex flex-col gap-2">
         {local !== false && (
@@ -52,7 +52,7 @@ export function WelcomeStep({ local, onThisMac, onRemote, onJoin }: { local?: bo
       <JoinTeamCard />
       {onJoin && (
         <Button variant="ghost" className="mt-4 -ml-3 text-muted-foreground" onClick={onJoin}>
-          I already use Shipyard on another computer
+          I already use Terminal on another computer
         </Button>
       )}
     </div>

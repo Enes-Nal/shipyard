@@ -10,7 +10,7 @@ import type { Client } from "@/lib/api";
 export interface InvitedBox {
   name: string;
   addresses: string[];
-  // The Shipyard network (another tailnet) this computer reaches it through,
+  // The Terminal network (another tailnet) this computer reaches it through,
   // and that tailnet's name.
   network?: string;
   tailnet?: string;

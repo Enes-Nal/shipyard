@@ -14,7 +14,7 @@ import type { CrewMember } from "@/lib/transcript";
 import { cn } from "@/lib/utils";
 
 // CrewCard lists the helpers working beside one agent: the subagents it
-// started, and Shipyard's own (an attempt, a reviewer, a loop). It belongs to
+// started, and Terminal's own (an attempt, a reviewer, a loop). It belongs to
 // the conversation, so it docks above the reply box beside the task list
 // (TodoCard), in each chat pane for its own agent. Folded it is one line:
 // how many, and how many are still working; open, every helper with what

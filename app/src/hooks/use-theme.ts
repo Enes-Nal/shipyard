@@ -22,7 +22,7 @@ export function useThemes(): Theme[] {
 }
 
 // SYSTEM_THEME follows the computer's light or dark appearance, with a
-// theme for each (Settings › Appearance; Shipyard Light and Shipyard Dark unless
+// theme for each (Settings › Appearance; Terminal Light and Terminal Dark unless
 // chosen).
 export const SYSTEM_THEME = "system";
 
@@ -44,7 +44,7 @@ export function useActiveTheme(): Theme {
   const dark = useSystemDark();
   const system = usePrefs((p) => p.systemThemes);
   if (id !== SYSTEM_THEME) return themes.find((t) => t.id === id) ?? berthDark;
-  // A pick that has gone (a theme file removed) falls back to Shipyard's own.
+  // A pick that has gone (a theme file removed) falls back to Terminal's own.
   const want = dark ? system.dark : system.light;
   return themes.find((t) => t.id === want) ?? themes.find((t) => t.id === (dark ? "berth-dark" : "berth-light")) ?? berthDark;
 }

@@ -21,7 +21,7 @@ import "@/components/conversation/agent-message.css";
 // A message to the agent from someone other than the person: a helper's
 // hand-back, a teammate, another session, the lead, or Claude Code's own
 // ping about a background task (internal/transcript/peer.go). Each is a
-// card beside Shipyard's report cards (report-card): who sent it and what kind
+// card beside Terminal's report cards (report-card): who sent it and what kind
 // it is in the head, its gist under it, and the whole report a click away,
 // drawn as the agent wrote it. Left-aligned and bordered, so nobody takes
 // it for something they typed. Pings are one line.
@@ -49,7 +49,7 @@ export function Avatar({ from, color, className }: { from: MessageSender; color:
   );
 }
 
-// BerthAvatar is Shipyard's own mark, for its reports.
+// BerthAvatar is Terminal's own mark, for its reports.
 export function BerthAvatar() {
   return (
     <span aria-hidden className="am-c-slate am-avatar inline-flex size-5 shrink-0 items-center justify-center rounded-md">
@@ -106,7 +106,7 @@ export function KindChip({ chip, className }: { chip: Chip; className?: string }
   );
 }
 
-// CardHead is the head every card to the agent shares, Shipyard's reports
+// CardHead is the head every card to the agent shares, Terminal's reports
 // included: avatar, name, what kind of sender, a kind chip, what else it
 // says (a diff, a count), the time it took, "to Claude" and Open.
 export function CardHead({ avatar, name, kind, chip, extra, took, tip, open }: { avatar: ReactNode; name: string; kind?: string; chip: Chip; extra?: ReactNode; took?: string; tip: string; open?: ReactNode }) {
@@ -140,7 +140,7 @@ export function CardHead({ avatar, name, kind, chip, extra, took, tip, open }: {
 
 // useSender is what the chat knows about a sender: its colour, how long it
 // took (a helper, from the crew), and how to open it: a helper's
-// conversation in a tab, or a session Shipyard runs.
+// conversation in a tab, or a session Terminal runs.
 function useSender(from: MessageSender) {
   const ctx = useContext(PromptActionsContext);
   const pane = useContext(PaneContext);

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build Shipyard's own tmux for Linux boxes: one static binary per architecture
+# Build Terminal's own tmux for Linux boxes: one static binary per architecture
 # (musl, with libevent and ncurses linked in), which `berth add ssh` uploads
 # to ~/.local/bin/tmux on a box that has no tmux, so the most common thing a
 # fresh box lacks needs no sudo.
@@ -41,7 +41,7 @@ if [ "$built" = 1 ]; then
 fi
 
 command -v docker >/dev/null 2>&1 || {
-	echo "build-tmux: needs Docker to build Shipyard's tmux; without it, berth add ssh installs tmux with the box's package manager instead" >&2
+	echo "build-tmux: needs Docker to build Terminal's tmux; without it, berth add ssh installs tmux with the box's package manager instead" >&2
 	exit 2
 }
 mkdir -p "$out"

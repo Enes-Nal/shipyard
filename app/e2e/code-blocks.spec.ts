@@ -129,7 +129,7 @@ test("a mermaid flowchart in a reply draws as its diagram, with its source a cli
   // Mermaid other than a flowchart is its source, said so.
   await expect(sequence.locator(":scope > pre")).toBeVisible();
   await expect(sequence.locator("svg[role=img]")).toHaveCount(0);
-  await expect(sequence.locator(".cv-pre-note")).toHaveText("Shown as written: Shipyard draws flowcharts");
+  await expect(sequence.locator(".cv-pre-note")).toHaveText("Shown as written: Terminal draws flowcharts");
 });
 
 test("a flowchart with subgraphs, shapes and line breaks draws as it was written", async ({ app }) => {

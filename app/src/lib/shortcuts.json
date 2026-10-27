@@ -1,5 +1,5 @@
 {
-  "_": "Shipyard's keyboard shortcuts, read by the webview (lib/shortcuts.ts: the handlers, the Keyboard shortcuts sheet, Settings → Shortcuts) and by the Mac app's menu bar (src-tauri/src/lib.rs). group is the menu an item is in; accel, when set, puts it there with that accelerator, so macOS cannot take the key first. count makes items 1..count, with {n} in label and accel. Never give ⌘C, ⌘V, ⌘A or ⌘F an accelerator: focused terminals and text need them.",
+  "_": "Terminal's keyboard shortcuts, read by the webview (lib/shortcuts.ts: the handlers, the Keyboard shortcuts sheet, Settings → Shortcuts) and by the Mac app's menu bar (src-tauri/src/lib.rs). group is the menu an item is in; accel, when set, puts it there with that accelerator, so macOS cannot take the key first. count makes items 1..count, with {n} in label and accel. Never give ⌘C, ⌘V, ⌘A or ⌘F an accelerator: focused terminals and text need them.",
   "shortcuts": [
     { "id": "new-worktree", "group": "File", "label": "New task…", "keys": "⌘N", "accel": "CmdOrCtrl+N" },
     { "id": "new-terminal", "group": "File", "label": "New terminal", "keys": "⌘T", "accel": "CmdOrCtrl+T" },

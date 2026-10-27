@@ -1,7 +1,7 @@
 import type { Theme } from "@/lib/api";
 import { contrast, distance, over } from "./color.ts";
 
-// What a theme must meet to ship with Shipyard (contrast.test.ts runs it over
+// What a theme must meet to ship with Terminal (contrast.test.ts runs it over
 // every built-in theme; a theme of your own is not held to it):
 //
 // - Text is AA, 4.5:1: body text on every surface it sits on, muted text

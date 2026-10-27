@@ -1,6 +1,6 @@
 ---
 title: Linear
-description: Your Linear issues in Shipyard, and an agent on any of them in one step, with an API key that stays on your computer.
+description: Your Linear issues in Terminal, and an agent on any of them in one step, with an API key that stays on your computer.
 ---
 
 **Issues** (under **More** in the sidebar, or **Show issues** in ⌘K) lists
@@ -12,11 +12,11 @@ with its description and comments, and starts an agent on any of them.
 
 1. In Linear, make a personal API key: **Settings → Security & access →
    Personal API keys**. Read access is enough to list issues; add write
-   access if you want to comment from Shipyard.
-2. In Shipyard, **Settings → Integrations**: paste the key and press
+   access if you want to comment from Terminal.
+2. In Terminal, **Settings → Integrations**: paste the key and press
    **Connect**.
 
-Shipyard asks Linear who the key belongs to before it keeps it, so a wrong
+Terminal asks Linear who the key belongs to before it keeps it, so a wrong
 or revoked key is refused there and then. **Disconnect** removes it.
 
 ## Where the key lives
@@ -29,7 +29,7 @@ file only you can read. Settings shows the full path.
   only talk to that agent, so the key never reaches it; Settings and
   plugins are told who is connected, never the key.
 - The key is never sent to a box, written to a log, or put in a URL.
-- Shipyard makes a fixed set of calls: who you are, your teams, a list of
+- Terminal makes a fixed set of calls: who you are, your teams, a list of
   issues, one issue with its comments, and posting a comment. Nothing else
   in your workspace is read or changed.
 
@@ -55,7 +55,7 @@ or the one open), `O` opens the issue in Linear, `/` searches.
 ## Starting an agent
 
 A Linear issue belongs to a team, not to a repository, so the first time
-you start an agent Shipyard asks which project it should work in. The
+you start an agent Terminal asks which project it should work in. The
 choice is kept, and shows beside the team picker where you can change it.
 
 **Start an agent** then opens a sheet, filled in from the issue:

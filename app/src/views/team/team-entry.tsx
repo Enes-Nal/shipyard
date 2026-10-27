@@ -32,7 +32,7 @@ export function JoinTeamCard() {
       <h2 className="flex items-center gap-2 text-section">
         <GitHubMark className="size-3.5" /> Joining a team?
       </h2>
-      <p className="mt-0.5 text-desc text-muted-foreground">Type your company's GitHub org, or paste a link to a team setup. Shipyard sets your box up the way the team's are: tools, services and repos.</p>
+      <p className="mt-0.5 text-desc text-muted-foreground">Type your company's GitHub org, or paste a link to a team setup. Terminal sets your box up the way the team's are: tools, services and repos.</p>
       <form
         className="mt-3 flex gap-2"
         onSubmit={(e) => {

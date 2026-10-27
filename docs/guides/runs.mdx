@@ -42,7 +42,7 @@ from any device; every run is in **Automations → Runs**.
 | --- | --- | --- |
 | `loop` | Prompt, wait for the turn, run `check`; while it fails, send the failing tail back, up to `max` rounds (5) | Your prompt once; each failed round about 90 characters plus the failing lines and tail, at most 3 KB |
 | `review` | A second agent reviews the worktree with its own session (headless by default), optionally sending its verdict to the author (`send_back`) | About 260 characters plus your criteria; the reply is capped at 15 lines and only it goes back |
-| `handoff` | The source agent writes `.berth/handoff/<run>.md` (Done, Left, Decisions, Gotchas); Shipyard adds the diffstat, commits, the last check and the turn log, then starts a new agent in a new worktree pointed at it. `native` forks or resumes the source's own conversation instead (same vendor, same box) | 170 characters to the source; the new agent's first prompt is about 90 characters pointing at a packet capped at 2 KB |
+| `handoff` | The source agent writes `.berth/handoff/<run>.md` (Done, Left, Decisions, Gotchas); Terminal adds the diffstat, commits, the last check and the turn log, then starts a new agent in a new worktree pointed at it. `native` forks or resumes the source's own conversation instead (same vendor, same box) | 170 characters to the source; the new agent's first prompt is about 90 characters pointing at a packet capped at 2 KB |
 | `broadcast` | One prompt (or one each) to several sessions on the box, each when it is idle; waits for every turn | Your prompt, once per session |
 | `attempts` | Try a task several ways: see [attempts](#attempts) | See below |
 | `fix-ci` | A failed check on a PR: the failing tail of the CI log to the worktree's agent, a local check, up to `max` rounds, then `git push` | About 110 characters plus the failing log lines, at most 3 KB |
@@ -93,7 +93,7 @@ POST /v1/runs
    "Opus against Sonnet" is a run). They work at once, up to `concurrency`.
 2. Each is verified with `verify.check`; a failure sends its failing tail
    back, up to `max_rounds`.
-3. Shipyard collects each attempt's diffstat, commits, check result and tokens.
+3. Terminal collects each attempt's diffstat, commits, check result and tokens.
 4. The judge, a [headless agent](#headless-agents) that can only read, gets
    one line per attempt (its check, diffstat and last commit subjects) and
    the worktree paths, about 2 KB for three attempts, never transcripts or
@@ -172,7 +172,7 @@ were, and the step that was in flight follows its kind's rule:
 Judges and reviewers run as one non-interactive turn (`claude -p
 --output-format stream-json`, `codex exec --json`, `gemini -p
 --output-format json`) **inside tmux**, so you can still attach and watch.
-Shipyard reads their final answer, tokens, cost and session ID from the JSON.
+Terminal reads their final answer, tokens, cost and session ID from the JSON.
 Read-only ones get Claude's `--allowedTools Read,Grep,Glob,LS` and Codex's
 `--sandbox read-only`. `berthd headless` is the wrapper they run in.
 
@@ -206,7 +206,7 @@ or 30 days old, are compacted away, journal and all.
 
 ## From an agent: MCP
 
-`berthd mcp` is a stdio MCP server of Shipyard's tools for agents on the box,
+`berthd mcp` is a stdio MCP server of Terminal's tools for agents on the box,
 talking to the box's own socket. `berthd integrations install` adds it to
 Claude Code, Codex and Gemini CLI. Every tool returns at once with minimal
 JSON:

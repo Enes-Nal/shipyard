@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { type ChatBackground, DEFAULT_CHAT_BACKGROUND, normalizeChatBackground } from "@/lib/chat-background";
 import { DEFAULT_HEADER_PICTURE, type HeaderPicture, normalizeHeaderPicture } from "@/lib/header-picture";
 import type { HomeLayout } from "@/lib/home-layout";
+import type { ModelRoutingPrefs } from "@/lib/model-router";
 import { clampTasks, clampWidth, defaultWidth, SIDEBAR_DEFAULT, SIDEBAR_NARROW_DEFAULT, TASKS_DEFAULT } from "@/lib/sidebar-width";
 import { load, save } from "@/lib/storage";
 import { DEFAULT_TERMINAL_PREFS, type TerminalPrefs } from "@/lib/terminal";
@@ -59,10 +60,13 @@ export interface Prefs {
   // brings each to you. Agents run structured wherever the box can
   // (lib/structured.ts); there is no setting for that.
   approvals: "bypass" | "ask";
+  // New tasks can be assigned to a light worker or a strong lead from the
+  // models the selected box already exposes. A manual agent pick wins.
+  modelRouting: ModelRoutingPrefs;
   // Labs: zen (⌘.): no sidebar or status bar, a switcher for a tab strip,
   // agents as conversations.
   zen: boolean;
-  // Update a box's berthd as soon as Shipyard ships a newer one
+  // Update a box's berthd as soon as Terminal ships a newer one
   // (lib/outdated.ts). Off: the status bar offers it instead.
   autoUpdateBoxes: boolean;
   // The picture behind conversations and its effects (Settings ›
@@ -120,6 +124,7 @@ const DEFAULTS: Prefs = {
   labsChosen: false,
   agentView: "terminal",
   approvals: "bypass",
+  modelRouting: { enabled: true, mode: "balanced", preferFree: true },
   zen: false,
   autoUpdateBoxes: false,
   chatBackground: DEFAULT_CHAT_BACKGROUND,
@@ -141,7 +146,7 @@ const PREFS_VERSION = 4;
 
 type Saved = Partial<Prefs> & { version?: number };
 
-// migrate brings prefs saved by an older Shipyard up to date. Prefs are saved
+// migrate brings prefs saved by an older Terminal up to date. Prefs are saved
 // whole, so a "keep" saved before version 2 is only the old default unless
 // the person chose it, which closeAgentsChosen records from now on.
 export function migratePrefs(saved: Saved): Saved {
@@ -178,6 +183,7 @@ export const usePrefs = create<Prefs>()(() => ({
   systemThemes: { ...DEFAULTS.systemThemes, ...saved.systemThemes },
   chatBackground: normalizeChatBackground(saved.chatBackground),
   headerPicture: normalizeHeaderPicture(saved.headerPicture),
+  modelRouting: { ...DEFAULTS.modelRouting, ...saved.modelRouting },
   // 240px was the default before the task sidebar: a saved 240 is a sidebar
   // never dragged, so it starts at today's default for this window.
   sidebarLayout: saved.sidebarLayout === "columns" || saved.sidebarLayout === "list" ? saved.sidebarLayout : "rail",

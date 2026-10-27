@@ -216,7 +216,7 @@ func TestAnAgentStartedWithNoDriverFollowsTheDefault(t *testing.T) {
 		t.Fatalf("with nothing saved, it bypassed permissions: %+v %v", live, err)
 	}
 
-	// Saved off (only an older Shipyard sends it): a terminal.
+	// Saved off (only an older Terminal sends it): a terminal.
 	call(t, c, "PUT", "/v1/agents/defaults", "", AgentDefaults{}, nil)
 	task = Task{}
 	if st := call(t, c, "POST", "/v1/tasks", "", TaskRequest{Location: "acme", Name: "before", Agent: "claude", Prompt: "hello"}, &task); st != 200 {

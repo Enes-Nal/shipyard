@@ -7,11 +7,11 @@ import { toastManager } from "@/components/ui/toast";
 import { isTauri } from "@/lib/api";
 import { useStore } from "@/lib/store";
 
-// Updates to the app itself. Shipyard checks the latest GitHub release's
+// Updates to the app itself. Terminal checks the latest GitHub release's
 // latest.json when it opens and every few hours after, and downloads a newer
 // version quietly. Nothing changes on disk until the person clicks "Restart
 // to update" (the status bar, or Settings → About): then the download is
-// installed over Shipyard.app and the app relaunches. It never restarts by
+// installed over Terminal.app and the app relaunches. It never restarts by
 // itself. Restarting stops no agent (they run on their boxes), but it does
 // close the window, which is the person's call.
 //
@@ -20,7 +20,7 @@ import { useStore } from "@/lib/store";
 // as it starts, has it restart (afterLaunch): the agent finishes its work
 // under way, stops, and the new one starts, through the login service when
 // it is installed at login, and brings this Mac's box up to date. A short
-// note says Shipyard was updated.
+// note says Terminal was updated.
 //
 // The update must carry a signature from the key in tauri.conf.json
 // (plugins.updater.pubkey); the plugin refuses anything else.
@@ -40,7 +40,7 @@ const EVERY = 4 * 60 * 60 * 1000;
 let pending: Update | null = null;
 let running: Promise<void> | null = null;
 
-// updatesSupported is whether this copy of Shipyard can update itself: the
+// updatesSupported is whether this copy of Terminal can update itself: the
 // packaged app. A dev build (pnpm tauri dev) can check, but only by hand.
 export const updatesSupported = () => isTauri();
 
@@ -99,7 +99,7 @@ async function run(manual: boolean) {
   }
 }
 
-// restartToUpdate installs the downloaded update and relaunches Shipyard. Only
+// restartToUpdate installs the downloaded update and relaunches Terminal. Only
 // ever from a click.
 export async function restartToUpdate() {
   const state = useUpdater.getState();
@@ -144,7 +144,7 @@ const LAST_VERSION = "berth.app-version";
 
 // afterLaunch restarts an agent older than this app (an update replaced the
 // app under it, or this app was installed over an older one), and says when
-// Shipyard was updated: this version is not the one that ran last, or the
+// Terminal was updated: this version is not the one that ran last, or the
 // agent was older.
 async function afterLaunch() {
   const version = await getVersion().catch(() => "");
@@ -170,7 +170,7 @@ async function afterLaunch() {
   toastManager.add({
     type: "success",
     title: `Updated to v${version}`,
-    description: r?.restarted ? "The Shipyard agent restarted with it. Your agents kept running." : undefined,
+    description: r?.restarted ? "The Terminal agent restarted with it. Your agents kept running." : undefined,
   });
 }
 

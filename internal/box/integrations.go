@@ -10,7 +10,7 @@ import (
 )
 
 // Integrations are the hooks agent CLIs on this box run to report their
-// needs-you, working and done states, and Shipyard's skills. berthd install
+// needs-you, working and done states, and Terminal's skills. berthd install
 // sets them up for the CLIs it finds; these let the app add them for a CLI
 // installed since.
 

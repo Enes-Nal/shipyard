@@ -20,9 +20,9 @@ import (
 // can't start there. berthd remembers why a browser last failed to start,
 // reads the setting's current value, and says so cheaply, without starting
 // Chromium to find out. The fix needs the box's owner: either allow it with
-// sudo (SandboxFix, which Shipyard types into a terminal for them and never
+// sudo (SandboxFix, which Terminal types into a terminal for them and never
 // runs itself), or turn on the box's no_sandbox setting, which starts
-// Chromium without its sandbox; Shipyard's proxy still confines it to the
+// Chromium without its sandbox; Terminal's proxy still confines it to the
 // worktree's own pages.
 
 // usernsPath is the sysctl's file. BERTH_TEST_USERNS_SYSCTL names another
@@ -44,9 +44,9 @@ var ErrBrowserSandbox = errors.New("the box's browser is blocked")
 
 func sandboxError(userns string) error {
 	if userns == "1" {
-		return fmt.Errorf("%w by Ubuntu's sandbox setting (kernel.apparmor_restrict_unprivileged_userns=1); ask the person to fix it from Shipyard (Settings → Boxes), or to run `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` in a terminal on the box. Don't work around it", ErrBrowserSandbox)
+		return fmt.Errorf("%w by Ubuntu's sandbox setting (kernel.apparmor_restrict_unprivileged_userns=1); ask the person to fix it from Terminal (Settings → Boxes), or to run `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` in a terminal on the box. Don't work around it", ErrBrowserSandbox)
 	}
-	return fmt.Errorf("%w: Chromium could not start its sandbox on this box; ask the person to fix it from Shipyard (Settings → Boxes). Don't work around it", ErrBrowserSandbox)
+	return fmt.Errorf("%w: Chromium could not start its sandbox on this box; ask the person to fix it from Terminal (Settings → Boxes). Don't work around it", ErrBrowserSandbox)
 }
 
 // BrowserSettings are the box owner's choices for agents' browsers, in
@@ -198,7 +198,7 @@ func (m *Browsers) Health() BrowserHealth {
 	case h.State == "error":
 		h.Text = "the last browser failed to start: " + h.Error
 	case h.NoSandbox:
-		h.Text = "browsers start without Chromium's sandbox; Shipyard's proxy still confines them to the worktree's own pages"
+		h.Text = "browsers start without Chromium's sandbox; Terminal's proxy still confines them to the worktree's own pages"
 	default:
 		h.Text = "browsers can start; pages open at " + DefaultViewport.String() + " unless an agent sets a size"
 	}

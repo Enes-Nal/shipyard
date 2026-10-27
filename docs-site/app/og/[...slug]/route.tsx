@@ -44,7 +44,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
             <circle cx="512.0" cy="430.5" r="37.0" fill={amber} />
           </svg>
           <div style={{ display: 'flex', fontSize: 30, fontWeight: 600, color: fg }}>
-            shipyard<span style={{ color: muted, fontWeight: 400, marginLeft: 10 }}>docs</span>
+            terminal<span style={{ color: muted, fontWeight: 400, marginLeft: 10 }}>docs</span>
           </div>
         </div>
 

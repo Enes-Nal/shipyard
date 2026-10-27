@@ -1,4 +1,4 @@
-// Shipyard on a phone. Each box you pair serves this page on its tailnet
+// Terminal on a phone. Each box you pair serves this page on its tailnet
 // address; one page reads every paired box, so the list covers all of them.
 "use strict";
 
@@ -158,7 +158,7 @@ async function loadAll() {
 
 async function showList() {
   clearTimeout(timer);
-  setBar("Shipyard", "", null);
+  setBar("Terminal", "", null);
   if (!boxes.length) return showPairing();
   const results = await loadAll();
   if (route().kind !== "list") return;
@@ -170,7 +170,7 @@ async function showList() {
   const gated = allRuns.filter((r) => r.status === "waiting_gate");
   const going = allRuns.filter((r) => r.status === "running" || r.status === "queued");
   const waiting = all.filter((s) => s.agent_state === "waiting").length + gated.length;
-  setBar("Shipyard", waiting ? waiting + " need" + (waiting === 1 ? "s" : "") + " you" : all.length ? "Nothing needs you" : "", null);
+  setBar("Terminal", waiting ? waiting + " need" + (waiting === 1 ? "s" : "") + " you" : all.length ? "Nothing needs you" : "", null);
 
   let html = "";
   if (gated.length || going.length) {
@@ -397,12 +397,12 @@ async function pressKey(key) {
 // --- pairing and boxes --------------------------------------------------------
 
 function showPairing() {
-  setBar("Shipyard", "", null);
+  setBar("Terminal", "", null);
   main.innerHTML = `<div class="hero">
     <h1>Pair this phone</h1>
     <p class="note">See which agents need you and answer them from here, across all your boxes.</p>
     <ol>
-      <li>On your laptop, open Shipyard → Settings → Phone.</li>
+      <li>On your laptop, open Terminal → Settings → Phone.</li>
       <li>Turn on phone access for your boxes.</li>
       <li>Scan the code with this phone's camera.</li>
     </ol>
@@ -418,7 +418,7 @@ function showBoxes() {
     .map((b, i) => `<div class="boxrow"><div><b>${esc(b.name)}</b><br><span>${esc(b.url)}</span></div><button class="btn ghost" type="button" data-forget="${i}">Forget</button></div>`)
     .join("")}</div>
     <div class="compose"><textarea id="pairlink" rows="1" placeholder="Or paste a pairing link" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea><button class="btn" id="pair" type="button">Pair</button></div>
-    <p class="note">To add a box, scan its code from Shipyard → Settings → Phone, or paste its link. Forgetting a box only removes it from this phone; turn phone access off in Shipyard to stop it answering.</p>`;
+    <p class="note">To add a box, scan its code from Terminal → Settings → Phone, or paste its link. Forgetting a box only removes it from this phone; turn phone access off in Terminal to stop it answering.</p>`;
 }
 
 // --- routing and chrome ---------------------------------------------------------
@@ -486,7 +486,7 @@ main.addEventListener("click", (e) => {
   if (e.target.id !== "pair") return;
   const field = $("pairlink");
   if (pairFrom(field.value)) render();
-  else if (!/#pair=/.test(field.value)) toast("Paste the whole link from Shipyard → Settings → Phone.");
+  else if (!/#pair=/.test(field.value)) toast("Paste the whole link from Terminal → Settings → Phone.");
 });
 main.addEventListener("click", (e) => {
   const p = e.target.closest("[data-pick]");

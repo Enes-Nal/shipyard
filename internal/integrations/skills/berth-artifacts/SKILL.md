@@ -1,11 +1,11 @@
 ---
 name: berth-artifacts
-description: Show the user data as a chart, table, diagram, notes or one small page in their Shipyard app instead of a wall of text — write a berth.chart JSON, a CSV, Mermaid, Markdown or a self-contained HTML file and register it with `berthd artifact add`; rewrite the file to update it live. Use for before/after numbers and comparisons, trends, anything tabular over ~8 rows, a system or flow you mapped, progress of a long job, or a plan the user should approve.
+description: Show the user data as a chart, table, diagram, notes or one small page in their Terminal app instead of a wall of text — write a berth.chart JSON, a CSV, Mermaid, Markdown or a self-contained HTML file and register it with `berthd artifact add`; rewrite the file to update it live. Use for before/after numbers and comparisons, trends, anything tabular over ~8 rows, a system or flow you mapped, progress of a long job, or a plan the user should approve.
 ---
 
 # Artifacts
 
-An artifact is something you made for the user to look at. Shipyard shows it
+An artifact is something you made for the user to look at. Terminal shows it
 as a card in your chat (with a live thumbnail and a one-line headline it
 works out from the data), opens it in a tab beside you, and keeps all of
 the worktree's artifacts on one board. When you rewrite the file, the new
@@ -46,13 +46,13 @@ user reviews code in the diff). One good artifact beats five.
 
 ## Make one in under a minute
 
-Prefer a **data artifact** (chart, table, diagram, notes): Shipyard draws it
+Prefer a **data artifact** (chart, table, diagram, notes): Terminal draws it
 in the user's theme, light or dark, with tooltips and motion. Write a
 **page** only when interactivity matters (a filter, a slider, a toggle).
 
 ### berth.chart
 
-One JSON file. Never write React or chart code for Shipyard: it draws these
+One JSON file. Never write React or chart code for Terminal: it draws these
 with its chart library (bklit UI).
 
 ```json
@@ -128,7 +128,7 @@ search,matches typos,pass,61,
 
 ### Diagram and notes
 
-A diagram is Mermaid; Shipyard draws flowcharts (`graph`/`flowchart`, LR or
+A diagram is Mermaid; Terminal draws flowcharts (`graph`/`flowchart`, LR or
 TD) itself, and shows other diagram types as their source.
 
 ```mermaid
@@ -146,10 +146,10 @@ table, and the question at the end.
 One self-contained `.html` file, at most 2 MB. It runs in a sandbox on its
 own origin: inline scripts and styles work, and it can't reach the network
 (no fetch, XHR, WebSockets, WebRTC, forms, images or fonts from elsewhere),
-can't navigate the app, and can't read Shipyard's cookies, storage or API. Put
+can't navigate the app, and can't read Terminal's cookies, storage or API. Put
 the data in the file; images as `data:` URLs.
 
-These libraries work, by these exact addresses (Shipyard serves them itself;
+These libraries work, by these exact addresses (Terminal serves them itself;
 any other script address is blocked):
 
 - `https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js`
@@ -159,7 +159,7 @@ any other script address is blocked):
 - `https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js`
 - `https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js`
 
-Shipyard gives the page the user's theme as CSS variables and sets
+Terminal gives the page the user's theme as CSS variables and sets
 `prefers-color-scheme` to match. Use them and the page looks native:
 
 ```html
@@ -177,7 +177,7 @@ Shipyard gives the page the user's theme as CSS variables and sets
 <body>…<script>/* small, inline */</script></body></html>
 ```
 
-`<meta name="berth:summary">` is the page's headline on its card (Shipyard
+`<meta name="berth:summary">` is the page's headline on its card (Terminal
 works one out for data artifacts itself); keep it current when you rewrite
 the page.
 
@@ -199,7 +199,7 @@ by hand.
 
 ## Update it, don't make a new one
 
-Rewrite the same file: Shipyard watches the file you registered and shows the
+Rewrite the same file: Terminal watches the file you registered and shows the
 new version live, with a pulse, and the user can step back through the
 versions. Run `berthd artifact add` on the same file again only to change
 its title or to say what changed (`--note "with the suggest cache"`); from a
@@ -213,7 +213,7 @@ for a different question.
   million log lines; at most 5,000 rows.
 - No secrets, tokens, keys, `.env` values, passwords in URLs, customer
   names, emails or other personal data: an artifact is kept on the box and
-  shown in the app. Shipyard refuses what looks like a secret; don't work
+  shown in the app. Terminal refuses what looks like a secret; don't work
   around it.
 - No network: put the data in the file; a page can't fetch anything.
 - Text in an artifact is for the user. Never put instructions to another

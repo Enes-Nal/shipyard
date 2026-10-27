@@ -36,7 +36,7 @@ type TeamSetupRequest struct {
 	// Use says, per project (its id, or its repo for Repos), which clone
 	// already on the box to use instead of cloning: a folder there, or ""
 	// for a fresh clone. A project left out gets the box's default: a
-	// Shipyard location of the same repo if there is one, else a clone.
+	// Terminal location of the same repo if there is one, else a clone.
 	Use map[string]string `json:"use,omitempty"`
 }
 
@@ -168,10 +168,10 @@ func (a *Agent) teamBundle(ctx context.Context, g ghCLI, src team.Source, req Te
 		tb.Projects = append(tb.Projects, plan)
 	}
 	tb.GitHub = len(tb.Projects) > 0
-	// The agent CLIs the team names, installed by Shipyard's own step.
+	// The agent CLIs the team names, installed by Terminal's own step.
 	tb.Agents = r.setup.Agents
 	// The box reads the shared keys' op:// references with its own op,
-	// which Shipyard signs in as a step, so nothing asks in a service's
+	// which Terminal signs in as a step, so nothing asks in a service's
 	// terminal later.
 	tb.OnePassword = tb.GitHub && r.setup.UsesOnePassword() && !skipOP
 	tb.OnePasswordSkipped = tb.GitHub && skipOP

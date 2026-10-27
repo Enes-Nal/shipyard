@@ -253,7 +253,7 @@ func (t terminalDriver) Conversation(ctx context.Context, sess Session, all []Se
 	}
 	switch {
 	case agent != "claude" && agent != "codex":
-		return none("Shipyard reads Claude Code's and Codex's conversations; this session runs " + firstNonEmpty(agent, "no agent") + ".")
+		return none("Terminal reads Claude Code's and Codex's conversations; this session runs " + firstNonEmpty(agent, "no agent") + ".")
 	case path == "":
 		return none("No " + agent + " conversation for " + sess.Dir + " since " + sess.Created.Format(time.RFC3339) + " in " + where + ".")
 	}

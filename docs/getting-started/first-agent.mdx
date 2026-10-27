@@ -5,13 +5,13 @@ description: Start Claude Code, Codex or another agent in a worktree, see what i
 
 ## Let the box report agent state
 
-Shipyard knows whether an agent is working, waiting for you or done from the
+Terminal knows whether an agent is working, waiting for you or done from the
 agents' own hooks, installed on the box where the agents run. `berthd
 install` (which `berth add ssh` and the install script run) installs them for
 every agent CLI it finds on the box, and says so:
 
 ```text title="Example output"
-Agent integrations (hooks for needs-you, working and done; Shipyard's skills):
+Agent integrations (hooks for needs-you, working and done; Terminal's skills):
   Claude Code: skills in /home/me/.claude/skills; hooks added in /home/me/.claude/settings.json
   Not found: Codex, Cursor Agent. After installing one, run: /home/me/.local/bin/berthd integrations install codex|cursor
 ```
@@ -30,10 +30,10 @@ else; then it prints the line to change yourself. The full path matters: a
 command over SSH may not have `~/.local/bin`, where berthd lives, on its
 `PATH`. To skip all this, install with `--no-integrations`.
 
-This also installs Shipyard's [skills](/guides/agent-integrations#skills), so
-agents on the box know how to use Shipyard themselves. The hooks record
+This also installs Terminal's [skills](/guides/agent-integrations#skills), so
+agents on the box know how to use Terminal themselves. The hooks record
 berthd's full path, so they work whatever `PATH` the agent has. Without them
-an agent still runs; Shipyard just can't tell what state it is in (apart from
+an agent still runs; Terminal just can't tell what state it is in (apart from
 Claude Code's "trust this folder" question at startup, which it spots on the
 screen).
 

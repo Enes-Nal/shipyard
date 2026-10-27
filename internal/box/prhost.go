@@ -135,9 +135,9 @@ func pushLink(out string) string {
 func noPRText(f forge, branch, link string) string {
 	var b strings.Builder
 	if f.Local {
-		b.WriteString("This repository's origin is a folder on this box, not GitHub, so Shipyard didn't open a pull request. ")
+		b.WriteString("This repository's origin is a folder on this box, not GitHub, so Terminal didn't open a pull request. ")
 	} else {
-		b.WriteString("This repository is on " + f.Host + ", not GitHub, so Shipyard didn't open a pull request. ")
+		b.WriteString("This repository is on " + f.Host + ", not GitHub, so Terminal didn't open a pull request. ")
 	}
 	b.WriteString("The branch " + branch + " is pushed to origin")
 	if link != "" {

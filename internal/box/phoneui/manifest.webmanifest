@@ -1,6 +1,6 @@
 {
-  "name": "Shipyard",
-  "short_name": "Shipyard",
+  "name": "Terminal",
+  "short_name": "Terminal",
   "description": "See which agents need you, and answer them.",
   "start_url": "./",
   "scope": "./",

@@ -168,7 +168,7 @@ function footActions(list: BoxStatus[]): Action[] {
 }
 
 // BoxesTip is the foot's tip: a line per box with its state and how busy
-// it is, and the route Shipyard reaches it by.
+// it is, and the route Terminal reaches it by.
 function BoxesTip({ list, states }: { list: BoxStatus[]; states: BoxState[] }) {
   return (
     <span className="grid grid-cols-[auto_auto_auto] items-center gap-x-2 gap-y-0.5">

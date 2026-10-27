@@ -1,4 +1,4 @@
-export const appName = 'Shipyard';
+export const appName = 'Terminal';
 export const siteUrl = 'https://docs.berthd.app';
 export const landingUrl = 'https://berthd.app';
 

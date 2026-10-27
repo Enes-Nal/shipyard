@@ -3,7 +3,7 @@ title: Automations and flows
 description: When something happens, do these steps. Flows run on the box, on events, schedules or GitHub activity.
 ---
 
-Automations in Shipyard are **flows**: when something happens, do these steps.
+Automations in Terminal are **flows**: when something happens, do these steps.
 They run on the box, so they keep going while your laptop sleeps.
 
 ```json
@@ -254,7 +254,7 @@ Output is the last 4000 characters. An unknown variable is empty.
 ### How values are filled in
 
 A variable's value can come from someone else: a PR's title, a review
-comment, a branch name, or whatever an earlier step printed. Shipyard fills it
+comment, a branch name, or whatever an earlier step printed. Terminal fills it
 in so that it is always just text, never part of a command:
 
 - **`run` commands never contain a value.** Every variable is in the
@@ -295,7 +295,7 @@ in so that it is always just text, never part of a command:
 - Events a flow causes carry `origin: "flow:<id>"`, and `flow.started` and
   `flow.finished` never start flows.
 - Webhooks only reach public addresses (below).
-- `before:` gates check requests to the box's API, so they apply to Shipyard
+- `before:` gates check requests to the box's API, so they apply to Terminal
   commands a `run` step runs (`berthd session send`, `berthd exec`, …). A
   flow's own `prompt` and `start_agent` steps don't go through them.
 

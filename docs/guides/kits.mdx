@@ -48,7 +48,7 @@ A link to GitHub, a gist, GitLab, Bitbucket or Codeberg works without
 `https://` (`berth kit add github.com/acme/shop-kit`). Git links are fetched
 over `https`, `http`, `ssh` or `git` only.
 
-Shipyard remembers the link and the commit, so `update` fetches the newest
+Terminal remembers the link and the commit, so `update` fetches the newest
 version and the app flags projects running an older one. Kits you add live
 in `~/.berth/kits/` on the laptop.
 
@@ -264,7 +264,7 @@ The users have to exist in the worktree's database: seed them in the kit's
 ## Safety
 
 A kit runs its scripts on the boxes you apply it to, with your account's
-access. Shipyard never applies one silently: adding shows everything it does
+access. Terminal never applies one silently: adding shows everything it does
 and every file, and applying is a separate step you choose projects for.
 
 - **You keep what you reviewed.** The review shows a hash of everything the

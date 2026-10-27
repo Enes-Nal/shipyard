@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Shipyard for macOS the way a release ships it, check it, and put what a
+# Build Terminal for macOS the way a release ships it, check it, and put what a
 # GitHub release carries in dist/mac/:
 #
 #   Berth-macos-universal.dmg              the download (Apple silicon and Intel)
@@ -90,15 +90,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-step "Building Shipyard $version for Apple silicon and Intel"
+step "Building Terminal $version for Apple silicon and Intel"
 rm -rf "$bundle"
 make app-build APP_TARGET="$target" VERSION="$version"
 
-app="$bundle/macos/Shipyard.app"
+app="$bundle/macos/Terminal.app"
 dmgs=("$bundle"/dmg/*.dmg)
 [ -d "$app" ] || die "no $app"
 if [ "${#dmgs[@]}" != 1 ] || [ ! -f "${dmgs[0]}" ]; then die "expected one dmg in $bundle/dmg"; fi
-tarball="$bundle/macos/Shipyard.app.tar.gz"
+tarball="$bundle/macos/Terminal.app.tar.gz"
 [ -f "$tarball" ] || die "no updater archive at $tarball (is createUpdaterArtifacts on?)"
 [ -f "$tarball.sig" ] || die "the updater archive was not signed"
 
@@ -223,15 +223,15 @@ if [ "$notarize" = 1 ] && [ -z "$dmg_pending" ]; then
 fi
 mkdir -p "$mnt"
 hdiutil attach -quiet -nobrowse -readonly -mountpoint "$mnt" "$dmg"
-[ -L "$mnt/Applications" ] || die "the dmg has no Applications link to drag Shipyard to"
-check_app "$mnt/Shipyard.app"
+[ -L "$mnt/Applications" ] || die "the dmg has no Applications link to drag Terminal to"
+check_app "$mnt/Terminal.app"
 hdiutil detach -quiet "$mnt"
 ok "$dmg"
 
 step "Checking the updater archive"
 mkdir -p "$work/tar"
 tar -xzf "$out/Berth-macos-universal.app.tar.gz" -C "$work/tar"
-check_app "$work/tar/Shipyard.app"
+check_app "$work/tar/Terminal.app"
 if command -v minisign >/dev/null; then
   pubkey="$(python3 -c 'import json; print(json.load(open("app/src-tauri/tauri.conf.json"))["plugins"]["updater"]["pubkey"])')"
   base64 -d <<<"$pubkey" >"$work/updater.pub"
@@ -251,7 +251,7 @@ url = f"https://github.com/{repo}/releases/download/{tag}/Berth-macos-universal.
 platform = {"signature": sig, "url": url}
 feed = {
     "version": version,
-    "notes": notes or f"Shipyard {version}: https://github.com/{repo}/releases/tag/{tag}",
+    "notes": notes or f"Terminal {version}: https://github.com/{repo}/releases/tag/{tag}",
     "pub_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "platforms": {"darwin-aarch64": platform, "darwin-x86_64": platform},
 }

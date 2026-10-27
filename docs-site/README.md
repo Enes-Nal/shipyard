@@ -1,4 +1,4 @@
-# Shipyard docs site
+# Terminal docs site
 
 The documentation at [docs.berthd.app](https://docs.berthd.app), built with
 [Fumadocs](https://fumadocs.dev) on Next.js.
@@ -6,7 +6,7 @@ The documentation at [docs.berthd.app](https://docs.berthd.app), built with
 ## Where the content lives
 
 Not here. The pages are the repository's own [`docs/`](../docs) folder, next
-to the code they describe, so a change to Shipyard and its docs land in one
+to the code they describe, so a change to Terminal and its docs land in one
 commit:
 
 ```text
@@ -14,7 +14,7 @@ docs/
   index.mdx              the home page (/)
   meta.json              sidebar order and section labels
   getting-started/       install, add a box, first project, first agent
-  concepts/              how Shipyard works, boxes, projects, sessions, security
+  concepts/              how Terminal works, boxes, projects, sessions, security
   guides/                orchestration, automations, hooks, kits, plugins, …
   reference/             CLI, berthd, config, events, app API, plugin SDK
 ```

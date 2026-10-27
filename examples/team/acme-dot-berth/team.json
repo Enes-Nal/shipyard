@@ -1,5 +1,5 @@
 {
-  "$comment": "An example team setup for Shipyard (schema berth.team/v1), for Acme, a made-up org whose shop (acme/shop) needs Node, Postgres and Redis. Shipyard reads <org>/.berth/team.json. Placeholders are in README.md; no secrets live here.",
+  "$comment": "An example team setup for Terminal (schema berth.team/v1), for Acme, a made-up org whose shop (acme/shop) needs Node, Postgres and Redis. Terminal reads <org>/.berth/team.json. Placeholders are in README.md; no secrets live here.",
   "schema": "berth.team/v1",
   "id": "acme",
   "name": "Acme",
@@ -16,7 +16,7 @@
       "SHOP_POSTGRES_VERSION": "18",
       "SHOP_REDIS_VERSION": "8"
     },
-    "$settings_why": "The one place these versions live; Shipyard gives them to box/setup.sh as BERTH_SETTING_SHOP_POSTGRES_VERSION and BERTH_SETTING_SHOP_REDIS_VERSION, and by hand it reads them from here. A new Postgres major does not move existing data: the step says how.",
+    "$settings_why": "The one place these versions live; Terminal gives them to box/setup.sh as BERTH_SETTING_SHOP_POSTGRES_VERSION and BERTH_SETTING_SHOP_REDIS_VERSION, and by hand it reads them from here. A new Postgres major does not move existing data: the step says how.",
     "steps": [
       { "id": "update", "title": "System updates", "detail": "apt-get update and upgrade (brew update on macOS); counts as done for 24 hours", "sudo": true },
       { "id": "packages", "title": "System packages", "detail": "git, curl, jq, unzip, build tools, python3, openssl, and psql and pg_dump of the Postgres version (PostgreSQL apt repository)", "sudo": true },
@@ -29,7 +29,7 @@
     ]
   },
   "agents": ["claude", "codex"],
-  "$agents": "The agent CLIs every Acme box gets. Shipyard installs them as a step of its own, after the steps above, into ~/.local/bin without sudo (Claude Code with its native installer, Codex from its pinned GitHub release, checksum checked), then their hooks and skills. Each engineer signs in to them on first start.",
+  "$agents": "The agent CLIs every Acme box gets. Terminal installs them as a step of its own, after the steps above, into ~/.local/bin without sudo (Claude Code with its native installer, Codex from its pinned GitHub release, checksum checked), then their hooks and skills. Each engineer signs in to them on first start.",
   "projects": [
     {
       "id": "shop",

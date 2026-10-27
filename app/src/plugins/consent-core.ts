@@ -9,7 +9,7 @@
 
 // What any plugin can do once it loads. Shown before the user allows one.
 export const PLUGIN_POWERS = [
-  "Use the Shipyard agent's API with your access, including its API token",
+  "Use the Terminal agent's API with your access, including its API token",
   "Run commands and open shells on every box you've paired",
   "Read what boxes return: files, logs, environment and session output",
   "Send anything it can read to any website",

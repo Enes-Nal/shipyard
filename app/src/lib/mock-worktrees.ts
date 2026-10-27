@@ -16,6 +16,9 @@ interface Git {
   changed: number;
   untracked: number;
   paused?: boolean;
+  outgoing?: number;
+  incoming?: number;
+  published?: boolean;
   // A rebase or merge of this one stops on these files.
   conflicts?: string[];
   subjects?: string[];
@@ -29,10 +32,13 @@ const git: Record<string, Git> = {
     behind: 12,
     changed: 4,
     untracked: 1,
+    outgoing: 2,
+    incoming: 1,
+    published: true,
     conflicts: ["apps/web/lib/payments/webhook.ts", "db/schema.sql"],
     subjects: ["fix(payments): add an idempotency key to the payment webhook", "test(payments): two retries create one order", "chore: migration for idempotency_key"],
   },
-  "devl/shop/qa-deck": { ahead: 1, behind: 0, changed: 0, untracked: 0, subjects: ["docs: QA deck outline"] },
+  "devl/shop/qa-deck": { ahead: 1, behind: 0, changed: 0, untracked: 0, outgoing: 0, published: true, subjects: ["docs: QA deck outline"] },
   "devl/shop/search-perf": {
     ahead: 5,
     behind: 2,
@@ -41,7 +47,8 @@ const git: Record<string, Git> = {
     paused: true,
     subjects: ["perf(search): memoise facet counts", "perf(search): virtualise the results grid", "perf: drop moment from the search bundle", "test: search render budget", "chore: bundle report"],
   },
-  "gpu/evals/judge-v2": { ahead: 2, behind: 30, changed: 1, untracked: 3, subjects: ["feat(judge): rubric v2", "feat(judge): pairwise mode"] },
+  "gpu/evals/judge-v2": { ahead: 2, behind: 30, changed: 1, untracked: 3, outgoing: 1, incoming: 3, published: true, subjects: ["feat(judge): rubric v2", "feat(judge): pairwise mode"] },
+  "gpu/shop/ci-flake": { ahead: 2, behind: 0, changed: 0, untracked: 0, outgoing: 0, incoming: 0, published: true, subjects: ["fix(ci): isolate billing test state", "test(ci): cover the ledger retry"] },
 };
 
 const baseSubjects = [
@@ -156,16 +163,23 @@ function statusOf(world: World, box: string, loc: Location, idx: number): Worktr
   const g = wt.main ? { ahead: 0, behind: 0, changed: 0, untracked: 0 } : gitOf(box, loc.name, wt.name);
   const last = commits(box, loc.name, wt.name, wt.branch, 1)[0];
   const sessions = (world.sessions[box] ?? []).filter((s) => s.dir === wt.path && !s.exited).length;
+  const published = !!wt.main || !!g.published;
   return {
     location: loc.name,
     name: wt.name,
+    title: wt.title,
     path: wt.path,
+    remote: loc.remote,
     branch: wt.branch,
     main: wt.main,
     port: 3000 + idx * 10 + (box === "gpu" ? 800 : 0),
     base: "origin/main",
     ahead: g.ahead,
     behind: g.behind,
+    upstream: published && wt.branch ? `origin/${wt.branch}` : undefined,
+    outgoing: g.outgoing ?? g.ahead,
+    incoming: g.incoming ?? 0,
+    published,
     changed: g.changed,
     untracked: g.untracked,
     last_commit: last,

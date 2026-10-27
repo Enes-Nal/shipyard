@@ -45,7 +45,7 @@ func printProcesses(out io.Writer, list box.BoxProcesses) {
 		for _, b := range list.Browsers {
 			stop := b.ID
 			if !b.Stoppable {
-				stop = "(not Shipyard's)"
+				stop = "(not Terminal's)"
 			}
 			fmt.Fprintf(out, "  %-44s %5.0f%% CPU  %8s  %4s  %d proc  %s\n", clip(b.Label, 44), b.CPUPercent, mem(b.Memory), since(b.Started), b.Processes, stop)
 		}
@@ -68,7 +68,7 @@ func printProcesses(out io.Writer, list box.BoxProcesses) {
 		}
 	}
 	if !list.Scopes {
-		fmt.Fprintln(out, "Sessions here have no systemd scope: ending one stops the processes Shipyard finds for it.")
+		fmt.Fprintln(out, "Sessions here have no systemd scope: ending one stops the processes Terminal finds for it.")
 	}
 }
 

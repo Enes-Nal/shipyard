@@ -1,4 +1,4 @@
-// The sidebar's word that a box's Shipyard skills aren't installed or are out
+// The sidebar's word that a box's Terminal skills aren't installed or are out
 // of date (lib/skills-notice.ts, components/sidebar/skills-notice.tsx): which
 // boxes get one, what it says, and when a snooze holds. Kept apart so it
 // tests without the app.
@@ -15,7 +15,7 @@ export interface SkillsNotice {
   kind: NoticeKind;
   // The box's agents the skills are for: Claude Code, Codex or both.
   agents: SkillAgent[];
-  // Of those, the ones with none of Shipyard's skills.
+  // Of those, the ones with none of Terminal's skills.
   without: SkillAgent[];
   // How many skills are not installed for one of the agents, and how many
   // are installed but older for one. A skill can be both: absent for Codex,
@@ -56,10 +56,10 @@ export function noticeFor(box: { name: string; state: string }, agents: string[]
 const names = (agents: SkillAgent[]) => agents.map((a) => AGENT_NAMES[a]).join(" or ");
 const skills = (n: number) => (n === 1 ? "1 skill" : `${n} skills`);
 
-// noticeText is what the notice says after the box's name: "Shipyard's
+// noticeText is what the notice says after the box's name: "Terminal's
 // skills aren't installed for Claude Code", "3 skills are out of date".
 export function noticeText(n: SkillsNotice): string {
-  if (n.without.length) return `Shipyard's skills aren't installed for ${names(n.without)}`;
+  if (n.without.length) return `Terminal's skills aren't installed for ${names(n.without)}`;
   if (n.kind === "outdated") return `${skills(n.outdated)} ${n.outdated === 1 ? "is" : "are"} out of date`;
   return `${skills(n.missing)} ${n.missing === 1 ? "isn't" : "aren't"} installed`;
 }
@@ -67,7 +67,7 @@ export function noticeText(n: SkillsNotice): string {
 // noticeDetail is the button's tooltip: what Install now does, and what
 // else it brings that the notice's one line left out.
 export function noticeDetail(n: SkillsNotice): string {
-  const base = `${n.kind === "outdated" ? "Updates" : "Installs"} all of Shipyard's skills for ${n.box}'s user, for ${n.agents.map((a) => AGENT_NAMES[a]).join(" and ")}.`;
+  const base = `${n.kind === "outdated" ? "Updates" : "Installs"} all of Terminal's skills for ${n.box}'s user, for ${n.agents.map((a) => AGENT_NAMES[a]).join(" and ")}.`;
   if (n.kind === "outdated" && n.missing) return `${base} ${skills(n.missing)} ${n.missing === 1 ? "isn't" : "aren't"} installed yet.`;
   if (n.kind === "missing" && n.outdated) return `${base} ${skills(n.outdated)} ${n.outdated === 1 ? "is" : "are"} out of date, too.`;
   return base;
@@ -91,7 +91,7 @@ export interface SkillsNoticePrefs {
 export const NO_PREFS: SkillsNoticePrefs = { snoozed: {}, never: [] };
 
 // normalizePrefs reads a stored document, whatever shape an older or newer
-// Shipyard left it in.
+// Terminal left it in.
 export function normalizePrefs(doc: Partial<SkillsNoticePrefs> | null | undefined): SkillsNoticePrefs {
   const snoozed: SkillsNoticePrefs["snoozed"] = {};
   for (const [box, s] of Object.entries(doc?.snoozed ?? {})) {

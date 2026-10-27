@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: What changed in each Shipyard release, newest first.
+description: What changed in each Terminal release, newest first.
 ---
 
 Releases are on [GitHub](https://github.com/cosscom/shipyard/releases).
@@ -11,6 +11,20 @@ again.
 
 ## Unreleased
 
+- **Terminal makes agent work visible from GitLab to done.** Connect a
+  GitLab repository by pasting its URL, then follow each branch on a Todo,
+  In progress and Done board. Branch cards show the active agent, changed
+  files, latest commit, and exactly what is waiting to push or pull. The
+  former Worktrees page is now Project activity, with the full branch and
+  commit graph still one click away. The app, phone view, docs and website
+  now use the Terminal name and command-prompt mark; `berth` identifiers stay
+  compatible.
+- **Agent work is easier to steer from one place.** Chats now have a
+  one-click switcher and a visible agent/model/effort handoff, plus a live Git
+  strip for the branch, changed files, commits and base drift. New tasks can
+  automatically route routine work to a fast, free or local-friendly worker
+  while stronger high-effort models lead architecture, debugging and
+  high-risk changes; a manual agent or model choice always wins.
 - **Switching projects no longer opens a new task.** Clicking a project on
   the rail (or in the projects column) with no agent at work in it now takes
   you to the worktree of it you were in last, or its main checkout, instead
@@ -29,7 +43,7 @@ again.
   is about to start in, the way the composer does, and resolves with its
   path on the box to put in a prompt. A pasted screenshot shrinks first, and
   a path to a file on this computer (`berth.api.localPaths` finds them in
-  pasted text) goes up through Shipyard. Files up to 20 MB.
+  pasted text) goes up through Terminal. Files up to 20 MB.
 - **A chat whose turn ended no longer looks busy.** When an agent's turn
   ends while its work runs on (turn check read a build, a deploy or a
   delegated task as still going), its chat now ends on an hourglass,
@@ -68,7 +82,7 @@ again.
 
 ## v0.3.30
 
-- **Agents on a Mac run at full speed.** Shipyard's login agents (the
+- **Agents on a Mac run at full speed.** Terminal's login agents (the
   Mac app's agent, and `berthd` on a Mac box) used to ask macOS to run
   them as background work, which slows their CPU and disk, and with them
   every agent and build they start. They now run as interactive work.
@@ -187,14 +201,14 @@ Keeping main up to date and opening Codex edits need each box's new
   The *Structured agents* switch is gone from Settings → Labs, and
   *Permissions* (Bypass or Ask) moved to Settings → Agents and models.
   Agents that other agents, the CLI, runs and automations start run in chat
-  too, asking for each permission on a box Shipyard hasn't reached yet.
+  too, asking for each permission on a box Terminal hasn't reached yet.
   Claude Code's own terminal is still one click away in its pane, and a box
   too old for chat keeps running agents in their terminals until you
   upgrade it. [Agents in chat](/guides/structured-agents) has the details.
 - **Attempts on a repository GitHub doesn't host finish with your pick.**
   On Gitea, Forgejo, GitLab or a folder, picking an attempt with a draft PR
   turned on failed the run at `gh pr create` and left every worktree
-  behind. Shipyard now pushes the picked branch, says plainly that it
+  behind. Terminal now pushes the picked branch, says plainly that it
   didn't open a pull request there (with the forge's own link to open one
   when it prints it), archives the other attempts and finishes the run.
 - **A pull request that doesn't open no longer fails the run.** When `gh`
@@ -227,7 +241,7 @@ Keeping main up to date and opening Codex edits need each box's new
   Each ask now shows in turn, the one shown is the one you answer, and a
   helper's ask stays until you answer it or the helper is stopped.
 - **Another Claude in the same folder no longer stalls a session.** A Claude
-  that Shipyard didn't start (in an editor, or a one-off `claude -p` a tool
+  that Terminal didn't start (in an editor, or a one-off `claude -p` a tool
   runs) in a session's folder could mark the session's agent exited when it
   quit; the session then showed as working for good and Stop did nothing.
   Its events are now told apart by its own conversation.
@@ -265,7 +279,7 @@ Keeping main up to date and opening Codex edits need each box's new
   beside are under Open in.
 - **A chat that recovers from a read error no longer crashes the app.** A
   pane that went from "Couldn't read the conversation" to its chat drew with
-  one hook more than before and showed "Shipyard hit an error".
+  one hook more than before and showed "Terminal hit an error".
 
 ## v0.3.24
 
@@ -294,7 +308,7 @@ Keeping main up to date and opening Codex edits need each box's new
   with the first session's environment: with two Codex sessions on a box,
   the second one's prompts, tools and turn ends showed on the first (which
   was even renamed after them), and the second only ever read off its
-  screen. Shipyard now starts Codex with `--no-daemon` when the installed
+  screen. Terminal now starts Codex with `--no-daemon` when the installed
   Codex knows the flag, and a Codex hook from another session's folder, or
   about a conversation another session holds, goes to that session.
 - **Every page uses the same type sizes as Settings.** Review, Worktrees,
@@ -334,7 +348,7 @@ Keeping main up to date and opening Codex edits need each box's new
   trust the new hooks with `/hooks`.
 - **An agent asking you a question no longer reads as done.** When a task's
   first prompt led Claude Code to ask something (its question form, with
-  choices), Shipyard could read the question off the screen as nothing,
+  choices), Terminal could read the question off the screen as nothing,
   end the wait and mark the agent finished while it waited for you. Now a
   wait Claude's hooks report lasts until Claude goes on, the turn ends at
   Claude's own Stop, and the screen recognises the question form too.
@@ -344,7 +358,7 @@ Keeping main up to date and opening Codex edits need each box's new
   whole height, next to the terminal's real cursor. Only the real one shows
   now.
 - **A box newer than the app is no longer called outdated.** An older
-  Shipyard used to offer to update a box that already ran a newer release,
+  Terminal used to offer to update a box that already ran a newer release,
   and *Update all* (or updating boxes automatically) would put its older
   `berthd` on it. Now a newer box is left alone, and `berth upgrade` refuses
   to downgrade one unless you pass `--force`. This works once both the app
@@ -363,7 +377,7 @@ Keeping main up to date and opening Codex edits need each box's new
 - **A kit link pinned to a commit works.** A GitHub link copied from a
   commit's page (`…/tree/308bc75…/kits/web`) used to fail with "Git
   couldn't do that", because git can't clone a commit by its hash as if it
-  were a branch. Shipyard now fetches the kit at that commit.
+  were a branch. Terminal now fetches the kit at that commit.
 
 ## v0.3.22
 
@@ -463,7 +477,7 @@ Keeping main up to date and opening Codex edits need each box's new
   image addresses stay as text instead of loading in the app.
 - **Tables in a reply can be explored.** An agent's Markdown table gets
   an *Explore* view with sortable columns and a failures filter for status
-  results. A small numeric table can switch to a chart in Shipyard's theme.
+  results. A small numeric table can switch to a chart in Terminal's theme.
   *Original* brings back the table exactly as written.
 - **Test failures in a reply have a short result card.** Vitest,
   Playwright and Go test output in a code block shows pass and fail counts
@@ -524,7 +538,7 @@ Keeping main up to date and opening Codex edits need each box's new
   through the Agent Client Protocol: its replies and tool calls fill the chat
   and its permission requests come to it. `berthd integrations install omp`
   adds a small extension to `~/.omp/agent/extensions` so a terminal session
-  says when it is working, needs you or is done, and adds Shipyard's MCP
+  says when it is working, needs you or is done, and adds Terminal's MCP
   server to `~/.omp/agent/mcp.json` so omp can drive other sessions; a box
   that has omp gets both with the other agents' hooks. Needs the box
   upgraded.
@@ -598,7 +612,7 @@ Keeping main up to date and opening Codex edits need each box's new
   the agent's first 60 commands, which hid every skill and plugin command
   (and the agent's last few) until you typed part of a name. It now lists
   everything: your own commands and skills first, then the agent's, then
-  plugins'. And if the list couldn't be read when the chat opened, Shipyard
+  plugins'. And if the list couldn't be read when the chat opened, Terminal
   asks the box again instead of leaving the menu closed.
 
 - **An agent's browser opens beside it.** When an agent opens its browser
@@ -615,7 +629,7 @@ Both need each box's new `berthd`, and the first the Database plugin's
 update (**Settings → Plugins**).
 
 - **Database finds a worktree's database in its `.env`.** Until now the
-  Database tab only showed a database once Shipyard had started one of the
+  Database tab only showed a database once Terminal had started one of the
   worktree's services with its address, so a project that keeps
   `DATABASE_URL` in `.env` and starts its own dev server saw "No database
   yet" for every worktree. Now, when you open the tab and no service has
@@ -630,11 +644,11 @@ update (**Settings → Plugins**).
   box with the others, and **Forget…** removes it. See
   [which databases appear](/guides/database#which-databases-appear).
 - **Leadline records queries for projects that keep `DATABASE_URL` in
-  `.env`.** When Shipyard starts a worktree's service and its own
+  `.env`.** When Terminal starts a worktree's service and its own
   environment for it has no `DATABASE_URL` or `POSTGRES_URL`, it now takes
   the one in the worktree's `.env` files and starts the service with
   Leadline's proxy in front of it, so **Queries** fills in without moving
-  the address into Shipyard's config. A variable Shipyard's environment
+  the address into Terminal's config. A variable Terminal's environment
   already has still wins, and the files are never changed. An app that
   overrides its environment from `.env` connects round Leadline. See
   [which databases Leadline sees](/guides/leadline#which-databases-leadline-sees).
@@ -660,12 +674,12 @@ Database, Leadline and `worktree new --no-setup` need each box's new
 - **A plugin's program stops when the plugin does.** Turning off a plugin
   that runs a program on your boxes, such as Leadline, now stops that
   program and removes it from every box it runs on, keeping what it
-  recorded; **Remove…** removes that too. Shipyard asks first and names the
+  recorded; **Remove…** removes that too. Terminal asks first and names the
   boxes, and a box that is offline is done when it next connects. Before,
   the program kept running and recording, with nothing in the app to stop
   it. Turning the plugin on again starts nothing: you turn it on for each
   box again. An update that keeps the same program leaves it running while
-  Shipyard asks you about the new version, with **Stop it** in the plugin's
+  Terminal asks you about the new version, with **Stop it** in the plugin's
   row. See [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
 - **Removing a worktree tells Leadline.** Leadline closes the connection it
   kept in front of that worktree's database and deletes what it recorded
@@ -676,9 +690,9 @@ Database, Leadline and `worktree new --no-setup` need each box's new
   Turned off, on and off again without restarting a service, the second
   time named none, though the service was sending to Leadline again.
 - **The sidebar says when a box's skills are missing or out of date.** On a
-  box where Shipyard's skills were never installed, or after a box upgrade
+  box where Terminal's skills were never installed, or after a box upgrade
   leaves them older than its berthd ships, a quiet note at the foot of the
-  sidebar names the box ("devl: Shipyard's skills aren't installed for
+  sidebar names the box ("devl: Terminal's skills aren't installed for
   Claude Code", "gpu: 3 skills are out of date") with two ways out.
   **Install now** installs or updates them all for the box's user and the
   note goes; if a hook refuses or the box drops off, it says why.
@@ -686,7 +700,7 @@ Database, Leadline and `worktree new --no-setup` need each box's new
   month, or **Don't remind me** for that box, which Settings → Agents turns
   back on. No toast, no sound. See
   [the sidebar's reminder](/guides/agent-integrations#the-sidebars-reminder).
-- The website's header is now coss.com's: "coss.com shipyard", with Docs,
+- The website's header is now coss.com's: "coss.com terminal", with Docs,
   Download, GitHub and its stars, and "Close the laptop" as an icon, and coss.com's
   lines down the sides of the page and across the top of each chapter.
 - **Review no longer keeps a box busy while an item is open.** With an item
@@ -715,14 +729,14 @@ Database, Leadline and `worktree new --no-setup` need each box's new
 - **Plugins can be installed from the app.** Settings → Plugins has a new
   **Browse** list of plugins that aren't built in, starting with Hello
   ports. Install puts one under Installed, off: it runs only once you allow
-  it, like any plugin of your own, and after an update Shipyard asks again.
+  it, like any plugin of your own, and after an update Terminal asks again.
   Remove deletes one you installed this way. To list a plugin of yours, see
   [publish it to the listing](/guides/plugins#publish-it-to-the-listing).
-- **Shipyard has its own mark.** The B from when the app was called Berth is
+- **Terminal has its own mark.** The B from when the app was called Berth is
   gone: the icon is now a hull seen bow-on, resting on its keel blocks, with
   the amber lamp lit inside. It is on the app and its dock icon, the phone
   app, the site and the docs.
-- **Linear issues in Shipyard.** Paste a personal API key in **Settings →
+- **Linear issues in Terminal.** Paste a personal API key in **Settings →
   Integrations**, and **Issues** gets a Linear side beside GitHub: what is
   assigned to you or a team's open issues, each with its description and
   comments, and **Start an agent** on any of them, in the project you
@@ -747,12 +761,12 @@ Database, Leadline and `worktree new --no-setup` need each box's new
   "Base UI error #31" instead of showing its Size and Refresh options.
 - **A Browser tab on a port with nothing listening no longer crashes the
   app.** Opening `http://localhost:3000` before its dev server started closed
-  Shipyard half a second later, and again on every launch after, since the
+  Terminal half a second later, and again on every launch after, since the
   tab came back.
 - **The laptop agent is lighter per request.** Proxied pages, port forwards
   and calls to your boxes allocate a fraction of what they did, and the kits
   and team suggestions ask all your boxes at once.
-- **Shipyard opens faster.** It now loads four files before it first paints
+- **Terminal opens faster.** It now loads four files before it first paints
   instead of about three hundred, and settings, dialogs and the browser pane
   load just after start. In our tests, the window drew in about a fifth of the
   time.
@@ -774,13 +788,13 @@ Database, Leadline and `worktree new --no-setup` need each box's new
 Most of this needs each box's new `berthd`: use **Update all** in the status
 bar, or `berth upgrade BOX`.
 
-- **The Review in Shipyard button is for UI work.** berthd adds it only to a
+- **The Review in Terminal button is for UI work.** berthd adds it only to a
   PR whose files change something a browser shows, agents add it only for
   such changes, and the button is the words alone, without a mark.
 
-- **Shipyard notices when your team has a setup.** If you added a project
+- **Terminal notices when your team has a setup.** If you added a project
   from `acme` yourself and acme publishes a [team setup](/guides/team-setup),
-  Shipyard says so quietly: a small icon on the project's row and a line in
+  Terminal says so quietly: a small icon on the project's row and a line in
   its menu, a line in Project settings saying what it sets up for the repo,
   a card on Home once, and **Team setup for acme** in ⌘K. **Review…** opens
   the setup with your project used as it is; nothing runs until you choose.
@@ -788,7 +802,7 @@ bar, or `berth upgrade BOX`.
   checks only your projects' owners, with your own `gh`, at most daily (weekly
   for a person's account), and never offline. The project menu also has
   **Copy team setup link**. See
-  [how Shipyard notices your team's setup](/guides/team-setup#how-shipyard-notices-your-teams-setup).
+  [how Terminal notices your team's setup](/guides/team-setup#how-terminal-notices-your-teams-setup).
 
 - **Just the kit from a team setup.** **Use acme's kit for this project…**
   applies only a project's kit from `acme/.berth` to the project you have: no
@@ -798,7 +812,7 @@ bar, or `berth upgrade BOX`.
   to review. See [just the kit](/guides/team-setup#just-the-kit).
 
 - **Team setup uses the clones you already have.** Before cloning a repo,
-  Shipyard looks for one on the box: a project you added already, or a
+  Terminal looks for one on the box: a project you added already, or a
   clone in `~/code`, `~/work`, `~/src` and the like (matched by its origin,
   reading nothing else). The page shows "Found ~/work/acme-web … · Use this
   / Clone a fresh copy", and using it changes nothing in it: no checkout,
@@ -815,11 +829,11 @@ bar, or `berth upgrade BOX`.
   in, and the sheet says why. **Copy review link as…** in the worktree menu
   makes one. See [review a PR](/guides/review-a-pr#opening-logged-in-at-a-page).
 
-- **A Review in Shipyard button on pull requests.** GitHub drops
+- **A Review in Terminal button on pull requests.** GitHub drops
   `berth://` links from PR descriptions, so a review link is now a button
   that goes through `https://berthd.app/review`, a small page that checks
-  the link and opens the review in Shipyard (with a link to the PR on
-  GitHub, and to install Shipyard). Agents add it to the PRs they open,
+  the link and opens the review in Terminal (with a link to the PR on
+  GitHub, and to install Terminal). Agents add it to the PRs they open,
   logged in as one of the project's dev users and at the page their change
   affects (`berthd login users` lists them). Turn on `"review_button"` for a
   project (its `.berth/config.json`, Project settings, or the team's
@@ -879,7 +893,7 @@ bar, or `berth upgrade BOX`.
 Most of this needs each box's new `berthd`: use **Update all** in the status
 bar, or `berth upgrade BOX`. Agents keep running through the update.
 
-- **More than one way to each box.** Shipyard can now reach a box over SSH
+- **More than one way to each box.** Terminal can now reach a box over SSH
   and at other addresses as well as over Tailscale, and sends new requests
   over the fastest route that works. When the route in use stops answering,
   requests move to another within seconds; open terminals follow once it is
@@ -893,13 +907,13 @@ bar, or `berth upgrade BOX`. Agents keep running through the update.
   browsers or a dev server, even ones left running in the background after
   the agent was killed. On Linux with systemd each new session runs in a
   scope of its own, which also lets it outlive berthd as before; elsewhere
-  Shipyard finds the session's processes by their tree (and, on Linux, the
+  Terminal finds the session's processes by their tree (and, on Linux, the
   session's marker). Your own processes and tmux are never touched.
 - **See and stop a box's browsers.** Click a box's memory meter in the
   status bar to see every Chromium, Chrome and Firefox on it, with who
-  started it (Shipyard's agent browser, an agent-browser session, a
+  started it (Terminal's agent browser, an agent-browser session, a
   session's tests, one left behind, or yours), its CPU, memory and age, and
-  **Stop** for Shipyard's and its sessions'. The sessions using the most
+  **Stop** for Terminal's and its sessions'. The sessions using the most
   memory are below. Settings → Boxes shows the same, and agents see it with
   `berthd ps` and in `berthd doctor`.
 - **A memory limit per session.** Settings → Boxes can hold each session on
@@ -943,11 +957,11 @@ bar, or `berth upgrade BOX`. Agents keep running through the update.
   on the client (Next.js, React Router: `history.pushState`) left the
   address bar on the first URL, since nothing loaded. It now shows where the
   page is, within half a second.
-- **Every agent account gets Shipyard's hooks and skills.** A Claude Code or
+- **Every agent account gets Terminal's hooks and skills.** A Claude Code or
   Codex session started on another account (the Usage plugin's accounts,
-  which set `CLAUDE_CONFIG_DIR` or `CODEX_HOME`) ran without Shipyard's
+  which set `CLAUDE_CONFIG_DIR` or `CODEX_HOME`) ran without Terminal's
   hooks, so the box guessed from the screen when it was working, done or
-  needed you, and without Shipyard's skills. `berthd integrations install`
+  needed you, and without Terminal's skills. `berthd integrations install`
   now puts them in every account folder (the default, those in
   `~/.berth/accounts`, and any the box or a project picks), **Add account…**
   puts them in the new one, and berthd adds them to an account a session
@@ -960,14 +974,14 @@ bar, or `berth upgrade BOX`. Agents keep running through the update.
   account's folder, and the box only looked in its own: the chat said "Its
   conversation can't be read here yet" and emptied after every message. The
   box now reads each session's conversation from the account it started on.
-- **Berth is now Shipyard.** A new name, nothing else: the same app, the
+- **Berth is now Terminal.** A new name, nothing else: the same app, the
   same CLI and the same boxes, with your data where it was. The commands are
   still `berth` and `berthd`, and their files (`~/.berth`, a repository's
   `.berth/`, `BERTH_*` variables, `berth://` links) keep their names for now.
-  A new download is `Shipyard.app`; an installed `Berth.app` updates in
+  A new download is `Terminal.app`; an installed `Berth.app` updates in
   place and keeps its folder name. Releases before this one went out as
   Berth.
-- **Shipyard for Linux, an alpha.** The desktop app now ships for x86-64
+- **Terminal for Linux, an alpha.** The desktop app now ships for x86-64
   Linux as an AppImage, which updates itself from the same feed as the Mac
   app, and as a .deb. It's an alpha: less tested than the Mac app, and its
   sidebar and **Settings → About** say so, with **Report a Linux bug** in

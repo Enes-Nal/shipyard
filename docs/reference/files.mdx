@@ -1,11 +1,11 @@
 ---
 title: Files and environment
-description: Where Shipyard keeps its state on the laptop and on boxes, and the variables it sets and reads.
+description: Where Terminal keeps its state on the laptop and on boxes, and the variables it sets and reads.
 ---
 
-Shipyard keeps two kinds of files:
+Terminal keeps two kinds of files:
 
-- **State**, which Shipyard writes: identities, trust stores, sockets, logs.
+- **State**, which Terminal writes: identities, trust stores, sockets, logs.
   It lives in the state directory: `~/Library/Application Support/berth` on
   a Mac, `~/.config/berth` (or `$XDG_CONFIG_HOME/berth`) on Linux.
   `BERTH_HOME` moves it; it must be an absolute path.
@@ -68,7 +68,7 @@ State, in `<state>/box/`:
 | `kits/<location>/<kit>/` | Installed kits' files (`$BERTH_KIT_DIR`) |
 | `paused.json` | Paused worktrees |
 | `agent-states.json` | What each agent last reported, by working directory |
-| `tmux.conf` | The configuration of Shipyard's tmux server |
+| `tmux.conf` | The configuration of Terminal's tmux server |
 | `commands/<session>.cmd` | Each session's command, prompt and all (0600), which its login shell runs; removed with the session |
 | `phone.json` | The phone companion: on or off, its token, notifications |
 | `turncheck.key`, `turncheck-openai.key` | The AI Gateway and OpenAI keys pasted for [turn check](/concepts/sessions-and-agents#agent-state) (0600) |
@@ -135,7 +135,7 @@ a 1Password session) is not passed on.
 
 See [events and gates](/reference/events#what-a-hook-gets).
 
-### What Shipyard reads
+### What Terminal reads
 
 | Variable | Meaning |
 | --- | --- |

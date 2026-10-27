@@ -40,7 +40,7 @@ function patch(box: string, p: Partial<Flow>) {
   useSandbox.setState((s) => ({ boxes: { ...s.boxes, [box]: { ...flowOf(box), ...p } } }));
 }
 
-// How long Shipyard watches for the fix after typing it, and how often.
+// How long Terminal watches for the fix after typing it, and how often.
 const WATCH_FOR = 120_000;
 const WATCH_EVERY = 2_500;
 // How long "Fixed" stays before the card goes.
@@ -148,7 +148,7 @@ export const canOpenFix = (box: string, prefer?: WorktreeRef) => !!fixTarget(box
 
 // openSandboxFix opens a terminal on the box with the fix typed and not
 // run: the person reads it and presses Enter, and sudo asks for their
-// password there. Shipyard never sees it.
+// password there. Terminal never sees it.
 export async function openSandboxFix(box: string, prefer?: WorktreeRef): Promise<boolean> {
   const client = useStore.getState().client;
   if (!client) return false;

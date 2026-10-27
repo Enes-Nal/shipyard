@@ -1,6 +1,6 @@
 # site
 
-Shipyard's landing page: static HTML and CSS, no build step. Open
+Terminal's landing page: static HTML and CSS, no build step. Open
 `index.html`, or serve the folder as it is.
 
 - `index.html`, `styles.css`: the page. Light and dark follow the system.
@@ -11,7 +11,7 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   renders once per size; without the script the plain painting shows. The
   lighthouse's beam is a CSS wedge of halftone dots from the lamp, sweeping
   by transform only (still for reduced motion, paused when hidden).
-- The header is coss.com's bar, as on coss.com/ui: `coss.com shipyard` in
+- The header is coss.com's bar, as on coss.com/ui: `coss.com terminal` in
   Cal Sans (the product in grey), then Docs and Download as ghost buttons,
   a hairline, GitHub with the repository's stars (from the GitHub API) and
   "Close the laptop" as an icon. Its lines
@@ -56,7 +56,7 @@ Shipyard's landing page: static HTML and CSS, no build step. Open
   and review click their way in, so they also work against the built demo:
   `node site/scripts/capture.mjs --url http://127.0.0.1:1460/demo/ --only
   pane-terminal,attempts` with `site/` served on 1460.
-- `review/`: the bounce page for the **Review in Shipyard** button on PRs
+- `review/`: the bounce page for the **Review in Terminal** button on PRs
   (`/review?repo=O/N&pr=N[&sha=…][&as=…][&path=…]`, rewritten to
   `review/index.html` in `vercel.json`). It checks the parameters as strictly
   as the app's `review-link.ts`, opens the `berth://review?…` link rebuilt

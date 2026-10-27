@@ -1,6 +1,6 @@
 import { expect, mockOnly, test } from "./fixtures";
 
-// When work an agent started ends, Shipyard types a <berth-notification> into
+// When work an agent started ends, Terminal types a <berth-notification> into
 // its session (internal/box/notify.go). The agent's chat draws each report
 // as a card, never the tagged text and never as the person's prompt.
 
@@ -8,7 +8,7 @@ test.beforeEach(async ({ app }) => {
   await app.open({ params: { view: "conversation" } });
 });
 
-test("a report from Shipyard reads as a card with a way to the agent", async ({ app }) => {
+test("a report from Terminal reads as a card with a way to the agent", async ({ app }) => {
   mockOnly();
   await app.openWorktree("devl/order-export");
   const reports = app.chat.locator("[data-testid=chat-item][data-kind=report]");

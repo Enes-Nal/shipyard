@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Acme team setup for Shipyard: box/setup.sh
+# Acme team setup for Terminal: box/setup.sh
 #
 # What an Acme engineer's box needs once, before any repository: system
 # updates and packages, Docker, gh and the 1Password CLI, Node (fnm), Yarn
-# (corepack), and Postgres and Redis in Docker. Shipyard runs it in a
+# (corepack), and Postgres and Redis in Docker. Terminal runs it in a
 # terminal on the box, as you, one step at a time; you can run it by hand
 # the same way.
 #
@@ -12,7 +12,7 @@
 #   box/setup.sh <step>         one step: update packages docker cli node yarn postgres redis
 #   box/setup.sh check <step>   exit 0 when the step has nothing left to do
 #   box/setup.sh plan           the steps, one per line, "sudo" after those that need it
-#   box/setup.sh github         gh auth login on this box (Shipyard does this step itself)
+#   box/setup.sh github         gh auth login on this box (Terminal does this step itself)
 #   box/setup.sh node-version [DIR]
 #                               the Node version the shop asks for, and where that came from
 #
@@ -24,7 +24,7 @@
 # best effort (Docker from OrbStack, Docker Desktop or Colima).
 #
 # The Postgres and Redis versions are set in one place, team.json's
-# box.settings (SHOP_POSTGRES_VERSION, SHOP_REDIS_VERSION), which Shipyard passes
+# box.settings (SHOP_POSTGRES_VERSION, SHOP_REDIS_VERSION), which Terminal passes
 # as BERTH_SETTING_<NAME>; by hand they are read from team.json, and the
 # environment can override them. Other settings (environment, all optional):
 #   SHOP_REPO=acme/shop       SHOP_DIR=~/code/shop     SHOP_NODE=<version>
@@ -45,7 +45,7 @@ STATE="${XDG_STATE_HOME:-$HOME/.local/state}/acme-team"
 FNM_DIR="${FNM_DIR:-$HOME/.local/share/fnm}"
 UPDATE_HOURS="${SHOP_UPDATE_EVERY_HOURS:-24}"
 
-# setting KEY: the environment's value, else what Shipyard passes from
+# setting KEY: the environment's value, else what Terminal passes from
 # team.json's box.settings (BERTH_SETTING_KEY), else team.json itself, read
 # with grep so it works before python3 or jq are installed.
 setting() {
@@ -103,7 +103,7 @@ need_sudo() {
   sudo -n true 2>/dev/null && return 0
   say "This step installs system software, which needs root."
   info "sudo will ask for $(id -un)'s password. You type it here, in this terminal;"
-  info "this script and Shipyard never see or store it."
+  info "this script and Terminal never see or store it."
   sudo -v
 }
 
@@ -156,7 +156,7 @@ dk() {
   fi
 }
 
-# Shipyard runs setup and services through a login shell, so a tool only
+# Terminal runs setup and services through a login shell, so a tool only
 # counts once a login shell finds it.
 login_has() { "${SHELL:-/bin/bash}" -lc "command -v $1" >/dev/null 2>&1; }
 
@@ -315,7 +315,7 @@ step_docker() {
     if ! in_docker_group; then
       sudo usermod -aG docker "$(id -un)"
       info "added $(id -un) to the docker group (new logins have it; this run uses sg)"
-      info "Shipyard gives the group to what it starts from now on; a terminal you had open needs a new login"
+      info "Terminal gives the group to what it starts from now on; a terminal you had open needs a new login"
     fi
   else
     # best effort on macOS: any running Docker passes; otherwise OrbStack if
@@ -343,7 +343,7 @@ step_cli() {
   else
     brew_install gh 1password-cli
   fi
-  info "Shipyard signs op in to 1Password as a step of its own, after GitHub (nothing is read now)"
+  info "Terminal signs op in to 1Password as a step of its own, after GitHub (nothing is read now)"
 }
 
 step_node() {
@@ -357,7 +357,7 @@ step_node() {
     fi
   fi
   export FNM_DIR PATH="$FNM_DIR:$PATH"
-  # Login shells (Shipyard's setup and services): fnm's default Node on the
+  # Login shells (Terminal's setup and services): fnm's default Node on the
   # PATH, in plain sh so any login shell reads it. Interactive shells also
   # switch Node per repository with --use-on-cd.
   # shellcheck disable=SC2016
@@ -462,7 +462,7 @@ step_redis() {
   check_redis || die "Redis did not start: docker logs $REDIS_NAME"
 }
 
-# github signs this box in to GitHub with its own gh, the way Shipyard's own
+# github signs this box in to GitHub with its own gh, the way Terminal's own
 # last step does: a device code you enter on your laptop.
 step_github() {
   say "GitHub on this box"

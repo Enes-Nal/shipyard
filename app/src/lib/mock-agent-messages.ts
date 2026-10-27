@@ -4,7 +4,7 @@ import type { AgentMessage, CrewMember, MessageSender, TranscriptItem } from "@/
 // berthd sends for them once internal/transcript/peer.go has read Claude
 // Code's record. The story (default) has helpers, a background command, a
 // mid-turn note and another session's question; ?scene=busy is a teammate
-// on a team, with four helpers, three teammates, the lead and Shipyard. All of
+// on a team, with four helpers, three teammates, the lead and Terminal. All of
 // acme and everyone in it is made up.
 
 export const MESSAGES_SESSION = "ci-flake-claude";

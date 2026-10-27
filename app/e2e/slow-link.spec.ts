@@ -53,7 +53,7 @@ test("Settings › Boxes shows the latency, why the link is slow, and that Tails
   const boxes = await app.openSettings("boxes");
   await expect(boxes.getByText("Slow", { exact: true })).toBeVisible();
   const link = boxes.getByTestId("box-link");
-  await expect(link).toContainText("Slow: health check took 1.9s. Shipyard stays connected, and requests still go through.");
+  await expect(link).toContainText("Slow: health check took 1.9s. Terminal stays connected, and requests still go through.");
   await expect(link).toContainText("Latency 1,900 ms.");
   const relay = boxes.getByTestId("box-relayed");
   await expect(relay).toContainText("Relayed through Tailscale's New York server: no direct connection (this computer's nearest is London).");

@@ -89,13 +89,13 @@ test("the prompt it started with is its first prompt, or the command typed as on
 });
 
 test("a question over several lines shows its first lines, one each", () => {
-  const ask = { tool: "AskUserQuestion", input: "Yes, both, as two issues:\n1. **Shipyard**: shortcuts for your layout.\n2. Lookout: shorter descriptions.\n3. A third." };
-  assert.deepEqual(chatCard(ask, true, [])?.tail, ["Yes, both, as two issues:", "1. Shipyard: shortcuts for your layout.", "2. Lookout: shorter descriptions."]);
+  const ask = { tool: "AskUserQuestion", input: "Yes, both, as two issues:\n1. **Terminal**: shortcuts for your layout.\n2. Lookout: shorter descriptions.\n3. A third." };
+  assert.deepEqual(chatCard(ask, true, [])?.tail, ["Yes, both, as two issues:", "1. Terminal: shortcuts for your layout.", "2. Lookout: shorter descriptions."]);
   assert.deepEqual(chatCard({ tool: "Bash", input: "make test", why: "Run the tests\nall of them" }, true, [])?.tail, ["Run the tests", "$ make test"]);
 });
 
 test("a long or pasted opening prompt is its first line, cut short", () => {
-  const pasted = `[scrawl 0:57 · Shipyard] ${"so right now here ".repeat(30)}\n#2 the second part`;
+  const pasted = `[scrawl 0:57 · Terminal] ${"so right now here ".repeat(30)}\n#2 the second part`;
   const p = openingPrompt([{ kind: "user", id: "u", text: pasted }]);
   assert.ok(p && p.length <= 200 && p.endsWith("…") && !p.includes("#2"), String(p));
   assert.equal(openingPrompt([{ kind: "user", id: "u", text: "\n  Fix the cart badge\nand its test" }]), "Fix the cart badge");

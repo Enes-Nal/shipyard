@@ -1,4 +1,4 @@
-/* Shipyard on a phone: one column, big targets, the app's own greys. */
+/* Terminal on a phone: one column, big targets, the app's own greys. */
 :root {
   --bg: #f6f6f4; --panel: #ffffff; --sunk: #efeeeb; --fg: #1d1f22; --muted: #686b70; --line: #e2e1dd;
   --term: #1b1d20; --term-fg: #d9d7d2;

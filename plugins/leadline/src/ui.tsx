@@ -17,7 +17,7 @@ export const COPY: HelperCopy = {
   name: "Leadline",
   program: HELPER,
   icon: "Anchor",
-  does: (box) => `It records what the dev servers Shipyard starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves ${box}.`,
+  does: (box) => `It records what the dev servers Terminal starts on that box do (their queries, traces and logs) into a folder on the box. Nothing it records leaves ${box}.`,
   about: (box) => (
     <>
       It shows what your code did in development: every database query, each request's trace, and the logs. Turning it on installs and runs <code>{HELPER}</code> on {box}; what it records stays there.
@@ -196,7 +196,7 @@ export function Nothing({ ctx, what, filtered }: { ctx: PanelContext; what: stri
       title={`Nothing from ${ctx.worktree} yet`}
       body={
         <>
-          Leadline is running on {ctx.box}, and this worktree's app hasn't sent it anything. Start the app as one of the worktree's services, so Shipyard gives it the variables that point at Leadline. Queries to a Postgres on the box are then recorded as they are; traces and logs need an OpenTelemetry SDK in the app.
+          Leadline is running on {ctx.box}, and this worktree's app hasn't sent it anything. Start the app as one of the worktree's services, so Terminal gives it the variables that point at Leadline. Queries to a Postgres on the box are then recorded as they are; traces and logs need an OpenTelemetry SDK in the app.
         </>
       }
       actions={

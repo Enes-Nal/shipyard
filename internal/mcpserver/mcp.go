@@ -129,7 +129,7 @@ func with(props map[string]any) map[string]any {
 }
 
 // told is what the tools that start work say about hearing back.
-const told = " Shipyard tells you when it ends, needs a person or hits a gate: a <berth-notification> message arrives in your session at your next idle. So end your turn instead of polling; berth_wait_turn is for short waits."
+const told = " Terminal tells you when it ends, needs a person or hits a gate: a <berth-notification> message arrives in your session at your next idle. So end your turn instead of polling; berth_wait_turn is for short waits."
 
 // Tools are berth's MCP tools.
 var Tools = []Tool{
@@ -197,7 +197,7 @@ func (s *Server) handle(ctx context.Context, req request) (any, *rpcError) {
 			"protocolVersion": v,
 			"capabilities":    map[string]any{"tools": map[string]any{}},
 			"serverInfo":      map[string]any{"name": "berth", "version": version.Version},
-			"instructions":    "Tools for this box's agents, worktrees and durable runs. Never block: wait_turn takes at most 90 s and returns a cursor. Work you start (task_new, send, exec, run_start, attempts) reports back: a <berth-notification> message from Shipyard, not the user, arrives at your next idle when it ends, needs a person or reaches a gate. So end your turn rather than polling.",
+			"instructions":    "Tools for this box's agents, worktrees and durable runs. Never block: wait_turn takes at most 90 s and returns a cursor. Work you start (task_new, send, exec, run_start, attempts) reports back: a <berth-notification> message from Terminal, not the user, arrives at your next idle when it ends, needs a person or reaches a gate. So end your turn rather than polling.",
 		}, nil
 	case "ping":
 		return map[string]any{}, nil

@@ -329,7 +329,7 @@
     @apply font-sans antialiased;
     }
 }
-/* Shipyard: a desktop app, dense like Orca. */
+/* Terminal: a desktop app, dense like Orca. */
 @layer base {
   html, body, #root {
     height: 100%;

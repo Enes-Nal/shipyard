@@ -4,7 +4,7 @@ import { type App, expect, mockOnly, test } from "./fixtures";
 
 // The guided install (views/onboarding/guided-install.tsx) is adding a box
 // from Team setup: the plan, full screen, with the agents to choose and the
-// team's steps after Shipyard's, then berth add ssh --guided in a terminal here
+// team's steps after Terminal's, then berth add ssh --guided in a terminal here
 // beside a checklist the step markers keep up to date, then the team's
 // setup on the new box in the same screen. (Adding a box anywhere else is
 // the quick install: quick-install.spec.ts.) The mock (lib/mock-install.ts)
@@ -25,7 +25,7 @@ async function openPlan(app: App, host: string) {
   const { page } = app;
   await app.open({ params: { team: "acme", "team-page": "acme" } });
   await page.getByRole("button", { name: "Add a box" }).locator("visible=true").first().click();
-  await page.getByText("Or let Shipyard set it up over SSH").click();
+  await page.getByText("Or let Terminal set it up over SSH").click();
   await page.getByLabel("SSH host, like me@my-box").fill(host);
   // Team setup's add a box has the agents in the plan, not inline.
   await expect(page.getByTestId("inline-agents")).toHaveCount(0);
@@ -60,7 +60,7 @@ test("from Team setup: the whole plan, the terminal, sudo's password, then the t
   // Claude Code is ticked the first time.
   await expect(page.getByTestId("agent-claude")).toHaveAttribute("data-checked", "true");
   await expect(plan.getByTestId("plan-agents")).toContainText("Claude Code");
-  // Then the team's own steps, after Shipyard's.
+  // Then the team's own steps, after Terminal's.
   const team = page.getByTestId("install-plan-team");
   await expect(guided(page)).toContainText("Then Acme's setup");
   await expect(team.getByTestId("plan-team-packages")).toContainText("System packages");
@@ -96,7 +96,7 @@ test("the agents chosen are installed, and remembered for the next box", async (
   await openPlan(app, "demo@my-box");
   await page.getByTestId("agent-codex").click();
   await expect(page.getByTestId("plan-agents")).toContainText("Claude Code and Codex");
-  // Gemini needs Node, so Shipyard says how instead of offering it.
+  // Gemini needs Node, so Terminal says how instead of offering it.
   await expect(page.getByTestId("agent-gemini")).toContainText("npm install -g @google/gemini-cli");
   expect(((await app.stored("berth.prefs")) as { installAgents: string[] }).installAgents).toEqual(["claude", "codex"]);
   await page.getByTestId("agent-claude").click();

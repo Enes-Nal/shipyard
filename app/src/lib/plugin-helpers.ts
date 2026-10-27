@@ -72,7 +72,7 @@ export function stopNote(program: string, h: PluginHelpers | undefined, remove =
     parts.push(`Its program, ${program}, is stopped and removed on ${listOf(on)}.`);
     parts.push(remove ? "What it recorded on your boxes is deleted too." : "What it recorded there is kept.");
   } else if (away.length > 0) {
-    parts.push(`Its program, ${program}, isn't running on a box Shipyard can reach.`);
+    parts.push(`Its program, ${program}, isn't running on a box Terminal can reach.`);
     if (remove) parts.push("What it recorded on your boxes is deleted.");
   } else {
     parts.push(`Its program, ${program}, isn't running on any box${remove ? "." : ", so nothing is stopped."}`);

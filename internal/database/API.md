@@ -1,13 +1,13 @@
 # The berth-database API
 
 `berth-database` is a helper that runs on a box beside its dev servers and
-lets Shipyard's Database tab browse and edit **a worktree's own development
+lets Terminal's Database tab browse and edit **a worktree's own development
 database**: its schema, a table's rows, one statement at a time, and edits to
 rows by their primary key. It is one small static program with no cgo. It
 opens Postgres today, behind an interface that the next engine fits into
 ([Engines](#engines)).
 
-It can run SQL, so it is closed in ways Shipyard's other helpers are not:
+It can run SQL, so it is closed in ways Terminal's other helpers are not:
 every route but `/api/health` needs a token only the box daemon holds, a
 database is opened only if it is on this machine, nothing is written unless
 writes were turned on for that database in the last 15 minutes, and what was
@@ -97,7 +97,7 @@ The helper holds no data of its own. Removing it with its data removes
   which stops DNS rebinding; anything else is a `403`.
 - **No pages.** A request with an `Origin` header is a `403`, whatever the
   origin and whatever token it carries. No page reaches this helper directly,
-  Shipyard's own window included: it goes through the box daemon, which sends
+  Terminal's own window included: it goes through the box daemon, which sends
   no `Origin`. There are no CORS headers.
 - **Bodies are JSON**, at most 4 MB (`/api/attach`, `/api/detach` and
   `/writes`: 256 KB). A larger one is a `413`.
@@ -339,7 +339,7 @@ POST /api/attach
 
 | field | default | what |
 | --- | --- | --- |
-| `project` | required | The repository, as Shipyard names it. |
+| `project` | required | The repository, as Terminal names it. |
 | `worktree` | `""` | The worktree's name; empty for the project's main checkout. |
 | `command` | `""` | The service's name in the project's config. `.env` when the variables are not a service's but what the box daemon read in the worktree's own `.env` files, because the worktree's tab was opened: no service has that name, so what the files say is kept apart from what a service was started with. `manual` when they are an address a person gave in the app. |
 | `env` | `{}` | The variables of the service's environment that the plugin's manifest names. |
@@ -382,7 +382,7 @@ POST /api/detach
 | --- | --- |
 | `project`, `worktree` | The worktree, as in attach. |
 | `source` | Or its source outright: `"acme/fix-orders"`. |
-| `service` | Or a service name as Shipyard's other helpers take it: `"acme/fix-orders"`, `"acme/fix-orders:web"`. |
+| `service` | Or a service name as Terminal's other helpers take it: `"acme/fix-orders"`, `"acme/fix-orders:web"`. |
 
 Has the helper forget a worktree, for when the worktree is removed: its
 connections close, statements in flight on them end, and its entries, with

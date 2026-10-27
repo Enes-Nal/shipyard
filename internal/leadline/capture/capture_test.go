@@ -165,9 +165,9 @@ func TestUnderAndOwners(t *testing.T) {
 		}
 	}
 	for want, w := range map[string]store.Worktree{
-		"from Shipyard, worktree fix-orders": {Project: "acme", Worktree: "fix-orders"},
-		"from Shipyard, project acme":        {Project: "acme"},
-		"from Shipyard, acme/fix-orders":     {},
+		"from Terminal, worktree fix-orders": {Project: "acme", Worktree: "fix-orders"},
+		"from Terminal, project acme":        {Project: "acme"},
+		"from Terminal, acme/fix-orders":     {},
 	} {
 		if o := OwnerOf("acme/fix-orders", w); o.Label != want || o.Kind != "worktree" || o.Service != "acme/fix-orders" {
 			t.Errorf("OwnerOf(%+v) = %+v, want the label %q", w, o, want)

@@ -167,7 +167,7 @@ func Detect(home string) (present, missing []Tool) {
 // returned names every failure.
 func InstallDetected(home, bin, command string, out io.Writer) error {
 	present, missing := Detect(home)
-	fmt.Fprintln(out, "Agent integrations (hooks for needs-you, working and done; Shipyard's skills):")
+	fmt.Fprintln(out, "Agent integrations (hooks for needs-you, working and done; Terminal's skills):")
 	var failed []string
 	for _, t := range present {
 		var buf bytes.Buffer
@@ -206,7 +206,7 @@ func InstallDetected(home, bin, command string, out io.Writer) error {
 func InstallPresent(home, bin string, out io.Writer) error {
 	present, _ := Detect(home)
 	if len(present) == 0 {
-		fmt.Fprintln(out, "No agent CLIs on this box yet; Shipyard adds their hooks when you add one from the box's settings.")
+		fmt.Fprintln(out, "No agent CLIs on this box yet; Terminal adds their hooks when you add one from the box's settings.")
 		return nil
 	}
 	var failed []string

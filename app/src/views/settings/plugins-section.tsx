@@ -132,7 +132,7 @@ export function PluginsSection() {
         }
       >
         {market.old ? (
-          <p className="py-3.5 text-muted-foreground text-body">The Shipyard agent on this computer is older than this app, so it can't read the listing yet.</p>
+          <p className="py-3.5 text-muted-foreground text-body">The Terminal agent on this computer is older than this app, so it can't read the listing yet.</p>
         ) : market.error ? (
           <div className="flex items-center gap-4 py-3.5" data-testid="market-error">
             <ErrorText className="min-w-0 flex-1 text-destructive-foreground text-body" text={market.error} />
@@ -169,7 +169,7 @@ function MarketRow({ plugin: p, was, onChanged, onStale }: { plugin: MarketPlugi
       await laptopApi.installPlugin(client, p.id, p.version, replace);
       toastManager.add({
         title: action === "update" ? `Updated ${p.name} to ${p.version}` : `Installed ${p.name}`,
-        description: was?.allowed ? "Shipyard asks again before the new code runs." : "It's off until you turn it on under Installed.",
+        description: was?.allowed ? "Terminal asks again before the new code runs." : "It's off until you turn it on under Installed.",
         type: "success",
       });
       onChanged();

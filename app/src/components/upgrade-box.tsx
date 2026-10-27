@@ -8,7 +8,7 @@ import { explain } from "@/lib/errors";
 import { updateBoxes, useOutdated, useOutdatedBoxes } from "@/lib/outdated";
 import { cn } from "@/lib/utils";
 
-// UpgradeBox updates a box's berthd to the build this Shipyard ships: the same
+// UpgradeBox updates a box's berthd to the build this Terminal ships: the same
 // upgrade as Settings → Boxes and the status bar's Update all, sharing their
 // progress, so pressing it in one place shows it running in all of them.
 // Agents keep running; once the box answers with the new build, whatever

@@ -69,7 +69,7 @@ function startup(s: Session, port: number): string[] {
   ];
 }
 
-const stopped = (s: Session) => `\r\n\x1b[33m■\x1b[0m ${s.title || s.service} stopped (exit 130). Start it again from Shipyard to run it here.\r\n`;
+const stopped = (s: Session) => `\r\n\x1b[33m■\x1b[0m ${s.title || s.service} stopped (exit 130). Start it again from Terminal to run it here.\r\n`;
 
 // Attached tabs, by session, so a start shows in a tab that is already open.
 const attached = new Map<string, Set<(lines: string[]) => void>>();

@@ -197,7 +197,7 @@ func TestArtifactLibrariesArePinned(t *testing.T) {
 	p, _ := artProxy(&fakeBox{kind: "page"})
 	// A library whose bytes differ from the pin is not served.
 	resp := get(t, p, artHost, "/_lib/chart.js@4.4.1/dist/chart.umd.js?leak=data", nil)
-	if resp.StatusCode != 502 || !strings.Contains(read(t, resp), "isn't what Shipyard pinned") {
+	if resp.StatusCode != 502 || !strings.Contains(read(t, resp), "isn't what Terminal pinned") {
 		t.Fatalf("tampered library: %d", resp.StatusCode)
 	}
 	// The right bytes are, from the canonical address, whatever the query.

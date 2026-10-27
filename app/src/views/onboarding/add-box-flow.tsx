@@ -25,7 +25,7 @@ export type AddBoxStage = "start" | "working" | "tailnet" | "paired";
 type From = "link" | "ssh" | "tailnet";
 
 // AddBoxFlow is every way to add a box, on one screen. When this computer
-// reaches a tailnet (its own Tailscale, or one Shipyard signed in to), that
+// reaches a tailnet (its own Tailscale, or one Terminal signed in to), that
 // tailnet's machines come first, each set up in a click; then the install
 // command to run on any box and the field for the link it prints; then
 // setting a box up over SSH by hand. Without a tailnet, the tailnet path
@@ -66,7 +66,7 @@ export function AddBoxFlow({
   const fromTeam = useStore((s) => s.view.kind === "team");
   const readyLabel = variant === "page" ? "Continue" : fromTeam ? "Back to Team setup" : undefined;
   // From Team setup, adding a box is the guided install, with the team's
-  // steps after Shipyard's; anywhere else it is the quick one.
+  // steps after Terminal's; anywhere else it is the quick one.
   const teamCtx = useTeamAddBox((s) => s.ctx);
   const team = fromTeam ? teamCtx : undefined;
 
@@ -99,7 +99,7 @@ export function AddBoxFlow({
   const head = signingIn
     ? {
         title: "Sign in to another tailnet",
-        description: "For a box on a tailnet this computer isn't on: a personal one while this Mac is on work's, say. Shipyard joins it as its own device, so nothing changes for the rest of this Mac.",
+        description: "For a box on a tailnet this computer isn't on: a personal one while this Mac is on work's, say. Terminal joins it as its own device, so nothing changes for the rest of this Mac.",
       }
     : intro;
   const onBack = signingIn ? () => setSigningIn(undefined) : onExit;
@@ -195,7 +195,7 @@ export function AddBoxFlow({
               </Collapsible>
             )}
             <Collapsible open={sshOpen} onOpenChange={setSshOpen}>
-              <Trigger>Or let Shipyard set it up over SSH</Trigger>
+              <Trigger>Or let Terminal set it up over SSH</Trigger>
               <CollapsiblePanel>
                 <div className="pt-3">
                   <SshSetup network={network} retry={retry.ssh} onRunning={setBusy} onPaired={setPaired} onSignIn={() => setSigningIn("ssh")} readyLabel={readyLabel} team={team} />

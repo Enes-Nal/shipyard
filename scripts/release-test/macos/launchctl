@@ -1,10 +1,10 @@
 #!/bin/sh
-# launchctl, as the release tests' Shipyard sees it (scripts/fresh-user-test.sh,
+# launchctl, as the release tests' Terminal sees it (scripts/fresh-user-test.sh,
 # scripts/upgrade-test.sh). The test puts this folder first on the app's
 # PATH, and berth and berthd run launchctl by name, so every launchd call
 # the app under test makes comes here.
 #
-# This Mac's own Shipyard uses the labels dev.berth.berthd and dev.berth.agent.
+# This Mac's own Terminal uses the labels dev.berth.berthd and dev.berth.agent.
 # A test that bootstrapped those would replace (and at cleanup remove) the
 # person's real box and agent, so here they become
 # dev.berth.test-<id>.berthd and dev.berth.test-<id>.agent: real launchd
@@ -21,7 +21,7 @@ uid=$(id -u)
 
 log() { [ -z "$root" ] || printf '%s launchctl %s\n' "$(date +%H:%M:%S)" "$*" >>"$root/launchctl.log"; }
 refuse() {
-	echo "launchctl (Shipyard release test): refused: $*" >&2
+	echo "launchctl (Terminal release test): refused: $*" >&2
 	log "REFUSED $*"
 	exit 1
 }

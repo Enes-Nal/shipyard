@@ -42,7 +42,7 @@ import { ApiError } from "@/lib/api";
 // (databaseEnvLook: helpers/database/attach-env on a real box). Without a
 // scenario the files are not there: the worktrees above have their database
 // from a service, and the others have none. The ?db=env scenarios are a
-// project whose services Shipyard does not start, so the helper knows no
+// project whose services Terminal does not start, so the helper knows no
 // database until a look: ?db=env has shop / checkout-fix's DATABASE_URL in
 // its .env.local, ?db=env-none has the files and no such variable in them,
 // ?db=env-refused has a DATABASE_URL that points at another host and a

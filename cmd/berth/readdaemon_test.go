@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// berth on the PATH is often a link to the copy inside Shipyard.app
+// berth on the PATH is often a link to the copy inside Terminal.app
 // (Settings → General → Command line); the daemons are in the app's
 // Contents/Resources, beside the file the link points at.
 func TestReadDaemonThroughALink(t *testing.T) {
@@ -38,7 +38,7 @@ func TestReadDaemonThroughALink(t *testing.T) {
 	}
 }
 
-// On a Mac, a Mac box is served by the universal berthd Shipyard.app carries
+// On a Mac, a Mac box is served by the universal berthd Terminal.app carries
 // for Use this Mac, or the one make build put beside berth.
 func TestReadDaemonFindsTheMacBerthd(t *testing.T) {
 	if runtime.GOOS != "darwin" {

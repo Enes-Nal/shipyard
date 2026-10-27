@@ -16,7 +16,7 @@ export const COPY: HelperCopy = {
   program: HELPER,
   icon: "table-2",
   does: (box) =>
-    `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Shipyard starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
+    `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Terminal starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
   about: (box) => (
     <>
       It shows a worktree's own development database: its tables and rows, and a console for SQL, read-only until you unlock it. Turning it on installs and runs <code>{HELPER}</code> on {box}; the database's address stays there.
@@ -84,7 +84,7 @@ export function Waiting({ fault, onRetry, title = "Couldn't read from the databa
 }
 
 // One line over what is shown: something needs saying ("note"), or went
-// wrong ("bad"). Never amber: in Shipyard that means an agent needs you.
+// wrong ("bad"). Never amber: in Terminal that means an agent needs you.
 export function Line({ tone = "note", children, actions, testId }: { tone?: "bad" | "note"; children: ReactNode; actions?: ReactNode; testId?: string }) {
   const tones = { bad: "bg-destructive/8 text-destructive-foreground", note: "bg-muted/50 text-muted-foreground" };
   return (

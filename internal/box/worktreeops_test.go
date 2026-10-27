@@ -47,7 +47,7 @@ func TestWorktreeStatusAndHistoryCompareWithTheBase(t *testing.T) {
 
 	loc, _ := b.Locations.Get(ctx, "app")
 	st := b.worktreeStatus(ctx, loc, Worktree{Name: "feature", Path: wt.Path, Branch: "feature"}, nil)
-	if st.Base != "origin/main" || st.Ahead != 1 || st.Behind != 1 || st.Untrack != 1 || st.Last == nil || st.Last.Subject != "Add the feature" {
+	if st.Base != "origin/main" || st.Ahead != 1 || st.Behind != 1 || st.Upstream != "" || st.Published || st.Outgoing != 1 || st.Incoming != 0 || st.Untrack != 1 || st.Last == nil || st.Last.Subject != "Add the feature" {
 		t.Fatalf("status = %+v", st)
 	}
 	commits, err := gitLog(ctx, wt.Path, st.Base, 10)
@@ -56,6 +56,27 @@ func TestWorktreeStatusAndHistoryCompareWithTheBase(t *testing.T) {
 	}
 	if len(commits) != 2 || commits[0].OnBase || !commits[1].OnBase || commits[0].Author != "t" {
 		t.Fatalf("log = %+v", commits)
+	}
+}
+
+func TestWorktreeStatusSeparatesPushPullFromBaseDrift(t *testing.T) {
+	ctx := context.Background()
+	b, _, wt := cloneWithWorktree(t)
+	gitIn(t, wt.Path, "push", "-q", "-u", "origin", "feature")
+	loc, _ := b.Locations.Get(ctx, "app")
+	st := b.worktreeStatus(ctx, loc, Worktree{Name: "feature", Path: wt.Path, Branch: "feature"}, nil)
+	if st.Upstream != "origin/feature" || !st.Published || st.Outgoing != 0 || st.Incoming != 0 {
+		t.Fatalf("published status = %+v", st)
+	}
+
+	if err := os.WriteFile(filepath.Join(wt.Path, "another.txt"), []byte("mine"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	gitIn(t, wt.Path, "add", ".")
+	gitIn(t, wt.Path, "commit", "-q", "-m", "Another local change")
+	st = b.worktreeStatus(ctx, loc, Worktree{Name: "feature", Path: wt.Path, Branch: "feature"}, nil)
+	if st.Outgoing != 1 || st.Incoming != 0 {
+		t.Fatalf("outgoing status = %+v", st)
 	}
 }
 

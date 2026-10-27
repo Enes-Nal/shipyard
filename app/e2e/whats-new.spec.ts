@@ -27,7 +27,7 @@ async function fromAbout(app: App) {
 async function fromPalette(page: Page) {
   await page.keyboard.press("Meta+k");
   await page.getByRole("combobox").fill("what's new");
-  await page.getByRole("option", { name: "What's new in Shipyard" }).click();
+  await page.getByRole("option", { name: "What's new in Terminal" }).click();
   await expect(card(page)).toBeVisible();
 }
 
@@ -40,7 +40,7 @@ test("a new install shows nothing and counts this version as seen", async ({ app
 
 test("after an update, a note opens the card, once", async ({ app }) => {
   await app.open(UPDATED);
-  await expect(nudge(app.page)).toContainText("New in Shipyard 0.3.10");
+  await expect(nudge(app.page)).toContainText("New in Terminal 0.3.10");
   // Quiet: nothing covers the app until the note is clicked.
   await expect(card(app.page)).toHaveCount(0);
   await nudge(app.page).getByRole("button", { name: "See what's new" }).click();

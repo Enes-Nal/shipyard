@@ -91,7 +91,7 @@ func install(b boxHome, args []string) error {
 	// launchd gives an agent /usr/bin:/bin:/usr/sbin:/sbin, without
 	// Homebrew's tmux or the user's node, gh and claude, and systemd's user
 	// manager a PATH without ~/.local/bin, where the guided install puts
-	// Shipyard's tmux and the agent CLIs: the unit carries the user's own PATH,
+	// Terminal's tmux and the agent CLIs: the unit carries the user's own PATH,
 	// as their login shell sets it now, with those folders.
 	spec.Env["PATH"] = service.ServicePATH()
 	started := time.Now()
@@ -121,7 +121,7 @@ func install(b boxHome, args []string) error {
 }
 
 // installIntegrations sets up the hooks that report agents' needs-you,
-// working and done states, and Shipyard's skills, for each agent CLI on this
+// working and done states, and Terminal's skills, for each agent CLI on this
 // box, running the berthd at bin. A failure is reported, not fatal: berthd
 // itself is installed and serving.
 func installIntegrations(out io.Writer, bin string) {

@@ -56,7 +56,7 @@ func TestRequestLogKeepsAPagesRequests(t *testing.T) {
 	if doc.Method != "GET" || doc.Path != "/" || doc.Status != 200 || doc.Type != "document" || doc.MIME != "text/html" || doc.Size == 0 || doc.Host != strconv.Itoa(port)+".devl.localhost" {
 		t.Errorf("page: %+v", doc)
 	}
-	// Shipyard's own flags are not the page's.
+	// Terminal's own flags are not the page's.
 	if js.Path != "/app.js?v=1" || js.Type != "script" {
 		t.Errorf("script: %+v", js)
 	}

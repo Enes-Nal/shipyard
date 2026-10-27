@@ -20,13 +20,20 @@ export interface Commit {
 export interface WorktreeStatus {
   location: string;
   name: string;
+  title?: string;
   path: string;
+  remote?: string;
   branch?: string;
   main?: boolean;
   port?: number;
   base?: string;
   ahead: number;
   behind: number;
+  upstream?: string;
+  // Commits waiting to push to, or pull from, this branch's upstream.
+  outgoing?: number;
+  incoming?: number;
+  published?: boolean;
   changed: number;
   untracked: number;
   last_commit?: Commit;

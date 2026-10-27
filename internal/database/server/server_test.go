@@ -52,7 +52,7 @@ func TestEveryRouteButHealthNeedsTheToken(t *testing.T) {
 		// The token does not make a page a caller, or another host this one.
 		for name, headers := range map[string]map[string]string{
 			"a page on this machine": {"Origin": "http://localhost:3000"},
-			"Shipyard's own window":  {"Origin": "tauri://localhost"},
+			"Terminal's own window":  {"Origin": "tauri://localhost"},
 			"a page somewhere":       {"Origin": "https://evil.example"},
 			"a rebound name":         {"Host": "evil.example:4326"},
 		} {

@@ -40,7 +40,7 @@ done
 # The cleanup (in the sourced lib) reads it.
 export KEEP
 OUT=${OUT:-$REPO/dist/release-test/linux-box-$(date +%Y%m%d-%H%M%S)}
-rt_init "Shipyard fresh-box test (Linux, Docker)" "$OUT"
+rt_init "Terminal fresh-box test (Linux, Docker)" "$OUT"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/berth-linux-test.XXXXXX")
 trap 'linux_cleanup >>"$RT_LOG" 2>&1; rm -rf "$WORK"' EXIT
 trap 'exit 130' INT TERM

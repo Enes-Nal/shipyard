@@ -31,7 +31,7 @@ import (
 // plugin's manifest names it ("box": {"helper": …} in berth-plugin.json),
 // with the SHA-256 of its build for each platform. The person allowed that
 // manifest on their laptop, so those checksums are what they allowed; the
-// laptop downloads the build, checks it, and uploads it here over Shipyard's
+// laptop downloads the build, checks it, and uploads it here over Terminal's
 // own connection, and berthd checks it again before it keeps a byte.
 //
 // A helper is the box user's own program: it runs as them, with what they

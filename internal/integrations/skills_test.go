@@ -211,7 +211,7 @@ func TestProjectSkillInstallRefusesSymlinks(t *testing.T) {
 }
 
 // GitHub drops berth:// links from a PR's description, so the berth skill
-// has agents add the Review in Shipyard button, which goes through the site,
+// has agents add the Review in Terminal button, which goes through the site,
 // between the markers berthd looks for.
 func TestTheBerthSkillAddsTheReviewButton(t *testing.T) {
 	b, err := SkillContent("berth")
@@ -220,7 +220,7 @@ func TestTheBerthSkillAddsTheReviewButton(t *testing.T) {
 	}
 	s := string(b)
 	for _, want := range []string{
-		"[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=OWNER/NAME&pr=N&as=EMAIL&path=/x)",
+		"[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=OWNER/NAME&pr=N&as=EMAIL&path=/x)",
 		"<!-- shipyard-review-button -->",
 		"<!-- /shipyard-review-button -->",
 		"berthd login users",

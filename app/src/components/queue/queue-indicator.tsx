@@ -58,7 +58,7 @@ function QueuePanel({ items, list }: { items: QueueItem[]; list: RefObject<HTMLD
     <div className="flex max-h-[min(32rem,70vh)] flex-col">
       <div className="border-b px-4 pt-3 pb-2.5">
         <div className="text-row">Queued prompts</div>
-        <p className="text-muted-foreground text-meta">Kept by Shipyard on this Mac and typed in when their box is back, in order for each agent, after its current turn.</p>
+        <p className="text-muted-foreground text-meta">Kept by Terminal on this Mac and typed in when their box is back, in order for each agent, after its current turn.</p>
       </div>
       <div ref={list} tabIndex={-1} role="region" aria-label="Queued prompts" className="min-h-0 flex-1 overflow-y-auto outline-none">
         {items.length === 0 && <p className="px-4 py-8 text-center text-muted-foreground text-body">Nothing queued. A prompt for a box that is offline can wait here.</p>}

@@ -115,10 +115,10 @@ command".
 - Do not run your own Chromium or Playwright against other hosts; if you do
   use one, it is routed through `$BERTH_BROWSER_PROXY` and confined the same.
 - If `open` says the box's browser is blocked (Ubuntu's sandbox setting),
-  stop and tell the user: they fix it from Shipyard (Settings → Boxes) or in a
+  stop and tell the user: they fix it from Terminal (Settings → Boxes) or in a
   terminal on the box. Don't run sudo, pass `--no-sandbox`, or start a
   browser of your own to get around it.
-- The user may be watching your browser live in their Shipyard app.
+- The user may be watching your browser live in their Terminal app.
 - `berthd ps` lists every browser on the box, who started it and what it
   costs. If your tests left one running (a Playwright run you stopped, say),
-  stop it with `berthd ps stop ID`; never stop one it says isn't Shipyard's.
+  stop it with `berthd ps stop ID`; never stop one it says isn't Terminal's.

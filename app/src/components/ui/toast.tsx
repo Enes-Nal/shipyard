@@ -61,7 +61,7 @@ function upsertReplayClassName(toast: {
   return isEven ? "animate-toast-success-even" : "animate-toast-success-odd";
 }
 
-// Shipyard: where the stack goes while a dialog, alert or sheet is open: the
+// Terminal: where the stack goes while a dialog, alert or sheet is open: the
 // first corner it does not cover (bottom-left, then bottom-right, then the
 // top corners), or the one it covers least. The stack is taken as 352px
 // wide and as tall as a two-line toast with two peeking behind it; the
@@ -186,7 +186,7 @@ function Toasts({
               toast={toast}
             >
               <Toast.Content className="pointer-events-auto flex items-start justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm transition-opacity duration-250 data-behind:not-data-expanded:pointer-events-none data-behind:opacity-0 data-expanded:opacity-100">
-                {/* Shipyard: the text gives way (min-w-0), and an action sits
+                {/* Terminal: the text gives way (min-w-0), and an action sits
                     under it rather than beside it, so a long label never
                     squeezes the text or pushes the close button out. Every
                     toast but a loading one can be closed. */}
@@ -205,7 +205,7 @@ function Toasts({
                       className="font-medium [overflow-wrap:anywhere]"
                       data-slot="toast-title"
                     />
-                    {/* Shipyard: a div, so an error's message and its Details button sit inside. */}
+                    {/* Terminal: a div, so an error's message and its Details button sit inside. */}
                     <Toast.Description
                       className="text-muted-foreground [overflow-wrap:anywhere]"
                       data-slot="toast-description"

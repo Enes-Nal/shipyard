@@ -672,7 +672,7 @@ func (a *Agent) away(name string) (string, time.Duration, bool) {
 		return "", 0, false
 	}
 	retry := time.Until(st.retryAt)
-	msg := name + " is offline; Shipyard is reconnecting"
+	msg := name + " is offline; Terminal is reconnecting"
 	if retry > 0 {
 		msg += fmt.Sprintf(" (next try in %ds)", int(retry.Round(time.Second)/time.Second))
 	}

@@ -1,11 +1,11 @@
 ---
 title: Security model
-description: Who Shipyard trusts and for what, how laptops and boxes prove who they are, what guards repository config, kits, flows and plugins, and what is still open.
+description: Who Terminal trusts and for what, how laptops and boxes prove who they are, what guards repository config, kits, flows and plugins, and what is still open.
 ---
 
-Every connection in Shipyard is between two keys that have met before. Nothing
+Every connection in Terminal is between two keys that have met before. Nothing
 on a box is reachable without a paired laptop, and nothing is public unless
-someone shares it. Inside that, Shipyard runs other people's code and data (a
+someone shares it. Inside that, Terminal runs other people's code and data (a
 repository's config, a kit, a plugin, a pull request's comments), and asks
 before any of it runs.
 
@@ -107,7 +107,7 @@ A laptop's system Tailscale can be on only one tailnet. For boxes on another
 embedded Tailscale node per named network (`berth network login personal`, a
 one-time browser sign-in). Each paired box records the network it is reached
 through; pairing, the agent's connections and `add ssh` all dial through it.
-Shipyard's own pinned TLS still runs on top: the tailnet only provides the route.
+Terminal's own pinned TLS still runs on top: the tailnet only provides the route.
 
 ## On the laptop
 
@@ -155,13 +155,13 @@ tell them never to share a port unless a person asked.
 - **The Mac app** is signed with a Developer ID and notarized by Apple.
   [Its updates](/getting-started/install#updates) come from the latest GitHub
   release, over HTTPS, and are installed only if they carry a valid
-  signature from Shipyard's updater key, whose public half is built into the
+  signature from Terminal's updater key, whose public half is built into the
   app. Nothing installs until you choose **Restart to update**.
 - **berthd and the CLI** from a release are checked against the release's
   `checksums.txt` by the install script. That catches a broken or truncated
   download, but the checksums come from the same release, so they don't
   prove who made it (see [known limits](#known-limits)).
-- **`berth upgrade BOX`** uploads the matching daemon over Shipyard's own
+- **`berth upgrade BOX`** uploads the matching daemon over Terminal's own
   connection. The box runs the upload once to check it starts and reads the
   box's own identity, swaps it in, and re-executes in place, keeping its PID
   so the supervisor sees no restart and sessions are untouched. Public shares
@@ -258,7 +258,7 @@ output. That data is only ever text:
   `ssh` and `git` transports, so a link can't use `file://` to read a local
   repository or `ext::` to run a command. (A kit can still come from a
   folder on your laptop, which is copied, not cloned.)
-- Installing Shipyard's [skills](/guides/agent-integrations#skills) into a
+- Installing Terminal's [skills](/guides/agent-integrations#skills) into a
   repository refuses to follow symbolic links, so a repository can't
   redirect the write to a file elsewhere on the box.
 
@@ -340,7 +340,7 @@ program that runs on the box as you**, for as long as berthd runs, and can
 read and do there whatever your account can. Turning one on for a box is
 deciding to run its author's program on that box.
 
-What Shipyard holds it to:
+What Terminal holds it to:
 
 - **Only an allowed plugin gets one, and only when you turn it on, box by
   box.** The plugin's manifest names the helper and the SHA-256 of its build
@@ -354,13 +354,13 @@ What Shipyard holds it to:
   it, at once for the boxes it can reach and for an offline box when it
   next connects. The one helper left running without a plugin that is on
   is the helper of a plugin that changed and still names the very same
-  program: it runs while Shipyard asks you about the new version, the
+  program: it runs while Terminal asks you about the new version, the
   plugin's row in Settings → Plugins says so, and **Stop it** there removes
   it. Removing a helper never needs the plugin to be allowed. See
   [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
 - **The program that runs is the one the manifest names.** Your laptop
   downloads the build, from whatever address the manifest gives, and uploads
-  it over Shipyard's own connection only if its size and SHA-256 match.
+  it over Terminal's own connection only if its size and SHA-256 match.
   berthd checks the bytes again before it keeps them, and checks the file
   again each time it starts it. A download that was tampered with or
   replaced at its address is never run.
@@ -392,7 +392,7 @@ What Shipyard holds it to:
   are never shown to it or replaced, a helper that is slow or failing
   changes nothing, and berthd logs none of it.
 - **berthd reads a worktree's dotenv files for it, and only those.** A
-  variable in that list that Shipyard's own environment for the service
+  variable in that list that Terminal's own environment for the service
   does not have is taken from the worktree's `.env`, `.env.development`,
   `.env.local` and `.env.development.local`: when a service starts, and
   when a plugin's tab asks the box to look
@@ -444,7 +444,7 @@ only records:
   connects. A remote or shared database is passed over, whoever names it:
   a service, a `.env`, or an address pasted in the app.
 - **berthd reads the worktree's dotenv files on request.** A worktree's
-  address comes from the environment of a service Shipyard starts, or from
+  address comes from the environment of a service Terminal starts, or from
   the worktree's own `.env` files, which berthd reads on the box when you
   open the worktree's Database tab (and again when you ask it to look
   again). The app names a location and a worktree the box already knows,
@@ -456,7 +456,7 @@ only records:
 - **An address you paste is kept like the others.** When nothing says
   which database a worktree has, **Connect a database…** takes its
   address. It travels once, in the body of a request from the app to
-  berthd over Shipyard's own connection, and from berthd to the helper on
+  berthd over Terminal's own connection, and from berthd to the helper on
   loopback. berthd does not log it, announce it, answer with it or keep
   it; a `before:helper.attach` gate is told which helper and which
   worktree, not the address. The helper keeps it in `connections.json`

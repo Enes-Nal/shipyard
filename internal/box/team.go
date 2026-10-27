@@ -31,10 +31,10 @@ import (
 //
 //  1. Steps. One terminal session on the box, in the home folder, as the
 //     box's user, runs the team's script once per step (`<script> check
-//     <step>` first, to skip what is done), then Shipyard's own step: the box's
+//     <step>` first, to skip what is done), then Terminal's own step: the box's
 //     own `gh auth login`. It is a terminal the engineer can see and type in,
 //     because steps that need root call sudo, which asks them for their
-//     password there; Shipyard never sees it. The runner script appends each
+//     password there; Terminal never sees it. The runner script appends each
 //     step's state to a progress file, which berthd follows, so progress
 //     survives berthd restarting (tmux keeps the session) and a failure
 //     leaves the steps before it done: Retry starts again from the step.
@@ -366,7 +366,7 @@ func (b *Box) runSteps(st TeamStatus, from int) (TeamStatus, error) {
 	}
 	sess, err := b.Sessions.Create(ctx, name, "", home, command, env)
 	if errors.Is(err, errTmuxMissing) {
-		return st, fmt.Errorf("%w, and Shipyard runs the team setup's steps in a terminal there (tmux): install it with `%s`, then set up again", errTmuxMissing, tmuxInstallHint())
+		return st, fmt.Errorf("%w, and Terminal runs the team setup's steps in a terminal there (tmux): install it with `%s`, then set up again", errTmuxMissing, tmuxInstallHint())
 	}
 	if err != nil {
 		return st, err
@@ -395,9 +395,9 @@ func teamRunScript(tb TeamBundle) string {
 		short = short[:7]
 	}
 	return fmt.Sprintf(`#!/bin/sh
-# Shipyard runs %[1]s's team setup here (%[2]s/.berth at %[3]s), as you, in
+# Terminal runs %[1]s's team setup here (%[2]s/.berth at %[3]s), as you, in
 # this terminal. Steps that need root ask for your password with sudo: type
-# it here. Shipyard never sees it or keeps it.
+# it here. Terminal never sees it or keeps it.
 T=$(cd "$(dirname "$0")" && pwd)
 P="$T/progress"
 SCRIPT=%[4]s
@@ -405,7 +405,7 @@ GH=${BERTH_TEAM_GH:-gh}
 BERTHD=${BERTH_TEAM_BERTHD:-berthd}
 mark() { printf '%%s %%s %%s %%s\n' "$1" "$2" "$(date +%%s)" "${3:-}" >>"$P"; }
 stop() {
-  printf '\n\033[31mShipyard stopped at %%s (exit %%s).\033[0m Fix it, then press Retry from it in Shipyard; the steps before it are kept.\n' "$1" "$2"
+  printf '\n\033[31mTerminal stopped at %%s (exit %%s).\033[0m Fix it, then press Retry from it in Terminal; the steps before it are kept.\n' "$1" "$2"
   mark - end fail
   exit "$2"
 }
@@ -436,12 +436,12 @@ regroup() {
   eval "$cmd"
 }
 if [ "$(id -u)" -eq 0 ]; then
-  echo "Shipyard runs team setups as you, not as root; steps that need root ask for your password with sudo."
+  echo "Terminal runs team setups as you, not as root; steps that need root ask for your password with sudo."
   mark - end fail
   exit 1
 fi
 cd "$T/files" || exit 1
-[ -n "${BERTH_TEAM_REGROUPED:-}" ] || printf '\033[1mShipyard: %[1]s team setup\033[0m (%[2]s/.berth at %[3]s)\n'
+[ -n "${BERTH_TEAM_REGROUPED:-}" ] || printf '\033[1mTerminal: %[1]s team setup\033[0m (%[2]s/.berth at %[3]s)\n'
 while [ $# -gt 0 ]; do
   s=$1
   shift
@@ -495,7 +495,7 @@ while [ $# -gt 0 ]; do
     mark 1password running
     printf '\n\033[1m==> 1Password on this box\033[0m\n'
     printf "    The team's shared keys are 1Password references (op://...). Sign op in\n"
-    printf '    here, once, so Shipyard can read them when a worktree needs them.\n\n'
+    printf '    here, once, so Terminal can read them when a worktree needs them.\n\n'
     if "$BERTHD" secret signin; then
       mark 1password done
     else
@@ -521,7 +521,7 @@ while [ $# -gt 0 ]; do
   fi
 done
 mark - end ok
-printf '\n\033[32mShipyard: the box is set up.\033[0m The repos are next, in Shipyard; you can close this tab.\n'
+printf '\n\033[32mTerminal: the box is set up.\033[0m The repos are next, in Terminal; you can close this tab.\n'
 `, tb.Name, tb.Org, short, shellQuote(tb.Script))
 }
 
@@ -879,7 +879,7 @@ func (b *Box) setUpProject(ctx context.Context, tb TeamBundle, p TeamProjectPlan
 		s.State, s.Error, s.Warnings, s.Line, s.Adopted, s.Path, s.Note, s.FirstOpen = TeamCloning, "", nil, "", false, "", "", 0
 	})
 	// A clone already there is used as it is: the one the page chose
-	// (checked again now), else a Shipyard location of the same repo.
+	// (checked again now), else a Terminal location of the same repo.
 	adopted, name, note, err := b.adoptable(ctx, p)
 	if err != nil {
 		return err
@@ -913,7 +913,7 @@ func (b *Box) setUpProject(ctx context.Context, tb TeamBundle, p TeamProjectPlan
 		}
 	}
 	// A location that was there already keeps its name, worktrees and
-	// settings; a clone new to Shipyard leaves its git worktrees to be set
+	// settings; a clone new to Terminal leaves its git worktrees to be set
 	// up the first time each is opened.
 	existed := name != ""
 	firstOpen := 0
@@ -1116,7 +1116,7 @@ func (b *Box) runInit(ctx context.Context, tb TeamBundle, p TeamProjectPlan, loc
 		}
 		os.Remove(status)
 		script := filepath.Join(t.dir(tb.ID), "files", filepath.FromSlash(p.Init))
-		command := fmt.Sprintf("cd %s && %s; c=$?; echo $c > %s; [ $c = 0 ] && echo && echo 'Shipyard: %s is set up.'", shellQuote(dest), shellQuote(script), shellQuote(status), p.ID)
+		command := fmt.Sprintf("cd %s && %s; c=$?; echo $c > %s; [ $c = 0 ] && echo && echo 'Terminal: %s is set up.'", shellQuote(dest), shellQuote(script), shellQuote(status), p.ID)
 		env := initEnv(ctx, b, tb, location, dest, filepath.Join(t.dir(tb.ID), "files"))
 		if _, err := b.Sessions.Create(ctx, name, location, dest, command, env); err != nil {
 			return fmt.Errorf("init: %w", err)

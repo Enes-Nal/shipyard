@@ -45,7 +45,7 @@ const SECTIONS: { id: SettingsSectionId; title: string; icon: ComponentType<{ cl
 // The nav groups the sections by what they're about; the quieter ones
 // (Labs, Developer, About) sit at the bottom.
 const GROUPS: { title?: string; ids: SettingsSectionId[] }[] = [
-  { title: "Shipyard", ids: ["general", "appearance", "notifications", "shortcuts"] },
+  { title: "Terminal", ids: ["general", "appearance", "notifications", "shortcuts"] },
   { title: "Agents", ids: ["agents", "terminal", "integrations", "plugins"] },
   { title: "Machines", ids: ["boxes", "computers", "phone"] },
 ];

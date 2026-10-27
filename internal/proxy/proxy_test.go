@@ -200,7 +200,7 @@ func TestProxyErrorPagesAreStyledForLightAndDark(t *testing.T) {
 		if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
 			t.Errorf("%s: content type %q", host, ct)
 		}
-		for _, want := range []string{"<!doctype html>", `content="light dark"`, "prefers-color-scheme:dark", "<h1>", "· Shipyard</footer>"} {
+		for _, want := range []string{"<!doctype html>", `content="light dark"`, "prefers-color-scheme:dark", "<h1>", "· Terminal</footer>"} {
 			if !strings.Contains(page, want) {
 				t.Errorf("%s: page lacks %q:\n%s", host, want, page)
 			}

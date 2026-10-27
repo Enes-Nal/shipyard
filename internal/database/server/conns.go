@@ -318,7 +318,7 @@ func (s *Server) detach(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Project  string `json:"project"`
 		Worktree string `json:"worktree"`
-		// Source, or Service as Shipyard's other helpers call it, names
+		// Source, or Service as Terminal's other helpers call it, names
 		// the worktree outright.
 		Source  string `json:"source"`
 		Service string `json:"service"`

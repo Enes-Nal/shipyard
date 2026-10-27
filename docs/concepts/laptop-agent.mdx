@@ -3,7 +3,7 @@ title: The laptop agent
 description: The background process that holds every box connection, serves private URLs, and outlives the app.
 ---
 
-The **Shipyard agent** (`berth agent`) runs on your laptop in the background. It
+The **Terminal agent** (`berth agent`) runs on your laptop in the background. It
 holds a connection to every paired box, runs saved forwards and the
 `*.localhost` proxy, and serves a local API that the CLI and the desktop app
 are clients of. Closing the app, or the app crashing, never stops a session,
@@ -54,7 +54,7 @@ since `localhost` there means the box, not your laptop.
 ## Running it
 
 Any command that needs the agent starts it, and when the desktop app finds
-it isn't running, it offers to: **Start the Shipyard agent** runs
+it isn't running, it offers to: **Start the Terminal agent** runs
 `berth agent start`, and ticking **Start at login** installs it as a service
 instead. To have it start at login and restart after a crash from a
 terminal:
@@ -68,7 +68,7 @@ berth agent restart      # restart it once its work under way is done
 berth stop               # stop it, and every forward
 ```
 
-The agent outlives the app, so an update to Shipyard would leave it running
+The agent outlives the app, so an update to Terminal would leave it running
 the old version. The updated app restarts it as it starts (`berth agent
 restart --if-stale`), whether the app started it or it starts at login:
 the agent first finishes what it's doing (adding or upgrading a box,
@@ -143,7 +143,7 @@ lists them all with their latency.
 
 Boxes are often far away (100–900 ms over Tailscale), and links drop. A
 link through one of Tailscale's relays can sit at 80 ms and then spike to 2
-seconds. Shipyard rides that out rather than calling the box offline:
+seconds. Terminal rides that out rather than calling the box offline:
 
 - **Slow, not offline.** A health check (every 10 seconds) that takes over
   1.5 seconds, or gets no answer in 8, marks the box **slow**: the status
@@ -224,7 +224,7 @@ What fixes it, best first:
   with `sudo ufw status` before changing it.
 - **Another route.** If SSH to the box goes direct (it often does, as SSH
   doesn't need the NAT traversal Tailscale's direct connections do), an
-  [SSH route](#routes-to-a-box) carries Shipyard's traffic instead while it
+  [SSH route](#routes-to-a-box) carries Terminal's traffic instead while it
   is the faster one. A box added with `berth add ssh` has one already; add
   one in **Settings › Boxes › Routes**.
 - **A nearer relay, or a peer relay.** If a direct connection isn't

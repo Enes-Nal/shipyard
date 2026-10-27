@@ -87,11 +87,11 @@ func OwnerOf(service string, w store.Worktree) Owner {
 		Project: w.Project, Worktree: w.Worktree, Branch: w.Branch, Box: w.Box}
 	switch {
 	case o.Worktree != "":
-		o.Label = "from Shipyard, worktree " + o.Worktree
+		o.Label = "from Terminal, worktree " + o.Worktree
 	case o.Project != "":
-		o.Label = "from Shipyard, project " + o.Project
+		o.Label = "from Terminal, project " + o.Project
 	default:
-		o.Label = "from Shipyard, " + service
+		o.Label = "from Terminal, " + service
 	}
 	return o
 }
@@ -587,7 +587,7 @@ func (m *Manager) viewLocked(px *proxy, since time.Time) View {
 		v.Origins = []string{"flag"}
 		v.Owner = Owner{Kind: "flag", Label: "the helper's --pg flag"}
 	case px.Label == "":
-		v.Owner = Owner{Kind: "worktree", Via: "shipyard", Label: "from Shipyard"}
+		v.Owner = Owner{Kind: "worktree", Via: "shipyard", Label: "from Terminal"}
 	default:
 		var w store.Worktree
 		if m.store != nil {

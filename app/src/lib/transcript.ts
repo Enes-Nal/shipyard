@@ -4,7 +4,7 @@ import type { Question } from "@/lib/questions";
 // mode draws. The agent still runs in its terminal on the box; berthd reads
 // the agent's own record of the conversation (Claude's transcript, Codex's
 // session file, ACP for the rest) and streams it as these items. Nothing is
-// kept by Shipyard.
+// kept by Terminal.
 
 export type TranscriptItem =
   // pending: sent from here, and the agent hasn't read it yet. midTurn:
@@ -49,8 +49,8 @@ export type TranscriptItem =
   // AskUserQuestion, Codex's request_user_input; lib/questions). Once done,
   // answers holds what was answered, one per question; error: it wasn't.
   | { kind: "question"; id: string; tool?: string; questions: Question[]; answers?: string[]; done?: boolean; error?: boolean }
-  // Work this agent started that Shipyard reported back on (a
-  // <berth-notification> typed into its session): a prompt from Shipyard, not
+  // Work this agent started that Terminal reported back on (a
+  // <berth-notification> typed into its session): a prompt from Terminal, not
   // the person (components/conversation/report-card).
   | { kind: "report"; id: string; report: BerthReport }
   // A message to the agent from another agent (a helper's hand-back, a

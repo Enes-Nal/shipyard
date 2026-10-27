@@ -163,7 +163,7 @@ func (f *fakeProcs) signal(pid int, sig syscall.Signal) {
 	f.killed[pid] = sig
 }
 
-func TestTheProcessesAPIListsBrowsersAndStopsOnlyShipyards(t *testing.T) {
+func TestTheProcessesAPIListsBrowsersAndStopsOnlyTerminals(t *testing.T) {
 	var fake fakeProcs
 	c, _ := servedBox(t, func(b *Box) {
 		fake.ps = boxProcsFixture(tmuxSocketPath())

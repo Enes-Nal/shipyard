@@ -156,7 +156,7 @@ func (s *Sessions) runService(ctx context.Context, r serviceRun) error {
 	}
 	// What the pane says once the program ends (tmux 3.3 and later; older
 	// ones say "Pane is dead").
-	s.tmux(ctx, "set-option", "-w", "-t", target, "remain-on-exit-format", tmuxArg("#[fg=yellow]■#[default] "+r.Title+" stopped (#{?pane_dead_signal,signal #{pane_dead_signal},exit #{pane_dead_status}}). Start it again from Shipyard to run it here."))
+	s.tmux(ctx, "set-option", "-w", "-t", target, "remain-on-exit-format", tmuxArg("#[fg=yellow]■#[default] "+r.Title+" stopped (#{?pane_dead_signal,signal #{pane_dead_signal},exit #{pane_dead_status}}). Start it again from Terminal to run it here."))
 	return nil
 }
 

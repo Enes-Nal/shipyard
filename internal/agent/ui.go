@@ -441,7 +441,7 @@ func (a *Agent) uiAttach(w http.ResponseWriter, r *http.Request) {
 		journal.seal(confirmed)
 		next, err := open()
 		if err != nil {
-			ws.Close(websocket.StatusTryAgainLater, "Shipyard is reconnecting")
+			ws.Close(websocket.StatusTryAgainLater, "Terminal is reconnecting")
 			cancel()
 			<-reading
 			a.held.put(box, session, journal.unsent())

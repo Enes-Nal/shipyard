@@ -213,7 +213,7 @@ function notifyFor(e: BerthEvent) {
     const [loc, wt] = (str(d.location) ?? "").split("/");
     route({
       category: "notify",
-      title: str(d.title) ?? "Shipyard",
+      title: str(d.title) ?? "Terminal",
       detail: str(d.body),
       box,
       path,
@@ -227,7 +227,7 @@ function notifyFor(e: BerthEvent) {
 
 // describeAgent names an agent event's agent and place the same way every
 // time: "Claude Code 2" in "shop / qa-deck · devl". The event names its
-// session when Shipyard started the agent; otherwise the agent in that
+// session when Terminal started the agent; otherwise the agent in that
 // worktree is it, when there is only one. With several and no name, the
 // agent's plain name is all that can be said.
 function describeAgent(e: BerthEvent): { agent: string; place: string; session?: string; path?: string; project?: string; worktree?: string } {

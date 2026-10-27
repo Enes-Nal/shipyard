@@ -69,12 +69,12 @@ that box, for every worktree; it can't be undone.
 Leadline runs on a box only while the plugin is on. Turning Leadline off in
 **Settings → Plugins** stops and removes the program on every box it runs
 on, and keeps what each recorded; **Remove…** there removes that too.
-Shipyard asks first and names the boxes, and a box that is offline is done
+Terminal asks first and names the boxes, and a box that is offline is done
 when it next connects. Turning the plugin on again starts nothing: you turn
 Leadline on for each box again. An update to the plugin that brings a new
 `berth-leadline` does the same once it is installed, so after allowing the
 update you turn Leadline on for your boxes again; an update that keeps the
-same program leaves it running while Shipyard asks you about the new
+same program leaves it running while Terminal asks you about the new
 version. See [a helper does not outlive its plugin](/guides/plugins#a-helper-does-not-outlive-its-plugin).
 
 <Callout title="Restart your services after turning it off">
@@ -94,17 +94,17 @@ version. See [a helper does not outlive its plugin](/guides/plugins#a-helper-doe
 Leadline shows a worktree once something arrives from it.
 
 1. **Start the app as a service of its worktree.** With Leadline on for a
-   box, Shipyard sets the variables that point an app at it
+   box, Terminal sets the variables that point an app at it
    (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`,
    `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`) for the
    [services](/guides/project-config) it starts. A service that was
    already running needs a restart to get them. A server you start by hand
    in a terminal isn't given them.
 2. **Queries need nothing more.** When a service's `DATABASE_URL` or
-   `POSTGRES_URL` names a Postgres on the box itself, Shipyard routes it
+   `POSTGRES_URL` names a Postgres on the box itself, Terminal routes it
    through Leadline, which records every statement as it goes by: its
    text, its time on the wire, and whether it failed. No SDK, in any
-   language. The address may be in [Shipyard's environment or in the
+   language. The address may be in [Terminal's environment or in the
    worktree's `.env`](#which-databases-leadline-sees).
 3. **Traces and logs need an OpenTelemetry SDK in the app.** Any
    OpenTelemetry SDK reads those variables and sends its traces and logs.
@@ -116,19 +116,19 @@ A tab for a worktree that has sent nothing says so, and says this.
 
 ### Which databases Leadline sees
 
-Leadline records a service's queries when Shipyard starts the service
-with a `DATABASE_URL` or `POSTGRES_URL` that goes through it. Shipyard
+Leadline records a service's queries when Terminal starts the service
+with a `DATABASE_URL` or `POSTGRES_URL` that goes through it. Terminal
 finds that address in one of two places:
 
-- **In the environment Shipyard gives the service**: `env` in the
+- **In the environment Terminal gives the service**: `env` in the
   repository's [`.berth/config.json`](/guides/project-config), a kit, or
   your own settings for the project.
-- **In the worktree's `.env` files**, when Shipyard's environment has no
+- **In the worktree's `.env` files**, when Terminal's environment has no
   such variable. Many projects keep `DATABASE_URL` only there, and let the
   dev server load it. When it starts a service, the box reads `.env`,
   `.env.development`, `.env.local` and `.env.development.local` in the
   worktree's own folder (a later file winning), and takes the two
-  variables from them. A variable Shipyard's environment already has is
+  variables from them. A variable Terminal's environment already has is
   never taken from a file: the project's own setting wins.
 
 Either way the service is **started with** the address of Leadline's proxy
@@ -142,7 +142,7 @@ it, so the app connects through Leadline.
   `dotenv`, `dotenv -o`, a script that sources `.env` before starting the
   server) puts the file's address back, and the app connects straight to
   the database. Nothing breaks, and **Queries** stays empty. Set the
-  address in the project's Shipyard `env` instead, or turn the override
+  address in the project's Terminal `env` instead, or turn the override
   off in development.
 </Callout>
 
@@ -166,7 +166,7 @@ readable only by you on that box.
 - A row is kept for **72 hours**.
 - Past **2 GB**, the oldest rows go early.
 - Old rows are dropped once a minute.
-- **A worktree you remove takes its rows with it.** Shipyard tells Leadline
+- **A worktree you remove takes its rows with it.** Terminal tells Leadline
   when a worktree is removed, however it was removed, and Leadline closes
   the connection it kept in front of that worktree's Postgres and deletes
   what it recorded under the worktree's name. Removing a project from the
@@ -200,7 +200,7 @@ agent's own provider then sees, like any prompt.
   left alone; its queries show only if the app's own OpenTelemetry SDK
   reports them. Other databases show the same way: through the app's
   spans.
-- **Services Shipyard starts.** A dev server started by hand isn't pointed
+- **Services Terminal starts.** A dev server started by hand isn't pointed
   at Leadline, wherever its database's address is written.
 - **An app that overrides its environment from `.env`** connects round
   Leadline. See [which databases Leadline sees](#which-databases-leadline-sees).

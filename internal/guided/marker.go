@@ -1,11 +1,11 @@
-// Package guided is Shipyard's guided install of a box over SSH: the plan a
+// Package guided is Terminal's guided install of a box over SSH: the plan a
 // person reads before anything runs, the script that runs the steps on the
 // box (in a terminal the person can type sudo's password into), and the
 // step markers that script prints for the checklist beside it.
 //
 // The same flow serves `berth add ssh` in the person's own terminal and the
 // app, which runs that command in a pseudo-terminal on the laptop and shows
-// it full screen. Shipyard never sees the password: sudo asks for it on the
+// it full screen. Terminal never sees the password: sudo asks for it on the
 // box's terminal, and the bytes only pass through.
 package guided
 

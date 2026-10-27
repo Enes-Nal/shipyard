@@ -27,9 +27,9 @@ async function expectTeamPageUsingShop(page: Page) {
   await expect(page.getByTestId("team-checklist").locator("visible=true").getByRole("combobox")).toContainText("devl");
   const found = page.getByTestId("found-shop");
   await expect(found).toContainText("Found ~/work/shop, a clone of acme/shop");
-  await expect(found).toContainText("the Shipyard project shop");
+  await expect(found).toContainText("the Terminal project shop");
   await expect(page.getByTestId("use-shop")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("found-review-shop")).toContainText("It is the Shipyard project shop already");
+  await expect(page.getByTestId("found-review-shop")).toContainText("It is the Terminal project shop already");
 }
 
 test("a project whose org has a team setup gets a quiet mark, and its menu's Review… opens it using the project", async ({ app }) => {

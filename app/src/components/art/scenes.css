@@ -1,4 +1,4 @@
-/* Scenes: Shipyard's small line drawings for quiet states (scenes.tsx). Lines
+/* Scenes: Terminal's small line drawings for quiet states (scenes.tsx). Lines
    take currentColor (muted by default); the one amber point is the logo's
    dot, from the theme's --warning, so every theme draws them right.
 

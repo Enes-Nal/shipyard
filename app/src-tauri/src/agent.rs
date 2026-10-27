@@ -100,7 +100,7 @@ fn bundled_beside_app() -> Option<PathBuf> {
     }
     #[cfg(all(target_os = "macos", not(debug_assertions)))]
     if !signed_like(&exe, &p) {
-        eprintln!("berth: {} is not signed by Shipyard's team; not running it", p.display());
+        eprintln!("berth: {} is not signed by Terminal's team; not running it", p.display());
         return None;
     }
     Some(p)
@@ -184,7 +184,7 @@ pub fn agent_binary() -> Option<AgentBinary> {
 // there the agent is started on its own instead, as without the tick.
 #[tauri::command]
 pub async fn start_agent(at_login: bool) -> Result<String, String> {
-    let (bin, _) = find_berth().ok_or("Shipyard could not find its berth command")?;
+    let (bin, _) = find_berth().ok_or("Terminal could not find its berth command")?;
     let args: &'static [&'static str] = if at_login {
         &["agent", "install"]
     } else {
@@ -212,7 +212,7 @@ pub async fn start_agent(at_login: bool) -> Result<String, String> {
 // berth's JSON report (RestartResult in cmd/berth/agentprocess.go).
 #[tauri::command]
 pub async fn restart_stale_agent() -> Result<String, String> {
-    let (bin, _) = find_berth().ok_or("Shipyard could not find its berth command")?;
+    let (bin, _) = find_berth().ok_or("Terminal could not find its berth command")?;
     tauri::async_runtime::spawn_blocking(move || run(&bin, &["agent", "restart", "--if-stale", "--json"]))
         .await
         .map_err(|e| e.to_string())?

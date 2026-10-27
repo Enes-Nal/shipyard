@@ -116,7 +116,7 @@ export function requirementsCopy(card: RequirementsCard, r: Requirements | undef
   const where = o.local ? (isMac(r) ? "Terminal on this Mac" : "a terminal on this computer") : `a terminal on ${box} (over SSH)`;
   if (card === "tmux") {
     const t = r.tmux;
-    const why = o.team ? "Shipyard runs the team setup's steps, and later your agents, in tmux on the box." : "Shipyard runs agents in tmux, so they keep going when you close it.";
+    const why = o.team ? "Terminal runs the team setup's steps, and later your agents, in tmux on the box." : "Terminal runs agents in tmux, so they keep going when you close it.";
     if (isMac(r) && t.manager_missing)
       return {
         title: `Install tmux on ${box}`,
@@ -146,8 +146,8 @@ export function requirementsCopy(card: RequirementsCard, r: Requirements | undef
   return {
     title: a ? `Install ${a.name} on ${box}` : `No agent CLI on ${box}`,
     body: a?.install
-      ? `Shipyard starts ${a.name} in the worktree, so it needs the ${a.command} command there. Install it, sign in once by running ${a.command}, then check again.`
-      : "Shipyard starts a coding agent's CLI in the worktree, such as Claude Code or Codex. Install one there, then check again.",
+      ? `Terminal starts ${a.name} in the worktree, so it needs the ${a.command} command there. Install it, sign in once by running ${a.command}, then check again.`
+      : "Terminal starts a coding agent's CLI in the worktree, such as Claude Code or Codex. Install one there, then check again.",
     command: a?.install,
     where,
   };

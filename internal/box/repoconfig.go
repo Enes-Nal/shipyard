@@ -164,7 +164,7 @@ type Config struct {
 	Local     RepoConfig `json:"local"`
 	Effective RepoConfig `json:"effective"`
 	// ReviewButton is whether PRs opened from the project's worktrees get
-	// the "Review in Shipyard" button, and from where (reviewbutton.go):
+	// the "Review in Terminal" button, and from where (reviewbutton.go):
 	// the team's team.json counts too, which Effective doesn't hold.
 	ReviewButton *ReviewButtonState `json:"review_button,omitempty"`
 }

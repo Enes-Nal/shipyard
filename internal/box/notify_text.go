@@ -31,7 +31,7 @@ const (
 func NotificationText(reps []Report, dropped int) string {
 	var b strings.Builder
 	b.WriteString("<berth-notification>\n")
-	b.WriteString("This comes from Shipyard, not from the user: news of agent work you started. Carry on with your task using it. If an agent waits for a person, tell the user who and why; never answer for them.\n")
+	b.WriteString("This comes from Terminal, not from the user: news of agent work you started. Carry on with your task using it. If an agent waits for a person, tell the user who and why; never answer for them.\n")
 	if dropped > 0 {
 		fmt.Fprintf(&b, "(%d earlier updates were dropped: too many came at once. berth_sessions lists every agent's state.)\n", dropped)
 	}

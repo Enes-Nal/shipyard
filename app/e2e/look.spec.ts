@@ -124,5 +124,5 @@ test("every Settings section opens", async ({ app }) => {
     titles.add((await heading.textContent()) ?? "");
   }
   expect(titles.size).toBe(ids.length);
-  await expect(app.page.getByText(/Shipyard hit an error|Something went wrong/)).toHaveCount(0);
+  await expect(app.page.getByText(/Terminal hit an error|Something went wrong/)).toHaveCount(0);
 });

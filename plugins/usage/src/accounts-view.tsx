@@ -114,7 +114,7 @@ export function AccountsView({
     }, a ? `New ${AGENT_NAME[agent]} sessions in ${location} use ${a.id}` : `${location} follows the box's ${AGENT_NAME[agent]} account again`);
 
   // Opens a terminal in the current worktree that runs the agent's own
-  // sign-in with that account's folder. Shipyard never sees the credentials.
+  // sign-in with that account's folder. Terminal never sees the credentials.
   const signIn = async (a: Pick<Account, "agent" | "dir">) => {
     const location = here ? worktreeLocation(here) : locations[0]?.name;
     if (!location) throw new Error(`${box} has no projects to open a terminal in`);
@@ -122,7 +122,7 @@ export function AccountsView({
     berth.openTerminal(box, s.name);
   };
 
-  // Shipyard's hooks and skills go in the new folder before the agent first
+  // Terminal's hooks and skills go in the new folder before the agent first
   // runs there, when the box has them for this agent at all. A box whose
   // berthd predates accounts installs them when a session starts on it.
   const addIntegrations = async (agent: Agent, dir: string) => {
@@ -157,7 +157,7 @@ export function AccountsView({
       <Alert>
         <Icon name="Info" />
         <AlertDescription>
-          Choosing an account changes the sessions you start next. Sessions that are already running keep the account they started with. Sign-in happens in the agent's own login, in a terminal on {box}; Shipyard never sees your credentials.
+          Choosing an account changes the sessions you start next. Sessions that are already running keep the account they started with. Sign-in happens in the agent's own login, in a terminal on {box}; Terminal never sees your credentials.
         </AlertDescription>
       </Alert>
 

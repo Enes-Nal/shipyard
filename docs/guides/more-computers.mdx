@@ -1,9 +1,9 @@
 ---
 title: More than one computer
-description: Use Shipyard on a second computer, a Mac mini beside your MacBook say, with the same boxes. Both stay paired and work at once.
+description: Use Terminal on a second computer, a Mac mini beside your MacBook say, with the same boxes. Both stay paired and work at once.
 ---
 
-Every computer you use Shipyard on pairs with your boxes with its own key. To
+Every computer you use Terminal on pairs with your boxes with its own key. To
 set up another one, the computer you already use makes a **join link**: one
 fresh, single-use pairing code from each box, in one link. The new computer
 pairs with every box in it. Nothing changes for the first computer; both
@@ -19,8 +19,8 @@ On the computer you already use:
 3. Read what the link gives away, then **Make the link**. You get the link,
    a QR code of it, and how long it lasts.
 
-On the new computer, install Shipyard, and on the welcome screen choose **I
-already use Shipyard on another computer**. Paste the link (the whole message
+On the new computer, install Terminal, and on the welcome screen choose **I
+already use Terminal on another computer**. Paste the link (the whole message
 is fine), check the boxes it lists, and **Pair**. Its projects are already on
 the boxes, so setup ends there.
 
@@ -47,12 +47,12 @@ reads the link from stdin.
 
 ## Boxes on another tailnet
 
-A box the first computer reaches through a [Shipyard network](/getting-started/add-a-box#boxes-on-another-tailnet)
+A box the first computer reaches through a [Terminal network](/getting-started/add-a-box#boxes-on-another-tailnet)
 (another tailnet) carries that network's name and tailnet in the link. The
 new computer reaches it through a network of its own by that name when it
 has one, and otherwise directly, which works when its own Tailscale is on
 that tailnet. When neither does, the box waits with **Sign in**: sign in to
-that tailnet in the browser, and Shipyard pairs with it then. In a terminal,
+that tailnet in the browser, and Terminal pairs with it then. In a terminal,
 `berth join` offers the same sign-in.
 
 ## Who can reach a box

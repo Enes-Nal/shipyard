@@ -17,11 +17,11 @@ import (
 	"strings"
 )
 
-// Worktree is one checkout of a project, made for one task: what Shipyard
+// Worktree is one checkout of a project, made for one task: what Terminal
 // runs each agent in. The helper shows each as a source of its own, so two
 // agents working on one project are two rows and not one muddle.
 type Worktree struct {
-	// Project is the repository as Shipyard names it (its location); Name
+	// Project is the repository as Terminal names it (its location); Name
 	// the worktree's own name, empty for the project's main checkout.
 	Project, Name string
 	// Branch and Box are for showing: the worktree's branch, and the
@@ -36,7 +36,7 @@ type Worktree struct {
 const SubSep = ":"
 
 // Service is the name a worktree is filed under, and its source in the
-// helper's API: "<project>/<worktree>", the way Shipyard itself addresses
+// helper's API: "<project>/<worktree>", the way Terminal itself addresses
 // one, or the project's name alone for its main checkout. It is made of
 // names that do not change for the life of the worktree.
 func (w Worktree) Service() string {

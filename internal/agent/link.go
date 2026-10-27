@@ -305,7 +305,7 @@ func LinkChecks(area string, b BoxStatus) []doctor.Check {
 		lat.Detail += fmt.Sprintf(", up to %dms lately (±%dms)", b.Link.MaxMs, b.Link.JitterMs)
 	}
 	if b.Link.Slow {
-		lat.Status, lat.Detail = doctor.Warn, "slow: "+b.Link.Reason+"; Shipyard stays connected and requests still go through"
+		lat.Status, lat.Detail = doctor.Warn, "slow: "+b.Link.Reason+"; Terminal stays connected and requests still go through"
 	}
 	checks = append(checks, lat)
 	if p := b.Link.Path; p != nil {

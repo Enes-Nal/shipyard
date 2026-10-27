@@ -57,14 +57,14 @@ export function QuickInstall({ target, onClose, onReady, readyLabel }: { target?
 
   const title = ready ? `${run.box} is ready` : run.state === "failed" ? `${where} isn't set up yet` : `Setting up ${where}`;
   const sub = ready
-    ? "Paired with this computer. Shipyard no longer needs SSH for it."
+    ? "Paired with this computer. Terminal no longer needs SSH for it."
     : needed
       ? `sudo needs ${user}'s password on ${where} for this step.`
       : asking
-        ? "One question before Shipyard goes on."
+        ? "One question before Terminal goes on."
         : run.state === "failed"
           ? "It stopped at the step below. The steps before it are kept."
-          : "Shipyard installs what the box needs. It only stops if sudo needs your password.";
+          : "Terminal installs what the box needs. It only stops if sudo needs your password.";
 
   return (
     <Dialog open={!!target} onOpenChange={(o) => !o && !busy && onClose()}>
@@ -143,7 +143,7 @@ function hint(s: StepRow, agents: string[]): string | undefined {
     case "linger":
       return "so berthd runs after you log out";
     case "tools":
-      return s.sudo ? "git, with sudo" : "Shipyard's own tmux, no sudo";
+      return s.sudo ? "git, with sudo" : "Terminal's own tmux, no sudo";
     case "agents":
       return agents.length === 1 ? "into ~/.local/bin, no sudo" : `${agents.length} agents, no sudo`;
     case "integrations":
@@ -172,7 +172,7 @@ function QuickRow({ step: s, run, host, user, busy, agents, needed, onRetry }: {
       </div>
       {needed && (
         <p data-testid="quick-password" className="mt-1 ml-7.5 text-meta">
-          Type it in the terminal below and press <Kbd>↵</Kbd>; nothing shows as you type. It goes to sudo on {host}: Shipyard never sees it or keeps it.
+          Type it in the terminal below and press <Kbd>↵</Kbd>; nothing shows as you type. It goes to sudo on {host}: Terminal never sees it or keeps it.
         </p>
       )}
       {s.needs === "ask" && s.state === "running" && <LingerChoice run={run} user={user} host={host} question={s.question} />}
@@ -240,7 +240,7 @@ const ORDER = ["claude", "codex", "cursor", "opencode"];
 const order = (id: string) => (ORDER.indexOf(id) + 1 || 99) as number;
 const busyHint = (v: string[]) => (v.length === 0 ? <span className="text-muted-foreground">none: add them later in Settings</span> : null);
 
-// The agent CLIs Shipyard can install, as the laptop agent lists them; asked
+// The agent CLIs Terminal can install, as the laptop agent lists them; asked
 // once per window.
 let catalog: Promise<AgentChoice[]> | undefined;
 function useAgentCatalog(): AgentChoice[] {

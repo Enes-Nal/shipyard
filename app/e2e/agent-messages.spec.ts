@@ -130,7 +130,7 @@ test("a message sent mid-turn is the person's own, marked as such", async ({ app
   await expect(app.chat.locator("[data-kind=user]").first().locator("[data-mid-turn]")).toHaveCount(0);
 });
 
-test("a busy team: teammates, the lead and Shipyard, with teammates in the crew", async ({ app }) => {
+test("a busy team: teammates, the lead and Terminal, with teammates in the crew", async ({ app }) => {
   await openStory(app, "busy");
   await scrollChat(app.page, "top");
   const lead = card(app, "instruction", "Lead");
@@ -165,7 +165,7 @@ test("a busy team: teammates, the lead and Shipyard, with teammates in the crew"
   await expect(crew).toContainText("7");
 });
 
-test("Shipyard's own report takes the same head as the agents'", async ({ app }) => {
+test("Terminal's own report takes the same head as the agents'", async ({ app }) => {
   await openStory(app, "busy");
   await scrollChat(app.page, "bottom");
   const berth = app.chat.locator("[data-report=finished]");
@@ -174,7 +174,7 @@ test("Shipyard's own report takes the same head as the agents'", async ({ app })
   await expect(berth).toContainText("+31");
   await expect(berth.locator("[data-to-agent]")).toBeVisible();
   await berth.locator("[data-to-agent]").hover();
-  await expect(app.page.getByText(/Shipyard reported back on billing-docs-claude.*You didn't type it\./)).toBeVisible();
+  await expect(app.page.getByText(/Terminal reported back on billing-docs-claude.*You didn't type it\./)).toBeVisible();
 });
 
 test("a crew row's Report badge brings the report into view", async ({ app }) => {

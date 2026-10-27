@@ -13,7 +13,7 @@ import (
 )
 
 // A helper learns of a worktree when berthd starts one of its services
-// (helperattach.go). A project whose dev servers Shipyard does not start
+// (helperattach.go). A project whose dev servers Terminal does not start
 // never gets there, and what a helper would have been told (a database's
 // address, say) is in the worktree's dotenv files all along. So the app may
 // ask berthd to look:
@@ -47,7 +47,7 @@ import (
 // was said by hand, what the files say and what a service was started with
 // are three things, each replaced on its own. An empty "env" takes back what
 // was said by hand. A value given this way is a secret like any other: it
-// comes in the request's body over Shipyard's own connection, goes to the
+// comes in the request's body over Terminal's own connection, goes to the
 // helper, and is not logged, answered, announced or kept by berthd.
 
 // HelperEnvLook is the answer of POST /v1/helpers/{plugin}/attach-env.
@@ -196,7 +196,7 @@ func (h *Helpers) attachTold(ctx context.Context, plugin string, about HelperAtt
 }
 
 // wantsMore reports whether the helper names a variable that the
-// environment Shipyard assembled for a service (env, and the secrets' names
+// environment Terminal assembled for a service (env, and the secrets' names
 // in refs) does not settle: a name that is not there, or a prefix, which may
 // match anything. Only then are the worktree's dotenv files worth reading
 // for it: a project that sets every variable a helper names never has its
@@ -233,10 +233,10 @@ func readDotenvWithin(ctx context.Context, dir string) *dotenvSet {
 
 // dotenvForService is what a worktree's dotenv files add to a service's
 // environment as its helpers are shown it: the variables that are in the
-// files and not in the environment Shipyard assembled (own, and the secrets'
+// files and not in the environment Terminal assembled (own, and the secrets'
 // names in refs), each with its value. A variable that names a secret, that
 // refers to something nothing defines, or that is empty or too long is not
-// among them, and neither is one of Shipyard's own.
+// among them, and neither is one of Terminal's own.
 //
 // The files are read when the result is first asked for, once, for as long
 // as that caller's ctx lasts; one that gave up leaves nothing for the rest,

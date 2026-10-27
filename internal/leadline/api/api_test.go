@@ -223,7 +223,7 @@ func TestSources(t *testing.T) {
 		t.Errorf("acme/new-checkout, which has only a proxy = %+v", fresh)
 	}
 	if len(got.Services) != 4 || got.Services[1].Name != "acme/fix-orders" || got.Services[1].Owner == nil ||
-		got.Services[1].Owner.Label != "from Shipyard, worktree fix-orders" || got.Services[2].Source != "acme/fix-orders" ||
+		got.Services[1].Owner.Label != "from Terminal, worktree fix-orders" || got.Services[2].Source != "acme/fix-orders" ||
 		got.Services[0].Owner != nil {
 		t.Errorf("services = %+v", got.Services)
 	}
@@ -464,9 +464,9 @@ func TestDetach(t *testing.T) {
 }
 
 // Any page on this machine may read and may send telemetry: an app under
-// test reports from its pages. Only Shipyard's own window, or no page at
+// test reports from its pages. Only Terminal's own window, or no page at
 // all, may change what the helper holds.
-func TestOnlyShipyardsWindowMayChangeThings(t *testing.T) {
+func TestOnlyTerminalsWindowMayChangeThings(t *testing.T) {
 	r := newRig(t)
 	body := map[string]any{"upstream": "127.0.0.1:5432", "label": "acme/fix-orders"}
 	for _, c := range []struct {

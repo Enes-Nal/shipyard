@@ -44,7 +44,7 @@ export type { TeamAfterInstall };
 // box. Then berth add ssh runs in a terminal here, full screen, beside a
 // checklist its step markers keep up to date: the person presses Enter to
 // start and types their password when sudo asks for it on the box. The
-// bytes go straight to the box; Shipyard never reads, keeps or logs them. A
+// bytes go straight to the box; Terminal never reads, keeps or logs them. A
 // failed step offers Retry from it. It ends with Ready.
 
 export interface InstallTarget {
@@ -183,7 +183,7 @@ function PlanStage({ target, agents, onAgents, onStart, onClose, team }: { targe
       <Header
         icon={<ServerIcon className="size-4" />}
         title={team ? `Set up ${target.host} for ${team.name}` : `Set up ${target.host}`}
-        sub={team ? `Shipyard installs what the box needs, then runs ${team.name}'s setup on it, in a terminal here. Nothing runs until you start it.` : "Shipyard installs what this box needs, in a terminal here. Nothing runs until you start it."}
+        sub={team ? `Terminal installs what the box needs, then runs ${team.name}'s setup on it, in a terminal here. Nothing runs until you start it.` : "Terminal installs what this box needs, in a terminal here. Nothing runs until you start it."}
         right={<CloseButton onClick={onClose} />}
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -241,7 +241,7 @@ function PlanStage({ target, agents, onAgents, onStart, onClose, team }: { targe
             <span>
               {sudo.length > 0 ? (
                 <>
-                  <span className="text-foreground">{sudo.length === 1 ? "One step" : `${sudo.length} steps`} may ask for your password.</span> sudo asks on the box, in the terminal; Shipyard never sees it or keeps it.
+                  <span className="text-foreground">{sudo.length === 1 ? "One step" : `${sudo.length} steps`} may ask for your password.</span> sudo asks on the box, in the terminal; Terminal never sees it or keeps it.
                   {team ? ` It may ask again for ${team.name}'s steps: they run in berthd's own terminal on the box.` : ""}
                 </>
               ) : (
@@ -302,7 +302,7 @@ function AgentPicker({ choices, value, onChange, installed = [] }: { choices: Ag
       </div>
       {left.map((a) => (
         <p key={a.id} data-testid={`agent-${a.id}`} className="mt-2.5 text-muted-foreground text-meta">
-          <span className="text-foreground">{a.name}</span> isn't installed by Shipyard: {a.why}. <code className="font-mono text-mono">{a.install}</code>
+          <span className="text-foreground">{a.name}</span> isn't installed by Terminal: {a.why}. <code className="font-mono text-mono">{a.install}</code>
         </p>
       ))}
     </>
@@ -314,7 +314,7 @@ const order = (id: string) => (ORDER.indexOf(id) + 1 || 99) as number;
 
 function PlanRow({ step, n, bundledTmux }: { step: InstallPlanStep; n: number; bundledTmux: boolean }) {
   const [open, setOpen] = useState(false);
-  const detail = step.id === "tools" && bundledTmux ? `${step.detail} Shipyard brings its own tmux, so tmux needs no sudo.` : step.detail;
+  const detail = step.id === "tools" && bundledTmux ? `${step.detail} Terminal brings its own tmux, so tmux needs no sudo.` : step.detail;
   return (
     <li data-testid={`plan-${step.id}`} className="group">
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-3 px-4 py-2.5 text-left outline-none hover:bg-accent/30 focus-visible:bg-accent/40">
@@ -508,7 +508,7 @@ export function useInstallRun(): InstallRun {
     const at = autoTrust.current;
     if (state !== "failed" || !fp || !req || at.tried || !at.known?.includes(fp)) return;
     at.tried = true;
-    write("\r\n\x1b[2mIts host key is the one your tailnet reports for it, so Shipyard trusts it.\x1b[0m\r\n");
+    write("\r\n\x1b[2mIts host key is the one your tailnet reports for it, so Terminal trusts it.\x1b[0m\r\n");
     start({ ...req, trust_host_key: fp });
   }, [state, failure, req, start]);
 
@@ -638,7 +638,7 @@ function RunStage({
       <Header
         icon={<SquareTerminalIcon className="size-4" />}
         title={ready ? `${run.box} is ready` : `Setting up ${target.host}`}
-        sub={ready ? `Paired with this computer. Shipyard no longer needs SSH for it.` : "You type in the terminal: press Enter to start, and your password when sudo asks."}
+        sub={ready ? `Paired with this computer. Terminal no longer needs SSH for it.` : "You type in the terminal: press Enter to start, and your password when sudo asks."}
         right={
           <div className="flex items-center gap-2">
             {status}
@@ -662,7 +662,7 @@ function RunStage({
           {!narrow && (
             <p className="mx-4 mt-2 mb-4 flex items-start gap-1.5 border-t pt-3 text-muted-foreground text-meta">
               <ShieldCheckIcon className="mt-0.5 size-3.5 shrink-0" />
-              <span>What you type goes to {target.host.split("@").pop()} through this terminal, and nowhere else. Shipyard doesn't keep it.</span>
+              <span>What you type goes to {target.host.split("@").pop()} through this terminal, and nowhere else. Terminal doesn't keep it.</span>
             </p>
           )}
           {run.state === "failed" && !failed && !run.failure && (
@@ -790,7 +790,7 @@ function TeamPhase({
     tone = "bg-warning/8";
     text = (
       <>
-        <span className="font-medium">sudo is asking for your password on {box}.</span> Type it in the terminal and press <Kbd>↵</Kbd>. Shipyard never sees it.
+        <span className="font-medium">sudo is asking for your password on {box}.</span> Type it in the terminal and press <Kbd>↵</Kbd>. Terminal never sees it.
       </>
     );
   } else {
@@ -989,7 +989,7 @@ function Banner({ run, ready, readyLabel, onReady, onBack, agents }: { run: Inst
     tone = "bg-warning/8 text-foreground";
     text = (
       <>
-        <span className="font-medium">sudo is asking for your password on the box.</span> Type it in the terminal and press <Kbd>↵</Kbd>; nothing shows as you type. Shipyard never sees it.
+        <span className="font-medium">sudo is asking for your password on the box.</span> Type it in the terminal and press <Kbd>↵</Kbd>; nothing shows as you type. Terminal never sees it.
       </>
     );
   } else if (run.waiting === "enter") {
@@ -1036,7 +1036,7 @@ export function agentNames(ids: string[]) {
   return n.length <= 1 ? (n[0] ?? "") : `${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}`;
 }
 
-// InstallTerminal is Shipyard's terminal (ghostty-web, or xterm.js) on the
+// InstallTerminal is Terminal's terminal (ghostty-web, or xterm.js) on the
 // install's pseudo-terminal: what it shows comes from berth add ssh, and
 // what is typed goes back to it. fontSize, when given, overrides the
 // terminal's own: the quick install's compact dialog uses a smaller one.
@@ -1180,7 +1180,7 @@ export function AddAgents({ box, open, onClose }: { box: string; open: boolean; 
         <DialogPrimitive.Popup data-testid="add-agents" data-stage={stage} className="fixed inset-0 z-50 flex flex-col bg-background text-foreground outline-none">
           {stage === "pick" ? (
             <>
-              <Header icon={<ServerIcon className="size-4" />} title={`Add agents to ${box}`} sub="Into ~/.local/bin on the box, without sudo, with Shipyard's hooks and skills." right={<CloseButton onClick={onClose} />} />
+              <Header icon={<ServerIcon className="size-4" />} title={`Add agents to ${box}`} sub="Into ~/.local/bin on the box, without sudo, with Terminal's hooks and skills." right={<CloseButton onClick={onClose} />} />
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <div className="mx-auto w-full max-w-md px-6 pt-8 pb-10">
                   {error && <p className="text-destructive-foreground text-body">{error}</p>}

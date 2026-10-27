@@ -1,9 +1,9 @@
-# Shipyard
+# Terminal
 https://www.berthd.app/
 Run coding agents on your dev boxes, and work with them as if they were on
 your laptop.
 
-Shipyard connects a laptop to any number of development machines (a VPS, a
+Terminal connects a laptop to any number of development machines (a VPS, a
 cloud VM, a desktop under your desk) and gives each repository on them
 worktrees, terminals, agents, dev servers and automations. The agents run on
 the boxes, so closing the app, sleeping the laptop or losing Wi-Fi never
@@ -24,7 +24,7 @@ stops them; the app is a view you can close and reopen at any time.
 - **Plugins**: React plugins for the app, with built-ins for git changes,
   pull requests, dev servers, box monitoring, activity and notes.
 - **Boxes without the fuss**: pinned mutual TLS, pairing by link, boxes on
-  other tailnets, self-upgrade over Shipyard's own connection, and a phone
+  other tailnets, self-upgrade over Terminal's own connection, and a phone
   companion served by each box.
 
 ## Pieces
@@ -52,7 +52,7 @@ hooks that let Claude Code, Codex and Cursor report their state
 once, for ten minutes. Run it again to upgrade in place; `sh -s -- --help`
 lists the options.
 
-**On your Mac**, [download Shipyard](https://github.com/cosscom/shipyard/releases/latest/download/Berth-macos-universal.dmg)
+**On your Mac**, [download Terminal](https://github.com/cosscom/shipyard/releases/latest/download/Berth-macos-universal.dmg)
 (`Berth-macos-universal.dmg`, for Apple silicon and Intel, signed and
 notarized), drag it to Applications and open it. The app carries the
 `berth` CLI and the Linux daemons `berth add ssh` uploads, and offers to
@@ -107,7 +107,7 @@ cd berthd && make all
 cd app && pnpm install && pnpm tauri dev
 ```
 
-`make app-build` builds `Shipyard.app` and its disk image, with the CLI and the
+`make app-build` builds `Terminal.app` and its disk image, with the CLI and the
 Linux daemons inside.
 
 ## Docs
@@ -116,7 +116,7 @@ The documentation is at [docs.berthd.app](https://docs.berthd.app). Its pages
 are the [`docs/`](docs) folder here, built by [`docs-site/`](docs-site):
 
 - [Install](docs/getting-started/install.mdx), [add a box](docs/getting-started/add-a-box.mdx), [first project](docs/getting-started/first-project.mdx), [first agent](docs/getting-started/first-agent.mdx)
-- [How Shipyard works](docs/concepts/architecture.mdx) and [the security model](docs/concepts/security.mdx)
+- [How Terminal works](docs/concepts/architecture.mdx) and [the security model](docs/concepts/security.mdx)
 - [Orchestration](docs/guides/orchestration.mdx): agents driving agents, and [the offline queue](docs/guides/offline-queue.mdx)
 - [Automations](docs/guides/automations.mdx): flows, schedules, GitHub triggers; [hooks and gates](docs/guides/hooks.mdx)
 - [Project config](docs/guides/project-config.mdx) (`.berth/config.json`), [kits](docs/guides/kits.mdx), [secrets](docs/guides/secrets.mdx)

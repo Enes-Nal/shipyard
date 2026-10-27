@@ -93,7 +93,7 @@ doesn't:
 
 Teammates (Claude Code's agent teams) join the **Crew** strip once they
 have written, and a helper that reported back has a **Report** badge that
-brings its report into view. Shipyard's own reports (see
+brings its report into view. Terminal's own reports (see
 [hearing back](/guides/orchestration#hearing-back)) take the same head. This
 needs a box from this release; an older box shows these messages as it did.
 Codex's helpers answer through a tool call, so there is nothing of this kind
@@ -109,7 +109,7 @@ they are sent or dismissed.
 The reply box says what Enter does: **Send**, or **Queue** while the agent
 works. A queued reply shows under the conversation ("Queued: sends when
 Claude finishes") until the box types it in, with **Send now** (it asks
-first if the agent is waiting on you) and **Cancel**. Shipyard reads Claude Code's and Codex's transcripts on the box
+first if the agent is waiting on you) and **Cancel**. Terminal reads Claude Code's and Codex's transcripts on the box
 (`GET /v1/sessions/{name}/transcript`); for other agents, or on an older
 box, the pane says so and offers the terminal. Settings → Labs chooses
 which view the panes of agents in their terminals open in; an
@@ -228,7 +228,7 @@ dialog, a trust or update prompt at start), its **live terminal opens
 inline** under the conversation: "Claude Code is showing its own screen —
 answer it here". It takes the keyboard, so arrows, Enter and Esc go straight
 to the agent, and it folds away once the agent is back at its prompt (or
-fold it yourself; the reply box waits until then). Shipyard spots such a screen
+fold it yourself; the reply box waits until then). Terminal spots such a screen
 from the agent's screen while it isn't asking a question its hooks describe:
 key hints at its foot ("Esc to cancel", "Enter to confirm"), numbered
 options, or no prompt where there always is one at rest. Only one terminal

@@ -13,7 +13,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ink } from "@/components/sidebar/ink";
 
-// The sidebar's quiet word that a box's Shipyard skills aren't installed or
+// The sidebar's quiet word that a box's Terminal skills aren't installed or
 // are out of date (lib/skills-notice.ts), with two ways out: Install now,
 // or Snooze. It sits at the sidebar's foot with the What's new note, clear
 // of the projects. One box shows whole; more fold under "2 more boxes", as
@@ -24,7 +24,7 @@ const openAgents = (box: string) => useStore.getState().setView({ kind: "setting
 
 // said is a notice's one line after the box's name: what is wrong, or that
 // Install now didn't go through.
-const said = (n: ShownNotice, failed: boolean) => (failed ? `couldn't ${n.kind === "outdated" ? "update" : "install"} Shipyard's skills` : noticeText(n));
+const said = (n: ShownNotice, failed: boolean) => (failed ? `couldn't ${n.kind === "outdated" ? "update" : "install"} Terminal's skills` : noticeText(n));
 
 // Notice is one box's: what is wrong, Install now and Snooze; or, after an
 // install that didn't go through, why, with Retry and Settings.
@@ -97,7 +97,7 @@ function Notice({ n, onLeave, className, line }: { n: ShownNotice; onLeave?: () 
       </div>
       {/* Said aloud while it runs; lib/skills-notice announces how it ended. */}
       <span role="status" className="sr-only">
-        {n.installing ? `${n.kind === "outdated" ? "Updating" : "Installing"} Shipyard's skills on ${n.box}…` : ""}
+        {n.installing ? `${n.kind === "outdated" ? "Updating" : "Installing"} Terminal's skills on ${n.box}…` : ""}
       </span>
     </div>
   );
@@ -111,7 +111,7 @@ export function SkillsNotices() {
   if (!list.length) return null;
   const [first, ...rest] = list;
   return (
-    <section aria-label="Shipyard's skills" data-testid="skills-notices" className="flex max-h-[45%] shrink-0 flex-col overflow-hidden">
+    <section aria-label="Terminal's skills" data-testid="skills-notices" className="flex max-h-[45%] shrink-0 flex-col overflow-hidden">
       <div className="min-h-0 overflow-y-auto">
         <Notice key={first.box} n={first} line />
         {open && rest.map((n) => <Notice key={n.box} n={n} line />)}
@@ -135,7 +135,7 @@ export function SkillsNotices() {
 // railLabel names the rail's button: the one notice whole, or how many.
 function railLabel(list: ShownNotice[]): string {
   if (list.length === 1) return `${list[0].box}: ${said(list[0], !!list[0].failure && !list[0].installing)}`;
-  return `Shipyard's skills need installing or updating on ${list.length} boxes`;
+  return `Terminal's skills need installing or updating on ${list.length} boxes`;
 }
 
 // RailSkillsNotices is the same in the folded sidebar: one quiet button,
@@ -163,7 +163,7 @@ export function RailSkillsNotices() {
           <span aria-hidden className="absolute top-0.5 right-0.5 size-2 rounded-full bg-muted-foreground/70" />
         </PopoverTrigger>
       </Tip>
-      <PopoverPopup side="right" align="end" sideOffset={8} aria-label="Shipyard's skills" className="w-64 [&_[data-slot=popover-viewport]]:p-0">
+      <PopoverPopup side="right" align="end" sideOffset={8} aria-label="Terminal's skills" className="w-64 [&_[data-slot=popover-viewport]]:p-0">
         <div data-testid="skills-notices" className="max-h-[min(24rem,70vh)] divide-y overflow-y-auto">
           {list.map((n) => (
             <Notice key={n.box} n={n} onLeave={() => setOpen(false)} />

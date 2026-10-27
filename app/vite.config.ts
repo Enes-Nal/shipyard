@@ -62,7 +62,7 @@ function demoPage(): Plugin {
       return html
         .replace(/"\/shims\//g, '"./shims/')
         .replace('href="/favicon.svg"', 'href="./favicon.svg"')
-        .replace("<title>Shipyard</title>", '<title>Shipyard demo</title>\n    <meta name="robots" content="noindex" />')
+        .replace("<title>Terminal</title>", '<title>Terminal demo</title>\n    <meta name="robots" content="noindex" />')
         .replace(
           "<script type=\"importmap\">",
           `<script>

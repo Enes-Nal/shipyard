@@ -1,10 +1,10 @@
 # shellcheck shell=bash
 # The Mac half of the release tests: a home, ports, launchd labels and an
-# app of their own, so a test never touches this Mac's own Shipyard. Sourced
+# app of their own, so a test never touches this Mac's own Terminal. Sourced
 # by scripts/fresh-user-test.sh and scripts/upgrade-test.sh after common.sh.
 #
 # What "its own" means:
-#  - HOME is a fresh folder: Shipyard's state (~/Library/Application Support/
+#  - HOME is a fresh folder: Terminal's state (~/Library/Application Support/
 #    berth), ~/.berth, ~/.claude, the sample project in ~/work all land in it.
 #  - The agent listens on free ports (the app's on BERTH_UI_PORT, from 9378
 #    up; the proxy from 9377 up), never 1377-1379.
@@ -13,7 +13,7 @@
 #    in the person's tmux server.
 #  - The app is a copy of the one in the dmg with its own bundle identifier,
 #    so its webview storage (where the layout and preferences live) is not
-#    the installed Shipyard's, and with the agent's port changed from 1378 to
+#    the installed Terminal's, and with the agent's port changed from 1378 to
 #    BERTH_UI_PORT: the same length, in the binary and its CSP, which the
 #    app has no setting for. Changing it breaks the Developer ID signature,
 #    so the copy is signed again ad hoc, with the hardened runtime; its
@@ -120,8 +120,8 @@ dmg_info() {
 		rmdir "$mnt"
 		return 1
 	}
-	app="$mnt/Shipyard.app"
-	# A release from before Berth became Shipyard carries Berth.app.
+	app="$mnt/Terminal.app"
+	# A release from before Berth became Terminal carries Berth.app.
 	[ -d "$app" ] || app="$mnt/Berth.app"
 	echo "version=$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null)"
 	echo "revision=$(LC_ALL=C grep -a -o -m1 'vcs\.revision=[0-9a-f]\{40\}' "$app/Contents/MacOS/berth-cli" 2>/dev/null | head -1 | cut -d= -f2)"
@@ -151,7 +151,7 @@ find_dmg() {
 			echo "$d"
 			return 0
 		fi
-		echo "  not $d: Shipyard $(info_of "$info" version), built from $(info_of "$info" revision | cut -c1-9), not HEAD ${head:0:9}" >&2
+		echo "  not $d: Terminal $(info_of "$info" version), built from $(info_of "$info" revision | cut -c1-9), not HEAD ${head:0:9}" >&2
 	done
 	echo "no dmg built from HEAD (${head:0:9}): build one with make app-build (scripts/release-check.sh does), or pass --dmg PATH" >&2
 	return 1
@@ -172,11 +172,11 @@ check_dmg() {
 	# The commit under test: release-check's, else HEAD.
 	head=${BERTH_RELEASE_TEST_REV:-$(git -C "$REPO" rev-parse HEAD 2>/dev/null)}
 	if [ "$(info_of "$info" berthd)" != yes ]; then
-		echo "$1 (Shipyard $DMG_VERSION, built from ${rev:0:9}) has no Contents/Resources/berthd: it isn't a release build. Build one with make app-build or scripts/mac-release.sh" >&2
+		echo "$1 (Terminal $DMG_VERSION, built from ${rev:0:9}) has no Contents/Resources/berthd: it isn't a release build. Build one with make app-build or scripts/mac-release.sh" >&2
 		return 1
 	fi
 	if [ -z "${2:-}" ] && [ -n "$head" ] && [ "$rev" != "$head" ]; then
-		echo "$1 is Shipyard $DMG_VERSION built from ${rev:0:9}, not ${head:0:9}, the commit under test: build it with make app-build, or pass --any-build to test it anyway" >&2
+		echo "$1 is Terminal $DMG_VERSION built from ${rev:0:9}, not ${head:0:9}, the commit under test: build it with make app-build, or pass --any-build to test it anyway" >&2
 		return 1
 	fi
 	return 0
@@ -187,9 +187,9 @@ download_dmg() {
 	echo "$2/Berth-macos-universal.dmg"
 }
 
-# install_dmg DMG DEST: what a person does: open the dmg, drag Shipyard to
+# install_dmg DMG DEST: what a person does: open the dmg, drag Terminal to
 # Applications (DEST here). Checks the dmg is laid out for that, and sets
-# INSTALLED_APP: DEST/Shipyard.app, or DEST/Berth.app from a release made
+# INSTALLED_APP: DEST/Terminal.app, or DEST/Berth.app from a release made
 # before the rename.
 install_dmg() {
 	local dmg=$1 dest=$2 mnt
@@ -200,11 +200,11 @@ install_dmg() {
 		return 1
 	}
 	local ok=0 name=""
-	if [ -d "$mnt/Shipyard.app" ]; then name=Shipyard.app; elif [ -d "$mnt/Berth.app" ]; then name=Berth.app; fi
+	if [ -d "$mnt/Terminal.app" ]; then name=Terminal.app; elif [ -d "$mnt/Berth.app" ]; then name=Berth.app; fi
 	if [ -z "$name" ]; then
-		echo "the dmg has no Shipyard.app" >&2
+		echo "the dmg has no Terminal.app" >&2
 	elif [ ! -L "$mnt/Applications" ]; then
-		echo "the dmg has no Applications link to drag Shipyard to" >&2
+		echo "the dmg has no Applications link to drag Terminal to" >&2
 	else
 		rm -rf "${dest:?}/$name"
 		# shellcheck disable=SC2034 # the tests use it
@@ -230,9 +230,9 @@ test_copy() {
 	LC_ALL=C perl -pi -e "s/127\\.0\\.0\\.1:1378/127.0.0.1:$UI_PORT/g" "$exe" || return 1
 	local plist="$dest/Contents/Info.plist"
 	plutil -replace CFBundleIdentifier -string "dev.berth.releasetest" "$plist" &&
-		plutil -replace CFBundleName -string "Shipyard Test" "$plist" &&
-		plutil -replace CFBundleDisplayName -string "Shipyard Test" "$plist" || return 1
-	# berth:// links stay the installed Shipyard's.
+		plutil -replace CFBundleName -string "Terminal Test" "$plist" &&
+		plutil -replace CFBundleDisplayName -string "Terminal Test" "$plist" || return 1
+	# berth:// links stay the installed Terminal's.
 	plutil -remove CFBundleURLTypes "$plist" 2>/dev/null || true
 	codesign --force --sign - --options runtime --preserve-metadata=entitlements "$dest" 2>&1 || return 1
 	codesign --verify "$dest" || return 1

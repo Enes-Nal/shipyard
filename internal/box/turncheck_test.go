@@ -276,7 +276,7 @@ var (
 		prompt: "Just start a worker to fix it and i will close this session",
 		reply: "I've started a worker to fix it, so you can close this session.\n\n" +
 			"- **Issue:** ACME-2262, \"Intake: an issue id in a title the card titler wrote shouldn't count as a live session\" (repo:acme-skills, Bug, unassigned). It's what I described: skip ids that appear only in a title the titler wrote, keep the current behaviour when there's no summary file, plus unit tests and a check on the box with throwaway sessions.\n" +
-			"- **Worker:** `acme-skills-acme-2262-intake-titler-ids-c-1af9`, running `/ship ACME-2262`. I turned off its notifications to this session since you're closing it. Follow it in Shipyard.\n\n" +
+			"- **Worker:** `acme-skills-acme-2262-intake-titler-ids-c-1af9`, running `/ship ACME-2262`. I turned off its notifications to this session since you're closing it. Follow it in Terminal.\n\n" +
 			"The task file is updated with where things stand. Three things are still open there:\n" +
 			"- **ACME-2253 intake:** clicking **Start intake** should work now.\n" +
 			"- **The earlier ACME-2253 attempt:** its uncommitted code is still in `acme-skills-acme-2253-control-chat`. Keep it for intake or throw it away.\n" +

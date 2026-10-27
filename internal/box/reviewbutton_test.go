@@ -129,7 +129,7 @@ func boolp(v bool) *bool { return &v }
 
 func strp(s string) *string { return &s }
 
-const plainBlock = ReviewButtonMarker + "\n[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12)\n" + reviewButtonEnd
+const plainBlock = ReviewButtonMarker + "\n[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12)\n" + reviewButtonEnd
 
 func TestTheReviewButtonIsAddedOnceAndTheRestOfTheBodyStays(t *testing.T) {
 	for _, tc := range []struct {
@@ -272,7 +272,7 @@ func TestForksAndOutsidersGetNoButton(t *testing.T) {
 func TestAButtonSomeoneWroteIsLeftAlone(t *testing.T) {
 	for _, body := range []string{
 		"Fixes it.\n\n" + plainBlock + "\n\nMore below.",
-		"Fixes it.\n\n[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12&as=pro@acme.test&path=/billing)",
+		"Fixes it.\n\n[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12&as=pro@acme.test&path=/billing)",
 		"Fixes it.\n\nReview it: berth://review?repo=acme/shop&pr=12",
 		// A marker with no end: never guessed at.
 		"Fixes it.\n\n" + ReviewButtonMarker + "\n[broken",
@@ -335,7 +335,7 @@ func TestSettingAsAndPathReplacesTheButtonInPlace(t *testing.T) {
 		t.Fatalf("edited %d after as and path were set", n)
 	}
 	want := "Fixes it.\n\n- [x] tests\n\n" + ReviewButtonMarker +
-		"\n[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12&as=admin@acme.test&path=/billing%3Ftab%3Dplans)\n" +
+		"\n[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=12&as=admin@acme.test&path=/billing%3Ftab%3Dplans)\n" +
 		reviewButtonEnd + "\n\n## Notes\nLooks good"
 	if got := f.body(12); got != want {
 		t.Fatalf("body = %q\nwant   %q", got, want)

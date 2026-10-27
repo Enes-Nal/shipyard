@@ -220,7 +220,7 @@ const giteaRun = (): Run => ({
     step("3.t.0", "pr", "skipped", 116, 115.9, {
       id: "open",
       output:
-        "This repository is on git.acme.dev, not GitHub, so Shipyard didn't open a pull request. The branch invoices-a1 is pushed to origin; open one there: https://git.acme.dev/acme/shop/compare/main...invoices-a1. (If git.acme.dev is GitHub Enterprise, run \"gh auth login --hostname git.acme.dev\" on this box.)",
+        "This repository is on git.acme.dev, not GitHub, so Terminal didn't open a pull request. The branch invoices-a1 is pushed to origin; open one there: https://git.acme.dev/acme/shop/compare/main...invoices-a1. (If git.acme.dev is GitHub Enterprise, run \"gh auth login --hostname git.acme.dev\" on this box.)",
     }),
     step("4", "if", "succeeded", 115.9, 110, { id: "tidy", children: [step("4.t", "then", "", 115.9, 110, { children: [step("4.t.0", "cleanup", "succeeded", 115.9, 110, { id: "archive", output: "archived invoices-a2" })] })] }),
   ),

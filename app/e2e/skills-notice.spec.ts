@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { type App, expect, mockOnly, test } from "./fixtures";
 
-// The sidebar's quiet notice that a box's Shipyard skills aren't installed
+// The sidebar's quiet notice that a box's Terminal skills aren't installed
 // or are out of date (lib/skills-notice.ts, components/sidebar/
 // skills-notice.tsx). In the fixtures devl has none for Claude Code and gpu
 // has three older ones; old-vps is offline, so it says nothing. One notice
@@ -45,8 +45,8 @@ test("the sidebar says which box's skills aren't installed, and folds the others
   const { page } = app;
   await app.open();
   await expect(card(page)).toBeVisible();
-  await expect(page.getByRole("region", { name: "Shipyard's skills" })).toBeVisible();
-  await expect(notice(page, "devl")).toContainText("devl: Shipyard's skills aren't installed for Claude Code");
+  await expect(page.getByRole("region", { name: "Terminal's skills" })).toBeVisible();
+  await expect(notice(page, "devl")).toContainText("devl: Terminal's skills aren't installed for Claude Code");
   await expect(notice(page, "devl")).toHaveAttribute("data-kind", "missing");
   await expect(notice(page, "devl").getByRole("button", { name: "Install now" })).toBeVisible();
   // One box whole; gpu waits under the fold, and unfolds.
@@ -100,7 +100,7 @@ test("Install now says it is installing while the box works, and takes no second
   await expect(devl).toHaveAttribute("data-state", "installing");
   await expect(devl.getByRole("button", { name: "Installing…" })).toBeDisabled();
   await expect(snoozeMenu(page, "devl")).toBeDisabled();
-  await expect(devl.getByRole("status")).toHaveText("Installing Shipyard's skills on devl…");
+  await expect(devl.getByRole("status")).toHaveText("Installing Terminal's skills on devl…");
   await page.clock.resume();
   await expect(devl).toHaveCount(0);
 });
@@ -124,7 +124,7 @@ test("a hook that refuses the install is said in the notice, with Retry and the 
   const gpu = notice(page, "gpu");
   await gpu.getByRole("button", { name: "Update now" }).click();
   await expect(gpu).toHaveAttribute("data-state", "failed");
-  await expect(gpu).toContainText("gpu: couldn't update Shipyard's skills");
+  await expect(gpu).toContainText("gpu: couldn't update Terminal's skills");
   await expect(page.getByTestId("skills-notice-error")).toContainText("A hook said no. Skills on this box are installed by the platform team.");
   // Said in place, not in a toast.
   await expect(page.locator("[data-slot=toast-title]")).toHaveCount(0);
@@ -154,7 +154,7 @@ test("a box that goes offline mid-install keeps its notice, saying it can't be r
   const devl = notice(page, "devl");
   await devl.getByRole("button", { name: "Install now" }).click();
   await expect(devl).toHaveAttribute("data-state", "failed");
-  await expect(devl).toContainText("devl: couldn't install Shipyard's skills");
+  await expect(devl).toContainText("devl: couldn't install Terminal's skills");
   await expect(page.getByTestId("skills-notice-error")).toContainText("Can't reach devl. It may be asleep or offline.");
   await expect(devl.getByRole("button", { name: "Retry" })).toBeVisible();
   await expect(devl.getByRole("button", { name: "Settings" })).toBeVisible();
@@ -195,7 +195,7 @@ for (const [choice, quietFor] of CHOICES) {
     await expect(notice(page, "gpu")).toBeVisible();
     await expect(notice(page, "devl")).toHaveCount(0);
     await forward(page, 45 * MINUTE);
-    await expect(notice(page, "devl")).toContainText("devl: Shipyard's skills aren't installed for Claude Code");
+    await expect(notice(page, "devl")).toContainText("devl: Terminal's skills aren't installed for Claude Code");
   });
 }
 
@@ -261,7 +261,7 @@ test("Don't remind me for a box holds until Settings → Agents turns it back on
   await remind.click();
   await expect(remind).toBeChecked();
   await app.leaveSettings();
-  await expect(notice(page, "devl")).toContainText("devl: Shipyard's skills aren't installed for Claude Code");
+  await expect(notice(page, "devl")).toContainText("devl: Terminal's skills aren't installed for Claude Code");
 });
 
 test("Don't remind me can be undone where it is said", async ({ app }) => {
@@ -305,7 +305,7 @@ test("the notice works from the keyboard", async ({ app }) => {
   await app.open();
   const devl = notice(page, "devl");
   // Its buttons are named by their box for a screen reader.
-  await expect(page.getByRole("group", { name: "devl: Shipyard's skills aren't installed for Claude Code" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "devl: Terminal's skills aren't installed for Claude Code" })).toBeVisible();
   await devl.getByRole("button", { name: "Install now" }).focus();
   await page.keyboard.press("Tab");
   await expect(snoozeMenu(page, "devl")).toBeFocused();
@@ -326,11 +326,11 @@ test("the folded sidebar keeps the notice as one quiet button that opens it", as
   await page.getByRole("button", { name: "Hide the sidebar" }).click();
   const rail = page.getByTestId("sidebar-rail");
   const button = rail.getByTestId("skills-notices-rail");
-  await expect(button).toHaveAccessibleName("Shipyard's skills need installing or updating on 2 boxes");
+  await expect(button).toHaveAccessibleName("Terminal's skills need installing or updating on 2 boxes");
   await button.click();
   const list = card(page);
   await expect(list.getByTestId("skills-notice")).toHaveCount(2);
-  await expect(notice(page, "devl")).toContainText("devl: Shipyard's skills aren't installed for Claude Code");
+  await expect(notice(page, "devl")).toContainText("devl: Terminal's skills aren't installed for Claude Code");
   await expect(notice(page, "gpu")).toContainText("gpu: 3 skills are out of date");
   await notice(page, "devl").getByRole("button", { name: "Install now" }).click();
   await expect(notice(page, "devl")).toHaveCount(0);

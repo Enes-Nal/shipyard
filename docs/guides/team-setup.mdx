@@ -6,7 +6,7 @@ description: Set a new engineer's box up the way the team's are, from a reposito
 A team setup sets a box up the way your team's boxes are: the tools it
 needs once, then the team's repositories, each cloned and set up. An org
 publishes it on GitHub in a repository called `.berth` (`github.com/<org>/.berth`),
-and an engineer runs it from Shipyard by typing the org's name or opening a
+and an engineer runs it from Terminal by typing the org's name or opening a
 link such as `berth://team?org=acme`. Under the hood it is a workspace
 kit: a [kit](/guides/kits) for a whole box, not one project.
 
@@ -26,14 +26,14 @@ Open the Team setup page one of three ways:
 - On the welcome screen, **Joining a team?**: type your company's GitHub org.
 - **Add a box** → **Set this box up for a team**.
 - A link from your team, `berth://team?org=<org>`, often in an onboarding
-  doc. It opens Shipyard on the page.
+  doc. It opens Terminal on the page.
 
 The page reads like the org's repository on GitHub: the org's avatar and
 name, **Published by Acme on GitHub**, `acme / .berth`, who changed it
-last and when, and the commit Shipyard will run. **What you'll get** lists:
+last and when, and the commit Terminal will run. **What you'll get** lists:
 
 - **On your box, once**: the box steps, those that ask for your password
-  marked **sudo**, then Shipyard's own steps: **GitHub on the box** and, when
+  marked **sudo**, then Terminal's own steps: **GitHub on the box** and, when
   the keys are 1Password references, **1Password on the box**. Open any line
   for its exact commands; **Read every command** shows every file of `.berth`
   as it is at that commit.
@@ -50,7 +50,7 @@ progress, so what you read is what runs.
 
 ### GitHub, through the GitHub CLI
 
-Shipyard has no GitHub sign-in of its own and keeps no GitHub token. On your
+Terminal has no GitHub sign-in of its own and keeps no GitHub token. On your
 laptop it reads the team setup and the repositories with your own `gh`:
 
 - Without `gh`, the page says how to install it (`brew install gh` on a
@@ -80,7 +80,7 @@ setup**: ask an admin of the org for access, accept the invitation, then
 ### Your password
 
 Steps that need root run `sudo` in a terminal on the box, as you; you type
-your password there. Shipyard never sees it and nothing keeps it. The page
+your password there. Terminal never sees it and nothing keeps it. The page
 shows that terminal inline on the step that is waiting (and **Open
 terminal** opens it as a tab). There is no root-over-SSH path, and the
 runner refuses to run as root.
@@ -119,17 +119,17 @@ No secrets live in git. A team setup lists, per repository:
 ### 1Password on the box
 
 When a team setup's shared keys are `op://` references, the box reads them
-with its own 1Password CLI, `op`, so op must be signed in there. Shipyard adds a
+with its own 1Password CLI, `op`, so op must be signed in there. Terminal adds a
 step for it after GitHub's: `berthd secret signin` runs `op signin` in the
 box's terminal. If the box has no account yet, op asks for your sign-in
 address, email, Secret Key and password; you answer there, the page shows
-the terminal inline while op waits, and Shipyard never sees what you type. It
+the terminal inline while op waits, and Terminal never sees what you type. It
 keeps only op's session, in `box/op-session` in the state directory (`~/.config/berth` on Linux, readable by you
 alone), which berthd passes to op when it reads a key. A box that is already
 signed in (or has `OP_SERVICE_ACCOUNT_TOKEN` in `~/.berth/env.json`) skips
 the step.
 
-op ends a session after 30 minutes unused. Shipyard never lets op ask anything
+op ends a session after 30 minutes unused. Terminal never lets op ask anything
 outside that step: it runs op with no terminal, so a read on a box that
 isn't signed in fails at once, the service or terminal starts without that
 key, and the box says **1Password isn't signed in on devbox: sign in from
@@ -165,7 +165,7 @@ why. Without it, or with `"optional"`, engineers may skip.
 ### Agent CLIs on the box
 
 A team setup can name the agent CLIs every engineer's box gets
-(`"agents": ["claude", "codex"]`). Shipyard installs them as a step of its own,
+(`"agents": ["claude", "codex"]`). Terminal installs them as a step of its own,
 after the team's steps and before GitHub, like the GitHub and 1Password
 steps: **Claude Code and Codex on devbox**, which runs `berthd agents
 install --integrations claude codex` in the same terminal. They go in
@@ -178,9 +178,9 @@ which a team's own step can install.
 
 ### What the box needs first
 
-Shipyard runs the steps in a terminal on the box, and that terminal is tmux's,
+Terminal runs the steps in a terminal on the box, and that terminal is tmux's,
 so the box needs tmux (and git). [Adding the box over SSH](/getting-started/add-a-box#over-ssh)
-gives it both: Shipyard's own tmux (no sudo) and git in the guided terminal,
+gives it both: Terminal's own tmux (no sudo) and git in the guided terminal,
 where `sudo` asks for your password; the install command installs both when
 it can, or says the command to run. The Team setup page checks the box too,
 and says **Install tmux on devbox**, with the command, until it is there.
@@ -188,16 +188,16 @@ and says **Install tmux on devbox**, with the command, until it is there.
 Adding a box from Team setup (the **+** beside the box, or **Add a box**
 while the page is open) is the full [guided install](/getting-started/add-a-box#the-guided-install),
 not the quick one: the whole plan, full screen, with the team's steps listed
-after Shipyard's, then one terminal on this computer for Shipyard's steps. When the
+after Terminal's, then one terminal on this computer for Terminal's steps. When the
 box is ready, the team's setup starts on it in the same screen, its steps
-under Shipyard's and its terminal beside them, and **Back to Team setup** goes
+under Terminal's and its terminal beside them, and **Back to Team setup** goes
 on from there. Anywhere else, adding a box is
 [quiet](/getting-started/add-a-box#over-ssh).
 
 ### Groups a step adds you to
 
 A step that adds you to a group, such as `docker`, can't give it to
-processes already running: groups are read at login. Shipyard carries on as a
+processes already running: groups are read at login. Terminal carries on as a
 new login would. The steps left in the team's terminal run with the new
 group (through `sg`, which needs no password for a group you are in), and so
 does what berthd starts afterwards: the repos' init scripts, terminals,
@@ -206,19 +206,19 @@ help: under systemd it gets the groups your user's service manager started
 with, and the terminals it already runs would keep theirs. `berthd doctor`
 says when this is happening; it ends at the next reboot.
 
-The keys a repository needs come from its `.env.example`. Shipyard only sets
+The keys a repository needs come from its `.env.example`. Terminal only sets
 what is its business (ports, URLs, databases, through the repository's
 config or kit); everything else stays as the repository has it. When
 nothing is missing, the keys line is skipped.
 
 ### Repositories you already cloned
 
-If a repo is already on your box, Shipyard uses that clone instead of
+If a repo is already on your box, Terminal uses that clone instead of
 making a second one. It matches a clone by the repository its origin points
 to, not by its folder, so `~/work/acme-web` counts for `acme/web` even when
 `team.json` says `~/code/web`.
 
-**How a clone is matched.** Shipyard reads the clone's `remote.origin.url`
+**How a clone is matched.** Terminal reads the clone's `remote.origin.url`
 as it is written in its `.git/config` (the same value `git config --get
 remote.origin.url` gives, so `url.*.insteadOf` rewrites don't change it).
 `https://github.com/acme/web`, `ssh://git@github.com/acme/web.git` and
@@ -227,8 +227,8 @@ without `.git`. A repository with the same folder name and another origin
 doesn't match. A git worktree is never used as a main checkout (its main
 checkout is offered instead), and a bare repository has no checkout to use.
 
-**Where Shipyard looks.** First at the projects you've already added to
-Shipyard. Then on the box, in:
+**Where Terminal looks.** First at the projects you've already added to
+Terminal. Then on the box, in:
 
 - `~/code`, `~/work`, `~/src`, `~/projects`, `~/dev`, `~/repos`, `~/git`, and
   the folder `team.json` puts the repo in, two levels deep;
@@ -245,17 +245,17 @@ uncommitted changes and last commit, without taking git's locks).
 **You choose.** The page shows each clone it finds: "**Found
 ~/work/acme-web**, a clone of acme/web (on branch `feat/x`, 3 uncommitted
 changes) · **Use this** / **Clone a fresh copy**". It starts on **Use this**
-when the repo is a Shipyard project already, or when exactly one clone was
+when the repo is a Terminal project already, or when exactly one clone was
 found and it has no uncommitted changes; otherwise on a fresh clone.
 Choosing **Use this** says what happens there: "Runs in your existing
 checkout ~/work/acme-web", what its init does, and, when it has uncommitted
-changes, "Your uncommitted changes stay as they are". When several Shipyard
+changes, "Your uncommitted changes stay as they are". When several Terminal
 projects are clones of the same repo, the one at the `team.json` path is
 used, else the one used most recently, and the page says which. The box
 checks the chosen folder's origin again before using it, and refuses it if
 it has changed since.
 
-**What using a clone does.** Shipyard adds it as a project, or keeps the
+**What using a clone does.** Terminal adds it as a project, or keeps the
 project it already is (its name, worktrees and settings), installs the
 team's kit for it or trusts its own `.berth/config.json` as you reviewed it,
 lays in its keys, and runs its init in that checkout. Inits are written to
@@ -267,7 +267,7 @@ When the clone is behind its upstream (as of its last fetch), the page
 offers **Pull**, a button of its own, which fast-forwards it only.
 
 **Its worktrees.** The git worktrees the repo already has show in the
-sidebar as Shipyard worktrees, marked **set up on first open**. Each one's
+sidebar as Terminal worktrees, marked **set up on first open**. Each one's
 setup (its kit's or repo's setup script) runs the first time you open a
 terminal or start an agent there, not all at once during the team setup,
 and nothing touches their files before then.
@@ -275,20 +275,20 @@ and nothing touches their files before then.
 From the command line, `berth team show acme --box devbox` lists the clones
 devbox has, and `berth team setup acme devbox --use web='~/work/acme-web'`
 uses one (quote the `~` so your shell leaves it for the box). `--fresh web`
-clones a fresh copy even when a Shipyard project is a clone of it already.
+clones a fresh copy even when a Terminal project is a clone of it already.
 A clone the box found is used only with `--use`.
 
 ### Updates
 
-When the team changes `.berth`, Shipyard notices the newer commit (it checks
+When the team changes `.berth`, Terminal notices the newer commit (it checks
 every few hours) and shows **Acme's setup changed · Review update**. It
 never runs by itself. Reviewing opens the same page with what changed:
 steps added or changed (one that now asks for your password is called
 out), repositories added, kits moved to a new commit, keys. **Update**, with your box's name on it, runs it; steps whose checks already pass are skipped.
 
-### How Shipyard notices your team's setup
+### How Terminal notices your team's setup
 
-If you added a project to Shipyard yourself, say `acme/shop`, Shipyard tells
+If you added a project to Terminal yourself, say `acme/shop`, Terminal tells
 you when acme publishes a team setup, so you don't have to know to look:
 
 - the project's row in the sidebar gets a small people icon, and its menu
@@ -303,7 +303,7 @@ you when acme publishes a team setup, so you don't have to know to look:
 it is (**Use this**, as [above](#repositories-you-already-cloned)). Nothing
 runs until you choose. **Not now** puts the Home card away and keeps the
 quieter hints; **Don't suggest again for acme** (in the project's menu) or
-**Not for me** hides every hint for the org, and Shipyard stops asking about
+**Not for me** hides every hint for the org, and Terminal stops asking about
 it.
 
 How it checks, and what it shares:
@@ -324,7 +324,7 @@ How it checks, and what it shares:
 - **Quietly.** Nothing is asked when the computer is offline, and a failure
   (offline, signed out of `gh`, rate limited) is silent and tried again
   later, after a wait that grows.
-- **Nowhere else.** Nothing is sent anywhere but GitHub. What Shipyard
+- **Nowhere else.** Nothing is sent anywhere but GitHub. What Terminal
   learnt is kept in its own state folder on this laptop, with the orgs you
   turned down.
 
@@ -362,7 +362,7 @@ already.
 ### An org with no .berth
 
 If the org has no `.berth` you can read, the page lists its repositories you
-can read, with those that carry their own `.berth/config.json` picked. Shipyard
+can read, with those that carry their own `.berth/config.json` picked. Terminal
 clones the ones you choose and sets each up from its own config, after the
 box's GitHub sign-in. A repo the box already has a clone of offers **Use
 this** too, as [above](#repositories-you-already-cloned).
@@ -409,7 +409,7 @@ github.com/<owner>/<repo>/tree/<ref>/<folder>  a folder holding team.json
 berth://team?src=<one of those, URL-encoded>   the same, as a link to share
 ```
 
-Type one where Shipyard asks for an org, open the `berth://` link, or run
+Type one where Terminal asks for an org, open the `berth://` link, or run
 `berth team show|setup <link>`. Everything else is the same: it is read with
 your `gh`, pinned to the commit you reviewed, and the access check covers
 each repository. The page names where it came from, for example
@@ -468,18 +468,18 @@ branch is offered as an update, like the org's own.
 | `box.os` | the systems the script supports; shown, not enforced |
 | `box.script` | a path inside `.berth`; see below |
 | `box.steps[]` | `id` (a subcommand of the script), `title`, `detail`, `sudo` (it asks for the password). `all`, `check`, `plan`, `agents`, `github` and `1password` are reserved |
-| `agents` | optional: the agent CLIs Shipyard installs on the box as its own step, `claude`, `codex`, `cursor` and `opencode` ([above](#agent-clis-on-the-box)) |
+| `agents` | optional: the agent CLIs Terminal installs on the box as its own step, `claude`, `codex`, `cursor` and `opencode` ([above](#agent-clis-on-the-box)) |
 | `box.settings` | values the team keeps in one place for its script (versions, ports), name → string. Each reaches the script, and each project's `init`, as `BERTH_SETTING_<NAME>`. Names are letters, digits and `_`; values are one line, at most 4096 bytes; at most 64 settings |
 | `projects[]` | `id` (the project's name on the box), `repo` (`owner/name`), `path` (default `~/code/<id>`), `required`, `kit`, `init`, `init_detail`, `first_task`, `review_button` |
 | `projects[].id` | lowercase letters, digits and dashes, not starting or ending with a dash. It is part of every worktree's URL (`<worktree>.<id>.<box>.localhost`), so an id with a dot is refused: for `acme/acme.com`, use `"id": "site"` with `"path": "~/code/acme.com"` to keep the folder. (An org without a `.berth` names each picked repo this way itself: `acme.com` becomes `acme-com`.) |
 | `projects[].kit` | for a repository without its own `.berth/config.json`: a kit link pinned to a commit (`https://github.com/o/kit@7f93797`, or `…/tree/<commit>/<dir>`), or a folder inside `.berth` (`./projects/api`). A link without a commit is refused |
-| `projects[].review_button` | default `false`: berthd adds a [Review in Shipyard button](/guides/review-a-pr#the-review-in-shipyard-button) to the description of each PR opened from the project's worktrees, on every engineer's box. A box's own Project settings, or the repository's `.berth/config.json`, can still turn it off |
+| `projects[].review_button` | default `false`: berthd adds a [Review in Terminal button](/guides/review-a-pr#the-review-in-terminal-button) to the description of each PR opened from the project's worktrees, on every engineer's box. A box's own Project settings, or the repository's `.berth/config.json`, can still turn it off |
 | `keys.<project>` | `from` (default `.env.example`), `shared` (name → `op://…` or `env://…` reference; a value is refused), `ask` (names each engineer enters once) |
 | `onepassword` | optional: `"optional"` (the default) lets engineers [skip 1Password](#skipping-1password) and type the shared keys instead; `"required"` means the box must sign op in. Anything else is refused |
 | `updates.notify` | default `true`: offer newer commits as updates |
 
 Fields starting with `$` are comments, at any level (`"$why"` inside
-`box.settings` too). Fields Shipyard does not know are reported as warnings and
+`box.settings` too). Fields Terminal does not know are reported as warnings and
 ignored.
 
 ### The box script
@@ -490,13 +490,13 @@ subcommands:
 | Subcommand | |
 | --- | --- |
 | `<step>` | do one step |
-| `check <step>` | exit 0 when the step is already done; Shipyard skips it then |
+| `check <step>` | exit 0 when the step is already done; Terminal skips it then |
 | `plan` | print the steps, one per line, `sudo` after those that need it |
 | `all` | every step, in order, for running it by hand |
 
 Write each step so it is safe to run again, and let it call `sudo` itself
 for what needs root: the engineer types the password in that terminal. The
-script should refuse to run as root. Shipyard runs `check <step>` then `<step>`
+script should refuse to run as root. Terminal runs `check <step>` then `<step>`
 for each step in order, and stops at the first that fails; Retry starts
 again from it.
 

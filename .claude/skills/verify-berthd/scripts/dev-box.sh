@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # dev-box.sh up|env|down: a box and a laptop agent of this checkout's
-# build, on this machine, apart from the Shipyard already running here:
+# build, on this machine, apart from the Terminal already running here:
 # their own state, tmux server and ports. `up` builds bin/, starts berthd
 # on 127.0.0.1:7544 and the agent on 9377/9378 (never 1377-1379), pairs
 # them as box "devq", adds a synthetic repo "acme-shop" and starts Claude

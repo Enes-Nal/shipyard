@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import { type Flowchart, labelText, layoutFlowchart, parseFlowchart, type Rect } from "./mermaid.ts";
 
-// The Mermaid flowcharts Shipyard draws itself (components/art/flowchart.tsx):
+// The Mermaid flowcharts Terminal draws itself (components/art/flowchart.tsx):
 // what it reads from the syntax agents write, and where it puts things.
 
 const chart = (src: string): Flowchart => {

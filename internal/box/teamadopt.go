@@ -17,7 +17,7 @@ import (
 )
 
 // Team setup uses the clones an engineer already has. A project's
-// repository is matched by its origin, not by its folder: a Shipyard
+// repository is matched by its origin, not by its folder: a Terminal
 // location on the box whose main checkout is a clone of it, or a clone
 // the scan finds (clonescan.go). Candidates are offered to the page, which
 // decides; the box re-checks the chosen folder's origin before using it.
@@ -37,11 +37,11 @@ type ExistingClone struct {
 	// Behind is how many commits its upstream has that it lacks, as of its
 	// last fetch (nothing is fetched to tell).
 	Behind int `json:"behind,omitempty"`
-	// Location is its Shipyard location's name, when it is one already.
+	// Location is its Terminal location's name, when it is one already.
 	Location string `json:"location,omitempty"`
 	// LastCommit is its HEAD commit's date.
 	LastCommit *time.Time `json:"last_commit,omitempty"`
-	// Used is when a Shipyard location was last worked in (its git index
+	// Used is when a Terminal location was last worked in (its git index
 	// changed), to prefer the most recent of several.
 	Used *time.Time `json:"used,omitempty"`
 	// AtPath says it is at the path team.json gives the project.
@@ -73,7 +73,7 @@ type ExistingResult struct {
 // projectRef is one project to look for: its id, repository and path.
 type projectRef struct{ ID, Repo, Path string }
 
-// FindExisting looks for clones of each project's repository: Shipyard
+// FindExisting looks for clones of each project's repository: Terminal
 // locations first, then the scan of the home folder's usual places.
 func (b *Box) FindExisting(ctx context.Context, projects []projectRef, scan *cloneScan) ExistingResult {
 	home, _ := os.UserHomeDir()
@@ -161,7 +161,7 @@ func locationAt(locs []locClone, path string) string {
 	return ""
 }
 
-// preferClones orders clones best first: Shipyard locations (the one at
+// preferClones orders clones best first: Terminal locations (the one at
 // the team.json path, then the most recently used), then other clones (at
 // the path, then the newest commit). It says why when several locations
 // could be used.
@@ -192,7 +192,7 @@ func preferClones(cs []ExistingClone) string {
 	if cs[0].AtPath {
 		why = "it is at the path team.json gives it"
 	}
-	return fmt.Sprintf("%d Shipyard projects are clones of this repo: %s (%s) is used, since %s", n, cs[0].Location, cs[0].Display, why)
+	return fmt.Sprintf("%d Terminal projects are clones of this repo: %s (%s) is used, since %s", n, cs[0].Location, cs[0].Display, why)
 }
 
 func timeOf(t *time.Time) time.Time {
@@ -297,7 +297,7 @@ func verifyClone(path, repo string) (string, error) {
 
 // adoptable is the clone setUpProject uses for p, and whether one was
 // found: the one the page chose (re-checked), else, unless a fresh clone
-// was asked for, a Shipyard location that is a clone of it.
+// was asked for, a Terminal location that is a clone of it.
 func (b *Box) adoptable(ctx context.Context, p TeamProjectPlan) (path, location, note string, err error) {
 	if p.Use != "" {
 		path, err = verifyClone(p.Use, p.Repo)

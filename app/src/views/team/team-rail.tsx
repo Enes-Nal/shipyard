@@ -63,7 +63,7 @@ export interface ChecklistProps {
   compact?: boolean;
   // The box has no tmux, which the steps' terminal runs in.
   noTmux?: boolean;
-  // The keys are 1Password references: Shipyard signs op in on the box.
+  // The keys are 1Password references: Terminal signs op in on the box.
   onePassword?: boolean;
   // 1Password skipped: the shared keys are typed here instead.
   skipOP?: boolean;
@@ -187,7 +187,7 @@ export function Checklist(p: ChecklistProps) {
         <KeyRoundIcon className="mt-0.5 size-3 shrink-0 text-warning-foreground" />
         {p.sudo > 0 ? (
           <span>
-            {plural(p.sudo, "step")} {p.sudo === 1 ? "asks" : "ask"} for your password on {p.box ?? "the box"}. You type it; Shipyard doesn't keep it.
+            {plural(p.sudo, "step")} {p.sudo === 1 ? "asks" : "ask"} for your password on {p.box ?? "the box"}. You type it; Terminal doesn't keep it.
           </span>
         ) : (
           <span>Nothing here asks for your password.</span>
@@ -269,7 +269,7 @@ export function RunCard({ run, github, os, onOpenTerminal, onRetry, onBackground
   const summary = runSummary(run);
   const { tone, pct, retryFrom } = summary;
   // The box out of reach mid-run: what the card last heard may be stale, so
-  // it says so, and when Shipyard tries next. The setup runs on in the box's
+  // it says so, and when Terminal tries next. The setup runs on in the box's
   // terminal; the card catches up from the box's events when it is back.
   const boxState = useStore((s) => s.status?.boxes.find((b) => b.name === run.box)?.state);
   const away = !!boxState && boxState !== "online" && run.phase !== "done";
@@ -381,7 +381,7 @@ export function runSummary(run: TeamStatus): { title: string; detail: string; to
   if (waiting?.id === "github")
     return { title: "Sign the box in to GitHub", detail: `Enter the code at github.com/login/device. Box step ${running + 1} of ${steps.length}, then ${plural(repos.length, "repo")}.`, tone: "waiting", pct, status: "waiting for GitHub's code" };
   if (waiting?.id === "1password")
-    return { title: "Sign the box in to 1Password", detail: `op asks in ${run.box}'s terminal, once, so Shipyard can read the team's shared keys. Box step ${running + 1} of ${steps.length}, then ${plural(repos.length, "repo")}.`, tone: "waiting", pct, status: "waiting for 1Password" };
+    return { title: "Sign the box in to 1Password", detail: `op asks in ${run.box}'s terminal, once, so Terminal can read the team's shared keys. Box step ${running + 1} of ${steps.length}, then ${plural(repos.length, "repo")}.`, tone: "waiting", pct, status: "waiting for 1Password" };
   if (waiting) return { title: "Waiting for your password", detail: `sudo asks in ${run.box}'s terminal. Box step ${running + 1} of ${steps.length}, then ${plural(repos.length, "repo")}.`, tone: "waiting", pct, status: "waiting for your password" };
   const asking = run.projects.find((p) => p.waiting && p.state === "setting-up");
   if (asking)

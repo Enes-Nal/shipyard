@@ -190,7 +190,7 @@ func TestUseThisMacSetsUpPairsReconnectsAndUninstalls(t *testing.T) {
 	if strings.Contains(all, "Next: berthd pair") {
 		t.Error("the set up passed on berthd's advice to pair by hand")
 	}
-	// The service runs Shipyard's own copy, on loopback, in BERTH_HOME.
+	// The service runs Terminal's own copy, on loopback, in BERTH_HOME.
 	unit, ok, err := service.Read(service.BerthdName())
 	if err != nil || !ok || unit.Program != e.stable || unit.Env["BERTH_HOME"] != e.root || !loopback(unit.Arg("--listen")) {
 		t.Fatalf("installed unit = %+v, %v, %v", unit, ok, err)
@@ -498,7 +498,7 @@ func TestNewerRelease(t *testing.T) {
 	}
 }
 
-// Inside Shipyard.app the agent takes only the app's own berthd, and only when
+// Inside Terminal.app the agent takes only the app's own berthd, and only when
 // the app's team signed it (security audit M-4).
 func TestTheBundledBerthdIsTheAppsOwnAndSignedByItsTeam(t *testing.T) {
 	dir := t.TempDir()
@@ -536,7 +536,7 @@ func TestTheBundledBerthdIsTheAppsOwnAndSignedByItsTeam(t *testing.T) {
 		t.Fatalf("a berthd signed by the team: %v (verified %q)", err, verified)
 	}
 	signedByTeam = false
-	if err := a.checkBundled(context.Background(), resource); err == nil || !strings.Contains(err.Error(), "not signed by Shipyard's team") {
+	if err := a.checkBundled(context.Background(), resource); err == nil || !strings.Contains(err.Error(), "not signed by Terminal's team") {
 		t.Fatalf("a berthd from someone else: %v", err)
 	}
 	// An unsigned build has no team to hold berthd to.

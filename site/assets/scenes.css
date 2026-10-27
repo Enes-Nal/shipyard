@@ -2,7 +2,7 @@
    the app's line scenes, for the chapters' markers. The page maps
    --muted-foreground and --warning to its own tokens (styles.css, .scene). */
 
-/* Scenes: Shipyard's small line drawings for quiet states (scenes.tsx). Lines
+/* Scenes: Terminal's small line drawings for quiet states (scenes.tsx). Lines
    take currentColor (muted by default); the one amber point is the logo's
    dot, from the theme's --warning, so every theme draws them right.
 

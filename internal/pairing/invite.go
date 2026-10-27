@@ -29,7 +29,7 @@ import (
 //	  fingerprint [32]byte  the key the box must present (pinned)
 //	  code        [32]byte  its single-use pairing code
 //	  name        str       what the inviting computer calls it
-//	  network     str       the Shipyard network it is reached through, or ""
+//	  network     str       the Terminal network it is reached through, or ""
 //	  tailnet     str       that network's tailnet, for the sign-in prompt
 //	  addresses   uint8 count, then str each (host:port)
 //
@@ -53,7 +53,7 @@ type InviteBox struct {
 	Addresses   []string             `json:"addresses"`
 	Fingerprint identity.Fingerprint `json:"fingerprint"`
 	Code        Code                 `json:"-"`
-	// Network is the name of the Shipyard network (an embedded tailnet node)
+	// Network is the name of the Terminal network (an embedded tailnet node)
 	// the inviting computer reaches the box through; empty for its own
 	// network. Tailnet is that network's tailnet name.
 	Network string `json:"network,omitempty"`
@@ -124,7 +124,7 @@ func ParseInvite(s string) (Invite, error) {
 	}
 	q := u.Query()
 	if q.Get("v") != JoinVersion {
-		return Invite{}, errors.New("this join link is from a newer version of Shipyard; update Shipyard on this computer")
+		return Invite{}, errors.New("this join link is from a newer version of Terminal; update Terminal on this computer")
 	}
 	b, err := base64.RawURLEncoding.DecodeString(q.Get("d"))
 	if err != nil {

@@ -123,7 +123,7 @@ type Box struct {
 	// Reviews keeps the box's review settings (prreview.go); nil uses the
 	// defaults.
 	Reviews *ReviewStore
-	// ReviewButtons adds the "Review in Shipyard" button to PRs opened from
+	// ReviewButtons adds the "Review in Terminal" button to PRs opened from
 	// worktrees of projects that turn it on (reviewbutton.go); nil on a box
 	// without it.
 	ReviewButtons *ReviewButtons
@@ -585,7 +585,7 @@ func (b *Box) removeWorktree(w http.ResponseWriter, r *http.Request) error {
 func (b *Box) dropWorktree(from string, loc Location, name, dir, branch string, force bool, reason string, done func(error)) (async bool, err error) {
 	_, mark := b.Locations.reviewAt(dir)
 	if mark != nil && branch == "" {
-		// A review's branch is Shipyard's own, made for it: it goes too.
+		// A review's branch is Terminal's own, made for it: it goes too.
 		if out, err := git(context.Background(), "-C", dir, "symbolic-ref", "--short", "HEAD"); err == nil && strings.HasPrefix(strings.TrimSpace(string(out)), "review/") {
 			branch = strings.TrimSpace(string(out))
 		}

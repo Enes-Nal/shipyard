@@ -118,7 +118,7 @@ func TrustHostKey(hk HostKey, want, knownHosts string) error {
 		}
 	}
 	if line == "" {
-		return fmt.Errorf("the box now presents a different host key (%s) from the one you approved (%s), so Shipyard did not trust it", strings.Join(hk.Fingerprints, ", "), want)
+		return fmt.Errorf("the box now presents a different host key (%s) from the one you approved (%s), so Terminal did not trust it", strings.Join(hk.Fingerprints, ", "), want)
 	}
 	if err := os.MkdirAll(filepath.Dir(knownHosts), 0o700); err != nil {
 		return err

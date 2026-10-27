@@ -3,14 +3,14 @@ title: The phone companion
 description: Which agents need you across your boxes, and answering them, from your phone.
 ---
 
-Shipyard has a small phone app: which agents need you, across your boxes, and
+Terminal has a small phone app: which agents need you, across your boxes, and
 answering them, from your phone.
 
 ## Setting it up
 
 1. Your phone runs the Tailscale app, signed in to the tailnet your boxes are
    on.
-2. In Shipyard, **Settings → Phone**: turn on phone access for each box.
+2. In Terminal, **Settings → Phone**: turn on phone access for each box.
 3. Scan the code with the phone's camera. One code pairs every online box
    that has phone access on (or use **Copy link** to open it on the phone). Add the page to your home screen (Share → Add to Home
    Screen) so it opens like an app.
@@ -83,7 +83,7 @@ does not serve them.
   (`from: "phone"`, with `key` for a key) and can refuse them.
 - **Notifications** carry which worktree and box need you, never what the
   agent wrote. An ntfy topic is readable by anyone who knows its name, so
-  the topic Shipyard makes is long and random; use your own ntfy server for
+  the topic Terminal makes is long and random; use your own ntfy server for
   more. Pushes go to public addresses and your tailnet (`100.64.0.0/10`), so
   a self-hosted ntfy on the tailnet works as it is. One on your LAN, on the
   box itself, or anywhere else private must be allowed in the box's
@@ -105,6 +105,6 @@ and a tailnet address over HTTP is not one. Serving the app over HTTPS would
 take a certificate for each box's `*.ts.net` name (`tailscale cert`), which
 is the next step if notifications without ntfy are wanted.
 
-For how the phone fits Shipyard's security as a whole, see
+For how the phone fits Terminal's security as a whole, see
 [security](/concepts/security#the-phone).
 

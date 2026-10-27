@@ -181,7 +181,7 @@ export function Console({ ctx, schemas, put }: { ctx: Ctx; schemas: Schema[]; pu
           {run.fault.code === "read_only" ? (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-destructive-foreground">
               <span className="min-w-0 flex-1">
-                <b>Not run:</b> {writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`}
+                <b>Not run:</b> {writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Terminal.`}
                 {run.fault.detail && <span className="mt-0.5 block font-mono text-muted-foreground">{run.fault.detail}</span>}
               </span>
               {writes.can && (

@@ -86,7 +86,7 @@ export function useNavItems(): NavItem[] {
         ? { id: "home", label: "New task", icon: <PenLineIcon />, go: goHome, active: view.kind === "workspace" && noWorktree, badge: waiting, keys: "⌘N" }
         : { id: "home", ...dashboard, badge: waiting },
       { id: "review", label: "Review", icon: <InboxIcon />, go: open({ kind: "review" }), active: view.kind === "review", badge: toReview ? { count: toReview, title: `${toReview} to review` } : undefined },
-      { id: "worktrees", label: "Worktrees", icon: <GitBranchIcon />, go: open({ kind: "worktrees" }), active: view.kind === "worktrees" },
+      { id: "worktrees", label: "Activity", icon: <GitBranchIcon />, go: open({ kind: "worktrees" }), active: view.kind === "worktrees" },
       { id: "automations", label: "Automations", icon: <ClockIcon />, go: open({ kind: "automations" }), active: view.kind === "automations" },
       ...(labs ? [{ id: "dashboard", ...dashboard }] : []),
       { id: "kits", label: "Kits", icon: <PackageIcon />, go: open({ kind: "kits" }), active: view.kind === "kits" },

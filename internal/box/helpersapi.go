@@ -183,7 +183,7 @@ func (b *Box) helperLog(w http.ResponseWriter, r *http.Request) error {
 // helperAPI relays a request to a running helper's own API. The helper
 // answers only to this machine, so the request reaches it as one from this
 // machine: its Host is the helper's loopback address, and it carries no
-// Origin, since the page that asked is Shipyard's own and not one the helper
+// Origin, since the page that asked is Terminal's own and not one the helper
 // could know. Nothing else of berthd's goes with it.
 func (b *Box) helperAPI(w http.ResponseWriter, r *http.Request) {
 	plugin := r.PathValue("plugin")

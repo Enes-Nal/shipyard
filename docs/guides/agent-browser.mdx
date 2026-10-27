@@ -3,7 +3,7 @@ title: Agent browser
 description: A headless browser on the box for each worktree, which agents drive with short commands and you can watch live, confined to the worktree's own pages.
 ---
 
-An agent that changes UI should look at it. Shipyard gives each worktree a
+An agent that changes UI should look at it. Terminal gives each worktree a
 headless Chromium **on the box**, which opens exactly the URL you open for
 that worktree (`$BERTH_URL`, such as
 `http://checkout.shop.devl.localhost:1377`), and which an agent drives with
@@ -33,7 +33,7 @@ card under the box in **Settings → Boxes**. Either offers two ways out:
 
 <Shot name="browser-sandbox" alt="A browser pane on gpu marked Agent's browser blocked, with a card: The agent's browser can't start on gpu, why, and two buttons, Fix it on gpu (needs your password) and Run without Chromium's sandbox, with what running without it means" />
 
-- **Fix it on BOX (needs your password).** Shipyard opens a terminal on the box
+- **Fix it on BOX (needs your password).** Terminal opens a terminal on the box
   with this typed, but not run:
 
   ```sh
@@ -41,7 +41,7 @@ card under the box in **Settings → Boxes**. Either offers two ways out:
   ```
 
   You read it and press Enter; sudo asks for your password in that
-  terminal. Shipyard never asks for, types or keeps a password. It watches the
+  terminal. Terminal never asks for, types or keeps a password. It watches the
   box for two minutes (or **Check again**), and once the setting reads 0 it
   starts Chromium once to be sure and the card says **Fixed**. If sudo was
   cancelled or refused, nothing changed, and the card says **Still
@@ -50,7 +50,7 @@ card under the box in **Settings → Boxes**. Either offers two ways out:
   `<state>/box/browser/settings.json`, behind the `before:config.change`
   gate, announced as `config.changed`), followed by the next browser to
   start, with no restart. Without its sandbox, a page that broke into
-  Chromium would run as you on the box; Shipyard's proxy still confines the
+  Chromium would run as you on the box; Terminal's proxy still confines the
   browser to the worktree's own pages. Turn it off in the same place,
   **Settings → Boxes**. `PUT /v1/browser/settings {"no_sandbox": true}`
   sets it from a script.
@@ -64,7 +64,7 @@ the error when it doesn't start ends with what Chromium itself said.
 
 ## Commands
 
-Inside a Shipyard session, commands act on the session's worktree; elsewhere,
+Inside a Terminal session, commands act on the session's worktree; elsewhere,
 name it as `LOC/WT` (and from a laptop, `berth browser open BOX/LOC/WT`).
 Every command takes `--tab NAME` for a [tab](#tabs-several-agents-in-one-worktree)
 of its own.
@@ -85,7 +85,7 @@ of its own.
 | `berthd browser status\|close`, `berthd browser list` | Whether it runs, its size, its memory; `close --tab NAME` closes just that tab |
 | `berthd browser tabs` | Its tabs, what each shows and its size, and which one a command runs on now |
 | `berthd browser allow ORIGIN` | Lets agents' browsers on the box load a public origin |
-| `berthd browser reap [--dry-run]` | Closes [agent-browser](#agent-browser) sessions left by Shipyard sessions that ended |
+| `berthd browser reap [--dry-run]` | Closes [agent-browser](#agent-browser) sessions left by Terminal sessions that ended |
 
 A ref names the same element across snapshots until the page navigates. The
 `berth-browser` skill (installed with the others) teaches agents these
@@ -170,7 +170,7 @@ each one its tab's name.
 
 ## What it costs an agent
 
-Everything Shipyard prints is short on purpose, because an agent reads every
+Everything Terminal prints is short on purpose, because an agent reads every
 byte on every step:
 
 | Output | Cap |
@@ -246,29 +246,29 @@ and a headless Chrome with a throwaway profile, and both run until the
 agent runs `agent-browser close`, which agents forget. On a box that runs
 agents all day they pile up, each Chrome burning CPU. The `berth-browser`
 skill tells agents to use `berthd browser` for the worktree's pages, and to
-run `agent-browser close` when they use agent-browser anyway. Shipyard also
+run `agent-browser close` when they use agent-browser anyway. Terminal also
 cleans up after them:
 
-- **Idle timeout.** Every session Shipyard starts gets
+- **Idle timeout.** Every session Terminal starts gets
   `AGENT_BROWSER_IDLE_TIMEOUT_MS=300000`, so an agent-browser left idle for
-  5 minutes closes its Chrome, removes its profile and exits, like Shipyard's
+  5 minutes closes its Chrome, removes its profile and exits, like Terminal's
   own browser. Set the variable in the box's `~/.berth/env.json`, the
   project's `env` in `.berth/config.json`, or berthd's own environment to
-  change it; `0` turns the timeout off. Shipyard never replaces a value you
+  change it; `0` turns the timeout off. Terminal never replaces a value you
   set.
-- **Closed with its session.** When a Shipyard session stops, its program
-  exits, or its worktree is archived, Shipyard closes the agent-browser
+- **Closed with its session.** When a Terminal session stops, its program
+  exits, or its worktree is archived, Terminal closes the agent-browser
   sessions it started: `agent-browser close` first, as the agent would
   have, then `SIGTERM` (and `SIGKILL`) for what is left, and the profile
   folder goes. It checks every minute, and at once when you stop a session.
-- **Only Shipyard's.** agent-browser's daemon and its Chrome keep the
-  environment of the agent that started them, so Shipyard knows them by
+- **Only Terminal's.** agent-browser's daemon and its Chrome keep the
+  environment of the agent that started them, so Terminal knows them by
   `AGENT_BROWSER_DAEMON` together with the `BERTH_SESSION` and `TMUX` of a
   session in its own tmux server (read from `/proc` on Linux, and with
   `sysctl` as `ps -E` does on a Mac). An agent-browser you run by hand, or
   from another tmux, has neither and is never touched.
 
-`berthd doctor` lists agent-browser sessions whose Shipyard session has ended
+`berthd doctor` lists agent-browser sessions whose Terminal session has ended
 under **agent-browser sessions**, and `berthd browser reap` closes them now
 (`--dry-run` only lists them).
 
@@ -277,7 +277,7 @@ under **agent-browser sessions**, and `berthd browser reap` closes them now
 A repository's own tests start browsers too: Playwright's or Puppeteer's
 Chromium, a Cypress run, a dev server's own. They belong to the session that
 ran them, and [go with it](/concepts/sessions-and-agents#sessions-clean-up-after-themselves)
-when Shipyard ends the session, even if the agent was killed mid-run.
+when Terminal ends the session, even if the agent was killed mid-run.
 
 ## Every browser on a box
 
@@ -286,13 +286,13 @@ Chromium, Chrome and Firefox running on it, each grouped as one browser with
 its helper processes, busiest first, with its CPU (100% is one core), memory
 and age, and who started it:
 
-- **Shipyard**: a worktree's agent browser, or the visual-diff browser.
+- **Terminal**: a worktree's agent browser, or the visual-diff browser.
 - **agent-browser**: a session's agent-browser, and which session.
 - **Session**: started by a session's programs, such as "Playwright tests in
   shop/checkout".
 - **Left behind**: started by a session that has ended, or by an earlier
   berthd.
-- **Not Shipyard's**: the box user's own browser. It is listed, so you can
+- **Not Terminal's**: the box user's own browser. It is listed, so you can
   see what it costs, but never stopped.
 
 **Stop** stops a browser and every process in it: an agent browser closes as
@@ -342,7 +342,7 @@ Show an agent's browser beside it**.
 ## Pointing at something: the element picker
 
 The crosshair in a browser pane's toolbar starts the picker in your tab:
-hover highlights an element, a click picks it, Esc cancels. Shipyard sends the
+hover highlights an element, a click picks it, Esc cancels. Terminal sends the
 worktree's agent a short prompt (about 1.5 KB at most) with the page's URL,
 the element's role and name, a selector that is unique on the page
 (`data-testid`, then `id`, then a path), a little of its HTML, its box and a
@@ -360,7 +360,7 @@ errors.
 
 Each browser is one Chromium: about 380 MB with a React app's pages open,
 counting shared memory once (PSS; about 620 MB resident across its six
-processes), on Linux with Playwright's headless shell. Shipyard caps each
+processes), on Linux with Playwright's headless shell. Terminal caps each
 page's JavaScript heap at 512 MB, which makes it collect sooner and saves
 about 35 MB; a page that needs more crashes its tab, and
 `BERTH_BROWSER_JS_HEAP_MB` in berthd's environment raises the cap (`0` for

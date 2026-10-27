@@ -128,7 +128,7 @@ func (a *Agent) guidedRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/boxes/add-ssh/terminal", a.addSSHTerminal)
 }
 
-// bundledTmux is whether berth carries Shipyard's tmux for Linux boxes, beside
+// bundledTmux is whether berth carries Terminal's tmux for Linux boxes, beside
 // it as it carries the daemons.
 func bundledTmux(exe string) bool {
 	for _, arch := range []string{"amd64", "arm64"} {

@@ -1,4 +1,4 @@
-// Bundles the plugin as one ES module. React and the Shipyard SDK stay external:
+// Bundles the plugin as one ES module. React and the Terminal SDK stay external:
 // the app provides one shared copy of each at runtime.
 import { build } from "esbuild";
 

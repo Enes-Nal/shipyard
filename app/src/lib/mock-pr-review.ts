@@ -60,7 +60,7 @@ const sha = (seed: string) => {
 const SETUP_CHANGES: SetupChange[] = [
   {
     kind: "berth",
-    title: "Changes Shipyard's own setup (.berth/)",
+    title: "Changes Terminal's own setup (.berth/)",
     detail: "Not used for this review: setup comes from your team's kit and the default branch's config, never from the PR",
     files: [".berth/config.json"],
   },
@@ -353,14 +353,14 @@ export function prReviewLaptopCall(method: string, path: string, body: unknown, 
     let path = r.path;
     if (r.link !== undefined) {
       const ref = parseReviewLink(r.link);
-      if (!ref) return Promise.reject(new ApiError("This isn't a review link Shipyard can open", 400, "bad_link"));
+      if (!ref) return Promise.reject(new ApiError("This isn't a review link Terminal can open", 400, "bad_link"));
       ({ repo, pr: n, sha: hint } = ref);
       as ??= ref.as;
       path ??= ref.path;
     }
-    if (!validRepo(repo) || !(n > 0)) return Promise.reject(new ApiError("This isn't a review link Shipyard can open", 400, "bad_link"));
+    if (!validRepo(repo) || !(n > 0)) return Promise.reject(new ApiError("This isn't a review link Terminal can open", 400, "bad_link"));
     // as and path beside the link are read as the link reads them.
-    if ((as || path) && !parseReviewLink(reviewLink(repo, n, { as, path }))) return Promise.reject(new ApiError("This isn't a review link Shipyard can open", 400, "bad_link"));
+    if ((as || path) && !parseReviewLink(reviewLink(repo, n, { as, path }))) return Promise.reject(new ApiError("This isn't a review link Terminal can open", 400, "bad_link"));
     return wait(350).then(() => delay(plan(repo, n, r.box, hint, { as, path })));
   }
   if (method === "POST" && route === "/v1/pr-review/open") {

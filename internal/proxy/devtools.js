@@ -1,9 +1,9 @@
-// Shipyard's console capture for a Browser tab's page: what the page logs
+// Terminal's console capture for a Browser tab's page: what the page logs
 // (console.log, info, warn, error, debug, assert, trace), uncaught errors,
 // unhandled promise rejections and resources that failed to load, kept for
 // the app's Console drawer. The page's console still gets every call.
 //
-// In the Shipyard app the page is a native webview, which runs this at the
+// In the Terminal app the page is a native webview, which runs this at the
 // start of every document (src-tauri/src/browser.rs) and asks it for what
 // is new a few times a second: window.__berthDevtools.drain() returns a
 // JSON string, or "" when there is nothing new. In an iframe (devtools.go)

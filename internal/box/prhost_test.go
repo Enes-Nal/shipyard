@@ -100,7 +100,7 @@ echo`)
 	if res.Status != runs.Skipped || res.Err != "" {
 		t.Fatalf("status %s, err %q", res.Status, res.Err)
 	}
-	for _, want := range []string{"This repository is on gitea.acme.test, not GitHub, so Shipyard didn't open a pull request.",
+	for _, want := range []string{"This repository is on gitea.acme.test, not GitHub, so Terminal didn't open a pull request.",
 		"The branch refunds-a2 is pushed to origin; open one there: https://gitea.acme.test/acme/shop/compare/main...refunds-a2"} {
 		if !strings.Contains(res.Out, want) {
 			t.Fatalf("out %q lacks %q", res.Out, want)

@@ -101,7 +101,7 @@ export function TeamDone({ view, run, onShowPlan, onReviewUpdate }: { view: Team
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted-foreground">
           {sudo > 0 && (
             <span className="flex items-center gap-2">
-              <SudoTag /> sudo asked for your password on {run.box} for {sudo} steps. Shipyard never had it, and nothing kept it.
+              <SudoTag /> sudo asked for your password on {run.box} for {sudo} steps. Terminal never had it, and nothing kept it.
             </span>
           )}
           <button type="button" onClick={onShowPlan} className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline">

@@ -126,7 +126,7 @@ func classify(c *conv, s string, o *Origin) []classified {
 			return out
 		}
 	}
-	// The rest is as before: userText knows commands, Shipyard's reports,
+	// The rest is as before: userText knows commands, Terminal's reports,
 	// pastes and the tags to skip.
 	return []classified{{kind: "user", text: s}}
 }

@@ -233,7 +233,7 @@ func TestLeadlineIsInstalledAttachesAServiceAndIsReadThroughTheBox(t *testing.T)
 	}
 
 	// The helper's own errors come back as it wrote them, status and body:
-	// its envelope, not Shipyard's.
+	// its envelope, not Terminal's.
 	status, body = helperCall(t, c, "GET", "/v1/helpers/leadline/api/api/traces/00000000000000000000000000000000", nil, nil)
 	var problem struct {
 		Error struct{ Code, Message, Hint string }

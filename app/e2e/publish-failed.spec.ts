@@ -42,7 +42,7 @@ test("an attempts run on a Gitea repository says its branch is pushed and links 
   const page = app.page;
   await page.getByRole("button", { name: "invoices: 2 attempts" }).click();
   const pr = page.getByRole("region", { name: "Pull request" });
-  await expect(pr).toContainText("This repository is on git.acme.dev, not GitHub, so Shipyard didn't open a pull request.");
+  await expect(pr).toContainText("This repository is on git.acme.dev, not GitHub, so Terminal didn't open a pull request.");
   await expect(pr.getByRole("button", { name: "Open git.acme.dev" })).toBeVisible();
   await expect(page.getByText(/succeeded · started/)).toBeVisible();
 });

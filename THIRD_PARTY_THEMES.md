@@ -1,17 +1,17 @@
 # Third-party themes
 
-Shipyard's built-in themes include ports of these VS Code themes. Each was
-mapped onto Shipyard's colour tokens from the theme's own palette (its VS Code
+Terminal's built-in themes include ports of these VS Code themes. Each was
+mapped onto Terminal's colour tokens from the theme's own palette (its VS Code
 colours and terminal ANSI 16, as published in its repository and copied
 into [`@shikijs/themes`](https://github.com/shikijs/textmate-grammars-themes)).
-Where a colour fell short of the contrast Shipyard keeps (body and muted text
+Where a colour fell short of the contrast Terminal keeps (body and muted text
 at 4.5:1, see `app/src/themes/contrast.ts`), it was moved in lightness only;
 `app/src/themes/vscode.ts` notes each such change. Code in diffs and chat
 replies is coloured by the theme's own Shiki theme.
 
 All are under the MIT licence. Their copyright notices:
 
-| Theme in Shipyard | Source | Author | Licence |
+| Theme in Terminal | Source | Author | Licence |
 |---|---|---|---|
 | Dracula | [dracula/visual-studio-code](https://github.com/dracula/visual-studio-code) | Copyright (c) 2016 Dracula Theme | MIT |
 | One Dark Pro | [Binaryify/OneDark-Pro](https://github.com/Binaryify/OneDark-Pro) | Copyright (c) 2013-2022 Binaryify | MIT |
@@ -48,6 +48,6 @@ The MIT licence, as each of the above grants it:
 > USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Not included: Monokai Pro and Material Theme (proprietary licences), Ayu
-(its signature accent is the amber Shipyard uses for an agent waiting on you)
+(its signature accent is the amber Terminal uses for an agent waiting on you)
 and Everforest (its green, yellow and aqua sit too close together to tell
 done, waiting and running apart).

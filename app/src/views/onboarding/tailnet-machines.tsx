@@ -18,9 +18,9 @@ import { discoverNetwork, type SystemTailnet, sortMachines, type TailnetSource }
 const TAILSCALE_DOWNLOAD = "https://tailscale.com/download";
 
 // TailnetMachines lists the machines on a tailnet this computer reaches,
-// each with Set up: Shipyard logs in over SSH once, installs berthd (which
+// each with Set up: Terminal logs in over SSH once, installs berthd (which
 // listens on the machine's tailnet address only) and pairs. With more than
-// one tailnet (this Mac's, and ones Shipyard signed in to), tabs switch.
+// one tailnet (this Mac's, and ones Terminal signed in to), tabs switch.
 export function TailnetMachines({
   sources,
   system,
@@ -97,7 +97,7 @@ export function TailnetMachines({
 type Found = { state: "loading" } | { state: "error"; message: string; retry(): void } | { state: "ok"; discovery: Discovery };
 
 // useDiscovery is the machine list for a source: this Mac's tailnet comes
-// with the screen; a Shipyard network's is read when its tab is chosen.
+// with the screen; a Terminal network's is read when its tab is chosen.
 function useDiscovery(source: TailnetSource | undefined, system?: SystemTailnet): Found {
   const client = useStore((s) => s.client);
   const [found, setFound] = useState<Found>({ state: "loading" });
@@ -165,7 +165,7 @@ function MachineList({
     const login = /needs a login/i.test(found.message);
     return (
       <div className="flex min-h-24 flex-col items-start justify-center gap-2 rounded-lg border px-3.5 py-3 text-body">
-        <span>{login ? `Shipyard is signed out of ${source.label}.` : `Couldn't list the machines on ${source.label}.`}</span>
+        <span>{login ? `Terminal is signed out of ${source.label}.` : `Couldn't list the machines on ${source.label}.`}</span>
         {!login && <span className="text-muted-foreground text-meta">{found.message}</span>}
         <Button size="xs" variant="outline" onClick={login ? onSignIn : found.retry}>
           {login ? "Sign in again" : "Try again"}
@@ -294,7 +294,7 @@ function MachineSetup({
   team?: TeamAfterInstall;
 }) {
   const [agents, setAgents] = useAgentChoice();
-  // A Shipyard network is dialed by address; this Mac's tailnet by name.
+  // A Terminal network is dialed by address; this Mac's tailnet by name.
   const host = network ? m.ip : m.dns_name || m.ip;
   const plan = useSshPlan(m.os === "linux" ? host : "", network);
   const boxes = useStore((s) => s.status?.boxes);
@@ -318,7 +318,7 @@ function MachineSetup({
     return (
       <div className="border-t p-3">
         <p className="text-muted-foreground text-meta">
-          Shipyard sets up Linux machines over SSH. On a Mac like {m.name}, run the command in step 1 below, then paste what it prints into step 2.
+          Terminal sets up Linux machines over SSH. On a Mac like {m.name}, run the command in step 1 below, then paste what it prints into step 2.
         </p>
       </div>
     );
@@ -329,7 +329,7 @@ function MachineSetup({
     if (/[\s@]/.test(u)) return;
     install.open({ host: `${u ? `${u}@` : ""}${host}`, name: name.trim() || undefined, network, knownHostKeys: m.host_keys });
   };
-  const userError = /@/.test(user) ? `Only the user: Shipyard connects to ${m.name}.` : /\s/.test(user.trim()) ? "A user name has no spaces." : undefined;
+  const userError = /@/.test(user) ? `Only the user: Terminal connects to ${m.name}.` : /\s/.test(user.trim()) ? "A user name has no spaces." : undefined;
 
   return (
     <div className="border-t p-3">
@@ -389,7 +389,7 @@ function MachineSetup({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="after its hostname"
-            aria-label="Name in Shipyard"
+            aria-label="Name in Terminal"
             spellCheck={false}
             disabled={running}
             className="h-5 w-28 border-input border-b bg-transparent px-0.5 text-foreground outline-none placeholder:text-muted-foreground/72 focus:border-ring"
@@ -399,7 +399,7 @@ function MachineSetup({
       {!team && <InlineAgents value={agents} onChange={setAgents} disabled={running} />}
       {state === "ready" && (
         <p className="mt-1 text-muted-foreground text-meta">
-          Shipyard logs in once to install berthd for that user. It listens on {m.name}'s tailnet address only, and Shipyard never needs SSH for it again.
+          Terminal logs in once to install berthd for that user. It listens on {m.name}'s tailnet address only, and Terminal never needs SSH for it again.
         </p>
       )}
       {team ? (
@@ -441,11 +441,11 @@ export function UseTailscale({ system, onRefresh, onSignIn }: { system?: SystemT
           ? "Tailscale is on this Mac, but not connected. Connect from its menu bar icon and your machines show up here."
           : state === "running"
             ? `Nothing on ${system?.name || "your tailnet"} can be a box yet: berthd runs on Linux and macOS.`
-            : "Shipyard couldn't ask Tailscale on this Mac for its machines.";
+            : "Terminal couldn't ask Tailscale on this Mac for its machines.";
   return (
     <div className="space-y-3">
       <p className="text-muted-foreground text-meta">
-        Tailscale puts your machines on one private network. With it on this Mac, they're listed here and Shipyard sets one up in a click: no ports to open, and berthd listens on the tailnet only.
+        Tailscale puts your machines on one private network. With it on this Mac, they're listed here and Terminal sets one up in a click: no ports to open, and berthd listens on the tailnet only.
       </p>
       {said && <p className="text-body">{said}</p>}
       <div className="flex flex-wrap items-center gap-2">
@@ -459,7 +459,7 @@ export function UseTailscale({ system, onRefresh, onSignIn }: { system?: SystemT
           </Button>
         )}
         <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={onSignIn}>
-          Sign in to a tailnet in Shipyard
+          Sign in to a tailnet in Terminal
         </Button>
       </div>
     </div>

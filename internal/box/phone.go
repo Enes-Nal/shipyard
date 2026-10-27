@@ -447,7 +447,7 @@ func (p *Phone) Handler(b *Box, listenAddr string) http.Handler {
 		got, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if want == "" || subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
 			p.limited(ip, true)
-			writeError(w, http.StatusUnauthorized, "missing or wrong phone token; pair this phone again from Shipyard's settings")
+			writeError(w, http.StatusUnauthorized, "missing or wrong phone token; pair this phone again from Terminal's settings")
 			return
 		}
 		api.ServeHTTP(w, r)

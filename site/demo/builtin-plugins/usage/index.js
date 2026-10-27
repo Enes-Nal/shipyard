@@ -698,7 +698,7 @@ function AccountsView({
       /* @__PURE__ */ jsxs2(AlertDescription, { children: [
         "Choosing an account changes the sessions you start next. Sessions that are already running keep the account they started with. Sign-in happens in the agent's own login, in a terminal on ",
         box,
-        "; Shipyard never sees your credentials."
+        "; Terminal never sees your credentials."
       ] })
     ] }),
     AGENTS.map((agent) => {

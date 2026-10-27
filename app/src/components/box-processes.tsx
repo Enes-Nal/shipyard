@@ -14,7 +14,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 // A box's browsers and what its sessions use (GET /v1/processes): from the
-// status bar's memory meter, and in Settings › Boxes. Anything Shipyard or
+// status bar's memory meter, and in Settings › Boxes. Anything Terminal or
 // its sessions started has Stop; the box user's own browsers are listed
 // but left alone.
 
@@ -84,7 +84,7 @@ function ProcessesBody({ box, data, error, reload }: { box: string; data?: BoxPr
         </Section>
       )}
       <p className="border-t px-4 py-2 text-tag text-muted-foreground">
-        {data.scopes ? "Each new session runs in a scope of its own: ending it stops everything it started." : "Ending a session stops the processes Shipyard finds for it (this box has no systemd scopes)."}
+        {data.scopes ? "Each new session runs in a scope of its own: ending it stops everything it started." : "Ending a session stops the processes Terminal finds for it (this box has no systemd scopes)."}
       </p>
     </>
   );
@@ -136,7 +136,7 @@ function BrowserRow({ box, b, onStopped }: { box: string; b: BoxBrowser; onStopp
             Stop
           </Button>
         ) : (
-          <Tip label="Shipyard didn't start this browser, so it leaves it alone">
+          <Tip label="Terminal didn't start this browser, so it leaves it alone">
             <span className="text-tag text-muted-foreground">—</span>
           </Tip>
         )}
@@ -217,7 +217,7 @@ function SessionLimit({ box, scopes }: { box: string; scopes: boolean }) {
   };
   const options = SESSION_LIMITS.map((n) => ({ value: String(n), label: n ? `${n} GB per session` : "No memory limit" }));
   return (
-    <Tip label={scopes ? "Near it, a session is slowed down and Shipyard says so in its chat; nothing is stopped" : "Needs a box with systemd (Linux), where each session runs in a scope of its own"}>
+    <Tip label={scopes ? "Near it, a session is slowed down and Terminal says so in its chat; nothing is stopped" : "Needs a box with systemd (Linux), where each session runs in a scope of its own"}>
       <div className={cn("w-44", !scopes && "opacity-60")}>
         <SimpleSelect aria-label="Memory limit per session" value={String(gb)} onChange={(v) => void save(Number(v))} options={options} size="sm" disabled={!scopes || saving} />
       </div>

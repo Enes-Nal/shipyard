@@ -6,8 +6,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FkaKob50MzZrdqcn60Wd25MRNc2B2L50q9MTXbf8Ri4='; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<title>Review in Shipyard</title>
-<meta name="description" content="Opens a pull request for review on your own box, in Shipyard.">
+<title>Review in Terminal</title>
+<meta name="description" content="Opens a pull request for review on your own box, in Terminal.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
@@ -16,33 +16,33 @@
 <body>
 <main class="rv">
   <div class="rv-card">
-    <a class="rv-brand" href="/" aria-label="Shipyard"><svg viewBox="56 64 400 386" aria-hidden="true"><path d="M88 96H424Q410 300 256 350Q102 300 88 96Z" fill="none" stroke="currentColor" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/><rect x="138" y="404" width="58" height="44" rx="9" fill="currentColor"/><rect x="227" y="404" width="58" height="44" rx="9" fill="currentColor"/><rect x="316" y="404" width="58" height="44" rx="9" fill="currentColor"/><circle cx="256" cy="190" r="30" fill="var(--amber)"/></svg>shipyard</a>
+    <a class="rv-brand" href="/" aria-label="Terminal"><svg viewBox="0 0 512 512" aria-hidden="true"><rect x="70" y="88" width="372" height="336" rx="54" fill="none" stroke="currentColor" stroke-width="42"/><path d="M151 191l69 65-69 65" fill="none" stroke="var(--amber)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/><path d="M270 326h94" fill="none" stroke="currentColor" stroke-width="42" stroke-linecap="round"/></svg>terminal</a>
 
     <section id="ok" hidden aria-labelledby="ok-title">
-      <h1 id="ok-title">Opening the pull request in Shipyard…</h1>
-      <p class="rv-lede">Shipyard opens it on your own box, at its exact commit, set up the way your team's worktrees are.</p>
+      <h1 id="ok-title">Opening the pull request in Terminal…</h1>
+      <p class="rv-lede">Terminal opens it on your own box, at its exact commit, set up the way your team's worktrees are.</p>
       <dl class="rv-facts">
         <div><dt>Repository</dt><dd id="f-repo"></dd></div>
         <div><dt>Pull request</dt><dd id="f-pr"></dd></div>
         <div id="row-as" hidden><dt>Logged in as</dt><dd id="f-as"></dd></div>
         <div id="row-path" hidden><dt>Page</dt><dd id="f-path"></dd></div>
       </dl>
-      <a class="btn primary rv-open" id="open" href="/review">Open in Shipyard</a>
+      <a class="btn primary rv-open" id="open" href="/review">Open in Terminal</a>
       <p class="rv-alt"><a id="github" href="https://github.com/">View the pull request on GitHub</a></p>
     </section>
 
     <section id="bad" hidden aria-labelledby="bad-title">
-      <h1 id="bad-title">This isn't a review link Shipyard can open</h1>
+      <h1 id="bad-title">This isn't a review link Terminal can open</h1>
       <p class="rv-lede" id="why">It should look like https://berthd.app/review?repo=OWNER/NAME&amp;pr=N.</p>
     </section>
 
-    <noscript><p class="rv-lede">This page checks the link and opens Shipyard with a little JavaScript. Turn it on, or open the pull request with <code>berth review OWNER/NAME#N</code>.</p></noscript>
+    <noscript><p class="rv-lede">This page checks the link and opens Terminal with a little JavaScript. Turn it on, or open the pull request with <code>berth review OWNER/NAME#N</code>.</p></noscript>
 
-    <p class="rv-foot">Don't have Shipyard? <a href="/#install-now">Install</a></p>
+    <p class="rv-foot">Don't have Terminal? <a href="/#install-now">Install</a></p>
   </div>
 </main>
 <script>
-// The bounce page for "Review in Shipyard" buttons. GitHub drops berth://
+// The bounce page for "Review in Terminal" buttons. GitHub drops berth://
 // links from PR descriptions, so the button links here, and this page opens
 // berth://review?… for it. It reads the query as strictly as the app does
 // (app/src/lib/review-link.ts, internal/prreview): a repository, a PR
@@ -164,12 +164,12 @@
   if (!t.link) {
     $("why").textContent = `${t.why} It should look like https://berthd.app/review?repo=OWNER/NAME&pr=N.`;
     $("bad").hidden = false;
-    document.title = "Not a review link · Shipyard";
+    document.title = "Not a review link · Terminal";
     return;
   }
-  const title = `Opening #${t.pr} of ${t.repo} in Shipyard…`;
+  const title = `Opening #${t.pr} of ${t.repo} in Terminal…`;
   $("ok-title").textContent = title;
-  document.title = `Review #${t.pr} of ${t.repo} · Shipyard`;
+  document.title = `Review #${t.pr} of ${t.repo} · Terminal`;
   $("f-repo").textContent = t.repo;
   $("f-pr").textContent = `#${t.pr}`;
   if (t.as) {

@@ -503,7 +503,7 @@ test("a plugin with no program is turned off without asking", async ({ app }) =>
 test("a plugin that changed says its program is still running while it waits for review, and can stop it", async ({ app }) => {
   mockOnly("removes a helper");
   await app.open({ params: { helper: "held" } });
-  // Shipyard asks about the changed plugin by itself, and says what was
+  // Terminal asks about the changed plugin by itself, and says what was
   // left running meanwhile.
   const consent = app.page.getByRole("dialog", { name: "Leadline has changed" });
   await expect(consent.getByTestId("consent-helper-held")).toHaveText(

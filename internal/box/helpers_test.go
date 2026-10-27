@@ -546,7 +546,7 @@ func TestAttachPutsWhatAHelperAnswersIntoTheServicesEnvironment(t *testing.T) {
 		"OTEL_SERVICE_NAME":           "cal/billing:web",
 		"OTEL_EXPORTER_OTLP_ENDPOINT": "http://127.0.0.1:4325",
 		"OTEL_RESOURCE_ATTRIBUTES":    "team=acme",
-		// A variable it did not name stays the project's; so do Shipyard's
+		// A variable it did not name stays the project's; so do Terminal's
 		// own, and one that names a secret keeps its reference.
 		"UNRELATED":  "as-the-project-set-it",
 		"BERTH_PORT": plain["BERTH_PORT"],

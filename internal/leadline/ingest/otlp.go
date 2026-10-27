@@ -147,7 +147,7 @@ func id(b []byte, fromJSON bool) string {
 	return hex.EncodeToString(b)
 }
 
-// The resource attributes that say which Shipyard worktree an app runs in.
+// The resource attributes that say which Terminal worktree an app runs in.
 // The attach helper sets them (OTEL_RESOURCE_ATTRIBUTES); Leadline's
 // `leadline run` sets the same four.
 const (

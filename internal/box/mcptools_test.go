@@ -78,7 +78,7 @@ func TestAnAgentsTaskThroughTheBerthToolsFollowsTheDefault(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// Off (only an older Shipyard sends it): its terminal.
+	// Off (only an older Terminal sends it): its terminal.
 	put(box.AgentDefaults{})
 	if d := driver(taskNew("off")); d != box.DriverTerminal {
 		t.Fatalf("with the default off, the tools' task ran %q", d)

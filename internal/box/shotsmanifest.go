@@ -455,7 +455,7 @@ func agentText(vd VisualDiff, a Artifact, imgDir string) string {
 	}
 	// The line the chat turns into a card (transcript/localartifacts.go).
 	fmt.Fprintf(&b, "Artifact %s v%d · visualdiff · %s\n", id, n, strings.NewReplacer("\n", " ", `"`, "'", `\`, "/").Replace(a.Title))
-	b.WriteString("Shown in the user's Shipyard beside your chat; compare again after a fix to update it.")
+	b.WriteString("Shown in the user's Terminal beside your chat; compare again after a fix to update it.")
 	return b.String()
 }
 

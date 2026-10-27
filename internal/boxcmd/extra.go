@@ -122,7 +122,7 @@ func findWorktree(ctx context.Context, c *box.Client, ref, dir string) (box.Loca
 	return bestLoc, best, nil
 }
 
-// preview asks the user's Shipyard app to open a worktree's page in a browser
+// preview asks the user's Terminal app to open a worktree's page in a browser
 // tab, in that worktree's workspace.
 func preview(ctx context.Context, c *box.Client, args []string, out io.Writer) error {
 	fs, _ := flags(args)
@@ -168,7 +168,7 @@ func preview(ctx context.Context, c *box.Client, args []string, out io.Writer) e
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "Asked the Shipyard app to open port %d%s for %s/%s (it opens if the app is running).\n", port, *path, loc.Name, wt.Name)
+	fmt.Fprintf(out, "Asked the Terminal app to open port %d%s for %s/%s (it opens if the app is running).\n", port, *path, loc.Name, wt.Name)
 	return nil
 }
 

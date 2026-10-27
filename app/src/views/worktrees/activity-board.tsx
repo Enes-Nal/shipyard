@@ -1,0 +1,113 @@
+import { ArrowDownIcon, ArrowUpIcon, CircleCheckBigIcon, CircleDashedIcon, CircleDotIcon, GitBranchIcon, GitCommitHorizontalIcon, PauseIcon } from "lucide-react";
+import { useMemo } from "react";
+
+import { AgentIcon } from "@/components/agent-glyph";
+import { Button } from "@/components/ui/button";
+import { agentLabel, agentOf, sessionState } from "@/lib/derive";
+import { activityStage, type ActivityStage } from "@/lib/activity-stage";
+import { forgeOf } from "@/lib/forge";
+import { ago } from "@/lib/format";
+import { NONE, useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { ProjectLabel } from "@/views/automations/flows/project-label";
+import { openWorktree, type Row } from "@/views/worktrees/use-worktrees";
+
+const columns: { stage: ActivityStage; title: string; description: string; Icon: typeof CircleDashedIcon }[] = [
+  { stage: "todo", title: "Todo", description: "Branches waiting for an agent", Icon: CircleDashedIcon },
+  { stage: "doing", title: "In progress", description: "Agents or files are active", Icon: CircleDotIcon },
+  { stage: "done", title: "Done", description: "Committed and ready to review", Icon: CircleCheckBigIcon },
+];
+
+export function ActivityBoard({ rows, onOpen }: { rows: Row[]; onOpen(row: Row): void }) {
+  const tasks = rows.filter((r) => !r.main);
+  return (
+    <div className="grid min-h-full grid-cols-1 items-start gap-3 px-page py-4 lg:grid-cols-3">
+      {columns.map((column) => {
+        const inColumn = tasks.filter((r) => stageOf(r) === column.stage);
+        return (
+          <section key={column.stage} aria-label={column.title} className="min-w-0 rounded-xl border bg-muted/20">
+            <header className="flex h-bar items-center gap-2 border-b px-3">
+              <column.Icon className={cn("size-4", column.stage === "doing" ? "text-info-foreground" : column.stage === "done" ? "text-success-foreground" : "text-muted-foreground")} />
+              <div className="min-w-0 flex-1">
+                <h2 className="text-label">{column.title}</h2>
+                <p className="truncate text-meta text-muted-foreground">{column.description}</p>
+              </div>
+              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-tag tabular-nums">{inColumn.length}</span>
+            </header>
+            <div className="space-y-2 p-2">
+              {inColumn.length ? inColumn.map((row) => <TaskCard key={row.key} row={row} onOpen={() => onOpen(row)} />) : <p className="px-2 py-8 text-center text-desc text-muted-foreground">Nothing here</p>}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function stageOf(row: Row): ActivityStage {
+  const sessions = useStore.getState().boxes[row.box]?.sessions ?? NONE;
+  const stats = useStore.getState().boxes[row.box]?.stats;
+  const running = sessions.some((s) => s.dir === row.path && !s.exited && !s.service && ["running", "waiting"].includes(sessionState(s, stats)));
+  return activityStage({ paused: row.paused, running, changed: row.changed, untracked: row.untracked, ahead: row.ahead });
+}
+
+function TaskCard({ row, onOpen }: { row: Row; onOpen(): void }) {
+  const all = useStore((s) => s.boxes[row.box]?.sessions ?? NONE);
+  const stats = useStore((s) => s.boxes[row.box]?.stats);
+  const sessions = useMemo(() => all.filter((s) => s.dir === row.path && !s.exited && !s.service && agentOf(s)), [all, row.path]);
+  const forge = forgeOf(row.remote);
+  const files = row.changed + row.untracked;
+  return (
+    <article className="rounded-lg border bg-background p-3 shadow-xs/5">
+      <div className="flex items-start gap-2">
+        <button type="button" onClick={onOpen} className="min-w-0 flex-1 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="flex items-center gap-1.5 text-meta text-muted-foreground">
+            <ProjectLabel box={row.box} scope={`repo:${row.location}`} />
+            {forge.kind === "gitlab" && <span className="rounded bg-[#fc6d26]/12 px-1.5 py-px text-[#c94f16] dark:text-[#fc8b52]">GitLab</span>}
+          </span>
+          <span className="mt-1 flex items-center gap-1.5">
+            <GitBranchIcon className="size-3.5 shrink-0 text-info-foreground" />
+            <span className="truncate font-medium text-body">{row.title?.trim() || row.branch || row.name}</span>
+          </span>
+        </button>
+        {row.paused && <PauseIcon className="mt-1 size-3.5 text-warning-foreground" aria-label="Paused" />}
+      </div>
+
+      {row.last_commit && (
+        <button type="button" onClick={onOpen} className="mt-2 flex w-full min-w-0 items-center gap-1.5 rounded text-left text-meta text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+          <GitCommitHorizontalIcon className="size-3 shrink-0" />
+          <span className="truncate">{row.last_commit.subject}</span>
+          <span className="ml-auto shrink-0">{ago(row.last_commit.time)}</span>
+        </button>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-meta">
+        {files > 0 && <span className="rounded bg-warning/12 px-1.5 py-0.5 text-warning-foreground">{files} {files === 1 ? "file" : "files"}</span>}
+        {row.published === false && <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">Not pushed</span>}
+        {(row.outgoing ?? 0) > 0 && (
+          <span className="inline-flex items-center gap-0.5 rounded bg-info/10 px-1.5 py-0.5 text-info-foreground"><ArrowUpIcon className="size-3" />{row.outgoing} to push</span>
+        )}
+        {(row.incoming ?? 0) > 0 && (
+          <span className="inline-flex items-center gap-0.5 rounded bg-warning/12 px-1.5 py-0.5 text-warning-foreground"><ArrowDownIcon className="size-3" />{row.incoming} to pull</span>
+        )}
+        {row.published === true && (row.outgoing ?? 0) === 0 && (row.incoming ?? 0) === 0 && <span className="rounded bg-success/10 px-1.5 py-0.5 text-success-foreground">Synced</span>}
+      </div>
+
+      <div className="mt-3 flex min-h-7 items-center gap-1 border-t pt-2">
+        {sessions.length ? (
+          <>
+            {sessions.slice(0, 3).map((session) => {
+              const agent = agentOf(session)!;
+              const state = sessionState(session, stats);
+              return <span key={session.name} className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-1 text-tag" aria-label={`${agentLabel(agent)} ${state}`}><AgentIcon agent={agent} className="size-3" />{agentLabel(agent)}</span>;
+            })}
+            {sessions.length > 3 && <span className="text-tag text-muted-foreground">+{sessions.length - 3}</span>}
+          </>
+        ) : (
+          <span className="text-meta text-muted-foreground">No agent active</span>
+        )}
+        <Button size="xs" variant="ghost" className="ml-auto" onClick={() => openWorktree(row)}>Open</Button>
+      </div>
+    </article>
+  );
+}

@@ -53,7 +53,7 @@ type TeamStepView struct {
 	Title  string `json:"title"`
 	Detail string `json:"detail,omitempty"`
 	Sudo   bool   `json:"sudo"`
-	// Berth marks the steps Shipyard adds: the box's own GitHub sign-in, and
+	// Berth marks the steps Terminal adds: the box's own GitHub sign-in, and
 	// 1Password's when the keys need it.
 	Berth    bool     `json:"berth,omitempty"`
 	Commands []string `json:"commands"`
@@ -86,7 +86,7 @@ type TeamProjectView struct {
 	Commands   []string         `json:"commands"`
 	Keys       *TeamProjectKeys `json:"keys,omitempty"`
 	Error      string           `json:"error,omitempty"`
-	// Existing are clones of it already on the box (a Shipyard location, or
+	// Existing are clones of it already on the box (a Terminal location, or
 	// one the box found in the usual folders), the preferred first; the
 	// page offers to use one instead of cloning. ExistingNote says why the
 	// first is preferred when several are locations.
@@ -393,7 +393,7 @@ func agentsStepView(ids []string) TeamStepView {
 	}
 	return TeamStepView{
 		ID: team.AgentsStep, Title: agentcli.Names(ids) + " on the box", Berth: true,
-		Detail:   "The agent CLIs the team uses, installed into ~/.local/bin without sudo, with Shipyard's hooks and skills. Signing in to each stays yours",
+		Detail:   "The agent CLIs the team uses, installed into ~/.local/bin without sudo, with Terminal's hooks and skills. Signing in to each stays yours",
 		Commands: cmds,
 	}
 }
@@ -401,7 +401,7 @@ func agentsStepView(ids []string) TeamStepView {
 func onePasswordStepView() TeamStepView {
 	return TeamStepView{
 		ID: team.OnePasswordStep, Title: "1Password on the box", Berth: true,
-		Detail: "The shared keys are 1Password references: op signs in on the box, in its terminal, so Shipyard reads them without asking in a service's terminal",
+		Detail: "The shared keys are 1Password references: op signs in on the box, in its terminal, so Terminal reads them without asking in a service's terminal",
 		Commands: []string{
 			"berthd secret signin --check || berthd secret signin   # op signin; its session kept for berthd, readable by you alone",
 		},

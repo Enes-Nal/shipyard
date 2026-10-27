@@ -26,7 +26,7 @@ import (
 )
 
 // Use this Mac: the laptop as a box of its own, set up from the app with no
-// terminal. The app carries a berthd for macOS (Shipyard.app/Contents/Resources
+// terminal. The app carries a berthd for macOS (Terminal.app/Contents/Resources
 // /berthd; bin/berthd beside bin/berth in a checkout). Setting up copies it
 // to BERTH_HOME/bin/berthd, which on a Mac is
 // ~/Library/Application Support/berth/bin/berthd, and runs `berthd install`
@@ -34,11 +34,11 @@ import (
 // through `berthd pair --json` and `berth pair`: nothing to copy or paste.
 //
 // Why that copy, and why there: launchd re-runs the program its plist
-// names, and a path inside Shipyard.app changes or disappears when the app is
+// names, and a path inside Terminal.app changes or disappears when the app is
 // updated, moved or run from its disk image. Application Support is where a
 // Mac app keeps what it manages for itself, beside the box's own state
 // (BERTH_HOME/box). It is deliberately not ~/.local/bin, where the install
-// script puts the berthd a person manages by hand: Shipyard never shadows or
+// script puts the berthd a person manages by hand: Terminal never shadows or
 // overwrites that one. When the install script did put berthd on this Mac,
 // that install is found by its service (dev.berth.berthd) and reused, not
 // installed a second time.
@@ -49,7 +49,7 @@ import (
 // --keep-listen`. Agent sessions keep running through it.
 
 // The first port tried for this Mac's berthd. 7444, berthd's usual port, is
-// often held by another berthd on a developer's Mac; Shipyard never takes it.
+// often held by another berthd on a developer's Mac; Terminal never takes it.
 const defaultLocalBoxPort = 7445
 
 // How often the agent checks whether the app now carries a newer berthd.
@@ -73,7 +73,7 @@ type localBoxRecord struct {
 	// Program is the berthd the service runs, and Home its BERTH_HOME.
 	Program string `json:"program"`
 	Home    string `json:"home"`
-	// Owned is whether Shipyard put Program there (BERTH_HOME/bin/berthd), as
+	// Owned is whether Terminal put Program there (BERTH_HOME/bin/berthd), as
 	// opposed to reusing a berthd the install script installed.
 	Owned bool `json:"owned"`
 }
@@ -99,7 +99,7 @@ type LocalBoxStatus struct {
 	// Available is whether there is a berthd to install; Reason says why not.
 	Available bool   `json:"available"`
 	Reason    string `json:"reason,omitempty"`
-	// Installed: a berthd service is installed for this user. Owned: Shipyard
+	// Installed: a berthd service is installed for this user. Owned: Terminal
 	// installed it, rather than the install script.
 	Installed bool   `json:"installed"`
 	Owned     bool   `json:"owned"`
@@ -167,10 +167,10 @@ func (a *Agent) isLocal(p trust.Peer) bool {
 	return r != nil && r.Fingerprint == p.Fingerprint.String()
 }
 
-var errNoBerthd = errors.New("this copy of Shipyard carries no berthd for this computer; install Shipyard from its disk image, or build one with make build")
+var errNoBerthd = errors.New("this copy of Terminal carries no berthd for this computer; install Terminal from its disk image, or build one with make build")
 
 // bundledBerthd is the berthd the app carries: Config.Berthd (tests), else,
-// when this agent is the berth inside Shipyard.app, only the app's own
+// when this agent is the berth inside Terminal.app, only the app's own
 // Contents/Resources/berthd (checkBundled holds it to the app's signature),
 // else the berthd beside this berth (bin/ in a checkout). Nothing on PATH
 // or in another folder is ever considered (security audit M-4).
@@ -226,12 +226,12 @@ func (a *Agent) checkBundled(ctx context.Context, src string) error {
 	}
 	req := fmt.Sprintf("=anchor apple generic and certificate leaf[subject.OU] = %q", team)
 	if out, err := localTool(ctx, "/usr/bin/codesign", "--verify", "--strict", "-R", req, src); err != nil {
-		return fmt.Errorf("%s is not signed by Shipyard's team (%s), so Shipyard will not install it; reinstall Shipyard from its disk image", src, strings.TrimSpace(string(out)))
+		return fmt.Errorf("%s is not signed by Terminal's team (%s), so Terminal will not install it; reinstall Terminal from its disk image", src, strings.TrimSpace(string(out)))
 	}
 	return nil
 }
 
-// stableBerthd is where Shipyard keeps its own copy of berthd for this
+// stableBerthd is where Terminal keeps its own copy of berthd for this
 // computer's box.
 func stableBerthd(home string) string { return filepath.Join(home, "bin", "berthd") }
 
@@ -324,7 +324,7 @@ func (a *Agent) setUpLocalBox(ctx context.Context, say sayFunc) (string, error) 
 	prog, owned := stable, true
 	unit, have, home, err := a.installedUnit()
 	if err != nil {
-		say("The installed berthd service can't be read (%v); Shipyard replaces it.", err)
+		say("The installed berthd service can't be read (%v); Terminal replaces it.", err)
 		have, home = false, a.localHome()
 	}
 	if have && unit.Program != stable {
@@ -334,7 +334,7 @@ func (a *Agent) setUpLocalBox(ctx context.Context, say sayFunc) (string, error) 
 			prog, owned = unit.Program, false
 			say("berthd is already installed on this computer (%s); using it rather than installing a second one.", unit.Program)
 		} else {
-			say("A berthd service is installed, but its program (%s) is gone; Shipyard replaces it.", unit.Program)
+			say("A berthd service is installed, but its program (%s) is gone; Terminal replaces it.", unit.Program)
 			have, home = false, a.localHome()
 		}
 	}
@@ -383,7 +383,7 @@ func (a *Agent) setUpLocalBox(ctx context.Context, say sayFunc) (string, error) 
 }
 
 // updateLocalBerthd puts the bundled berthd at dst when dst is missing or
-// another build, and says whether it changed anything. Shipyard's own copy
+// another build, and says whether it changed anything. Terminal's own copy
 // follows the app (but is never downgraded below a newer release someone
 // upgraded it to); a berthd the install script put there is only replaced
 // by a newer release.
@@ -395,7 +395,7 @@ func (a *Agent) updateLocalBerthd(ctx context.Context, src, dst, home string, ow
 		have, _ := berthdVersion(ctx, dst, home)
 		next, _ := berthdVersion(ctx, src, home)
 		if owned && newerRelease(have, next) {
-			say("Keeping berthd %s at %s: it is newer than the %s Shipyard carries.", have, dst, next)
+			say("Keeping berthd %s at %s: it is newer than the %s Terminal carries.", have, dst, next)
 			return false, nil
 		}
 		if !owned && !newerRelease(next, have) {
@@ -427,7 +427,7 @@ func orUnknown(v string) string {
 // copy is cleared, and only then: the copy is byte for byte the berthd
 // inside an app Gatekeeper already let run, its signature was just
 // verified, and launchd starts it with no window to ask for approval in, so
-// a quarantined copy could be refused silently. Shipyard writes the copy
+// a quarantined copy could be refused silently. Terminal writes the copy
 // itself, so macOS normally sets no such flag; this is a guard.
 func checkCopy(ctx context.Context, src, dst string, say sayFunc) error {
 	if localGOOS != "darwin" {
@@ -439,7 +439,7 @@ func checkCopy(ctx context.Context, src, dst string, say sayFunc) error {
 	}
 	if out, err := localTool(ctx, "/usr/bin/codesign", "--verify", "--strict", dst); err != nil {
 		os.Remove(dst)
-		return fmt.Errorf("the copy of berthd at %s fails its code signature check (%s), so it was removed; reinstall Shipyard from its disk image and try again", dst, strings.TrimSpace(string(out)))
+		return fmt.Errorf("the copy of berthd at %s fails its code signature check (%s), so it was removed; reinstall Terminal from its disk image and try again", dst, strings.TrimSpace(string(out)))
 	}
 	if _, err := localTool(ctx, "/usr/bin/xattr", "-p", "com.apple.quarantine", dst); err == nil {
 		if out, err := localTool(ctx, "/usr/bin/xattr", "-d", "com.apple.quarantine", dst); err != nil {
@@ -666,7 +666,7 @@ func (a *Agent) pairLocal(ctx context.Context, prog, home string, owned bool, sa
 // berthd service stops and is removed. With removeData, the box's state
 // (BERTH_HOME/box: its keys, project list and session records) goes too.
 // Repositories are never touched, and nor is a berthd the install script
-// put on this computer: only Shipyard's own copy is deleted.
+// put on this computer: only Terminal's own copy is deleted.
 func (a *Agent) removeLocalBox(ctx context.Context, removeData bool, say sayFunc) error {
 	rec := a.localRecord()
 	unit, have, home, err := a.installedUnit()
@@ -853,7 +853,7 @@ func runBerthd(ctx context.Context, say sayFunc, prog, home string, args ...stri
 			failure = append(failure, line)
 			continue
 		}
-		// Shipyard pairs on its own; there is no link to make.
+		// Terminal pairs on its own; there is no link to make.
 		if strings.HasPrefix(line, "Next: berthd pair") || strings.TrimSpace(line) == "" {
 			continue
 		}

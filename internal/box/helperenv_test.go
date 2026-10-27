@@ -18,7 +18,7 @@ import (
 	"github.com/cosscom/shipyard/internal/wire"
 )
 
-// envRig is a box with helpers and a project "acme" that has no Shipyard
+// envRig is a box with helpers and a project "acme" that has no Terminal
 // environment at all: what its worktrees have is in their dotenv files.
 type envRig struct {
 	t     *testing.T
@@ -521,7 +521,7 @@ func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 		"a variable the manifest does not name": {`{"UNRELATED": "` + byHand + `"}`, "UNRELATED is not a variable the acme helper is told"},
 		"one it names beside one it does not":   {`{"DATABASE_URL": "` + byHand + `", "PGPASSWORD": "s3cret"}`, "PGPASSWORD is not a variable the acme helper is told"},
 		"an address where the name goes":        {`{"` + byHand + `": "DATABASE_URL"}`, "env has a name that is not a variable's"},
-		"one of Shipyard's own":                 {`{"BERTH_PORT": "1"}`, "BERTH_PORT is not a variable"},
+		"one of Terminal's own":                 {`{"BERTH_PORT": "1"}`, "BERTH_PORT is not a variable"},
 		"a secret's name":                       {`{"DATABASE_URL": "op://dev/acme-db/url"}`, "DATABASE_URL names a secret"},
 		"nothing":                               {`{"DATABASE_URL": ""}`, "DATABASE_URL must be text"},
 		"too much":                              {`{"DATABASE_URL": "postgres://` + strings.Repeat("x", maxAttachValue) + `"}`, "DATABASE_URL must be text"},
@@ -582,7 +582,7 @@ func TestAHelperIsToldOfADatabaseGivenByHand(t *testing.T) {
 }
 
 // At a service's start a helper is shown what the worktree's dotenv files
-// have of the variables it names, when Shipyard's own environment for the
+// have of the variables it names, when Terminal's own environment for the
 // service does not have them, and what it answers is what the service
 // starts with.
 func TestAServiceIsShownItsWorktreesDotenvValues(t *testing.T) {
@@ -656,7 +656,7 @@ func TestAServiceIsShownItsWorktreesDotenvValues(t *testing.T) {
 		if told.Command != "web" || told.Worktree != "fix-orders" {
 			t.Errorf("%s was told %+v", plugin, told)
 		}
-		// The file's own value for what Shipyard does not set, a reference
+		// The file's own value for what Terminal does not set, a reference
 		// in it filled in from the service's environment; the project's own
 		// for what it does; and no secret, in the file or of the project's.
 		if !reflect.DeepEqual(told.Env, map[string]string{

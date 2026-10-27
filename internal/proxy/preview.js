@@ -1,6 +1,6 @@
-// Shipyard's Preview frame script. The laptop's proxy puts it at the top of a
+// Terminal's Preview frame script. The laptop's proxy puts it at the top of a
 // worktree page's <head> only for a Preview tab's frames (preview.go), never
-// for normal browsing. It talks to the Shipyard app, the frame's parent, with
+// for normal browsing. It talks to the Terminal app, the frame's parent, with
 // postMessage, and only with it: it mirrors navigation, scrolling, clicks and
 // typing between frames, forces light or dark, and draws the frame for a
 // screenshot. In any other frame (the page's own iframes, a Browser tab in a

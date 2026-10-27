@@ -3,7 +3,7 @@ title: Hooks and gates
 description: Run your commands when something happens, or refuse an action before it does.
 ---
 
-Hooks run your commands when something happens in Shipyard. They run on the
+Hooks run your commands when something happens in Terminal. They run on the
 machine whose `~/.berth/hooks.json` names them: hooks on a box run there,
 next to its repositories; hooks on the laptop run on the laptop, where they
 can notify you, open things, or call other tools.
@@ -52,7 +52,7 @@ Each hook runs through `/bin/sh -c` and gets:
 - The same as environment variables: `BERTH_EVENT`, `BERTH_EVENT_BOX`,
   `BERTH_EVENT_ORIGIN`, and every data field upper-cased, as `BERTH_PATH`,
   `BERTH_NAME`, `BERTH_LOCATION`, `BERTH_BRANCH`, …
-- `BERTH_ORIGIN`, which Shipyard commands the hook runs pass on, so their own
+- `BERTH_ORIGIN`, which Terminal commands the hook runs pass on, so their own
   events are attributed to the hook rather than to you.
 - Hooks from a repository's config also get the worktree's environment
   (its ports and `BERTH_*` variables, and the project's `env`); plugin hooks

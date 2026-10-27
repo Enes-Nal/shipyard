@@ -21,7 +21,7 @@ the `BOX/` prefix.
 
 | Command | What it does |
 | --- | --- |
-| `berth add ssh [user@]HOST [--name N] [--agents claude,codex\|none] [--guided] [--yes] [--from STEP] [--network NET] [--listen ADDR] [--address ADDR] [--identity FILE] [--trust-host-key SHA256:…] [--no-integrations] [-- SSH OPTIONS]` | Set a box up over SSH (once), quietly: installs berthd, tmux and git if missing (Shipyard's own tmux needs no sudo), the agent CLIs (`--agents`, Claude Code by default) and their hooks, and pairs, with no plan and no Enter. Only a step that needs `sudo`'s password (git missing, or lingering the box allows only as root) runs in a terminal, where `sudo` asks; lingering alone is asked about first and can be skipped. `--guided` shows the whole plan, waits for Enter, and runs every step in one terminal. `--yes` (or no terminal) asks nothing and stops with the command to run where `sudo` would need a password; `--from` retries from a step. See [add a box](/getting-started/add-a-box#over-ssh). |
+| `berth add ssh [user@]HOST [--name N] [--agents claude,codex\|none] [--guided] [--yes] [--from STEP] [--network NET] [--listen ADDR] [--address ADDR] [--identity FILE] [--trust-host-key SHA256:…] [--no-integrations] [-- SSH OPTIONS]` | Set a box up over SSH (once), quietly: installs berthd, tmux and git if missing (Terminal's own tmux needs no sudo), the agent CLIs (`--agents`, Claude Code by default) and their hooks, and pairs, with no plan and no Enter. Only a step that needs `sudo`'s password (git missing, or lingering the box allows only as root) runs in a terminal, where `sudo` asks; lingering alone is asked about first and can be skipped. `--guided` shows the whole plan, waits for Enter, and runs every step in one terminal. `--yes` (or no terminal) asks nothing and stops with the command to run where `sudo` would need a password; `--from` retries from a step. See [add a box](/getting-started/add-a-box#over-ssh). |
 | `berth pair '<link>' [--name N] [--network NET]` | Pair with a box, from the link `berthd pair` prints |
 | `berth invite [--boxes a,b] [--for NAME] [--yes] [--json]` | A join link for another computer of yours: a fresh single-use code from each box (every paired box, or `--boxes`), valid ten minutes. Offline boxes are left out and listed. Asks first unless `--yes`; `--for` names the computer in the boxes' events. See [more than one computer](/guides/more-computers). |
 | `berth join '<link>'\|- [--check] [--yes] [--json]` | Pair this computer with every box in a join link (`-` reads it from stdin; pasting the whole message is fine). Each box reports `paired`, `already`, `needs-network` (sign in to its tailnet, then join again) or `failed`; `--check` only says what the link holds |
@@ -31,7 +31,7 @@ the `BOX/` prefix.
 | `berth discover [--network NET] [--json]` | Machines on the tailnet that could be boxes |
 | `berth boxes [--json]` | Paired boxes, whether they are online, and the [route](/concepts/laptop-agent#routes-to-a-box) each is reached by |
 | `berth ping BOX [-c N]` | Check a box answers and still trusts you: how long connecting took, then N−1 round trips on the open connection (its latency) |
-| `berth upgrade BOX [--check] [--json] [--force]` | Upgrade the box's daemon over Shipyard's own connection (no SSH); `--check` only reports whether it is older. A box on a newer release than this Shipyard isn't outdated and is left alone (update the app instead); `--force` puts the older daemon on it anyway |
+| `berth upgrade BOX [--check] [--json] [--force]` | Upgrade the box's daemon over Terminal's own connection (no SSH); `--check` only reports whether it is older. A box on a newer release than this Terminal isn't outdated and is left alone (update the app instead); `--force` puts the older daemon on it anyway |
 | `berth edit BOX/PROJECT[/WT] [FILE[:LINE[:COL]]] [--in cursor\|vscode\|windsurf\|zed]` | Open a worktree, or a file at a line, in your editor (default: the first installed) |
 | `berth ssh-config [--write] [--json]` | Show (then write) the SSH hosts editors use: `berth-<box>` |
 | `berth forget BOX` | Remove a box from this laptop |
@@ -115,7 +115,7 @@ Who may be reviewed is read from GitHub with this laptop's `gh`, as you. See
 | `berth doctor [BOX] [--json]` | Check this computer (or a box, with the routes to it) and how to fix it |
 | `berth events [BOX] [--json]` | Stream events from this laptop and every box as they happen (box events carry `box`); with `BOX`, only that box's |
 | `berth agent` | Run the agent in the foreground |
-| `berth agent start` | Start the agent in the background if it isn't running (what the app's **Start the Shipyard agent** runs) |
+| `berth agent start` | Start the agent in the background if it isn't running (what the app's **Start the Terminal agent** runs) |
 | `berth agent restart [--if-stale] [--json]` | Restart the agent once its work under way is done; `--if-stale` only when it's older than this `berth` (what the app runs as it starts, after an update) |
 | `berth agent install\|uninstall\|status` | Run the agent at login, restart it on crashes |
 | `berth setup port80 [--remove]` | Drop `:1377` from URLs (macOS; asks for your admin password once) |
@@ -135,7 +135,7 @@ Who may be reviewed is read from GitHub with this laptop's `gh`, as you. See
 | `berth location config BOX/NAME [--json] [--trust HASH\|--untrust]` | The repo's, the box's and the effective config; trust the repo's to run it |
 | `berth services BOX [--json]` | Which worktree each running server belongs to |
 | `berth service list\|start\|stop\|restart\|log BOX/LOC/WORKTREE [SERVICE]` | A worktree's services from the repo's config |
-| `berth preview BOX/[LOC/WORKTREE] [PORT] [--path /x]` | Open a worktree's page in the Shipyard app |
+| `berth preview BOX/[LOC/WORKTREE] [PORT] [--path /x]` | Open a worktree's page in the Terminal app |
 | `berth worktree new BOX/LOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME] [--no-setup]` | Create a git worktree and run its setup; `--pr` checks out that pull request (pass its head branch as `--branch`; a fork's head comes from `--ref`, by default `pull/N/head`); `--parent` nests it under another worktree of the location; `--no-setup` skips setup and autostart services, and the worktree shows `setup_pending` in `locations --json` |
 | `berth worktree setup BOX/LOC/NAME [--wait]` | Run the location's setup script and autostart services in a worktree, for one made with `--no-setup`. `--wait` blocks until setup finishes and exits non-zero if it fails |
 | `berth worktree rm BOX/LOC/NAME [--force]` | Remove a worktree |
@@ -194,7 +194,7 @@ See [orchestration](/guides/orchestration) and
 | `berth ports BOX [--json]` | What is listening on the box |
 | `berth stats BOX [--json]` | Memory, disk, load, and agents running or waiting |
 | `berth ps BOX [--json]` | The box's browsers with who started each, and what its sessions use |
-| `berth ps BOX stop ID` | Stop one of them (Shipyard's or its sessions' only) |
+| `berth ps BOX stop ID` | Stop one of them (Terminal's or its sessions' only) |
 | `berth info BOX` | The box's name, OS, build, tools and agent presets, as JSON |
 | `berth share BOX PORT` | Make a port public (a Cloudflare quick tunnel run by the box) |
 | `berth shares BOX [--json]` | List public shares |
@@ -204,7 +204,7 @@ See [orchestration](/guides/orchestration) and
 
 | Command | What it does |
 | --- | --- |
-| `berth skills BOX [list\|install\|uninstall] [SKILL...] [--agent claude\|codex\|all] [--target user\|project] [--location LOC] [--commit]` | Teach Claude Code and Codex on a box to use Shipyard |
+| `berth skills BOX [list\|install\|uninstall] [SKILL...] [--agent claude\|codex\|all] [--target user\|project] [--location LOC] [--commit]` | Teach Claude Code and Codex on a box to use Terminal |
 | `berth secret test BOX REF` | Check a box can resolve `op://vault/item/field` or `env://NAME` (prints the value's length, never the value) |
 | `berth emit TYPE [key=value...]` | Announce an event on this laptop |
 | `berth emit BOX TYPE [key=value...] [--origin TOOL]` | Announce an event on a box |
@@ -213,8 +213,8 @@ See [orchestration](/guides/orchestration) and
 
 | Command | What it does |
 | --- | --- |
-| `berth integrations [status]` | Where Shipyard's hooks and skills are for each agent CLI on this laptop, per Claude Code and Codex account |
-| `berth integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all` | Install Shipyard's skills and agent hooks for a tool, on this laptop, in every account folder it has |
-| `berth hook TOOL EVENT [PAYLOAD]` | What those hooks run: turns a tool's hook into a Shipyard event |
+| `berth integrations [status]` | Where Terminal's hooks and skills are for each agent CLI on this laptop, per Claude Code and Codex account |
+| `berth integrations install claude\|cursor\|codex\|gemini\|opencode\|omp\|all` | Install Terminal's skills and agent hooks for a tool, on this laptop, in every account folder it has |
+| `berth hook TOOL EVENT [PAYLOAD]` | What those hooks run: turns a tool's hook into a Terminal event |
 
 See [agent integrations](/guides/agent-integrations).

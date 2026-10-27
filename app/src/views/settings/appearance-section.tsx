@@ -31,20 +31,20 @@ export function AppearanceSection() {
   const active = useActiveTheme();
   const selectedId = system ? active.id : themeId;
 
-  // Shipyard's own, then every other theme (built-in ports, yours, plugins')
+  // Terminal's own, then every other theme (built-in ports, yours, plugins')
   // by appearance, the best-known first; a search narrows them by name.
   // Unsearched, each group shows a row of four, plus the chosen theme, until
   // Show more.
   const q = query.trim().toLowerCase();
   const shown = q ? themes.filter((t) => t.name.toLowerCase().includes(q) || t.id.includes(q)) : themes;
   const groups = [
-    { title: "Shipyard", themes: byFirst(shown.filter((t) => BERTH.has(t.id)), SHIPYARD_FIRST) },
+    { title: "Terminal", themes: byFirst(shown.filter((t) => BERTH.has(t.id)), SHIPYARD_FIRST) },
     { title: "Light", themes: byFirst(shown.filter((t) => !BERTH.has(t.id) && t.appearance !== "dark"), LIGHT_FIRST) },
     { title: "Dark", themes: byFirst(shown.filter((t) => !BERTH.has(t.id) && t.appearance === "dark"), DARK_FIRST) },
   ]
     .filter((g) => g.themes.length)
     .map((g) => {
-      if (q || all || g.title === "Shipyard") return { ...g, hidden: [] as Theme[] };
+      if (q || all || g.title === "Terminal") return { ...g, hidden: [] as Theme[] };
       const keep = g.themes.filter((t, i) => i < ROW || t.id === selectedId);
       return { ...g, themes: keep, hidden: g.themes.filter((t) => !keep.includes(t)) };
     });
@@ -62,7 +62,7 @@ export function AppearanceSection() {
   };
 
   return (
-    <SettingsPage title="Appearance" description="How Shipyard looks. A theme colours the terminal too.">
+    <SettingsPage title="Appearance" description="How Terminal looks. A theme colours the terminal too.">
       <SettingsGroup
         title="Theme"
         actions={
@@ -173,7 +173,7 @@ function byFirst(list: Theme[], first: string[]): Theme[] {
 }
 
 // Match system follows the computer's appearance: one theme by day, another
-// when macOS is dark (Shipyard Light and Shipyard Dark unless picked here).
+// when macOS is dark (Terminal Light and Terminal Dark unless picked here).
 function useSystemPair(themes: Theme[]) {
   const picks = usePrefs((p) => p.systemThemes);
   const light = themes.find((t) => t.id === picks.light) ?? themes.find((t) => t.id === "berth-light");

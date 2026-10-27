@@ -4,7 +4,7 @@ description: Use this Mac as a box in a click, set up a machine on your tailnet,
 ---
 
 A **box** is any machine your agents run on, usually Linux: a VPS, a cloud
-VM, the desktop under your desk. It runs `berthd`, Shipyard's daemon, as a user
+VM, the desktop under your desk. It runs `berthd`, Terminal's daemon, as a user
 service.
 The laptop pairs with it once and from then on talks to it over pinned mutual
 TLS; it never needs SSH to reach the box, and at most uses it once, to install.
@@ -13,7 +13,7 @@ TLS; it never needs SSH to reach the box, and at most uses it once, to install.
 
 - Linux (or macOS) on amd64 or arm64
 - `git` (repositories and worktrees) and `tmux` (sessions). A fresh Ubuntu
-  has neither: [over SSH](#over-ssh) Shipyard puts its own tmux on the box (no
+  has neither: [over SSH](#over-ssh) Terminal puts its own tmux on the box (no
   sudo) and installs git in a terminal where `sudo` asks for your password;
   the install command offers to install both with `sudo` when it can ask,
   and otherwise stops with the command to run
@@ -26,7 +26,7 @@ TLS; it never needs SSH to reach the box, and at most uses it once, to install.
 ### Agent CLIs you installed yourself
 
 An agent CLI counts wherever your own terminal on the box finds it, not
-only where Shipyard's installer puts it (`~/.local/bin`). berthd runs as a
+only where Terminal's installer puts it (`~/.local/bin`). berthd runs as a
 service, whose `PATH` doesn't have what your shell's startup files add, so
 it asks your shell the way a terminal starts it, interactive and login
 (`$SHELL -lic`), and reads only its answer, past any banner. `npm i -g
@@ -37,7 +37,7 @@ itself: `~/.local/bin`, `npm prefix -g`, nvm's and fnm's default Node (then
 their other versions), `~/.volta/bin`, `~/.bun/bin`, `~/.npm-global/bin`
 and Homebrew's.
 
-When there are two installs (npm's and Shipyard's, say), the one your shell
+When there are two installs (npm's and Terminal's, say), the one your shell
 finds first is used. Agents start with it, by the `PATH` it was found
 with, so an npm CLI finds the `node` beside it. `berthd doctor` and
 **Settings → Boxes** show which one, with its version and how it was
@@ -55,7 +55,7 @@ Mac** (in **Add a box**) set it up with one click and no terminal:
 1. It copies the `berthd` the app carries (a universal build, signed and
    notarized with the app) to
    `~/Library/Application Support/berth/bin/berthd`. launchd runs the program
-   its service names, and a path inside `Shipyard.app` changes when the app
+   its service names, and a path inside `Terminal.app` changes when the app
    updates or moves, so the service never points into the app. The copy is
    checked against its signature (`codesign --verify`) before it runs.
 2. It runs `berthd install` from there, listening on `127.0.0.1` only, on
@@ -91,7 +91,7 @@ reconnects. Some cases it handles on its own:
   sharing counts); over SSH alone, setting up says so and changes nothing.
 
 To stop, open Settings → Boxes, the box's **…** menu, **Stop using this
-Mac…**: Shipyard forgets the box, stops berthd and removes its launch agent, and
+Mac…**: Terminal forgets the box, stops berthd and removes its launch agent, and
 deletes the copy. Its data (keys, projects list, session records) stays
 unless you tick **Also delete its data**. Your repositories are never touched.
 
@@ -114,7 +114,7 @@ nothing to open to the internet and nothing to choose.
   are marked; the tailnet's SSH rules decide who logs in, and no keys are
   needed. Their host keys come from the tailnet itself, so a first login
   trusts the key without asking when it is the one the tailnet reports. When
-  your rules ask for a check, Shipyard opens the approval page in your browser
+  your rules ask for a check, Terminal opens the approval page in your browser
   and carries on once you approve.
 - **A Mac on the tailnet.** `berth` carries only the Linux daemons, so for a
   Mac the screen points to [the install command](#with-the-install-command)
@@ -134,7 +134,7 @@ with a link to get Tailscale or a note to sign in from its menu bar icon.
 Coming back to the app checks again.
 
 **Sign in to another tailnet**, beside the list, adds a tailnet this Mac's
-Tailscale isn't on (a personal one while the Mac is on work's, say): Shipyard
+Tailscale isn't on (a personal one while the Mac is on work's, say): Terminal
 signs in to it with its own embedded node (see
 [Boxes on another tailnet](#boxes-on-another-tailnet)), and its machines
 appear in the list under a tab of their own, set up the same way.
@@ -158,13 +158,13 @@ go in for the agent CLIs it finds. Then it prints a pairing link:
 ==> Installing berthd v0.1.0 to /home/me/.local/bin/berthd
 ==> Starting the service
   Installed /home/me/.config/systemd/user/berthd.service; berthd is serving on 100.101.102.103:7444.
-  Agent integrations (hooks for needs-you, working and done; Shipyard's skills):
+  Agent integrations (hooks for needs-you, working and done; Terminal's skills):
     Claude Code: hooks and 7 skills in ~/.claude
       hooks added in ~/.claude/settings.json
       MCP server added in ~/.claude.json
     Not found: Codex, Cursor Agent. After installing one, run: /home/me/.local/bin/berthd integrations install codex|cursor
 
-berthd v0.1.0 is running. Paste this link into Shipyard on your laptop
+berthd v0.1.0 is running. Paste this link into Terminal on your laptop
 (Add a box). It works once, for ten minutes:
 
   berth://100.101.102.103:7444?code=…&fp=…
@@ -212,15 +212,15 @@ read it before piping it to `sh` if you like.
 
 ## Over SSH
 
-If you can `ssh me@my-box`, Shipyard sets the box up from here, with nothing to
+If you can `ssh me@my-box`, Terminal sets the box up from here, with nothing to
 install on the box by hand: berthd, tmux and git when they're missing, the
 agent CLIs you choose, their hooks, and the pairing. Adding a box is quiet:
-there is no plan to read and nothing to press. Shipyard stops only for a step
+there is no plan to read and nothing to press. Terminal stops only for a step
 that truly needs `sudo`'s password on the box, and only for that step.
 
 ### In the app
 
-**Add a box › Or let Shipyard set it up over SSH** takes `user@host`, with
+**Add a box › Or let Terminal set it up over SSH** takes `user@host`, with
 **Agents** right below it: Claude Code is ticked; Codex, Cursor Agent and
 OpenCode are there to add, and your choice is remembered for the next box.
 **Install and pair** on a machine [on your tailnet](#on-your-tailnet) has the
@@ -235,7 +235,7 @@ Each step ticks as it ends.
 - **git is missing**: when the **tmux and git** step needs root, its row is
   marked **sudo** and a small terminal opens in the dialog, for that step
   alone. Type your password there and press Enter; it goes to `sudo` on the
-  box and nowhere else, and Shipyard never sees, keeps or logs it. The terminal
+  box and nowhere else, and Terminal never sees, keeps or logs it. The terminal
   closes when the step is done, and the rest go on quietly.
 - **Keeping berthd running after you log out needs root**, and nothing else
   does: the dialog asks first. **Keep it running** opens the terminal for
@@ -275,7 +275,7 @@ needs `sudo`'s password runs in one (`ssh -t`), where `sudo` asks:
 
 ==> Keeping berthd running after you log out
     This needs root: sudo asks for me's password on this box.
-    Type it and press Enter. It goes to sudo here; Shipyard never sees it or keeps it.
+    Type it and press Enter. It goes to sudo here; Terminal never sees it or keeps it.
 [sudo] password for me:
     Lingering is on: berthd keeps running when you log out.
 ✓ Keep berthd running after you log out
@@ -304,13 +304,13 @@ service and pairs again.
 show the whole plan first: what will run, step by step, the exact commands,
 and which steps may need `sudo`. In the app it is full screen, with the
 agents to choose and, from Team setup, the team's own steps listed after
-Shipyard's. Then every step runs in one terminal, full screen beside a
+Terminal's. Then every step runs in one terminal, full screen beside a
 checklist: press **Enter** in it to start, and type your password when
 `sudo` asks. From Team setup, when the box is ready the team's setup starts
 on it in the same screen, and **Back to Team setup** goes on from there.
 
 ```text title="berth add ssh me@my-box --agents claude,codex --guided"
-Shipyard will set this box up:
+Terminal will set this box up:
  1. Install berthd
       upload berthd-linux-arm64 → ~/.local/bin/berthd
       ~/.local/bin/berthd install --no-tools --no-integrations --keep-listen
@@ -318,7 +318,7 @@ Shipyard will set this box up:
       loginctl enable-linger me   (no sudo, where the box allows it)
       sudo loginctl enable-linger me   (otherwise)
  3. tmux and git  [sudo]
-      upload tmux-linux-arm64 → ~/.local/bin/tmux   (Shipyard's own build: no sudo)
+      upload tmux-linux-arm64 → ~/.local/bin/tmux   (Terminal's own build: no sudo)
       sudo apt-get update -q
       sudo apt-get install -y -q git
  4. Claude Code and Codex
@@ -355,20 +355,20 @@ What each step does:
     publishes checksums for them).
 
   Gemini CLI isn't offered: it installs with npm and needs Node.js 20 or
-  newer, which Shipyard doesn't install. Install Node, then
+  newer, which Terminal doesn't install. Install Node, then
   `npm install -g @google/gemini-cli`.
   If a login shell's `PATH` lacks `~/.local/bin`, one marked line adds it to
   your profile. Signing in is yours: each agent asks the first time it starts
   (Claude Code right in the chat).
 - **Integrations**: the [hooks that report agent state](/getting-started/first-agent#let-the-box-report-agent-state)
-  and Shipyard's skills, for every agent CLI on the box.
+  and Terminal's skills, for every agent CLI on the box.
 - **Pair**: `berthd pair` on the box, and this computer pairs with the link.
 
 A box without a tailnet address asks where berthd should listen: press
 **Enter** to listen on every interface (`0.0.0.0:7444`; only laptops
 you pair can connect, both keys pinned), or pass `--listen`.
 
-Shipyard installs as the user your agents will run as, never as root: logging in
+Terminal installs as the user your agents will run as, never as root: logging in
 as `root` stops at the first step and says to log in as that user (make one
 with `adduser me && usermod -aG sudo me`).
 
@@ -379,10 +379,10 @@ nothing can type a password: steps that need `sudo` use it only when it asks
 for nothing, and otherwise stop with the command to run on the box:
 
 ```text
-Installing git needs root, and sudo asks for a password, which Shipyard can't type without a terminal.
+Installing git needs root, and sudo asks for a password, which Terminal can't type without a terminal.
 Run this on the box, then set it up again:
   sudo apt-get update -q && sudo apt-get install -y -q git
-✗ tmux and git: Installing git needs root, and sudo asks for a password, which Shipyard can't type without a terminal.
+✗ tmux and git: Installing git needs root, and sudo asks for a password, which Terminal can't type without a terminal.
 ```
 
 Only the Linux daemons come with `berth`. For a Mac box, run
@@ -398,7 +398,7 @@ Options:
 
 | Flag | What it does |
 | --- | --- |
-| `--name N` | What to call the box in Shipyard (default: its hostname). It becomes part of URLs like `3000.N.localhost`. |
+| `--name N` | What to call the box in Terminal (default: its hostname). It becomes part of URLs like `3000.N.localhost`. |
 | `--agents LIST` | The agent CLIs to install: `claude`, `codex`, `cursor`, `opencode`, comma-separated, or `none` (default `claude`). |
 | `--guided` | Show the whole plan first, wait for Enter, and run every step in one terminal (what Team setup does). Without it, steps run on their own and only one that needs `sudo`'s password asks. |
 | `--yes` | Ask nothing, and stop with the command to run where `sudo` would ask for a password. |
@@ -453,16 +453,16 @@ the first-run setup, show one screen with every way in:
    comes first.
 2. **Or, on any box**: **On the box, run** the
    [install command](#with-the-install-command), with a copy button; then
-   **Paste what it printed**: the link, or the whole output; Shipyard keeps the
+   **Paste what it printed**: the link, or the whole output; Terminal keeps the
    link. Enter pairs.
-3. **Or let Shipyard set it up over SSH** takes `user@host` (Tab completes hosts
+3. **Or let Terminal set it up over SSH** takes `user@host` (Tab completes hosts
    from `~/.ssh/config` and machines on your tailnet), says which SSH agent
    or keys it will use before connecting, and runs `berth add ssh` quietly,
    with a short checklist ([over SSH](#over-ssh)).
 
 Without a tailnet, the install command comes first and **Or use Tailscale**
 sits beside the SSH option. When a box can't be reached and might be on a
-tailnet this computer isn't signed in to, Shipyard offers to sign in to that
+tailnet this computer isn't signed in to, Terminal offers to sign in to that
 tailnet and tries again.
 
 ## Where berthd listens
@@ -491,7 +491,7 @@ berth discover --network personal     # machines there that could be boxes
 berth add ssh me@homelab --network personal
 ```
 
-Each box remembers the network it is reached through. Shipyard's own TLS still
+Each box remembers the network it is reached through. Terminal's own TLS still
 runs on top; the tailnet only provides the route.
 
 ## Check it
@@ -504,7 +504,7 @@ berth doctor my-box
 
 ## On another computer
 
-Using Shipyard on a second computer too? Don't pair each box again: make a join
+Using Terminal on a second computer too? Don't pair each box again: make a join
 link on the first one and paste it there. See
 [more than one computer](/guides/more-computers).
 

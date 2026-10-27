@@ -19,7 +19,7 @@ const HOME = "/Users/me";
 const ADDRESS = "127.0.0.1:7445";
 
 const local: LocalBoxStatus = { supported: true, available: mode !== "none", installed: false, owned: false, running: false, name: NAME };
-if (mode === "none") local.reason = "this copy of Shipyard carries no berthd for this computer";
+if (mode === "none") local.reason = "this copy of Terminal carries no berthd for this computer";
 
 export function initMockLocalBox(d: Deps) {
   deps = d;
@@ -115,7 +115,7 @@ export async function localBoxStream(method: string, path: string, body: unknown
     return true;
   }
   await say(`  Installed ${HOME}/Library/LaunchAgents/dev.berth.berthd.plist; berthd is serving on ${ADDRESS}.`, 1200);
-  await say("  Agent integrations (hooks for needs-you, working and done; Shipyard's skills):", 300);
+  await say("  Agent integrations (hooks for needs-you, working and done; Terminal's skills):", 300);
   await say(`    Claude Code: hooks and 7 skills in ~/.claude`, 300);
   await say("Pairing this laptop with it…", 500);
   d.addBox(NAME, ADDRESS);

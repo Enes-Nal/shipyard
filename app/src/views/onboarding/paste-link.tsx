@@ -127,7 +127,7 @@ export function PasteLink({
                 <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={onSignIn}>
                   sign in to that tailnet
                 </button>
-                {" and Shipyard tries again."}
+                {" and Terminal tries again."}
               </span>
             )}
           </div>
@@ -144,7 +144,7 @@ export function PasteLink({
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void pair())}
                 placeholder="after its hostname"
-                aria-label="Name in Shipyard"
+                aria-label="Name in Terminal"
                 spellCheck={false}
                 disabled={busy}
                 className="h-5 w-32 border-input border-b bg-transparent px-0.5 text-foreground outline-none placeholder:text-muted-foreground/72 focus:border-ring"

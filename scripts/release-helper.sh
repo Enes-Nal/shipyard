@@ -31,7 +31,7 @@
 #      The other helpers' builds are left as the listing has them.
 #   3. gh release create <release>-v<version> with the four files and their
 #      checksums.txt. It is not marked as the latest release: the latest is
-#      Shipyard's own, which site/install.sh and the app's updater download
+#      Terminal's own, which site/install.sh and the app's updater download
 #      from.
 #
 # Then commit site/plugins/ and merge it: the listing on the public site is
@@ -168,7 +168,7 @@ fi
 commit=$(git rev-parse HEAD)
 notes="The builds of $name $version, the helper the $plugin plugin runs on a box.
 
-Shipyard installs these itself: turn the plugin on for a box and the app
+Terminal installs these itself: turn the plugin on for a box and the app
 downloads the build for that box, checks it against the SHA-256 in the
 plugin's manifest, and uploads it. There is nothing here to install by hand.
 

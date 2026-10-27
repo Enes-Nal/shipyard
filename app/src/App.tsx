@@ -79,14 +79,14 @@ const SettingsView = lazyView(() => import("@/views/settings/settings-view").the
 // The live demo's guide and script (pnpm build:demo); not in the app.
 const DemoGuide = __BERTH_DEMO__ ? lazy(() => import("@/demo/guide")) : null;
 
-const viewTitles = { team: "Team setup", dashboard: "Agent Dashboard", review: "Review", worktrees: "Worktrees", automations: "Automations", kits: "Kits", project: "Project settings", settings: "Settings", plugin: "" } as const;
+const viewTitles = { team: "Team setup", dashboard: "Agent Dashboard", review: "Review", worktrees: "Project activity", automations: "Automations", kits: "Kits", project: "Project settings", settings: "Settings", plugin: "" } as const;
 
 export default function App() {
   useApplyTheme();
   useBerthConnection();
   useShortcuts();
   useWindowTitle();
-  // Checks for a newer Shipyard on launch and every few hours (lib/updater.ts).
+  // Checks for a newer Terminal on launch and every few hours (lib/updater.ts).
   useEffect(startUpdater, []);
   // Spinners and shimmers hold still while the window is in the background.
   useEffect(watchStillness, []);
@@ -101,7 +101,7 @@ export default function App() {
   // Agents started without the app (another agent, the CLI, a run) follow
   // the Labs setting too (lib/box-defaults.ts).
   useEffect(() => (connectedToAgent ? startBoxDefaultsSync() : undefined), [connectedToAgent]);
-  // Which boxes' Shipyard skills aren't installed or are out of date, for
+  // Which boxes' Terminal skills aren't installed or are out of date, for
   // the sidebar's notice (lib/skills-notice.ts).
   useEffect(() => (connectedToAgent ? startSkillsNoticeWatch() : undefined), [connectedToAgent]);
   useKitDeepLinks();
