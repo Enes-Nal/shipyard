@@ -277,7 +277,7 @@ func (s *Sessions) kill(pid int, sig syscall.Signal) {
 		s.signal(pid, sig)
 		return
 	}
-	syscall.Kill(pid, sig)
+	signalProcess(pid, sig)
 }
 
 // sessionProcs are the processes that belong to session name as berth can

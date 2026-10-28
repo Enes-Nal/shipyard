@@ -4,7 +4,7 @@
   "version": "0.3.30",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/build-plugins.mjs && vite",
+    "dev": "node scripts/ensure-windows-agent.mjs && node scripts/build-plugins.mjs && vite",
     "build": "node scripts/build-plugins.mjs && tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",

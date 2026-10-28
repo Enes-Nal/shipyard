@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/version"
@@ -103,10 +102,11 @@ func lockFree(dir string) bool {
 		return false
 	}
 	defer f.Close()
-	if syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) != nil {
+	unlock, ok := tryAgentLock(f)
+	if !ok {
 		return false
 	}
-	syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+	unlock()
 	return true
 }
 

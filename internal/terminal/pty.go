@@ -1,3 +1,5 @@
+//go:build !windows
+
 // Package terminal runs programs under a pseudo-terminal on the box and puts
 // the laptop's terminal into raw mode, so an attached session behaves exactly
 // like a local one: colours, cursor keys, resizing, and Ctrl-C.

@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/agentpath"
@@ -278,8 +277,8 @@ func runLoginScript(ctx context.Context, script, dir string, env []string, email
 	}
 	cmd.Env = append(append(append(base, quietEnv...), env...), "BERTH_LOGIN_EMAIL="+email)
 	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+	configureProcessGroup(cmd)
+	cmd.Cancel = func() error { return killProcessGroup(cmd.Process) }
 	cmd.WaitDelay = time.Second
 	var stdout capped
 	stdout.max = maxLoginOutput

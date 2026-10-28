@@ -1,3 +1,5 @@
+//go:build !windows
+
 package agenthost
 
 import (
@@ -54,3 +56,11 @@ func signalTree(pid int, sig syscall.Signal) {
 	syscall.Kill(-pid, sig)
 	syscall.Kill(pid, sig)
 }
+
+func isolateCommand(cmd *exec.Cmd) { cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} }
+
+func terminateTree(pid int) { signalTree(pid, syscall.SIGTERM) }
+
+func killTree(pid int) { signalTree(pid, syscall.SIGKILL) }
+
+func processAlive(pid int) bool { return syscall.Kill(pid, 0) == nil }

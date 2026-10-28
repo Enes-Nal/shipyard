@@ -186,11 +186,11 @@ func (s *Sessions) stopService(ctx context.Context, name string) error {
 	for i, st := range steps {
 		// The pane's program leads its process group, as the terminal's
 		// foreground group: Ctrl-C signals all of it.
-		syscall.Kill(-pid, st.sig)
+		signalProcessGroup(pid, st.sig)
 		if i > 0 {
 			// Children that left the group go too.
 			for _, p := range processTree(pid) {
-				syscall.Kill(p, st.sig)
+				signalProcess(p, st.sig)
 			}
 		}
 		if s.waitDead(ctx, name, st.wait) {

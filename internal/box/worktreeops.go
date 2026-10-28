@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/statefile"
@@ -52,7 +51,7 @@ type WorktreeStatus struct {
 	Upstream string  `json:"upstream,omitempty"`
 	Outgoing int     `json:"outgoing"`
 	Incoming int     `json:"incoming"`
-	Published bool   `json:"published"`
+	Published bool    `json:"published"`
 	Changed  int     `json:"changed"`
 	Untrack  int     `json:"untracked"`
 	Last     *Commit `json:"last_commit,omitempty"`
@@ -412,18 +411,7 @@ func (s *Sessions) freezeSession(ctx context.Context, name string, freeze bool) 
 		if err != nil || pid <= 1 {
 			continue
 		}
-		tree := processTree(pid)
-		if !freeze {
-			for _, p := range tree {
-				syscall.Kill(p, syscall.SIGCONT)
-			}
-			continue
-		}
-		// Children first, so none is left running by a parent that stopped.
-		for i := len(tree) - 1; i > 0; i-- {
-			syscall.Kill(tree[i], syscall.SIGSTOP)
-		}
-		syscall.Kill(pid, syscall.SIGTTIN)
+		freezeProcessTree(processTree(pid), freeze)
 	}
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/agent"
@@ -84,7 +83,7 @@ func spawnAgent(l laptop, exe string) error {
 	cmd := exec.Command(exe, "agent")
 	cmd.Env = append(os.Environ(), "BERTH_HOME="+filepath.Dir(l.dir))
 	cmd.Stdout, cmd.Stderr = logFile, logFile
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	detachAgentCommand(cmd)
 	if err := cmd.Start(); err != nil {
 		return err
 	}

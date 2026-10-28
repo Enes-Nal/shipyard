@@ -29,8 +29,7 @@ func NewClient(socket string) *Client {
 }
 
 func (c *Client) dialSocket(ctx context.Context) (net.Conn, error) {
-	var d net.Dialer
-	return d.DialContext(ctx, "unix", c.socket)
+	return dialLocalSocket(ctx, c.socket)
 }
 
 // Running reports whether an agent answers on the socket.

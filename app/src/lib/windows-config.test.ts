@@ -9,3 +9,11 @@ test("Windows development opens the real app instead of sample fixtures", () => 
 
   assert.doesNotMatch(config.build?.devUrl ?? "", /[?&]mock=/, "Windows must not force the synthetic workspace");
 });
+
+test("the app development command prepares the Windows agent", () => {
+  const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
+    scripts?: { dev?: string };
+  };
+
+  assert.match(pkg.scripts?.dev ?? "", /ensure-windows-agent/, "pnpm tauri dev must build the native Windows agent before Vite starts");
+});

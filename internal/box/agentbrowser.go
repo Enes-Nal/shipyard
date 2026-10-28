@@ -144,7 +144,7 @@ func tmuxSocketPath() string {
 	if r, err := filepath.EvalSymlinks(dir); err == nil {
 		dir = r
 	}
-	return filepath.Join(dir, "tmux-"+strconv.Itoa(os.Getuid()), tmuxSocket)
+	return filepath.Join(dir, "tmux-"+strconv.Itoa(currentUID()), tmuxSocket)
 }
 
 // sameSocket says whether a pane's TMUX value (socket,pid,index) names the
@@ -175,8 +175,7 @@ func tmuxServerRuns(tmux string) bool {
 	if err != nil || pid <= 0 {
 		return false
 	}
-	err = syscall.Kill(pid, 0)
-	return err == nil || errors.Is(err, syscall.EPERM)
+	return processAlive(pid)
 }
 
 func (a *AgentBrowsers) procs() ([]proc, error) {
@@ -356,7 +355,7 @@ func (a *AgentBrowsers) kill(pid int, sig syscall.Signal) {
 		a.signal(pid, sig)
 		return
 	}
-	syscall.Kill(pid, sig)
+	signalProcess(pid, sig)
 }
 
 // remaining is which of s's processes still run, looked up again by their

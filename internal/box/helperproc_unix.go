@@ -3,6 +3,8 @@
 package box
 
 import (
+	"os"
+	"os/exec"
 	"syscall"
 	"time"
 )
@@ -37,3 +39,39 @@ func signalProcess(pid int, sig syscall.Signal) { syscall.Kill(pid, sig) }
 
 // processAlive reports whether a process is still there.
 func processAlive(pid int) bool { return syscall.Kill(pid, 0) == nil }
+
+func currentUID() int { return os.Getuid() }
+
+func ownedByUID(info os.FileInfo, uid int) bool {
+	st, ok := info.Sys().(*syscall.Stat_t)
+	return !ok || int(st.Uid) == uid
+}
+
+func configureProcessGroup(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+}
+
+func killProcessGroup(process *os.Process) error {
+	return syscall.Kill(-process.Pid, syscall.SIGKILL)
+}
+
+func detachProcess(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+}
+
+func signalProcessGroup(pid int, sig syscall.Signal) { _ = syscall.Kill(-pid, sig) }
+
+func freezeProcessTree(tree []int, freeze bool) {
+	if !freeze {
+		for _, pid := range tree {
+			_ = syscall.Kill(pid, syscall.SIGCONT)
+		}
+		return
+	}
+	for i := len(tree) - 1; i > 0; i-- {
+		_ = syscall.Kill(tree[i], syscall.SIGSTOP)
+	}
+	if len(tree) > 0 {
+		_ = syscall.Kill(tree[0], syscall.SIGTTIN)
+	}
+}

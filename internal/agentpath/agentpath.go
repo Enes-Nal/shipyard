@@ -38,7 +38,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -688,7 +687,7 @@ func (f *Finder) version(ctx context.Context, r Found) string {
 	cmd.Env = setEnv(f.env(), "PATH", r.PATH)
 	cmd.Dir = f.home()
 	cmd.WaitDelay = time.Second
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	isolateCommand(cmd)
 	out, _ := cmd.Output()
 	v := ""
 	sc := bufio.NewScanner(bytes.NewReader(out))
@@ -786,10 +785,10 @@ func AskShell(ctx context.Context, shell string, names []string, env []string, t
 	cmd := exec.CommandContext(ctx, shell, args...)
 	cmd.Env = env
 	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	isolateCommand(cmd)
 	cmd.Cancel = func() error {
 		// The shell and anything its rc files started.
-		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		return killCommandTree(cmd.Process)
 	}
 	cmd.WaitDelay = time.Second
 	var stdout bytes.Buffer
