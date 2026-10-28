@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Terminal",
+  "productName": "Shipyard",
   "version": "0.3.30",
   "identifier": "dev.berth.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Terminal",
+        "title": "Shipyard",
         "width": 1400,
         "height": 900,
         "minWidth": 900,

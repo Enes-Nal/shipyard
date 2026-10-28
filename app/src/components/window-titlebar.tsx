@@ -6,7 +6,7 @@ import { IS_WINDOWS } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 // WindowsTitlebar replaces the system frame with one that belongs to
-// Terminal. macOS keeps its traffic lights and Linux keeps its window
+// Shipyard. macOS keeps its traffic lights and Linux keeps its window
 // manager's controls.
 export function WindowsTitlebar() {
   const visible = isTauri() && IS_WINDOWS;
@@ -46,14 +46,14 @@ export function WindowsTitlebar() {
   return (
     <header
       data-tauri-drag-region
-      aria-label="Terminal window"
+      aria-label="Shipyard window"
       className="flex h-bar shrink-0 select-none items-center border-b border-border/80 bg-sidebar text-sidebar-foreground"
     >
       <div data-tauri-drag-region className="flex min-w-0 items-center gap-2 px-edge">
         <span data-tauri-drag-region className="grid size-6 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
           <SquareTerminalIcon className="size-4" strokeWidth={1.9} />
         </span>
-        <span data-tauri-drag-region className="truncate font-semibold text-label tracking-wide">Terminal</span>
+        <span data-tauri-drag-region className="truncate font-semibold text-label tracking-wide">Shipyard</span>
       </div>
       <div data-tauri-drag-region className="min-w-8 flex-1 self-stretch" />
       <div className="flex h-full shrink-0">

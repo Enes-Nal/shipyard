@@ -35,7 +35,7 @@ test("renamed from its menu, it is called by the new name everywhere, and ⌘K s
   // Opened: the status bar, the breadcrumb and the window's title.
   await row.click();
   await expect(page.getByTestId("status-worktree")).toHaveText("Cart badge after refund");
-  await expect(page).toHaveTitle("shop / Cart badge after refund — Terminal");
+  await expect(page).toHaveTitle("shop / Cart badge after refund — Shipyard");
 
   // A tab group of it beside another worktree (⌥-click) is called by it.
   await app.worktree("devl/search-perf").click({ modifiers: ["Alt"] });
