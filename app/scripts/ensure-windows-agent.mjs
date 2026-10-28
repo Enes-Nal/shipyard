@@ -6,7 +6,8 @@ import path from "node:path";
 // Tauri's Windows shell needs the laptop CLI beside this checkout before it
 // can start the local agent. make app-dev already prepares it on Unix; direct
 // `pnpm tauri dev` is the normal Windows entry point, so prepare the laptop
-// agent here before Vite opens the window. The box daemon remains Unix-only.
+// agent here before Vite opens the window. The box daemon, berthd, runs in
+// WSL (internal/agent/localbox_wsl.go), so it is built for Linux beside it.
 if (process.platform === "win32") {
   const app = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const repo = path.dirname(app);
@@ -16,10 +17,12 @@ if (process.platform === "win32") {
 
   mkdirSync(bin, { recursive: true });
   build(go, repo, ["build", "-trimpath", `-ldflags=${ldflags}`, "-o", path.join(bin, "berth.exe"), "./cmd/berth"]);
+  const linux = { ...process.env, GOOS: "linux", GOARCH: process.arch === "arm64" ? "arm64" : "amd64", CGO_ENABLED: "0" };
+  build(go, repo, ["build", "-trimpath", `-ldflags=${ldflags}`, "-o", path.join(bin, "berthd-linux"), "./cmd/berthd"], linux);
 }
 
-function build(go, cwd, args) {
-  const result = spawnSync(go, args, { cwd, stdio: "inherit", shell: false });
+function build(go, cwd, args, env = process.env) {
+  const result = spawnSync(go, args, { cwd, env, stdio: "inherit", shell: false });
   if (result.error?.code === "ENOENT") {
     console.error("Shipyard's Windows development app needs Go to build its native agent. Install Go from https://go.dev/dl/ and run pnpm tauri dev again.");
     process.exit(1);

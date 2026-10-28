@@ -63,18 +63,30 @@ test("a new account with no boxes is shown onboarding", async ({ app }) => {
   await expect(app.page.locator("main")).toContainText(/box/i);
 });
 
-test("Windows without a native agent opens a guided workspace instead of a missing command", async ({ app }) => {
+test("Windows without WSL says how to set it up and checks again", async ({ app }) => {
+  mockOnly("a Windows PC without WSL is a mock fixture (?thismac=nowsl&platform=windows)");
+  await app.page.goto("/?mock=1&fresh=1&platform=windows&thismac=nowsl");
+  const card = app.page.getByRole("region", { name: "Use this computer" });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("wsl --install -d Ubuntu")).toBeVisible();
+  await expect(card.getByRole("button", { name: "Check again" })).toBeEnabled();
+  await expect(app.page.getByRole("button", { name: "Connect a box" })).toBeVisible();
+});
+
+test("Windows with WSL offers this computer as the box", async ({ app }) => {
+  mockOnly("a Windows PC with WSL is a mock fixture (?platform=windows)");
+  await app.page.goto("/?mock=1&fresh=1&platform=windows");
+  await expect(app.page.getByRole("region", { name: "Use this computer" })).toContainText("Agents run in WSL");
+  await expect(app.page.getByRole("button", { name: "Start on this computer" })).toBeEnabled();
+});
+
+test("Windows without a native agent reports the missing build instead of opening placeholders", async ({ app }) => {
   mockOnly("the missing Windows helper is a mock startup state");
   await app.page.goto("/?mock=offline&binary=missing&platform=windows");
-  await expect(app.page.getByText("The Terminal agent isn't running", { exact: true })).toBeVisible();
-  await expect(app.page.getByRole("button", { name: "Open guided workspace" })).toBeVisible();
-  await expect(app.page.getByRole("button", { name: "Copy command" })).toHaveCount(0);
-  await app.page.getByRole("button", { name: "Open guided workspace" }).click();
-  await expect(app.page.getByRole("heading", { name: "What should your agents work on?" })).toBeVisible();
-  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
-  await app.page.getByRole("button", { name: "Show project activity" }).click();
-  await expect(app.page.getByRole("heading", { name: "Project activity" })).toBeVisible();
-  await expect(app.page.getByRole("heading", { name: "Connect your GitLab project" })).toBeVisible();
+  await expect(app.page.getByText("The Shipyard agent isn't running", { exact: true })).toBeVisible();
+  await expect(app.page.getByText("This Windows build is missing Shipyard's local background service.")).toBeVisible();
+  await expect(app.page.getByRole("button", { name: "Open guided workspace" })).toHaveCount(0);
+  await expect(app.page.getByRole("button", { name: "Copy command" })).toBeVisible();
 });
 
 test("the Terminal tutorial explains the GitLab branch workflow and can be reopened", async ({ app }) => {

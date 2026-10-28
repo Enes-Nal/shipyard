@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, PanelsTopLeftIcon, PlayIcon, RotateCwIcon, SquareTerminalIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlayIcon, RotateCwIcon, SquareTerminalIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Scene } from "@/components/art/scenes";
@@ -30,7 +30,7 @@ export function Connecting({ state, error }: { state: string; error?: string }) 
             <EmptyMedia>
               <Scene name="lighthouse" />
             </EmptyMedia>
-            <EmptyTitle>Finding the Terminal agent…</EmptyTitle>
+            <EmptyTitle>Finding the Shipyard agent…</EmptyTitle>
           </EmptyHeader>
         </Empty>
       </div>
@@ -55,7 +55,7 @@ function AgentOffline({ error }: { error?: string }) {
   useEffect(() => {
     if (phase.kind !== "waiting") return;
     const t = window.setTimeout(
-      () => setPhase({ kind: "failed", message: "The agent started, but Terminal can't reach it on 127.0.0.1:1378. Its log, agent.log in Terminal's state folder, says why." }),
+      () => setPhase({ kind: "failed", message: "The agent started, but Shipyard can't reach it on 127.0.0.1:1378. Its agent.log says why." }),
       ANSWER_TIMEOUT,
     );
     return () => window.clearTimeout(t);
@@ -80,22 +80,22 @@ function AgentOffline({ error }: { error?: string }) {
           <EmptyMedia>
             <Scene name="offline" />
           </EmptyMedia>
-          <EmptyTitle>The Terminal agent isn't running</EmptyTitle>
+          <EmptyTitle>The Shipyard agent isn't running</EmptyTitle>
           <EmptyDescription>
             {binary === null && IS_WINDOWS
-              ? "The native agent isn't available in this Windows build yet. Open the guided workspace to learn Terminal without installing anything."
+              ? "This Windows build is missing Shipyard's local background service. Rebuild or reinstall the app, then try again."
               : binary === null
               ? "The local helper isn't available to this window yet. Copy the setup command, paste it into a terminal, and this window will connect automatically."
-              : "It keeps your boxes connected while this window is closed, and keeps running after you quit Terminal."}
+              : "It keeps your projects available while this window is closed, and keeps running after you quit Shipyard."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          {binary === null && (IS_WINDOWS ? <WindowsGuide /> : <TerminalCommand />)}
+          {binary === null && <TerminalCommand />}
           {binary && (
             <div className="flex w-full flex-col items-center gap-3">
               <Button className="w-full" disabled={busy} onClick={() => void start()}>
                 {busy ? <Spinner /> : <PlayIcon />}
-                {phase.kind === "starting" ? "Starting the Terminal agent…" : phase.kind === "waiting" ? "Connecting…" : "Start the Terminal agent"}
+                {phase.kind === "starting" ? "Starting the Shipyard agent…" : phase.kind === "waiting" ? "Connecting…" : "Start the Shipyard agent"}
               </Button>
               <label className="flex w-full items-start gap-2.5 text-left text-body">
                 <Checkbox className="mt-0.5" checked={atLogin} disabled={busy} onCheckedChange={(v) => setAtLogin(!!v)} />
@@ -125,30 +125,11 @@ function AgentOffline({ error }: { error?: string }) {
             <details className="w-full text-left text-muted-foreground text-meta">
               <summary className="cursor-default select-none hover:text-foreground">Details</summary>
               <pre className="mt-2 rounded-md bg-muted p-2 font-mono whitespace-pre-wrap">{error}</pre>
-              {binary && <p className="mt-2">Terminal starts it with {binary.path}</p>}
+              {binary && <p className="mt-2">Shipyard starts it with {binary.path}</p>}
             </details>
           )}
         </EmptyContent>
       </Empty>
-    </div>
-  );
-}
-
-function WindowsGuide() {
-  const open = () => {
-    const url = new URL(location.href);
-    url.searchParams.set("mock", "1");
-    url.searchParams.set("tutorial", "1");
-    url.searchParams.delete("binary");
-    location.assign(url);
-  };
-  return (
-    <div className="flex w-full flex-col items-center gap-2">
-      <Button className="w-full" onClick={open}>
-        <PanelsTopLeftIcon />
-        Open guided workspace
-      </Button>
-      <p className="text-center text-meta text-muted-foreground">Practice the full workflow safely; nothing on this computer is changed.</p>
     </div>
   );
 }

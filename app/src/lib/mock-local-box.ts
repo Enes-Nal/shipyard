@@ -4,7 +4,8 @@ import type { LocalBoxStatus } from "@/lib/local-box";
 // Use this Mac in mock mode (?mock=1): this Mac can be a box until it is
 // one; setting it up plays the agent's steps and pairs a box marked local,
 // whose folders are a Mac's. ?thismac=nosession fails the way a Mac without
-// a login session does; ?thismac=none is an agent with no berthd to install.
+// a login session does; ?thismac=none is an agent with no berthd to install;
+// ?thismac=nowsl is a Windows PC without WSL.
 
 type Deps = {
   status: Status;
@@ -20,6 +21,7 @@ const ADDRESS = "127.0.0.1:7445";
 
 const local: LocalBoxStatus = { supported: true, available: mode !== "none", installed: false, owned: false, running: false, name: NAME };
 if (mode === "none") local.reason = "this copy of Terminal carries no berthd for this computer";
+if (mode === "nowsl") Object.assign(local, { supported: false, available: false, reason: "WSL isn't installed. In PowerShell as administrator run: wsl --install -d Ubuntu, restart Windows, then run bash scripts/setup-wsl.sh inside Ubuntu" });
 
 export function initMockLocalBox(d: Deps) {
   deps = d;

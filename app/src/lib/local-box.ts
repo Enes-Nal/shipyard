@@ -83,10 +83,13 @@ const WAIT_MS = 1500;
 // useLocalBox reads whether this computer can be set up as a box. ready
 // turns true once it knows (or stops waiting), so the screen is laid out
 // once.
-export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus } {
+// recheck asks again, for a computer that was just made ready (WSL set up
+// on Windows).
+export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus; recheck(): void } {
   const client = useStore((s) => s.client);
   const [status, setStatus] = useState<LocalBoxStatus>();
   const [settled, setSettled] = useState(false);
+  const [asked, setAsked] = useState(0);
   useEffect(() => {
     if (!client) return;
     let live = true;
@@ -100,8 +103,8 @@ export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus } {
       live = false;
       clearTimeout(t);
     };
-  }, [client]);
-  return { ready: settled, status };
+  }, [client, asked]);
+  return { ready: settled, status, recheck: () => setAsked((n) => n + 1) };
 }
 
 // offerLocalBox is whether Add a box offers Use this Mac: it can be one,

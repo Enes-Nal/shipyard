@@ -11,6 +11,14 @@ again.
 
 ## Unreleased
 
+- **Windows runs agents on this PC, through WSL.** Choose **Use this
+  computer** on the welcome screen: Shipyard copies its box into WSL (Windows'
+  built-in Linux), keeps it running while you're signed in, and pairs with it,
+  with nothing to paste. Without WSL yet, the welcome screen says what to run
+  and checks again when you're done; `scripts/setup-wsl.sh` installs tmux, git
+  and the Claude Code, Codex, Gemini and OpenCode CLIs inside Ubuntu. The
+  Windows title bar says Shipyard, and Shipyard can open Windows Terminal
+  anywhere the app offers a terminal.
 - **Folder browsing now feels native on Windows.** The project picker opens
   in the box's usual project folder, uses drive-letter breadcrumbs and
   Windows separators, and labels the Enter key plainly instead of showing

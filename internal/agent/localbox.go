@@ -76,6 +76,10 @@ type localBoxRecord struct {
 	// Owned is whether Terminal put Program there (BERTH_HOME/bin/berthd), as
 	// opposed to reusing a berthd the install script installed.
 	Owned bool `json:"owned"`
+	// WSL: Program and Home are paths in WSL, and the agent runs berthd
+	// there itself, listening on Listen (localbox_wsl.go).
+	WSL    bool   `json:"wsl,omitempty"`
+	Listen string `json:"listen,omitempty"`
 }
 
 type localBox struct {
@@ -89,6 +93,8 @@ type localBox struct {
 	// size and modification time, so the periodic check reads and hashes it
 	// only after the app was updated.
 	seen string
+	// wsl runs this computer's berthd on Windows.
+	wsl wslSupervisor
 }
 
 // LocalBoxStatus answers GET /v1/boxes/local: whether this computer can be
@@ -190,6 +196,10 @@ func (a *Agent) bundledBerthd() (string, error) {
 	}
 	dir := filepath.Dir(exe)
 	p := filepath.Join(dir, "berthd")
+	if localGOOS == "windows" {
+		// WSL runs Linux programs: the app carries a Linux berthd.
+		p = filepath.Join(dir, "berthd-linux")
+	}
 	if strings.HasSuffix(dir, ".app/Contents/MacOS") {
 		p = filepath.Join(dir, "..", "Resources", "berthd")
 	}
@@ -279,6 +289,9 @@ func (a *Agent) installedUnit() (unit service.Unit, have bool, home string, err 
 }
 
 func (a *Agent) localBoxStatus() LocalBoxStatus {
+	if localGOOS == "windows" {
+		return a.wslBoxStatus()
+	}
 	st := LocalBoxStatus{Supported: localGOOS == "darwin" || localGOOS == "linux", Name: localName()}
 	if _, err := a.bundledBerthd(); err != nil {
 		st.Reason = err.Error()
@@ -297,19 +310,30 @@ func (a *Agent) localBoxStatus() LocalBoxStatus {
 		st.Running = serving(home)
 	}
 	if r := a.localRecord(); r != nil {
-		if fp, err := identity.ParseFingerprint(r.Fingerprint); err == nil {
-			if peer, ok, _ := a.boxes.Trusted(fp); ok {
-				st.Box = peer.Name
-			}
+		if name, ok := a.localPeer(r); ok {
+			st.Box = name
 		}
 	}
 	return st
+}
+
+// localPeer is the name this laptop knows the box in r by, once paired.
+func (a *Agent) localPeer(r *localBoxRecord) (string, bool) {
+	fp, err := identity.ParseFingerprint(r.Fingerprint)
+	if err != nil {
+		return "", false
+	}
+	peer, ok, _ := a.boxes.Trusted(fp)
+	return peer.Name, ok
 }
 
 // setUpLocalBox makes this computer a box and pairs with it, saying what it
 // does as it goes. Run again, it reconnects: each step is skipped when it is
 // already done.
 func (a *Agent) setUpLocalBox(ctx context.Context, say sayFunc) (string, error) {
+	if localGOOS == "windows" {
+		return a.setUpWSLBox(ctx, say)
+	}
 	if localGOOS != "darwin" && localGOOS != "linux" {
 		return "", fmt.Errorf("berthd runs as a service on macOS and Linux, not %s", localGOOS)
 	}
@@ -591,6 +615,12 @@ func dialAddress(home string) string {
 // is, and returns the box's name here. The pairing link goes from berthd
 // straight to berth pair: the same pairing a pasted link makes.
 func (a *Agent) pairLocal(ctx context.Context, prog, home string, owned bool, say sayFunc) (string, error) {
+	return a.pairLocalAt(ctx, prog, home, dialAddress(home), owned, false, say)
+}
+
+// pairLocalAt is pairLocal with the address the berthd listens on given,
+// for a berthd whose home this agent can't read (WSL's).
+func (a *Agent) pairLocalAt(ctx context.Context, prog, home, addr string, owned, wsl bool, say sayFunc) (string, error) {
 	out, err := berthdOutput(ctx, prog, home, "id")
 	if err != nil {
 		return "", fmt.Errorf("reading berthd's fingerprint: %w", err)
@@ -600,6 +630,9 @@ func (a *Agent) pairLocal(ctx context.Context, prog, home string, owned bool, sa
 		return "", fmt.Errorf("berthd printed an unexpected fingerprint: %w", err)
 	}
 	rec := &localBoxRecord{Fingerprint: fp.String(), Program: prog, Home: home, Owned: owned}
+	if wsl {
+		rec.WSL, rec.Listen = true, addr
+	}
 	if prev := a.localRecord(); prev != nil && prev.Fingerprint == rec.Fingerprint {
 		rec.Name = prev.Name
 	}
@@ -608,7 +641,6 @@ func (a *Agent) pairLocal(ctx context.Context, prog, home string, owned bool, sa
 	if err := a.saveLocalRecord(rec); err != nil {
 		return "", err
 	}
-	addr := dialAddress(home)
 	if peer, ok, err := a.boxes.Trusted(fp); err != nil {
 		return "", err
 	} else if ok {
@@ -669,6 +701,12 @@ func (a *Agent) pairLocal(ctx context.Context, prog, home string, owned bool, sa
 // put on this computer: only Terminal's own copy is deleted.
 func (a *Agent) removeLocalBox(ctx context.Context, removeData bool, say sayFunc) error {
 	rec := a.localRecord()
+	if localGOOS == "windows" {
+		if rec == nil || !rec.WSL {
+			return errors.New("this computer is not set up as a box")
+		}
+		return a.removeWSLBox(ctx, rec, removeData, say)
+	}
 	unit, have, home, err := a.installedUnit()
 	if err != nil {
 		return err
@@ -687,14 +725,8 @@ func (a *Agent) removeLocalBox(ctx context.Context, removeData bool, say sayFunc
 		prog = unit.Program
 	}
 	if rec != nil {
-		if fp, err := identity.ParseFingerprint(rec.Fingerprint); err == nil {
-			if peer, ok, _ := a.boxes.Trusted(fp); ok {
-				say("Forgetting %s on this laptop…", peer.Name)
-				if _, err := a.cli(ctx, "forget", peer.Name).Output(); err != nil {
-					return errors.New(cliError(err))
-				}
-				a.sync()
-			}
+		if err := a.forgetLocalPeer(ctx, rec, say); err != nil {
+			return err
 		}
 	}
 	if have {
@@ -725,6 +757,20 @@ func (a *Agent) removeLocalBox(ctx context.Context, removeData bool, say sayFunc
 	return a.saveLocalRecord(nil)
 }
 
+// forgetLocalPeer unpairs this laptop from the box in rec, if paired.
+func (a *Agent) forgetLocalPeer(ctx context.Context, rec *localBoxRecord, say sayFunc) error {
+	name, ok := a.localPeer(rec)
+	if !ok {
+		return nil
+	}
+	say("Forgetting %s on this laptop…", name)
+	if _, err := a.cli(ctx, "forget", name).Output(); err != nil {
+		return errors.New(cliError(err))
+	}
+	a.sync()
+	return nil
+}
+
 // keepLocalBoxCurrent refreshes this computer's berthd when the app carries
 // a new one: shortly after the agent starts, then every few minutes, since
 // the agent outlives the app being updated.
@@ -747,6 +793,13 @@ func (a *Agent) keepLocalBoxCurrent(ctx context.Context) {
 func (a *Agent) refreshLocalBox(ctx context.Context) {
 	rec := a.localRecord()
 	if rec == nil {
+		return
+	}
+	if rec.WSL {
+		if a.local.mu.TryLock() {
+			defer a.local.mu.Unlock()
+			a.refreshWSLBox(ctx, rec)
+		}
 		return
 	}
 	src, err := a.bundledBerthd()
@@ -812,6 +865,10 @@ func (a *Agent) refreshLocalBox(ctx context.Context) {
 }
 
 func berthdCmd(ctx context.Context, prog, home string, args ...string) *exec.Cmd {
+	if localGOOS == "windows" {
+		// This computer's berthd is in WSL (localbox_wsl.go).
+		return wslCommand(ctx, append([]string{"env", "BERTH_HOME=" + home, prog}, args...)...)
+	}
 	cmd := exec.CommandContext(ctx, prog, args...)
 	cmd.Env = append(os.Environ(), "BERTH_HOME="+home)
 	return cmd

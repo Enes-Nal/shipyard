@@ -82,9 +82,16 @@ fn open_terminal() -> Result<(), String> {
     {
         linux::open_terminal()
     }
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    #[cfg(target_os = "windows")]
     {
-        Err("opening a terminal is only for macOS and Linux".into())
+        std::process::Command::new("wt.exe")
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| format!("couldn't open Windows Terminal: {e}"))
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    {
+        Err("opening a terminal is only for macOS, Linux and Windows".into())
     }
 }
 
