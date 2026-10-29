@@ -407,7 +407,7 @@ func (l *Locations) createReviewWorktree(ctx context.Context, loc Location, name
 	path := filepath.Join(filepath.Dir(loc.Path), filepath.Base(loc.Path)+"-"+name)
 	hadBranch := branchExists(ctx, loc.Path, "refs/heads/"+branch)
 	_, statErr := os.Stat(path)
-	args := append([]string{"-C", loc.Path}, noHooks...)
+	args := append(append([]string{"-C", loc.Path}, noHooks...), worktreeOptions(loc.Path)...)
 	args = append(args, "worktree", "add", "-b", branch, path, sha)
 	if out, err := git(context.WithoutCancel(ctx), args...); err != nil {
 		cleanUpFailedAdd(loc.Path, path, branch, statErr == nil, hadBranch)
