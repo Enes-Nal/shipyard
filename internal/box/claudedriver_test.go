@@ -957,24 +957,30 @@ func TestATurnClaudeStartsByItselfShowsAsWorking(t *testing.T) {
 		t.Fatalf("start: %d", status)
 	}
 	t.Cleanup(func() { call(t, c, "DELETE", "/v1/sessions/"+sess.Name, "", nil, nil) })
-	// Its own turn (running, finished), then the one Claude starts
-	// (running, finished).
-	want := []string{"running", "finished", "running", "finished"}
+	// Its own turn finishes, then the one Claude starts shows as running
+	// and then finished, under a turn of its own. The prompted turn's
+	// running can come and go between two looks on a fast runner, so only
+	// its end is waited for.
 	var order []string
+	var ownEnd, started string
 	deadline := time.Now().Add(20 * time.Second)
-	for len(order) < len(want) {
+	for {
 		st, _ := states.State(sess.Name)
-		if n := len(order); (st.State == "running" || st.State == "finished") && (n == 0 || order[n-1] != st.State) {
-			order = append(order, st.State)
+		if n := len(order); (st.State == "running" || st.State == "finished") && (n == 0 || order[n-1] != st.State+" "+st.Turn) {
+			order = append(order, st.State+" "+st.Turn)
+		}
+		switch {
+		case ownEnd == "" && st.State == "finished":
+			ownEnd = st.Turn
+		case ownEnd != "" && started == "" && st.State == "running" && st.Turn != ownEnd:
+			started = st.Turn
+		}
+		if started != "" && st.State == "finished" && st.Turn == started {
+			return
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("the turn Claude started never showed as working, then done: %v (now %+v)", order, st)
 		}
 		time.Sleep(25 * time.Millisecond)
-	}
-	for i := range want {
-		if order[i] != want[i] {
-			t.Fatalf("states: %v", order)
-		}
 	}
 }
