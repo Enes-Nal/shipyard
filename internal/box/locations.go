@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -306,7 +307,7 @@ func (l *Locations) CreateWorktreeFrom(ctx context.Context, location string, req
 			}
 		}
 	}
-	args := []string{"-C", loc.Path, "worktree", "add"}
+	args := append(append([]string{"-C", loc.Path}, worktreeOptions(loc.Path)...), "worktree", "add")
 	var refresh *BaseRefresh
 	switch {
 	case branchExists(ctx, loc.Path, "refs/heads/"+branch):
@@ -355,10 +356,32 @@ func cleanUpFailedAdd(repo, path, branch string, hadPath, hadBranch bool) {
 		git(ctx, "-C", repo, "worktree", "remove", "--force", "--force", path)
 		os.RemoveAll(path)
 	}
-	git(ctx, "-C", repo, "worktree", "prune")
+	// On a Windows drive, worktrees made from Windows (Codex's, an IDE's)
+	// can look lost from WSL; pruning would drop them for Windows too.
+	if !onWindowsDrive(repo) {
+		git(ctx, "-C", repo, "worktree", "prune")
+	}
 	if !hadBranch && branchExists(ctx, repo, "refs/heads/"+branch) {
 		git(ctx, "-C", repo, "branch", "-D", branch)
 	}
+}
+
+// onWindowsDrive is whether repo is on a Windows drive as WSL sees it
+// (/mnt/e/Code/shop is E:\Code\shop): this PC's box on Windows, where
+// Windows tools use the same repository and its worktrees.
+func onWindowsDrive(repo string) bool { return windowsDrive.MatchString(filepath.ToSlash(repo)) }
+
+var windowsDrive = regexp.MustCompile(`^/mnt/[a-z](/|$)`)
+
+// worktreeOptions are the git options a worktree add in repo takes. On a
+// Windows drive its worktree links are relative, so the worktree works from
+// Windows and from WSL alike; an absolute /mnt/e/… path means nothing to
+// Windows, nor E:/… to WSL. (git 2.48 has them; an older git ignores it.)
+func worktreeOptions(repo string) []string {
+	if onWindowsDrive(repo) {
+		return []string{"-c", "worktree.useRelativePaths=true"}
+	}
+	return nil
 }
 
 // gitLockReason is the reason `git worktree add` locks a worktree with

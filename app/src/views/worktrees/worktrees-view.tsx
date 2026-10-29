@@ -1,4 +1,4 @@
-import { GitBranchIcon, LayoutDashboardIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { GitBranchIcon, GitPullRequestArrowIcon, LayoutDashboardIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Scene } from "@/components/art/scenes";
@@ -22,10 +22,11 @@ import { type Row, useWorktrees } from "@/views/worktrees/use-worktrees";
 import { type Group, WorktreeTable } from "@/views/worktrees/worktree-table";
 import { BoxError } from "@/components/upgrade-box";
 import { ActivityBoard } from "@/views/worktrees/activity-board";
+import { GitLabPanel } from "@/views/worktrees/gitlab-panel";
 
 type Flag = "behind" | "changes" | "paused";
 type Sort = "recent" | "behind" | "changes" | "name";
-type Mode = "board" | "branches";
+type Mode = "board" | "gitlab" | "branches";
 
 const SORTS: { value: Sort; label: string }[] = [
   { value: "recent", label: "Last commit" },
@@ -190,6 +191,7 @@ export function WorktreesView() {
               }}
               options={[
                 { value: "board", label: "Todo board", icon: <LayoutDashboardIcon /> },
+                { value: "gitlab", label: "GitLab", icon: <GitPullRequestArrowIcon /> },
                 { value: "branches", label: "Branches", icon: <GitBranchIcon /> },
               ]}
             />
@@ -276,6 +278,8 @@ export function WorktreesView() {
           </Empty>
         ) : mode === "board" ? (
           <ActivityBoard rows={flat} onOpen={(r) => setOpenKey(r.key)} />
+        ) : mode === "gitlab" ? (
+          <GitLabPanel rows={flat} />
         ) : (
           <WorktreeTable
             groups={groups}

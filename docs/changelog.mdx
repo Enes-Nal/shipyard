@@ -11,6 +11,22 @@ again.
 
 ## Unreleased
 
+- **Tasks on a Windows drive work from Windows and WSL alike.** For a
+  project on a Windows drive, Shipyard's box (in WSL) now makes worktrees
+  with relative paths, so Windows tools such as Codex, Claude Code or your
+  editor can open them too, and it no longer prunes that project's
+  worktrees, which could have dropped ones Windows tools made. Worktrees
+  made earlier with Windows-only paths show up once repaired with
+  `git worktree repair --relative-paths` (git 2.48 or newer).
+- **See each project's GitLab in Project activity.** The new **GitLab** tab
+  lists a project's merge requests with their pipeline status and the agent
+  that worked on each, what each agent committed, the latest pipelines, and
+  origin's branches with how far ahead and behind they are. **Work on it**
+  starts a task on a merge request or branch, and board cards show their
+  merge request and pipeline too. Open merge requests with no task yet wait
+  in the board's **Todo** column. It works with gitlab.com and your own
+  GitLab: Shipyard asks through `glab` on the box, so run `glab auth login`
+  there once (in Ubuntu, on Windows), and the tab says so until you do.
 - **Project activity shows your projects before any task.** Each project's
   own folder is on the board, with the branch it's on, its last commit,
   changed files and what's waiting to push or pull. Until there's a task, the
