@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/agentpath"
@@ -278,8 +277,8 @@ func runLoginScript(ctx context.Context, script, dir string, env []string, email
 	}
 	cmd.Env = append(append(append(base, quietEnv...), env...), "BERTH_LOGIN_EMAIL="+email)
 	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+	configureProcessGroup(cmd)
+	cmd.Cancel = func() error { return killProcessGroup(cmd.Process) }
 	cmd.WaitDelay = time.Second
 	var stdout capped
 	stdout.max = maxLoginOutput
@@ -336,9 +335,9 @@ func parseLoginOutput(out []byte) (proxy.LoginResult, error) {
 			if strings.EqualFold(f, "domain") {
 				return proxy.LoginResult{}, errors.New("a cookie has a domain; leave it out: the cookie is set for the worktree's own address")
 			}
-			return proxy.LoginResult{}, fmt.Errorf("%s is not a field Shipyard takes; print {\"cookies\": [{\"name\", \"value\", \"path\", \"httpOnly\", \"secure\", \"sameSite\", \"maxAge\"}], \"redirect\": \"/path\"}", f)
+			return proxy.LoginResult{}, fmt.Errorf("%s is not a field Terminal takes; print {\"cookies\": [{\"name\", \"value\", \"path\", \"httpOnly\", \"secure\", \"sameSite\", \"maxAge\"}], \"redirect\": \"/path\"}", f)
 		}
-		return proxy.LoginResult{}, errors.New("it is not the JSON Shipyard expects: {\"cookies\": [{\"name\": …, \"value\": …}], \"redirect\": \"/path\"}")
+		return proxy.LoginResult{}, errors.New("it is not the JSON Terminal expects: {\"cookies\": [{\"name\": …, \"value\": …}], \"redirect\": \"/path\"}")
 	}
 	if _, err := dec.Token(); err != io.EOF {
 		return proxy.LoginResult{}, errors.New("it has more than one JSON value; print one object")

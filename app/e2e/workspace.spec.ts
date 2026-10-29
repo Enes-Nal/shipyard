@@ -72,7 +72,7 @@ test("a browser tab shows a worktree's dev server in a frame", async ({ app }) =
   await app.page.getByRole("button", { name: "New tab" }).click();
   await app.page.getByRole("option", { name: /New browser tab/ }).click();
   const pane = app.page.locator("[data-testid=browser-pane]:visible");
-  // Outside the Shipyard app there is no native webview: the page is an iframe.
+  // Outside the Terminal app there is no native webview: the page is an iframe.
   await expect(pane).toHaveAttribute("data-mode", "iframe");
   if (live) return;
   // A port typed in the address bar opens that worktree's server through

@@ -84,7 +84,7 @@ interface Scope {
 // Connections reads the databases the helper knows for the worktree, and
 // says why when there is none to show.
 //
-// The helper is told of a database when Shipyard starts one of the
+// The helper is told of a database when Terminal starts one of the
 // worktree's services. When it knows none for this worktree, the box is
 // asked to look in the worktree's own .env files and tell the helper what it
 // finds there (dotenv.ts): once for each time the panel is opened, which is
@@ -271,12 +271,12 @@ function Connections({ berth, box, source, worktree, at, active }: Scope & { at:
                   {result.kind === "looked" ? said(result.look, box).join(" ") : `Couldn't look in ${worktree}'s .env files on ${box}: ${result.message}`}
                 </span>
                 <span className="mt-2 block">
-                  Database shows the Postgres a worktree's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> points at when it is on {box} itself. It reads that from the worktree's <code>.env</code> files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database {worktree} has, connect it yourself with its address.
+                  Database shows the Postgres a worktree's <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> points at when it is on {box} itself. It reads that from the worktree's <code>.env</code> files when this tab opens. A service of this worktree that Terminal starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database {worktree} has, connect it yourself with its address.
                 </span>
               </>
             ) : (
               <>
-                A service of this worktree that Shipyard starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
+                A service of this worktree that Terminal starts with a <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> pointing at a Postgres on {box} itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown.
               </>
             )
           }
@@ -497,7 +497,7 @@ function Connected({
           </>
         )}
         {file && !mine && (
-          // Where Database learned of it: not a service Shipyard started.
+          // Where Database learned of it: not a service Terminal started.
           <Tip label={`${conn.label}, read from ${worktree}'s ${file} on ${box}. Reading the tables again looks in the file again.`}>
             <Badge variant="outline" size="sm" className="shrink-0 font-mono font-normal text-muted-foreground" data-testid="database-from-env" aria-label={`From ${conn.label} in ${worktree}'s ${file}`}>
               {file}

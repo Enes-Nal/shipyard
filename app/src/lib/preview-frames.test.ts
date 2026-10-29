@@ -101,7 +101,7 @@ test("a frame's first address carries the flag that asks the proxy for the previ
   assert.equal(proxied("not a url"), false);
 });
 
-test("only Shipyard's own frame messages are read", () => {
+test("only Terminal's own frame messages are read", () => {
   assert.equal(parseMessage({ type: "nav", url: "x" }), undefined);
   assert.equal(parseMessage({ berth: "preview", id: "md", type: "nav" }), undefined);
   assert.equal(parseMessage({ berth: "preview", id: "md", type: "eval", code: "x" }), undefined);

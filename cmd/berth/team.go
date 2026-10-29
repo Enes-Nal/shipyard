@@ -35,7 +35,7 @@ const teamUsage = `berth team — set a box up the way your team's are, from <or
                                              --no-1password asks for the shared keys instead.
                                              --use web=~/work/acme-web uses that clone on BOX as
                                              it is, rather than cloning a second copy; --fresh web
-                                             clones a fresh copy even when a Shipyard project is
+                                             clones a fresh copy even when a Terminal project is
                                              one already. Quote a ~ so your shell leaves it for BOX
   berth team status [--json]                 Each team setup you accepted, and how it stands
   berth team retry ORG [--from STEP|PROJECT] [--box BOX]
@@ -188,7 +188,7 @@ func cloneLine(c box.ExistingClone) string {
 		parts = append(parts, fmt.Sprintf("%d behind", c.Behind))
 	}
 	if c.Location != "" {
-		parts = append(parts, "Shipyard project "+c.Location)
+		parts = append(parts, "Terminal project "+c.Location)
 	}
 	return fmt.Sprintf("%s (%s)", c.Display, strings.Join(parts, ", "))
 }
@@ -228,7 +228,7 @@ func describeTeam(v agent.TeamView) {
 	case "none":
 		fmt.Printf("%s has no team setup you can read (no %s/.berth).\n", v.Org.Name, v.Org.Login)
 		if len(v.Repos) > 0 {
-			fmt.Println("\nIts repos you can read (* has its own Shipyard setup):")
+			fmt.Println("\nIts repos you can read (* has its own Terminal setup):")
 			for _, r := range v.Repos {
 				mark := " "
 				if r.HasBerth {
@@ -273,7 +273,7 @@ func describeTeam(v agent.TeamView) {
 			tag = " [sudo]"
 		}
 		if st.Berth {
-			tag = " [Shipyard]"
+			tag = " [Terminal]"
 		}
 		fmt.Printf("  %-28s%s %s\n", st.Title, tag, st.Detail)
 	}

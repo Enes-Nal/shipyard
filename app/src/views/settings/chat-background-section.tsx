@@ -260,7 +260,7 @@ export async function forgetPicture(img: StoredImageInfo) {
 function OwnImages({ selected }: { selected?: string }) {
   const bg = usePrefs((p) => p.chatBackground);
   const images = useOwnImages();
-  // A picture not chosen yet is shown as it would land: Shipyard's preset.
+  // A picture not chosen yet is shown as it would land: Terminal's preset.
   return images.map((img) => (
     <Tile
       key={img.id}
@@ -429,7 +429,7 @@ function Generate({ onClose }: { onClose(): void }) {
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string>();
   const check = () => {
-    if (!client) return setGens(new Error("Shipyard isn't connected to its agent on this computer."));
+    if (!client) return setGens(new Error("Terminal isn't connected to its agent on this computer."));
     setGens("loading");
     imageGenApi.list(client).then(setGens, (err: unknown) => setGens(err instanceof Error ? err : new Error(String(err))));
   };
@@ -481,7 +481,7 @@ function Generate({ onClose }: { onClose(): void }) {
           <TriangleAlertIcon />
           <AlertTitle>{gens instanceof Error ? "Can't look for an image generator" : !gen ? "No image generator found" : !gen.installed ? "Codex isn't installed" : "Codex isn't signed in"}</AlertTitle>
           <AlertDescription>
-            <p>{gens instanceof Error ? gens.message : (gen?.note ?? "Shipyard generates backgrounds with Codex's CLI.")} Meanwhile, you can add a picture of your own.</p>
+            <p>{gens instanceof Error ? gens.message : (gen?.note ?? "Terminal generates backgrounds with Codex's CLI.")} Meanwhile, you can add a picture of your own.</p>
             <Button size="xs" variant="outline" className="mt-2 w-fit" onClick={check}>
               <RefreshCwIcon />
               Check again

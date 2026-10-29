@@ -420,7 +420,7 @@ func serve(b boxHome, args []string) error {
 	// once merged, closed or idle.
 	bx.Reviews = &box.ReviewStore{Path: filepath.Join(b.dir, "reviews.json")}
 	go bx.RunReviewSweeps(ctx)
-	// The "Review in Shipyard" button on PRs opened from worktrees of
+	// The "Review in Terminal" button on PRs opened from worktrees of
 	// projects that turn it on.
 	bx.ReviewButtons = &box.ReviewButtons{Path: filepath.Join(b.dir, "review-buttons.json")}
 	go bx.RunReviewButtons(ctx)

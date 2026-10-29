@@ -149,7 +149,7 @@ func (b *Box) toTerminal(r *http.Request, sess Session) error {
 	}
 	b.claude().forget(sess.Name)
 	command := b.claudePreset(ctx, sess).Command + resume + shellQuote(sid)
-	if bypass && os.Getuid() != 0 {
+	if bypass && currentUID() != 0 {
 		command += " --permission-mode bypassPermissions"
 	} else if mode != "default" {
 		command += " --permission-mode " + shellQuote(mode)

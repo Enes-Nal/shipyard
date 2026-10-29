@@ -8,7 +8,7 @@ import (
 )
 
 // A fresh Ubuntu box as the probe sees it: sudo asks for a password, git is
-// there, tmux isn't (Shipyard brings its own), lingering is off.
+// there, tmux isn't (Terminal brings its own), lingering is off.
 func freshUbuntu() Probe {
 	return Probe{OS: "linux", Arch: "arm64", UID: 1000, User: "dev", Home: "/home/dev", Git: true, Manager: "apt-get", Linger: "no", Sudo: true, Agents: map[string]bool{}}
 }
@@ -36,7 +36,7 @@ func TestQuietInstallAsksOnlyWhenAStepNeedsThePassword(t *testing.T) {
 		// LingerTry turned lingering on without sudo (polkit allows it):
 		// nothing needs a person.
 		{"git there, lingering on without sudo", func(p *Probe) { p.Linger = "yes" }, nil, false},
-		// Shipyard's tmux needs no sudo; git does.
+		// Terminal's tmux needs no sudo; git does.
 		{"git missing", func(p *Probe) { p.Linger = "yes"; p.Git = false }, []string{StepTools}, false},
 		// Lingering needs the password too: it rides in git's terminal, and
 		// nothing is asked first.
@@ -47,7 +47,7 @@ func TestQuietInstallAsksOnlyWhenAStepNeedsThePassword(t *testing.T) {
 		{"passwordless sudo", func(p *Probe) { p.Git = false; p.SudoNoPassword = true }, nil, false},
 		// No sudo at all: no terminal helps; the step says the command.
 		{"no sudo", func(p *Probe) { p.Git = false; p.Sudo = false }, nil, false},
-		// tmux missing with no Shipyard build: the package manager, with sudo.
+		// tmux missing with no Terminal build: the package manager, with sudo.
 		{"tmux missing, none bundled", func(p *Probe) { p.Linger = "yes" }, []string{StepTools}, false},
 	}
 	for _, c := range cases {

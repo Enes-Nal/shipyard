@@ -69,7 +69,7 @@ func loginUsersCmd(ctx context.Context, c *box.Client, args []string, out io.Wri
 	})
 }
 
-// reviewButtonCmd shows a worktree's "Review in Shipyard" button, and with
+// reviewButtonCmd shows a worktree's "Review in Terminal" button, and with
 // --as or --path sets what it opens with; berthd puts that in the PR's
 // description on its next look.
 func reviewButtonCmd(ctx context.Context, c *box.Client, args []string, out io.Writer) error {

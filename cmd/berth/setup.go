@@ -41,7 +41,7 @@ func setup(args []string) error {
 		if remove {
 			command += " --remove"
 		}
-		prompt := "Shipyard wants to redirect localhost port 80 so your box URLs need no port."
+		prompt := "Terminal wants to redirect localhost port 80 so your box URLs need no port."
 		script := fmt.Sprintf("do shell script %q with prompt %q with administrator privileges", command, prompt)
 		out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 		text := strings.TrimSpace(string(out))

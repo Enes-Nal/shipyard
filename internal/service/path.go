@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -83,7 +82,7 @@ func LoginShellPATH(timeout time.Duration) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, shell, "-lic", script)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	isolateCommand(cmd)
 	cmd.WaitDelay = time.Second
 	out, err := cmd.Output()
 	if p, ok := markedPATH(out); ok {

@@ -1,5 +1,5 @@
 // pnpm smoke:live runs the smoke suite (e2e/) against this laptop's own
-// Shipyard agent instead of the mock fixtures, for a check before a release.
+// Terminal agent instead of the mock fixtures, for a check before a release.
 // It is read only: the tests only GET from the agent (anything else is
 // refused in e2e/fixtures.ts), never attach a terminal, and skip what needs
 // a fixture or would write.

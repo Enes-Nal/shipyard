@@ -1,5 +1,5 @@
-/* Shipyard's landing page. The app's type (Inter, JetBrains Mono; Cal Sans
-   for coss.com in the header), its tokens (Shipyard Light and Shipyard Dark,
+/* Terminal's landing page. The app's type (Inter, JetBrains Mono; Cal Sans
+   for coss.com in the header), its tokens (Terminal Light and Terminal Dark,
    following the system) and coss-ui's buttons.
    The harbour at the top is the only picture that isn't a screenshot. */
 
@@ -10,7 +10,7 @@
   font-style: normal;
   font-display: swap;
 }
-/* Cal Sans, cut down to the letters of "coss.com shipyard" in the header. */
+/* Cal Sans, cut down to the letters of "coss.com terminal" in the header. */
 @font-face {
   font-family: "Cal Sans";
   src: url("assets/fonts/cal-sans-wordmark.woff2") format("woff2");
@@ -943,7 +943,7 @@ main {
 }
 
 /* A loop: its poster sizes the frame; the video fades in over it once it
-   plays. The footage is the app in Shipyard Dark, so the frame is dark too. */
+   plays. The footage is the app in Terminal Dark, so the frame is dark too. */
 .clip {
   position: relative;
   margin: 0;

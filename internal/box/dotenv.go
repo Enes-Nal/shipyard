@@ -11,7 +11,7 @@ import (
 )
 
 // A worktree's dotenv files. Many projects keep their development settings
-// there and nowhere Shipyard assembles an environment from: the dev server
+// there and nowhere Terminal assembles an environment from: the dev server
 // loads .env itself. So that a plugin's helper can still be told of a
 // worktree's database (helperenv.go), berthd reads them, and only them:
 //
@@ -42,7 +42,7 @@ import (
 // variable: ${NAME}, ${NAME:-fallback}, ${NAME-fallback} or $NAME. A
 // reference is filled in from the variables of these same files (whichever
 // file, the last value winning), and, when a service is being started, from
-// the environment Shipyard gives that service first, as a loader would find
+// the environment Terminal gives that service first, as a loader would find
 // it there. It is never filled in from berthd's own environment, and
 // nothing is ever run: there is no $(command). A ${NAME} that nothing
 // defines, or that goes round in a circle, leaves the variable unresolved:

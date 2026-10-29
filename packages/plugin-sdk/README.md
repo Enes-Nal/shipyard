@@ -1,6 +1,6 @@
 # @berth/plugin
 
-Types for Shipyard plugins. A plugin is an ES module whose default export
+Types for Terminal plugins. A plugin is an ES module whose default export
 receives a `BerthPluginContext`, registers what it adds, and may return a
 cleanup function:
 
@@ -51,4 +51,4 @@ that names files on this computer (`berth.api.localPaths(text)`) attaches
 too: pass each path as `file`. Both came after the first SDK release, so
 check `typeof berth.api.attach === "function"` before you offer them.
 
-See `plugins/hello-ports` in the Shipyard repository for a complete example.
+See `plugins/hello-ports` in the Terminal repository for a complete example.

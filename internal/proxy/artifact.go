@@ -31,7 +31,7 @@ import (
 //
 // Two documents:
 //
-//   - "/" is the shell, Shipyard's own few lines: it frames the page and
+//   - "/" is the shell, Terminal's own few lines: it frames the page and
 //     forwards the app's theme messages to it. Its policy lets it frame
 //     only this origin's /v/ pages, so a page that navigates itself
 //     anywhere else (location = "https://…?data") is stopped by the
@@ -52,7 +52,7 @@ import (
 // /v1/artifacts/{id}/v/{version}.
 type ArtifactFunc func(ctx context.Context, box, id, version string) (*http.Response, error)
 
-// AppOrigins are the origins Shipyard's app runs on, which alone may frame an
+// AppOrigins are the origins Terminal's app runs on, which alone may frame an
 // artifact: the bundled app, and the dev server's ports (1420–1439).
 var AppOrigins = func() []string {
 	out := []string{"tauri://localhost", "http://tauri.localhost", "https://tauri.localhost"}
@@ -375,7 +375,7 @@ func (c *libCache) get(ctx context.Context, l artLib, fetch func(ctx context.Con
 	}
 	sum := sha256.Sum256(b)
 	if hex.EncodeToString(sum[:]) != l.sha256 {
-		return nil, fmt.Errorf("%s isn't what Shipyard pinned (its hash differs); not served", l.path)
+		return nil, fmt.Errorf("%s isn't what Terminal pinned (its hash differs); not served", l.path)
 	}
 	c.mu.Lock()
 	c.got[l.path] = b

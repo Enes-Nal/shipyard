@@ -27,13 +27,13 @@ const KINDS: Record<string, Kind> = {
 // A kind of relation in words, with an icon. One the plugin has no name for
 // is called what the helper called it, and is read, not edited.
 export function kindOf(kind: string): Kind {
-  return KINDS[kind] ?? { label: kind.replaceAll("_", " ") || "Relation", short: kind.replaceAll("_", " ") || "relation", icon: "table-2", why: `is a ${kind.replaceAll("_", " ") || "relation"}, which Shipyard only knows how to read` };
+  return KINDS[kind] ?? { label: kind.replaceAll("_", " ") || "Relation", short: kind.replaceAll("_", " ") || "relation", icon: "table-2", why: `is a ${kind.replaceAll("_", " ") || "relation"}, which Terminal only knows how to read` };
 }
 
 export function rulesFor(table: { name: string; kind: string; primary_key: string[] }, engine: { name: string; edits: boolean }, caps: { writes: boolean }): Rules {
   const none = (why: string): Rules => ({ rows: false, inserts: false, why });
-  if (!caps.writes) return none(`${engine.name} takes no writes through Shipyard, so ${table.name} can be read and not changed.`);
-  if (!engine.edits) return none(`Shipyard doesn't know ${engine.name}'s types well enough to edit rows in the grid. The console still runs what you type.`);
+  if (!caps.writes) return none(`${engine.name} takes no writes through Terminal, so ${table.name} can be read and not changed.`);
+  if (!engine.edits) return none(`Terminal doesn't know ${engine.name}'s types well enough to edit rows in the grid. The console still runs what you type.`);
   const kind = kindOf(table.kind);
   if (kind.why) return none(`${table.name} ${kind.why}.`);
   if (table.primary_key.length === 0) return { rows: false, inserts: true, why: `${table.name} has no primary key, so one row can't be told from another like it: rows can be added, not edited or deleted.` };

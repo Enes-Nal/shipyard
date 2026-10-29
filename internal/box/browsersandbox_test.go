@@ -118,7 +118,7 @@ func TestTheSandboxErrorIsShortAndTellsTheAgentWhoFixesIt(t *testing.T) {
 	if !errors.Is(err, ErrBrowserSandbox) || statusFor(err) != 503 || codeFor(err) != CodeBrowserBlock {
 		t.Fatalf("%v: status %d, code %s", err, statusFor(err), codeFor(err))
 	}
-	for _, want := range []string{"blocked by Ubuntu's sandbox setting", "ask the person to fix it from Shipyard (Settings → Boxes)", "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0", "Don't work around it"} {
+	for _, want := range []string{"blocked by Ubuntu's sandbox setting", "ask the person to fix it from Terminal (Settings → Boxes)", "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0", "Don't work around it"} {
 		if !strings.Contains(msg, want) {
 			t.Errorf("lacks %q: %s", want, msg)
 		}

@@ -16,7 +16,7 @@ import type { WorktreeRef } from "@/lib/workspaces";
 // The Files panel's tree (components/files/tree-dock.tsx places it): the
 // worktree's files a folder at a time (All), or only what its agents
 // touched this turn (Changed), with +/− and A/M/D. A blue dot marks a
-// folder with changes inside (amber means "needs you" in Shipyard, so not
+// folder with changes inside (amber means "needs you" in Terminal, so not
 // that); the file an agent is writing now gets a quiet live mark, and its
 // folders' dots pulse. New file is the only thing it does to files: no
 // rename, delete, move or drag.

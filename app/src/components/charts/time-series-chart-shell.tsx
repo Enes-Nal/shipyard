@@ -405,7 +405,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   );
 
   const dateLabels = useMemo(
-    // Shipyard: a row may carry its own x label (lib/art/chart-spec.ts
+    // Terminal: a row may carry its own x label (lib/art/chart-spec.ts
     // X_LABEL) when its x values are labels, not dates.
     () =>
       visiblePlotData.map((d) =>

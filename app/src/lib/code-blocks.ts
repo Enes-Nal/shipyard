@@ -17,7 +17,7 @@ export type DiffShape =
 
 export type DrawnBlock =
   | { kind: "flowchart"; chart: Flowchart }
-  // Mermaid that isn't a flowchart Shipyard can draw (a sequence diagram,
+  // Mermaid that isn't a flowchart Terminal can draw (a sequence diagram,
   // a gantt): its source, said so.
   | { kind: "mermaid" }
   // The block as a patch the diff renderer reads.

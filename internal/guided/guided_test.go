@@ -193,7 +193,7 @@ func TestPlanFreshUbuntu(t *testing.T) {
 	p := Probe{OS: "linux", Arch: "arm64", UID: 1000, User: "demo", Manager: "apt-get", Linger: "no", Sudo: true, Agents: map[string]bool{}}
 	steps := Plan(Options{Target: "demo@box", Agents: []string{"claude", "codex"}, BundledTmux: true}, &p)
 	tools := find(steps, StepTools)
-	want := []string{"upload tmux-linux-arm64 → ~/.local/bin/tmux   (Shipyard's own build: no sudo)", "sudo apt-get update -q", "sudo apt-get install -y -q git"}
+	want := []string{"upload tmux-linux-arm64 → ~/.local/bin/tmux   (Terminal's own build: no sudo)", "sudo apt-get update -q", "sudo apt-get install -y -q git"}
 	if !reflect.DeepEqual(tools.Commands, want) || !tools.Sudo || tools.Skip != "" {
 		t.Errorf("tools = %+v", tools)
 	}
@@ -204,7 +204,7 @@ func TestPlanFreshUbuntu(t *testing.T) {
 		t.Errorf("sudo steps = %v", got)
 	}
 
-	// Without Shipyard's tmux, tmux comes from apt-get too.
+	// Without Terminal's tmux, tmux comes from apt-get too.
 	steps = Plan(Options{Target: "demo@box"}, &p)
 	if c := find(steps, StepTools).Commands; c[len(c)-1] != "sudo apt-get install -y -q tmux git" {
 		t.Errorf("tools without a bundled tmux = %v", c)
@@ -356,7 +356,7 @@ func TestScriptRunsWithSudoAsking(t *testing.T) {
 	if strings.Contains(out, "Next: berthd pair") || strings.Contains(out, "hunter2") {
 		t.Errorf("output has what it shouldn't:\n%s", out)
 	}
-	if !strings.Contains(out, "Shipyard never sees it") {
+	if !strings.Contains(out, "Terminal never sees it") {
 		t.Errorf("sudo's password wasn't explained:\n%s", out)
 	}
 	calls, _ := os.ReadFile(log)

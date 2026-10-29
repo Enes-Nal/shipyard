@@ -1,9 +1,9 @@
 ---
-title: How Shipyard works
+title: How Terminal works
 description: The box serves, the laptop connects, and the app is only a view.
 ---
 
-Shipyard connects a laptop to remote development boxes (any VPS, on a tailnet or
+Terminal connects a laptop to remote development boxes (any VPS, on a tailnet or
 not) and makes the services, worktrees and agent sessions on them usable as
 if they were local. Nothing is public unless someone explicitly shares it.
 
@@ -25,7 +25,7 @@ if they were local. Nothing is public unless someone explicitly shares it.
 
 ## Components
 
-<Diagram caption="The desktop app and the CLI talk to the Shipyard agent on the same laptop. The agent keeps one pinned TLS connection to berthd on each box, which owns that box's locations, sessions and shares.">
+<Diagram caption="The desktop app and the CLI talk to the Terminal agent on the same laptop. The agent keeps one pinned TLS connection to berthd on each box, which owns that box's locations, sessions and shares.">
   <DiagramGroup label="Your laptop" icon="laptop">
     <DiagramNode title="Clients">
       - Desktop app
@@ -56,7 +56,7 @@ if they were local. Nothing is public unless someone explicitly shares it.
   box's locations, sessions, services, shares, hooks and flows. Tools on the
   box reach it through a private Unix socket with the same API. See
   [boxes](/concepts/boxes).
-- **The Shipyard agent** (`berth agent`) runs on the laptop. It keeps a connection to every box,
+- **The Terminal agent** (`berth agent`) runs on the laptop. It keeps a connection to every box,
   runs forwards and the `*.localhost` proxy, relays every box's events, runs
   laptop hooks, holds the offline prompt queue, and owns the embedded tailnet
   nodes. The CLI and the app talk to it, so closing the app drops nothing.
@@ -103,7 +103,7 @@ forward only identifiers and paths, never prompts. The catalog is in
   commands, status bar items, themes. They can carry hooks and kits.
 - [Kits](/guides/kits) package how a project is set up, and travel as a link.
 - [Skills](/guides/agent-integrations#skills) teach the agents on a box to use
-  Shipyard themselves.
+  Terminal themselves.
 
 Next, read about [boxes](/concepts/boxes), or
 [add one](/getting-started/add-a-box) if you haven't yet.

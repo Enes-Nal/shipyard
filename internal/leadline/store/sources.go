@@ -153,7 +153,7 @@ func (s *Store) Summary(ctx context.Context) (*Summary, error) {
 	return out, nil
 }
 
-// Worktree is what a service says of where it runs: the Shipyard project it
+// Worktree is what a service says of where it runs: the Terminal project it
 // is a checkout of, the worktree's own name, its branch and the box it is
 // on. An app says so in the resource of its telemetry (the shipyard.*
 // attributes the attach helper sets), and whoever opens a proxy for a

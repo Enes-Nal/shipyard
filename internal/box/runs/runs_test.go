@@ -849,7 +849,7 @@ func waitGate(t *testing.T, e *Engine, id, path string) Run {
 // with its reason: the run still archives the other attempts and succeeds,
 // with the pick kept.
 func TestAttemptsPRSkippedOnAnotherForgeStillCleansUp(t *testing.T) {
-	why := "This repository is on gitea.acme.test, not GitHub, so Shipyard didn't open a pull request. The branch refunds-a2 is pushed to origin."
+	why := "This repository is on gitea.acme.test, not GitHub, so Terminal didn't open a pull request. The branch refunds-a2 is pushed to origin."
 	e, stop, h, id := prAttempts(t, t.TempDir(), func(int) Result {
 		return Result{Status: Skipped, Out: why, Set: map[string]string{"pr.skipped": "1"}}
 	})

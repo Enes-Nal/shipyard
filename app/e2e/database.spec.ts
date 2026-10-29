@@ -684,7 +684,7 @@ test("another engine is shown by what its connection says it can do: no schemas,
   await expect(p.getByRole("button", { name: "Unlock writes…" })).toHaveCount(0);
 
   await openTable(p, "deliveries");
-  await expect(p.getByTestId("database-browse-only")).toHaveText("Browse only. driftdb takes no writes through Shipyard, so deliveries can be read and not changed.");
+  await expect(p.getByTestId("database-browse-only")).toHaveText("Browse only. driftdb takes no writes through Terminal, so deliveries can be read and not changed.");
   // Its types are its own, shown as they are.
   await expect(p.getByRole("columnheader", { name: /^retries/ })).toContainText("i32");
   await expect(cell(p, 0, "error")).toHaveText("upstream timed out");
@@ -742,7 +742,7 @@ test("where Database is off, the panel says so, and turns it on after a confirm 
   // has no .env for it to have found a database in.
   await expect(said).toContainText("No database for ci-flake yet");
   await expect(said.getByTestId("database-looked")).toHaveText("Looked for .env, .env.development, .env.local and .env.development.local in this worktree on gpu: there is none.");
-  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart.");
+  await expect(said).toContainText("A service of this worktree that Terminal starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart.");
 });
 
 test("a worktree with no database yet says where it looked, which databases show, and why others don't", async ({ app }) => {
@@ -760,7 +760,7 @@ test("a worktree with no database yet says where it looked, which databases show
   await expect(screen).toContainText("the box reads .env, .env.development, .env.local and .env.development.local in the worktree's own folder, a later file winning");
 });
 
-// The ?db=env scenarios are a project whose dev servers Shipyard does not
+// The ?db=env scenarios are a project whose dev servers Terminal does not
 // start: the helper has been told of no database, and the worktree's
 // DATABASE_URL is in its .env files, which the box reads when the tab opens.
 const looks = (app: App) => app.page.evaluate(() => (window as unknown as { __berthMockDatabase: { looks(): number } }).__berthMockDatabase.looks());
@@ -808,7 +808,7 @@ test("a .env with no database address says which files were read, and looking ag
   const said = notice(p);
   await expect(said).toContainText("No database for checkout-fix yet");
   await expect(said.getByTestId("database-looked")).toHaveText("Looked in .env and .env.local: no DATABASE_URL or POSTGRES_URL in them.");
-  await expect(said).toContainText("A service of this worktree that Shipyard starts with one shows here too, once it has started");
+  await expect(said).toContainText("A service of this worktree that Terminal starts with one shows here too, once it has started");
   await expect.poll(() => looks(app)).toBe(1);
 
   // The file gets a DATABASE_URL: Look again reads it.
@@ -847,7 +847,7 @@ test("a box too old to look in .env says what it always said, and nothing went w
   const p = await open(app, undefined, { db: "env-old" });
   const said = notice(p);
   await expect(said).toContainText("No database for checkout-fix yet");
-  await expect(said).toContainText("A service of this worktree that Shipyard starts with a DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
+  await expect(said).toContainText("A service of this worktree that Terminal starts with a DATABASE_URL or POSTGRES_URL pointing at a Postgres on devl itself shows here once it has started. Database learns of a database when a service starts, so one that was already running when Database was turned on needs a restart.");
   await expect(said.getByTestId("database-looked")).toHaveCount(0);
   await expect(said).not.toContainText("older berthd");
   await expect(said).not.toContainText("Couldn't");

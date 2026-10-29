@@ -121,7 +121,7 @@ func secretSignin(b boxHome, args []string) error {
 	}
 	fmt.Println("Sign op in to your 1Password account. If this box has none yet, op asks to add")
 	fmt.Println("one: your sign-in address (such as my.1password.com), email, Secret Key and")
-	fmt.Println("password. You type them here; Shipyard never sees them. It keeps only op's session,")
+	fmt.Println("password. You type them here; Terminal never sees them. It keeps only op's session,")
 	fmt.Println("readable by you alone, so the box can read the team's shared keys.")
 	fmt.Println()
 	cmd := exec.Command(bin, "signin")

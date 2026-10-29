@@ -151,7 +151,7 @@ func (s *Server) otlpRoutes(mux *routes) {
 // a request must name a loopback host, which stops DNS rebinding, and only
 // loopback and app origins get CORS headers. A request that changes
 // something must come from no page at all (the box daemon, curl) or from
-// Shipyard's own window: the app being debugged is also a page on this
+// Terminal's own window: the app being debugged is also a page on this
 // machine, and must not be able to close a proxy or delete a worktree's
 // data.
 func guard(next http.Handler) http.Handler {
@@ -170,7 +170,7 @@ func guard(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Encoding")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 			if r.Method != http.MethodOptions && changes(r) && !appOrigin(origin) {
-				writeProblem(w, http.StatusForbidden, "forbidden", "Only Shipyard's own window may change what the helper holds.", "")
+				writeProblem(w, http.StatusForbidden, "forbidden", "Only Terminal's own window may change what the helper holds.", "")
 				return
 			}
 		}
@@ -214,7 +214,7 @@ func allowedOrigin(origin string) bool {
 	return (u.Scheme == "http" || u.Scheme == "https") && loopbackHost(u.Host)
 }
 
-// appOrigin reports whether a request's Origin is Shipyard's own window:
+// appOrigin reports whether a request's Origin is Terminal's own window:
 // the desktop app's webview, or the app's dev server on 1420.
 // BERTH_LEADLINE_APP_ORIGINS adds origins, comma separated, for running the
 // interface somewhere else.

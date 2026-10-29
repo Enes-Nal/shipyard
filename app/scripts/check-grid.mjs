@@ -26,6 +26,7 @@ import { join, relative, resolve } from "node:path";
 
 const app = resolve(import.meta.dirname, "..");
 const src = join(app, "src");
+const posix = (path) => path.replaceAll("\\", "/");
 
 // file → why its off-grid values are on purpose.
 const ALLOW = new Map([
@@ -55,7 +56,7 @@ async function* files(dir) {
 
 const found = [];
 for await (const f of files(src)) {
-  const rel = relative(src, f);
+  const rel = posix(relative(src, f));
   if (ALLOW.has(rel)) continue;
   const lines = (await readFile(f, "utf8")).split("\n");
   lines.forEach((line, i) => {

@@ -38,7 +38,7 @@ func (p *Proxy) handle(client net.Conn) {
 	if err != nil {
 		p.warn("pg proxy: can't reach postgres", "upstream", p.route.Upstream, "err", err)
 		if m != nil {
-			client.Write(fatal("08001", fmt.Sprintf("Shipyard's query proxy on %s could not reach Postgres at %s: %v",
+			client.Write(fatal("08001", fmt.Sprintf("Terminal's query proxy on %s could not reach Postgres at %s: %v",
 				p.route.Listen, p.route.Upstream, err)))
 		}
 		return

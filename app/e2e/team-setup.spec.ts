@@ -57,7 +57,7 @@ test("a berth://team link opens the org's setup, read like its repo on GitHub", 
   await expect(checklist(page)).toContainText("You have access to all 3 repos");
   // The new box is picked: the one with no projects yet.
   await expect(checklist(page).getByRole("combobox")).toContainText("sean-dev");
-  await expect(page.getByTestId("team-page")).not.toContainText("the Shipyard project");
+  await expect(page.getByTestId("team-page")).not.toContainText("the Terminal project");
 });
 
 test("without the GitHub CLI, the page says how to install it", async ({ app }) => {
@@ -87,11 +87,11 @@ test("every line opens to its commands, and Read every command shows the .berth 
   await expect(step(page, "docker")).toContainText("sudo usermod -aG docker $USER");
   await repo(page, "shop").getByRole("button").first().click();
   await expect(repo(page, "shop")).toContainText("git clone https://github.com/acme/shop");
-  await expect(step(page, "github")).toContainText("Shipyard");
-  // The keys are 1Password references: Shipyard signs op in on the box, as a
+  await expect(step(page, "github")).toContainText("Terminal");
+  // The keys are 1Password references: Terminal signs op in on the box, as a
   // step of its own after GitHub's.
   await expect(step(page, "1password")).toContainText("1Password on the box");
-  await expect(step(page, "1password")).toContainText("Shipyard");
+  await expect(step(page, "1password")).toContainText("Terminal");
   await step(page, "1password").getByRole("button").first().click();
   await expect(step(page, "1password")).toContainText("berthd secret signin");
   await page.getByTestId("read-every-command").click();
@@ -134,11 +134,11 @@ test("running: sudo waits in the box's terminal, then the box signs in to GitHub
   const { page } = app;
   await app.open({ params: { team: "acme", teamhold: "github", "team-page": "acme" } });
   await startRun(page);
-  await expect(step(page, "update")).toContainText("Type it in the terminal below; Shipyard doesn't see or keep it");
+  await expect(step(page, "update")).toContainText("Type it in the terminal below; Terminal doesn't see or keep it");
   // The sidebar and the status bar show it from the start.
   await expect(page.getByTestId("team-status")).toContainText("Setting up sean-dev for Acme · waiting for your password");
   await expect(page.getByTestId("team-sidebar")).toContainText("queued");
-  // The password goes to the terminal, never to Shipyard.
+  // The password goes to the terminal, never to Terminal.
   await step(page, "update").locator("[data-pane-kind], .xterm, canvas, [contenteditable]").first().click().catch(() => {});
   await page.keyboard.type("hunter2");
   await page.keyboard.press("Enter");
@@ -156,7 +156,7 @@ test("1Password: op asks in the box's terminal, which the step shows, then the s
   await advance(page, "sudo");
   await expect(step(page, "1password")).toHaveAttribute("data-state", "waiting", { timeout: 15_000 });
   await expect(step(page, "1password")).toContainText("op on sean-dev is asking you to sign in to 1Password");
-  await expect(step(page, "1password")).toContainText("Shipyard keeps only op's session there");
+  await expect(step(page, "1password")).toContainText("Terminal keeps only op's session there");
   await expect(page.getByTestId("team-runcard").locator("visible=true")).toContainText("Sign the box in to 1Password");
   await expect(page.getByTestId("team-status")).toContainText("waiting for 1Password");
   await advance(page, "1password");
@@ -171,7 +171,7 @@ test("a box without tmux: the Box check says how to install it, and setup waits 
   const box = page.getByTestId("check-box").locator("visible=true");
   await expect(box).toHaveAttribute("data-state", "warn");
   await expect(box).toContainText("Install tmux on sean-dev");
-  await expect(box).toContainText("Shipyard runs the team setup's steps, and later your agents, in tmux on the box.");
+  await expect(box).toContainText("Terminal runs the team setup's steps, and later your agents, in tmux on the box.");
   await expect(box).toContainText("sudo apt install tmux");
   await expect(checklist(page).getByTestId("team-run")).toBeDisabled();
   await expect(checklist(page)).toContainText("Install tmux on sean-dev first");
@@ -247,7 +247,7 @@ test("You're set up: the team's first task and each repo", async ({ app }) => {
   await expect(done.getByLabel("First task", { exact: true })).toHaveValue(/good first issue/);
   await expect(done.getByTestId("start-first-task")).toBeEnabled();
   await expect(done).toContainText("acme/billing-api");
-  await expect(done).toContainText("Shipyard never had it, and nothing kept it");
+  await expect(done).toContainText("Terminal never had it, and nothing kept it");
 });
 
 test("an update shows on this page as a diff, and runs only when asked", async ({ app }) => {
@@ -267,7 +267,7 @@ test("an update shows on this page as a diff, and runs only when asked", async (
   await expect(card).toHaveCount(0);
 });
 
-test("an org without .berth: its repos, the Shipyard-configured ones picked", async ({ app }) => {
+test("an org without .berth: its repos, the Terminal-configured ones picked", async ({ app }) => {
   const { page } = app;
   await app.open({ params: { team: "acme", "team-page": "northwind" } });
   await expect(page.getByTestId("team-none")).toHaveText("Northwind Labs");
@@ -289,7 +289,7 @@ test("a repo already cloned on the box: Found … · Use this, or Clone a fresh 
   await app.open({ params: { team: "acme", "team-clones": "1", "team-page": "acme" } });
   // The new box is picked once the boxes' projects are in: its clones are the ones offered.
   await expect(checklist(page).getByRole("combobox")).toContainText("sean-dev");
-  await expect(page.getByTestId("team-page")).not.toContainText("the Shipyard project");
+  await expect(page.getByTestId("team-page")).not.toContainText("the Terminal project");
   const shop = page.getByTestId("found-shop");
   await expect(shop).toContainText("Found ~/work/acme-shop, a clone of acme/shop (on branch feat/x, 3 uncommitted changes)");
   // Uncommitted changes: a fresh clone until you say otherwise.
@@ -320,7 +320,7 @@ test("a found clone that is behind offers Pull as a button of its own", async ({
   await app.open({ params: { team: "acme", "team-clones": "1", "team-page": "acme" } });
   // The new box is picked once the boxes' projects are in: its clones are the ones offered.
   await expect(checklist(page).getByRole("combobox")).toContainText("sean-dev");
-  await expect(page.getByTestId("team-page")).not.toContainText("the Shipyard project");
+  await expect(page.getByTestId("team-page")).not.toContainText("the Terminal project");
   const review = page.getByTestId("found-review-website");
   await expect(review).toContainText("2 commits behind its upstream");
   await review.getByRole("button", { name: "Pull" }).click();
@@ -333,7 +333,7 @@ test("a repo set up from a clone you have runs in place, and its worktree waits 
   await app.open({ params: { team: "acme", "team-clones": "1", "team-page": "acme" } });
   // The new box is picked once the boxes' projects are in: its clones are the ones offered.
   await expect(checklist(page).getByRole("combobox")).toContainText("sean-dev");
-  await expect(page.getByTestId("team-page")).not.toContainText("the Shipyard project");
+  await expect(page.getByTestId("team-page")).not.toContainText("the Terminal project");
   await page.getByTestId("use-shop").click();
   await page.getByTestId("fresh-website").click();
   await startRun(page);

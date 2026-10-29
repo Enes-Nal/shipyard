@@ -1,6 +1,6 @@
 # Hello ports
 
-An example Shipyard plugin: a screen listing every dev server on every box with
+An example Terminal plugin: a screen listing every dev server on every box with
 a button to open it, a sidebar item and a command that open that screen, a
 worktree section (under the composer where work starts in a worktree) with
 the ports open there, a Home widget with the same list (Home → Customize →

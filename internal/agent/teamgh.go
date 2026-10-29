@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// GitHub, for team setups, goes through the laptop's own gh CLI: Shipyard has
+// GitHub, for team setups, goes through the laptop's own gh CLI: Terminal has
 // no GitHub sign-in of its own and keeps no token. Reading <org>/.berth and
 // each repository with the person's gh is also the access check — if gh can
 // read it, they may set it up. The box signs in with its own gh, in a
@@ -187,7 +187,7 @@ func (a *Agent) openGHLogin() (bool, error) {
 		return false, err
 	}
 	script := filepath.Join(dir, "gh-login.command")
-	body := fmt.Sprintf("#!/bin/sh\n# Shipyard: sign this computer's GitHub CLI in, so Shipyard can read your team's setup.\n# Shipyard keeps no token; gh does, and you can sign out with: gh auth logout\nclear\n%q auth login --hostname github.com --git-protocol https --web\necho\necho \"Done. Shipyard checks again on its own; you can close this window.\"\n", g.bin)
+	body := fmt.Sprintf("#!/bin/sh\n# Terminal: sign this computer's GitHub CLI in, so Terminal can read your team's setup.\n# Terminal keeps no token; gh does, and you can sign out with: gh auth logout\nclear\n%q auth login --hostname github.com --git-protocol https --web\necho\necho \"Done. Terminal checks again on its own; you can close this window.\"\n", g.bin)
 	if err := os.WriteFile(script, []byte(body), 0o700); err != nil {
 		return false, err
 	}
@@ -220,7 +220,7 @@ func (g ghCLI) file(ctx context.Context, slug, path, ref string) ([]byte, string
 	return b, f.SHA, err
 }
 
-// ghCommit is a commit as Shipyard shows it.
+// ghCommit is a commit as Terminal shows it.
 type ghCommit struct {
 	SHA          string `json:"sha"`
 	Short        string `json:"short"`

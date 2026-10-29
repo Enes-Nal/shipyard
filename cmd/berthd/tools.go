@@ -12,7 +12,7 @@ import (
 	"github.com/cosscom/shipyard/internal/guided"
 )
 
-// Shipyard needs two tools on a box before anything else works: tmux, which
+// Terminal needs two tools on a box before anything else works: tmux, which
 // every terminal, agent and team setup step runs in, and git, for
 // worktrees. A fresh Ubuntu image has neither, so `berthd install` (which
 // the install script and `berth add ssh` both run) installs them when it
@@ -74,7 +74,7 @@ func (p toolsPlan) instruction() string {
 	if len(p.Missing) > 1 {
 		verb = "aren't"
 	}
-	msg := fmt.Sprintf("Shipyard needs %s on this box, and %s %s installed: every terminal, agent and team setup step runs in tmux, and worktrees are git's.", p.what(), them(len(p.Missing)), verb)
+	msg := fmt.Sprintf("Terminal needs %s on this box, and %s %s installed: every terminal, agent and team setup step runs in tmux, and worktrees are git's.", p.what(), them(len(p.Missing)), verb)
 	switch {
 	case len(p.Steps) > 0 && p.Brew:
 		return msg + " Install " + them2(len(p.Missing)) + ", then run this again:\n  " + p.command()

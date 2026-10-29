@@ -14,7 +14,7 @@ func TestServiceNames(t *testing.T) {
 		want string
 	}{
 		{Worktree{Project: "acme", Name: "fix-orders"}, "acme/fix-orders"},
-		// The main checkout is a worktree to Shipyard, named for its folder.
+		// The main checkout is a worktree to Terminal, named for its folder.
 		{Worktree{Project: "acme"}, "acme"},
 		{Worktree{Project: "acme", Name: "acme"}, "acme"},
 		{Worktree{Name: "fix-orders"}, "fix-orders"},

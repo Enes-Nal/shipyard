@@ -1,4 +1,4 @@
-# Shipyard app verification map
+# Terminal app verification map
 
 The maintained list of what a person can do in the app, and how to prove each one with this skill. Read it before driving; use the matching file as the recipe. A change to a feature updates its file, and a scenario that proved it moves into `../scripts/scenarios/`, in the same PR.
 

@@ -42,7 +42,7 @@ you are idle:
 
 ```
 <berth-notification>
-This comes from Shipyard, not from the user: news of agent work you started. …
+This comes from Terminal, not from the user: news of agent work you started. …
 <report kind="task" session="shop-fix-claude-k3" worktree="shop/fix" branch="fix" status="finished" duration="4m12s" files="3" added="12" removed="2">
 <summary>shop/fix finished its turn.</summary>
 <answer>…its last words…</answer>

@@ -1,5 +1,5 @@
 // Package examples carries the sample projects a box can make, so trying
-// Shipyard needs no repository of your own and no network: POST
+// Terminal needs no repository of your own and no network: POST
 // /v1/locations/new with "sample": "hello" writes examples/hello into a new
 // git repository. The same files are in this repository, for anyone to
 // read or clone.

@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -82,7 +81,7 @@ func Run(ctx context.Context, o Options) (int, error) {
 	cmd := exec.Command(o.Command[0], o.Command[1:]...)
 	cmd.Dir, cmd.Env = o.WorkDir, o.Env
 	// Its own group, so a stop reaches what it starts.
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	isolateCommand(cmd)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return 0, err
@@ -260,14 +259,11 @@ func (h *host) stop() {
 			return
 		}
 		kids := descendants(h.pid)
-		signalTree(h.pid, syscall.SIGTERM)
+		terminateTree(h.pid)
 		if h.waitExit(h.grace) && !anyAlive(kids) {
 			return
 		}
-		for _, p := range kids {
-			syscall.Kill(p, syscall.SIGKILL)
-		}
-		signalTree(h.pid, syscall.SIGKILL)
+		killTree(h.pid)
 	})
 }
 
@@ -282,7 +278,7 @@ func (h *host) waitExit(d time.Duration) bool {
 
 func anyAlive(pids []int) bool {
 	for _, p := range pids {
-		if syscall.Kill(p, 0) == nil {
+		if processAlive(p) {
 			return true
 		}
 	}

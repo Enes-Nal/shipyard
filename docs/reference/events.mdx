@@ -1,6 +1,6 @@
 ---
 title: Events and gates
-description: Every event Shipyard announces, the gates that can refuse actions, and the variables hooks get.
+description: Every event Terminal announces, the gates that can refuse actions, and the variables hooks get.
 ---
 
 ## The envelope
@@ -42,8 +42,8 @@ and dashes.
 | Event | Data |
 | --- | --- |
 | `agent.ready` | `path`, `agent`, `session` (when the hook knows it) and the tool's own id (below): a new agent at its prompt. After a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged unfinished but not waiting on you, with `source: "turncheck"`, `choice` and `seq`: the session stays `finished`, with `unfinished: true` for `choice: "working"` (something still runs) or `parked: true` for `choice: "parked"` (it waits on a reply or a later time); neither notifies |
-| `agent.started` | the same, with `signal`: `prompt` (working on a prompt) or `tool` (working again after an approval or an answer). For an agent that cannot say it started, Shipyard sends it at the send, with `source: "send"` and `turn` |
-| `agent.waiting` | the same, with `reason` (`permission`, `question`): needs you. Codex's async question box adds `question_box: "async"`: its turn can end before the answer, and the session keeps waiting until you prompt again. At a startup question Shipyard sends it itself, with `reason: "startup question"`; after a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged to need you, with `reason: "turn check"`, `source: "turncheck"` and the model's `choice` (`needs_input` or `blocked`) |
+| `agent.started` | the same, with `signal`: `prompt` (working on a prompt) or `tool` (working again after an approval or an answer). For an agent that cannot say it started, Terminal sends it at the send, with `source: "send"` and `turn` |
+| `agent.waiting` | the same, with `reason` (`permission`, `question`): needs you. Codex's async question box adds `question_box: "async"`: its turn can end before the answer, and the session keeps waiting until you prompt again. At a startup question Terminal sends it itself, with `reason: "startup question"`; after a finished turn [turn check](/concepts/sessions-and-agents#agent-state) judged to need you, with `reason: "turn check"`, `source: "turncheck"` and the model's `choice` (`needs_input` or `blocked`) |
 | `agent.finished` | the same: done with its turn; `status: "error"` when it ended on a failure |
 | `agent.exited` | the same: the agent itself quit |
 | `task.created` | `location`, `name`, `path`, `branch`, `session`, `agent`, `from_session` |
@@ -60,15 +60,15 @@ and dashes.
 Agent events come from the agents' own hooks (`berthd integrations install`),
 with the tool as their origin and the agent's own conversation id as
 `agent_session_id` (Claude Code also sends `session_id`, Codex `turn_id`,
-Cursor `conversation_id` and `status`). A hook names the Shipyard session it
+Cursor `conversation_id` and `status`). A hook names the Terminal session it
 runs in as `session`, from `$BERTH_SESSION`. Hooks spooled while berthd was
-down carry `spooled: true` and the time they ran. Shipyard does not publish a
+down carry `spooled: true` and the time they ran. Terminal does not publish a
 tool use (`agent.started` with `signal: "tool"`) for an agent that is
 already working: it would change nothing. Nor does it publish Codex's
 `notify` (`agent.finished` with `via: "notify"`) once the session's hooks
 have said a prompt started: notify comes at the end of each of Codex's
 messages, and its `Stop` hook ends the turn. When an agent's hooks cannot
-tell, Shipyard reads the terminal and sends these itself with
+tell, Terminal reads the terminal and sends these itself with
 `origin: "screen"` and `source: "screen"`. See [turns](/concepts/sessions-and-agents#turns).
 
 ### Locations and worktrees
@@ -100,7 +100,7 @@ events.
 | `review.updated` | `location`, `name`, `path`, `repo`, `pr`, `from`, `sha`, `author`, `association`, `reviewer`: moved to a newer head the reviewer confirmed |
 | `review.waiting` | `location`, `name`, `path`, `repo`, `pr`, `reason` (`merged`, `closed`, `idle`): due for clean-up, but it has uncommitted changes or a session running, so it waits for the reviewer; once per reason |
 | `review.removed` | `location`, `name`, `path`, `repo`, `pr`, `reason`: `merged`, `closed`, `idle`, or `removed` (by hand) |
-| `review.button` | `repo`, `pr`, `location`, `worktree`, and `as` and `path` when set: berthd added the [Review in Shipyard button](/guides/review-a-pr#the-review-in-shipyard-button) to a PR's description, or put a new `as` or `path` in place |
+| `review.button` | `repo`, `pr`, `location`, `worktree`, and `as` and `path` when set: berthd added the [Review in Terminal button](/guides/review-a-pr#the-review-in-terminal-button) to a PR's description, or put a new `as` or `path` in place |
 
 ### Automation, config and the box
 
@@ -175,7 +175,7 @@ runs, so `flow` and `scope` name one flow.
 | `queue.failed` | `id`, `box`, `session`, `reason` (never the prompt) |
 | `kit.added` | `kit`, `source`; for a team setup's kit also `team`, and `from` and `to` when a newer commit of `.berth` changed it |
 | `team.accepted` | `org`, `team`, `box`, `commit`: a team setup was sent to a box |
-| `team.suggestions` | `orgs`: the orgs of your projects that publish a team setup you haven't accepted changed ([how Shipyard notices](/guides/team-setup#how-shipyard-notices-your-teams-setup)) |
+| `team.suggestions` | `orgs`: the orgs of your projects that publish a team setup you haven't accepted changed ([how Terminal notices](/guides/team-setup#how-terminal-notices-your-teams-setup)) |
 | `team.update` | `org`, `name`, `from`, `to`, `changes`, `sudo`: a newer commit of a team setup this laptop accepted, to review; once per commit |
 | `app.changed` | `key`: an app settings document changed |
 | `hooks.changed` | |
@@ -255,7 +255,7 @@ gates.
 | `BERTH_EVENT_BOX` | Its box |
 | `BERTH_EVENT_ORIGIN` | Its origin |
 | `BERTH_<FIELD>` | Each data field, upper-cased, with other characters as `_`: `BERTH_PATH`, `BERTH_NAME`, `BERTH_LOCATION`, `BERTH_SESSION`, `BERTH_AGENT`… |
-| `BERTH_ORIGIN` | The hook's `tool`, or `hook`: Shipyard commands the hook runs announce their events with it |
+| `BERTH_ORIGIN` | The hook's `tool`, or `hook`: Terminal commands the hook runs announce their events with it |
 | `BERTH_PLUGIN_DIR` | A plugin's hooks: its folder |
 
 The event is also on stdin as JSON. Hooks from a repository's config get the

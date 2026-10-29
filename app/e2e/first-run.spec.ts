@@ -19,7 +19,7 @@ test("a fresh install gets the project rail", async ({ app }) => {
   expect(((await app.stored("berth.prefs")) as { sidebarLayout?: string }).sidebarLayout).toBe("rail");
 });
 
-test("prefs an older Shipyard saved move to this version's defaults", async ({ app }) => {
+test("prefs an older Terminal saved move to this version's defaults", async ({ app }) => {
   // Version 2 saved Labs off and "keep" only as the defaults of the day.
   await app.open({ prefs: { labs: false, closeAgents: "keep", agentCloseTips: 2, version: 2 } });
   await expect.poll(() => app.stored("berth.prefs")).toMatchObject({ labs: true, version: 4 });
@@ -61,4 +61,90 @@ test("a new account with no boxes is shown onboarding", async ({ app }) => {
   // Onboarding is the whole window until a box is added: no sidebar.
   await expect(app.page.getByTestId("nav-home")).toHaveCount(0);
   await expect(app.page.locator("main")).toContainText(/box/i);
+});
+
+test("Windows without WSL says how to set it up and checks again", async ({ app }) => {
+  mockOnly("a Windows PC without WSL is a mock fixture (?thismac=nowsl&platform=windows)");
+  await app.page.goto("/?mock=1&fresh=1&platform=windows&thismac=nowsl");
+  const card = app.page.getByRole("region", { name: "Use this computer" });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("wsl --install -d Ubuntu")).toBeVisible();
+  await expect(card.getByRole("button", { name: "Check again" })).toBeEnabled();
+  await expect(app.page.getByRole("button", { name: "Connect a box" })).toBeVisible();
+});
+
+test("Windows with WSL offers this computer as the box", async ({ app }) => {
+  mockOnly("a Windows PC with WSL is a mock fixture (?platform=windows)");
+  await app.page.goto("/?mock=1&fresh=1&platform=windows");
+  await expect(app.page.getByRole("region", { name: "Use this computer" })).toContainText("Agents run in WSL");
+  await expect(app.page.getByRole("button", { name: "Start on this computer" })).toBeEnabled();
+});
+
+test("this PC's box on Windows browses the PC's drives, in Windows paths", async ({ app }) => {
+  mockOnly("this PC's WSL box is a mock fixture (?platform=windows)");
+  const page = app.page;
+  await page.goto("/?mock=1&fresh=1&platform=windows");
+  await page.getByRole("button", { name: "Start on this computer" }).click();
+  await page.getByRole("button", { name: /Browse folders/ }).click({ timeout: 20_000 });
+
+  // It starts at This PC: the drives, not Linux's own folders or WSL's.
+  const folders = page.getByRole("listbox", { name: "Folders" });
+  await expect(folders.getByRole("option")).toHaveText(["C:", "E:"]);
+  await expect(page.getByRole("navigation", { name: "Folder" })).toHaveText("This PC");
+  await expect(page.getByRole("button", { name: "Add C:" })).toBeVisible();
+
+  await folders.getByRole("option", { name: "E:" }).dblclick();
+  await folders.getByRole("option", { name: "Code" }).dblclick();
+  await expect(page.getByRole("textbox", { name: "Path" })).toHaveValue("E:\\Code");
+  await expect(page.getByRole("navigation", { name: "Folder" })).toContainText("This PC");
+  await expect(folders.getByRole("option")).toHaveText([/shop/, /site/]);
+
+  // A typed Windows path goes there too, and Ubuntu's home is a click away.
+  await page.getByRole("textbox", { name: "Path" }).fill("C:\\Users");
+  await page.getByRole("textbox", { name: "Path" }).press("Enter");
+  await expect(page.getByRole("navigation", { name: "Folder" })).toContainText("Users");
+  await page.getByRole("button", { name: "Ubuntu" }).click();
+  await expect(page.getByRole("textbox", { name: "Path" })).toHaveValue("~");
+  await expect(folders.getByRole("option", { name: "code" })).toBeVisible();
+
+  // A project with no tasks yet is on Project activity, with how to start one.
+  await page.getByRole("textbox", { name: "Path" }).fill("E:\\Code");
+  await page.getByRole("textbox", { name: "Path" }).press("Enter");
+  await folders.getByRole("option", { name: /shop/ }).dblclick();
+  await page.getByRole("button", { name: "Skip setup" }).click();
+  await page.getByTestId("nav-worktrees").click();
+  await expect(page.getByRole("region", { name: "Projects" })).toContainText("main folder");
+  await expect(page.getByText("No tasks yet.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "New task" }).last()).toBeVisible();
+});
+
+test("Windows without a native agent reports the missing build instead of opening placeholders", async ({ app }) => {
+  mockOnly("the missing Windows helper is a mock startup state");
+  await app.page.goto("/?mock=offline&binary=missing&platform=windows");
+  await expect(app.page.getByText("The Shipyard agent isn't running", { exact: true })).toBeVisible();
+  await expect(app.page.getByText("This Windows build is missing Shipyard's local background service.")).toBeVisible();
+  await expect(app.page.getByRole("button", { name: "Open guided workspace" })).toHaveCount(0);
+  await expect(app.page.getByRole("button", { name: "Copy command" })).toBeVisible();
+});
+
+test("the Terminal tutorial explains the GitLab branch workflow and can be reopened", async ({ app }) => {
+  mockOnly("the guided workspace uses the normal mock fixtures");
+  await app.page.goto("/?mock=1&tutorial=1");
+
+  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
+  await expect(app.page.getByText("Terminal turns repository branches into a simple workflow you can scan without reading terminal logs.")).toBeVisible();
+  await expect(app.page.getByText("This practice workspace is safe to explore. Actions stay here and do not change a real repository.")).toBeVisible();
+  await app.page.getByRole("button", { name: "Show project activity" }).click();
+  await expect(app.page.getByRole("heading", { name: "Connect your GitLab project" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Read the Todo board" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Follow every push and pull" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Next" }).click();
+  await expect(app.page.getByRole("heading", { name: "Guide the agent to done" })).toBeVisible();
+  await app.page.getByRole("button", { name: "Finish" }).click();
+  await expect(app.page.getByRole("heading", { name: "Guide the agent to done" })).toHaveCount(0);
+
+  await app.page.getByRole("button", { name: "Tutorial" }).click();
+  await expect(app.page.getByRole("heading", { name: "Welcome to Terminal" })).toBeVisible();
 });

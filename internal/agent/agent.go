@@ -17,7 +17,6 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/box"
@@ -330,8 +329,8 @@ var ErrAlreadyRunning = errors.New("another berth agent is already running")
 // Run serves until ctx is cancelled or a client asks the agent to stop.
 func Run(ctx context.Context, cfg Config) error {
 	cfg.defaults()
-	if len(cfg.Socket) > 100 {
-		return fmt.Errorf("agent socket path %s is too long for a Unix socket; set a shorter BERTH_HOME", cfg.Socket)
+	if err := validateLocalSocket(cfg.Socket); err != nil {
+		return err
 	}
 	unlock, err := lockAgent(cfg.Dir)
 	if err != nil {
@@ -359,17 +358,11 @@ func Run(ctx context.Context, cfg Config) error {
 	a.ctx = ctx
 	a.queue = newPromptQueue(ctx, filepath.Join(cfg.Dir, "queue.json"), agentBoxes{a}, a.publish, cfg.Now, cfg.Log.Printf, cfg.QueueIdleTimeout, cfg.QueueWaitStep)
 
-	// Holding the agent lock means any socket file left here is stale.
-	os.Remove(cfg.Socket)
-	apiLn, err := net.Listen("unix", cfg.Socket)
+	apiLn, cleanupSocket, err := listenLocalSocket(cfg.Socket)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(cfg.Socket)
-	if err := os.Chmod(cfg.Socket, 0o600); err != nil {
-		apiLn.Close()
-		return err
-	}
+	defer cleanupSocket()
 	a.startProxy(ctx)
 	a.sync()
 	a.startSavedForwards(ctx)
@@ -410,11 +403,12 @@ func lockAgent(dir string) (func(), error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	unlock, ok := tryAgentLock(f)
+	if !ok {
 		f.Close()
 		return nil, ErrAlreadyRunning
 	}
-	return func() { syscall.Flock(int(f.Fd()), syscall.LOCK_UN); f.Close() }, nil
+	return func() { unlock(); f.Close() }, nil
 }
 
 func (a *Agent) publish(e Event) {
@@ -672,7 +666,7 @@ func (a *Agent) away(name string) (string, time.Duration, bool) {
 		return "", 0, false
 	}
 	retry := time.Until(st.retryAt)
-	msg := name + " is offline; Shipyard is reconnecting"
+	msg := name + " is offline; Terminal is reconnecting"
 	if retry > 0 {
 		msg += fmt.Sprintf(" (next try in %ds)", int(retry.Round(time.Second)/time.Second))
 	}

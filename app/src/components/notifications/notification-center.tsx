@@ -257,7 +257,7 @@ const STATUS_BAR = 26;
 // ---- Agents waiting now ------------------------------------------------
 
 // A live agent waiting for the person that no note covers: the centre only
-// hears events while Shipyard is open, so an agent that asked before then (or
+// hears events while Terminal is open, so an agent that asked before then (or
 // whose note was cleared) would otherwise leave "all caught up" showing
 // while the status bar says one is waiting.
 interface Live {
@@ -546,7 +546,7 @@ export function NotificationCenter() {
         {error && (
           <div className="flex h-8 shrink-0 items-center gap-2 border-t px-4 text-tag text-destructive-foreground dark:text-destructive">
             <span className="min-w-0 flex-1 truncate" title={error}>
-              Not saved: the Shipyard agent did not take the history.
+              Not saved: the Terminal agent did not take the history.
             </span>
           </div>
         )}

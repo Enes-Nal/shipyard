@@ -7,7 +7,7 @@ import (
 
 // Source is the name a worktree's databases are listed under:
 // "<project>/<worktree>", or the project alone for its main checkout. It is
-// the rule Shipyard's other helpers name a worktree by (Leadline's
+// the rule Terminal's other helpers name a worktree by (Leadline's
 // Worktree.Service), written again here so that this helper depends on none
 // of them; a test holds the two to the same answers.
 //

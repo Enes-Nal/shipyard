@@ -74,7 +74,7 @@ test("requirementsCopy: a team setup's card says its steps run in tmux", () => {
   const linux = parseRequirements({ os: "linux", tmux: { found: false, install: "sudo apt install tmux", manager: "apt" }, agents: [] });
   const c = requirementsCopy("tmux", linux, "devl", { team: true });
   assert.equal(c?.title, "Install tmux on devl");
-  assert.match(c?.body ?? "", /^Shipyard runs the team setup's steps, and later your agents, in tmux on the box\. /);
+  assert.match(c?.body ?? "", /^Terminal runs the team setup's steps, and later your agents, in tmux on the box\. /);
   assert.equal(c?.command, "sudo apt install tmux");
-  assert.match(requirementsCopy("tmux", linux, "devl")?.body ?? "", /^Shipyard runs agents in tmux/);
+  assert.match(requirementsCopy("tmux", linux, "devl")?.body ?? "", /^Terminal runs agents in tmux/);
 });

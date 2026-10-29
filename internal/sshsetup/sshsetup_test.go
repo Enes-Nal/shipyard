@@ -71,7 +71,7 @@ func TestClassify(t *testing.T) {
 		{noRoute, "unreachable", "no route"},
 		{unresolved, "resolve", "Could not resolve dev-box.example"},
 		{unresolvedLinux, "resolve", "Could not resolve"},
-		{denied, "auth", "Shipyard offered me@laptop (1Password's SSH agent), /Users/me/.ssh/id_ed25519"},
+		{denied, "auth", "Terminal offered me@laptop (1Password's SSH agent), /Users/me/.ssh/id_ed25519"},
 		{deniedNoKeys, "auth", "the keys in 1Password's SSH agent, ~/.ssh/id_ed25519"},
 		{passwordOnly, "password", "only accepts passwords"},
 		{unknownKey, "host-key-unknown", "hasn't connected to dev-box.example before"},

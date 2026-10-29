@@ -86,7 +86,7 @@ function database(berth) {
     // have not been started since the helper was turned on, or use no
     // database the helper can reach.
     connections: (box, source) => berth.helper.request(box, "GET", `db/connections?${new URLSearchParams({ source })}`).then((r) => r.connections ?? []),
-    // Whether this Shipyard can have a box look in a worktree's .env files.
+    // Whether this Terminal can have a box look in a worktree's .env files.
     canLook: typeof berth.helper.attachEnv === "function",
     // The box looks in the worktree's .env files and tells the helper of
     // the database it finds there (dotenv.ts). worktree "" is the main
@@ -711,12 +711,12 @@ var KINDS = {
   materialized_view: { label: "Materialized view", short: "mat. view", icon: "Layers", why: "is a materialized view: its rows are a query's saved result, so they can't be changed here" }
 };
 function kindOf(kind) {
-  return KINDS[kind] ?? { label: kind.replaceAll("_", " ") || "Relation", short: kind.replaceAll("_", " ") || "relation", icon: "table-2", why: `is a ${kind.replaceAll("_", " ") || "relation"}, which Shipyard only knows how to read` };
+  return KINDS[kind] ?? { label: kind.replaceAll("_", " ") || "Relation", short: kind.replaceAll("_", " ") || "relation", icon: "table-2", why: `is a ${kind.replaceAll("_", " ") || "relation"}, which Terminal only knows how to read` };
 }
 function rulesFor(table, engine, caps) {
   const none = (why) => ({ rows: false, inserts: false, why });
-  if (!caps.writes) return none(`${engine.name} takes no writes through Shipyard, so ${table.name} can be read and not changed.`);
-  if (!engine.edits) return none(`Shipyard doesn't know ${engine.name}'s types well enough to edit rows in the grid. The console still runs what you type.`);
+  if (!caps.writes) return none(`${engine.name} takes no writes through Terminal, so ${table.name} can be read and not changed.`);
+  if (!engine.edits) return none(`Terminal doesn't know ${engine.name}'s types well enough to edit rows in the grid. The console still runs what you type.`);
   const kind = kindOf(table.kind);
   if (kind.why) return none(`${table.name} ${kind.why}.`);
   if (table.primary_key.length === 0) return { rows: false, inserts: true, why: `${table.name} has no primary key, so one row can't be told from another like it: rows can be added, not edited or deleted.` };
@@ -919,7 +919,7 @@ var COPY = {
   name: "Database",
   program: HELPER,
   icon: "table-2",
-  does: (box) => `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Shipyard starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
+  does: (box) => `It notes the development database of each worktree on that box: a DATABASE_URL or POSTGRES_URL that points at a database on the box itself, in the environment of a service Terminal starts there, in the worktree's own .env files, which the box reads when you open the worktree's Database tab, or in an address you paste for it. It keeps that address in a folder on the box, and runs what you ask of it here. It changes nothing in a service's environment, and only reads until you unlock writes. Nothing it keeps leaves ${box}.`,
   about: (box) => /* @__PURE__ */ jsxs3(Fragment2, { children: [
     "It shows a worktree's own development database: its tables and rows, and a console for SQL, read-only until you unlock it. Turning it on installs and runs ",
     /* @__PURE__ */ jsx3("code", { children: HELPER }),
@@ -1952,7 +1952,7 @@ function Console({ ctx, schemas, put }) {
       /* @__PURE__ */ jsxs6("span", { className: "min-w-0 flex-1", children: [
         /* @__PURE__ */ jsx6("b", { children: "Not run:" }),
         " ",
-        writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Shipyard.`,
+        writes.can ? `this statement writes, and writes to ${conn.database} are locked.` : `this statement writes, and ${conn.database} takes no writes through Terminal.`,
         run.fault.detail && /* @__PURE__ */ jsx6("span", { className: "mt-0.5 block font-mono text-muted-foreground", children: run.fault.detail })
       ] }),
       writes.can && /* @__PURE__ */ jsx6(Button5, { size: "xs", variant: "outline", onClick: writes.ask, children: "Unlock writes\u2026" })
@@ -2008,7 +2008,7 @@ import { jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
 var MINUTES = Math.round(WRITES_FOR_MS / 6e4);
 function Lock({ writes, now, busy, onLock }) {
   if (!writes.can) {
-    return /* @__PURE__ */ jsx7(Tip5, { label: "This database takes no writes through Shipyard: its tables can be read and queried, not changed.", children: /* @__PURE__ */ jsxs7(Badge3, { variant: "outline", size: "sm", className: "shrink-0 gap-1 font-normal", "data-testid": "database-lock", "data-writes": "never", children: [
+    return /* @__PURE__ */ jsx7(Tip5, { label: "This database takes no writes through Terminal: its tables can be read and queried, not changed.", children: /* @__PURE__ */ jsxs7(Badge3, { variant: "outline", size: "sm", className: "shrink-0 gap-1 font-normal", "data-testid": "database-lock", "data-writes": "never", children: [
       /* @__PURE__ */ jsx7(Icon6, { name: "Lock", className: "size-3" }),
       "Read-only"
     ] }) });
@@ -2340,12 +2340,12 @@ ${source}`;
               box,
               " itself. It reads that from the worktree's ",
               /* @__PURE__ */ jsx8("code", { children: ".env" }),
-              " files when this tab opens. A service of this worktree that Shipyard starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database ",
+              " files when this tab opens. A service of this worktree that Terminal starts with one shows here too, once it has started; one that was already running when Database was turned on needs a restart. A database on another host, or one whose address is a secret reference, is not shown. If nothing says which database ",
               worktree,
               " has, connect it yourself with its address."
             ] })
           ] }) : /* @__PURE__ */ jsxs8(Fragment5, { children: [
-            "A service of this worktree that Shipyard starts with a ",
+            "A service of this worktree that Terminal starts with a ",
             /* @__PURE__ */ jsx8("code", { children: "DATABASE_URL" }),
             " or ",
             /* @__PURE__ */ jsx8("code", { children: "POSTGRES_URL" }),
@@ -2505,7 +2505,7 @@ ${conn.id}`, { active });
         /* @__PURE__ */ jsx8(Tip6, { label: `You connected this one by hand. Its address is kept on ${box} until you forget it, ${worktree} is removed, or Database's data on ${box} is removed.`, children: /* @__PURE__ */ jsx8(Badge4, { variant: "outline", size: "sm", className: "shrink-0 font-normal text-muted-foreground", "data-testid": "database-by-hand", children: "added by hand" }) }),
         /* @__PURE__ */ jsx8(Button7, { size: "xs", variant: "ghost", className: "shrink-0", "aria-label": "Forget this connection\u2026", onClick: () => setForgetting(true), children: "Forget\u2026" })
       ] }),
-      file && !mine && // Where Database learned of it: not a service Shipyard started.
+      file && !mine && // Where Database learned of it: not a service Terminal started.
       /* @__PURE__ */ jsx8(Tip6, { label: `${conn.label}, read from ${worktree}'s ${file} on ${box}. Reading the tables again looks in the file again.`, children: /* @__PURE__ */ jsx8(Badge4, { variant: "outline", size: "sm", className: "shrink-0 font-mono font-normal text-muted-foreground", "data-testid": "database-from-env", "aria-label": `From ${conn.label} in ${worktree}'s ${file}`, children: file }) }),
       /* @__PURE__ */ jsx8(
         PickOne2,
@@ -2611,8 +2611,8 @@ function DatabaseScreen({ berth }) {
         /* @__PURE__ */ jsx9(FrameDescription, { children: "A worktree's Database tab shows the worktree's own development database. It learns of it from a service, from the worktree's files, or from you." })
       ] }),
       /* @__PURE__ */ jsx9(FramePanel, { children: /* @__PURE__ */ jsxs9("ol", { className: "space-y-3 text-sm", children: [
-        /* @__PURE__ */ jsxs9(Step, { n: 1, title: "From a service Shipyard starts in the worktree", children: [
-          "With Database on for a box, Shipyard tells it about each service it starts there: the ones under ",
+        /* @__PURE__ */ jsxs9(Step, { n: 1, title: "From a service Terminal starts in the worktree", children: [
+          "With Database on for a box, Terminal tells it about each service it starts there: the ones under ",
           /* @__PURE__ */ jsx9("code", { children: "services" }),
           " in the repository's ",
           /* @__PURE__ */ jsx9("code", { children: ".berth/config.json" }),
@@ -2681,8 +2681,8 @@ var index_default = definePlugin((berth) => {
 function TooOld(_) {
   return /* @__PURE__ */ jsx10(Empty3, { className: "py-16", children: /* @__PURE__ */ jsxs10(EmptyHeader3, { children: [
     /* @__PURE__ */ jsx10(Icon9, { name: "table-2", className: "mx-auto mb-2 size-5 text-muted-foreground" }),
-    /* @__PURE__ */ jsx10(EmptyTitle3, { children: "Database needs a newer Shipyard" }),
-    /* @__PURE__ */ jsx10(EmptyDescription3, { children: "This version can't install a plugin's program on a box. Update Shipyard, then reload plugins in Settings \u2192 Plugins." })
+    /* @__PURE__ */ jsx10(EmptyTitle3, { children: "Database needs a newer Terminal" }),
+    /* @__PURE__ */ jsx10(EmptyDescription3, { children: "This version can't install a plugin's program on a box. Update Terminal, then reload plugins in Settings \u2192 Plugins." })
   ] }) });
 }
 export {

@@ -207,7 +207,7 @@ func (p *Proxy) serveLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if why := crossSite(r); why != "" {
-		page(w, http.StatusForbidden, "Shipyard didn't log you in", why+" Open the link yourself: paste it in the address bar, or use Log in as… in the Browser tab.")
+		page(w, http.StatusForbidden, "Terminal didn't log you in", why+" Open the link yourself: paste it in the address bar, or use Log in as… in the Browser tab.")
 		return
 	}
 	labels, ok := localhostLabels(r.Host)

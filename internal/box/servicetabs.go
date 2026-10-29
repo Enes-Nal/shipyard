@@ -156,7 +156,7 @@ func (s *Sessions) runService(ctx context.Context, r serviceRun) error {
 	}
 	// What the pane says once the program ends (tmux 3.3 and later; older
 	// ones say "Pane is dead").
-	s.tmux(ctx, "set-option", "-w", "-t", target, "remain-on-exit-format", tmuxArg("#[fg=yellow]■#[default] "+r.Title+" stopped (#{?pane_dead_signal,signal #{pane_dead_signal},exit #{pane_dead_status}}). Start it again from Shipyard to run it here."))
+	s.tmux(ctx, "set-option", "-w", "-t", target, "remain-on-exit-format", tmuxArg("#[fg=yellow]■#[default] "+r.Title+" stopped (#{?pane_dead_signal,signal #{pane_dead_signal},exit #{pane_dead_status}}). Start it again from Terminal to run it here."))
 	return nil
 }
 
@@ -186,11 +186,11 @@ func (s *Sessions) stopService(ctx context.Context, name string) error {
 	for i, st := range steps {
 		// The pane's program leads its process group, as the terminal's
 		// foreground group: Ctrl-C signals all of it.
-		syscall.Kill(-pid, st.sig)
+		signalProcessGroup(pid, st.sig)
 		if i > 0 {
 			// Children that left the group go too.
 			for _, p := range processTree(pid) {
-				syscall.Kill(p, st.sig)
+				signalProcess(p, st.sig)
 			}
 		}
 		if s.waitDead(ctx, name, st.wait) {

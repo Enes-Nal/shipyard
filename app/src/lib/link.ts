@@ -21,7 +21,7 @@ export function relayNote(path: BoxPath | undefined): string | undefined {
 export function slowNote(link: BoxLink | undefined): string | undefined {
   if (!link?.slow) return undefined;
   const why = link.reason ? `Slow: ${link.reason}. ` : "Slow. ";
-  return `${why}Shipyard stays connected, and requests still go through.`;
+  return `${why}Terminal stays connected, and requests still go through.`;
 }
 
 const ms = (n: number) => `${n.toLocaleString("en-US")} ms`;

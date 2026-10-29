@@ -34,6 +34,7 @@ import { mockHistoryCall } from "@/lib/mock-history";
 import { BENCH, benchFleet, benchTerm, noisyTerm, seedBenchChats } from "@/lib/mock-bench";
 import { mockAnswer, mockToolDetailSync, WEBHOOK_TEST } from "@/lib/mock-conversation";
 import { crowd } from "@/lib/mock-crowd";
+import { IS_WINDOWS } from "@/lib/platform";
 
 // Mock mode (?mock=1) runs the whole UI on fixtures, so it can be worked on
 // without an agent or a box. State is mutable: new tasks and sessions appear,
@@ -93,7 +94,7 @@ const status: Status = {
   proxy: { port: 1377, url_port: 1377 },
 };
 
-// The berthd build each box runs, and the one this Shipyard ships: gpu is
+// The berthd build each box runs, and the one this Terminal ships: gpu is
 // behind until it is updated (GET /v1/boxes/outdated).
 const SHIPPED_BUILD = "b9758a308077";
 const mockBuilds: Record<string, string> = { devl: SHIPPED_BUILD, gpu: "304337b99a15" };
@@ -157,6 +158,9 @@ const locations: Record<string, Location[]> = {
       name: "evals",
       path: "/home/me/evals",
       repo: true,
+      remote: "git@gitlab.com:acme/evals.git",
+      slug: "acme/evals",
+      default_branch: "main",
       scripts: {},
       worktrees: [
         { name: "evals", path: "/home/me/evals", branch: "main", main: true },
@@ -379,7 +383,7 @@ const checksRun: Record<string, number> = {};
 // mockProjects is a box's folders, branches and the resolver: enough to
 // browse, clone, create, and make worktrees from names, branches, PRs and
 // issues.
-const mockFolders: Record<string, { git?: boolean; slug?: string }> = {
+const posixFolders: Record<string, { git?: boolean; slug?: string }> = {
   "/home/me": {},
   "/home/me/work": {},
   "/home/me/work/shop": { git: true, slug: "acme/shop" },
@@ -393,27 +397,63 @@ const mockFolders: Record<string, { git?: boolean; slug?: string }> = {
   "/home/me/orca/projects": {},
   "/home/me/orca/projects/bean-app": { git: true, slug: "me/bean-app" },
 };
+const windowsFolders: Record<string, { git?: boolean; slug?: string }> = {
+  "C:\\": {},
+  "C:\\Users": {},
+  "C:\\Users\\dev": {},
+  "C:\\Users\\dev\\Projects": {},
+  "C:\\Users\\dev\\Projects\\shop": { git: true, slug: "acme/shop" },
+  "C:\\Users\\dev\\Projects\\notes": { git: true, slug: "me/notes" },
+  "C:\\Users\\dev\\Projects\\terminal-app": { git: true, slug: "me/terminal-app" },
+  "C:\\Users\\dev\\Projects\\drafts": {},
+  "C:\\Users\\dev\\Documents": {},
+  "C:\\Users\\dev\\Downloads": {},
+  "E:\\": {},
+  "E:\\Code": {},
+  "E:\\Code\\New folder": { git: true, slug: "me/new-folder" },
+};
+const mockFolders = IS_WINDOWS ? windowsFolders : posixFolders;
 const mockBranches = ["main", "me/checkout-fix", "me/qa-deck", "me/search-perf", "feat/qa-app", "feat/pr-previews", "fix/cart-badge"];
 const HOME = "/home/me";
-const expand = (p: string) => (p === "~" ? HOME : p.startsWith("~/") ? `${HOME}${p.slice(1)}` : p.replace(/\/+$/, "") || "/");
+const FOLDER_HOME = IS_WINDOWS ? "C:\\Users\\dev" : HOME;
+const FOLDER_SEP = IS_WINDOWS ? "\\" : "/";
+const DEFAULT_PROJECTS = IS_WINDOWS ? "~/Projects" : "~/work";
+const trimFolder = (p: string) => {
+  if (IS_WINDOWS && /^[A-Za-z]:[\\/]*$/.test(p)) return `${p.slice(0, 2)}\\`;
+  const trimmed = p.replace(/[\\/]+$/, "");
+  return trimmed || FOLDER_SEP;
+};
+const expand = (p: string) => {
+  if (p === "~") return FOLDER_HOME;
+  if (/^~[\\/]/.test(p)) return `${FOLDER_HOME}${FOLDER_SEP}${p.slice(2).replace(/[\\/]/g, FOLDER_SEP)}`;
+  return trimFolder(p);
+};
+const folderJoin = (dir: string, name: string) => `${trimFolder(dir)}${trimFolder(dir).endsWith(FOLDER_SEP) ? "" : FOLDER_SEP}${name}`;
+const folderParent = (p: string) => {
+  const at = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  const rootLength = IS_WINDOWS ? 3 : 1;
+  if (IS_WINDOWS && p.length > rootLength && at < rootLength) return `${p.slice(0, 2)}\\`;
+  return at < rootLength ? undefined : (p.slice(0, at) || FOLDER_SEP);
+};
 
 function mockProjects(box: string, method: string, path: string, body?: unknown): Promise<unknown> | undefined {
   const [route, query = ""] = path.split("?");
   if (method === "GET" && route === "fs") {
-    const dir = expand(new URLSearchParams(query).get("path") ?? "~");
+    const dir = expand(new URLSearchParams(query).get("path") || DEFAULT_PROJECTS);
     if (!(dir in mockFolders)) return Promise.reject(new Error(`${dir}: no such folder`));
+    const childPrefix = dir.endsWith(FOLDER_SEP) ? dir : `${dir}${FOLDER_SEP}`;
     const entries = Object.keys(mockFolders)
-      .filter((p) => p.startsWith(`${dir}/`) && !p.slice(dir.length + 1).includes("/"))
+      .filter((p) => p !== dir && p.startsWith(childPrefix) && !/[\\/]/.test(p.slice(childPrefix.length)))
       .sort()
-      .map((p) => ({ name: p.split("/").pop()!, path: p, ...mockFolders[p] }));
-    return delay({ path: dir, parent: dir === "/" ? undefined : dir.split("/").slice(0, -1).join("/") || "/", home: HOME, entries });
+      .map((p) => ({ name: p.split(/[\\/]/).pop()!, path: p, ...mockFolders[p] }));
+    return delay({ path: dir, parent: folderParent(dir), home: FOLDER_HOME, entries });
   }
   if (method === "POST" && route === "locations/new") {
     // sample: the box writes its sample project (examples/hello) in.
     const r = body as { name?: string; parent?: string; sample?: string };
     if (r.sample && r.sample !== "hello") return Promise.reject(new ApiError(`there is no sample named "${r.sample}"`, 400));
     r.name ||= r.sample ?? "";
-    const dir = `${expand(r.parent ?? "~/work")}/${r.name}`;
+    const dir = folderJoin(expand(r.parent ?? DEFAULT_PROJECTS), r.name);
     if (locations[box]?.some((l) => l.name === r.name)) return Promise.reject(new Error(`a location named ${r.name} already exists`));
     mockFolders[dir] = { git: true };
     const loc: Location = { name: r.name, path: dir, repo: true, scripts: {}, default_branch: "main", worktrees: [{ name: r.name, path: dir, branch: "main", main: true }] };
@@ -789,7 +829,7 @@ function boxCall(box: string, method: string, path: string, body?: unknown): Pro
       // and its agent browser has no tabs.
       capabilities: ["diff", "turns", "queue", "ask", "answer", "journal", "runs", "exec.detach", "browser", "browser.devtools", "titles", "sample", "service.terminal", "session.home", "agents.install", "artifacts", "processes", ...(box === "gpu" ? [] : ["worktree.titles", "agents.paths", "browser.tabs"]), ...(structuredDemo ? ["driver.claude", "conversations", "sessions.past"] : [])],
       // Claude Code from npm under nvm, as the person's shell finds it;
-      // Codex from Shipyard's own installer.
+      // Codex from Terminal's own installer.
       agent_paths: [
         { id: "claude", name: "Claude Code", command: "claude", path: `${HOME}/.nvm/versions/node/v22.9.0/bin/claude`, version: "2.1.3 (Claude Code)", install: "npm", via: "shell" },
         { id: "codex", name: "Codex", command: "codex", path: `${HOME}/.local/bin/codex`, version: "codex-cli 0.46.0", via: "shell" },
@@ -1044,7 +1084,7 @@ if (discovery.tailscale !== "running") {
   delete (discovery as { tailnet?: string }).tailnet;
 }
 
-// The machines on tailnets Shipyard signed in to itself, by network.
+// The machines on tailnets Terminal signed in to itself, by network.
 const networkMachines: MockMachine[] = [
   { name: "homelab", dns_name: "homelab.example-home.ts.net", ip: "100.80.0.2", os: "linux", online: true },
   { name: "nas", dns_name: "nas.example-home.ts.net", ip: "100.80.0.3", os: "linux", online: true, ssh: true },
@@ -1077,7 +1117,7 @@ function addMockBox(name: string, address: string, network?: string) {
   emit({ type: "box.connected", box: name });
 }
 
-// mockSshPlan is how Shipyard would log in: 1Password's agent for most hosts,
+// mockSshPlan is how Terminal would log in: 1Password's agent for most hosts,
 // keys on disk for one with "nokey" in its name. Invented paths only.
 function mockSshPlan(host: string) {
   const at = host.lastIndexOf("@");
@@ -1108,7 +1148,7 @@ function mockSshFailure(host: string, trusted?: string) {
       host: where,
       port: "22",
       tried: ["the keys in 1Password's SSH agent", "~/.ssh/id_ed25519"],
-      message: `${where} refused the login. Shipyard offered the keys in 1Password's SSH agent, ~/.ssh/id_ed25519. Make the right key available: unlock your key manager's SSH agent, name it with IdentityAgent for this host in ~/.ssh/config, or choose the key file. Or add this computer's public key to ~/.ssh/authorized_keys on the box.`,
+      message: `${where} refused the login. Terminal offered the keys in 1Password's SSH agent, ~/.ssh/id_ed25519. Make the right key available: unlock your key manager's SSH agent, name it with IdentityAgent for this host in ~/.ssh/config, or choose the key file. Or add this computer's public key to ~/.ssh/authorized_keys on the box.`,
     };
   if (/build-01/.test(host) && trusted !== BUILD_KEY)
     return { kind: "host-key-unknown", host: where, port: "22", fingerprint: BUILD_KEY, message: `This computer hasn't connected to ${where} before. Check its host key fingerprint, then trust it to continue.` };
@@ -1120,7 +1160,7 @@ function mockSshFailure(host: string, trusted?: string) {
       host: where,
       port: "22",
       fingerprint: fp,
-      message: `${where}'s host key has changed since this computer last connected, so Shipyard did not log in. If the box was rebuilt, remove the old key with \`ssh-keygen -R ${where}\` and try again; if not, someone may be in the way, so don't connect.`,
+      message: `${where}'s host key has changed since this computer last connected, so Terminal did not log in. If the box was rebuilt, remove the old key with \`ssh-keygen -R ${where}\` and try again; if not, someone may be in the way, so don't connect.`,
     };
   if (/nohost/.test(host)) return { kind: "resolve", host: where, port: "22", message: `Could not resolve ${where}: no machine by that name is reachable from this computer. Check the spelling, or use its IP or tailnet address.` };
   return undefined;
@@ -1312,7 +1352,7 @@ async function mockStream(method: string, path: string, body: unknown, onValue: 
     }
     for (const pct of [12, 47, 83, 100]) await say(`Receiving objects: ${pct}% (${pct * 41}/4100), ${(pct * 0.31).toFixed(1)} MiB | 18.2 MiB/s`, 350);
     await say("Resolving deltas: 100% (2210/2210), done.", 400);
-    const dir = `${expand(r.parent ?? "~/work")}/${name}`;
+    const dir = folderJoin(expand(r.parent ?? DEFAULT_PROJECTS), name);
     mockFolders[dir] = { git: true };
     const loc: Location = { name, path: dir, repo: true, scripts: {}, default_branch: "main", slug: r.url.replace(/^.*[:/]([^/:]+\/[^/]+?)(\.git)?$/, "$1"), worktrees: [{ name, path: dir, branch: "main", main: true }] };
     locations[box] = [...(locations[box] ?? []), loc];
@@ -1503,11 +1543,11 @@ function mockAgent(): Client {
 // leaves it. Project copies start missing and are kept out of git.
 const skillCatalog = [
   { name: "berth", description: "Use berth to work across development boxes — repos, worktrees, tasks, sessions, ports and the repo's config.", version: "eb32be71b151" },
-  { name: "berth-artifacts", description: "Show the user data as a chart, table, diagram, notes or a small page in their Shipyard app instead of a wall of text.", version: "3b7e9c41d2a0" },
+  { name: "berth-artifacts", description: "Show the user data as a chart, table, diagram, notes or a small page in their Terminal app instead of a wall of text.", version: "3b7e9c41d2a0" },
   { name: "berth-browser", description: "Use the worktree's own page in a headless browser on the box: snapshot, click, fill, screenshot, console errors and the page's size.", version: "a84f0d27c6e3" },
   { name: "berth-hooks", description: "Automate berth with hooks and gates at the right scope.", version: "f20829fe718c" },
   { name: "berth-orchestrate", description: "Drive other coding agents: prompt, wait, check, loop, hand off, review.", version: "66660a4b14c8" },
-  { name: "berth-preview", description: "Run the worktree's dev server on its port and show it in the Shipyard app.", version: "e1454dda1a21" },
+  { name: "berth-preview", description: "Run the worktree's dev server on its port and show it in the Terminal app.", version: "e1454dda1a21" },
   { name: "berth-visual-diff", description: "Screenshot the worktree's pages and main's, diff them, and show what moved.", version: "5d0c1a9e7f42" },
 ];
 type MockSkillState = "installed" | "outdated" | "missing";

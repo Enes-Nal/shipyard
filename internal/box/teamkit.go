@@ -137,7 +137,7 @@ func (b *Box) startTeamKitInit(ctx context.Context, location, dest string, in Te
 		return name, nil
 	}
 	b.Sessions.Kill(ctx, name)
-	command := fmt.Sprintf("cd %s && %s; c=$?; [ $c = 0 ] && echo && echo 'Shipyard: %s is set up.'", shellQuote(dest), shellQuote(filepath.Join(files, filepath.FromSlash(script))), in.Project)
+	command := fmt.Sprintf("cd %s && %s; c=$?; [ $c = 0 ] && echo && echo 'Terminal: %s is set up.'", shellQuote(dest), shellQuote(filepath.Join(files, filepath.FromSlash(script))), in.Project)
 	env := initEnv(ctx, b, TeamBundle{ID: in.Team, Settings: in.Settings}, location, dest, files)
 	if _, err := b.Sessions.Create(ctx, name, location, dest, command, env); err != nil {
 		return "", err

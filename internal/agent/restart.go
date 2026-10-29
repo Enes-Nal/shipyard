@@ -10,14 +10,13 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/version"
 )
 
 // Restarting the agent cleanly, for an update. The app's updater replaces
-// Shipyard.app under a running agent, which goes on running the old code (and
+// Terminal.app under a running agent, which goes on running the old code (and
 // keeps this computer's box on the old berthd) until it restarts. The
 // updated app asks `berth agent restart --if-stale`, which reads what the
 // agent runs (GET /v1/agent), and when it is older than the berth asking,
@@ -103,10 +102,11 @@ func lockFree(dir string) bool {
 		return false
 	}
 	defer f.Close()
-	if syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) != nil {
+	unlock, ok := tryAgentLock(f)
+	if !ok {
 		return false
 	}
-	syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+	unlock()
 	return true
 }
 

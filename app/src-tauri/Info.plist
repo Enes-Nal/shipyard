@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Tauri merges this into Shipyard.app's Info.plist.
+  Tauri merges this into Terminal.app's Info.plist.
 
   Browser panes are WKWebViews, and in a bundled app App Transport Security
   refuses plain http to any name but an IP address, so every

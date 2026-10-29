@@ -65,7 +65,7 @@ berthd session screen shop-fix-login-claude-1a2b --history 200
 - Start agents with `--agent ID --prompt TEXT` (ids from `berthd agents`),
   never `-- claude "…"`: berth builds and quotes the command for that agent.
 - `--open split` (beside the user's focused terminal) or `--open tab` shows
-  it in the user's Shipyard app when they are looking at that worktree, and
+  it in the user's Terminal app when they are looking at that worktree, and
   offers it otherwise. Use it whenever the user asks for an agent "beside
   me", "in a split" or "in a new tab".
 - A new agent may stop at a question before it is ready, such as "do you
@@ -120,15 +120,15 @@ in the app or with `berth location config BOX/LOC --trust HASH`.
 
 When a pull request you open from a berth worktree changes something a
 reviewer would look at in a browser (pages, components, styles, copy, UI
-behaviour), end its description with a **Review in Shipyard** button, so a
+behaviour), end its description with a **Review in Terminal** button, so a
 teammate opens it on their own box in one click, set up by the team's kit,
 at the page it changes. Leave it out of PRs with nothing to see: backend,
 API, infrastructure, tests or docs alone. GitHub drops `berth://` links, so the
-button goes through berthd.app, which opens the review in Shipyard:
+button goes through berthd.app, which opens the review in Terminal:
 
 ```md
 <!-- shipyard-review-button -->
-[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=OWNER/NAME&pr=N&as=EMAIL&path=/x)
+[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=OWNER/NAME&pr=N&as=EMAIL&path=/x)
 <!-- /shipyard-review-button -->
 ```
 

@@ -2,7 +2,7 @@
 # (scripts/linux-box-test.sh, scripts/upgrade-test.sh --linux): systemd runs
 # as init, so berthd installs as the systemd user service it is on a real
 # box, for the user dev, with lingering on as install.sh asks for. Nothing
-# of Shipyard is in the image: the test installs it with site/install.sh.
+# of Terminal is in the image: the test installs it with site/install.sh.
 # The same image, without systemd, is the laptop the box pairs with.
 #   docker build -f scripts/release-test/linux/Dockerfile scripts/release-test
 FROM ubuntu:24.04

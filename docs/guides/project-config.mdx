@@ -65,7 +65,7 @@ The box's API is `POST /v1/locations/{name}/config/trust` with
   shell (up to 30 minutes, with its output in a log on the box).
 - `check` is how to tell the work is right (`"pnpm test && pnpm lint"`):
   Try N ways and loops verify with it unless you give another. Without one,
-  Shipyard suggests what the repository suggests: `package.json`'s `test`
+  Terminal suggests what the repository suggests: `package.json`'s `test`
   script run by the package manager its lockfile names, `go test ./...`,
   `cargo test`, or a Makefile's `test` target. It is only a default; nothing
   runs it until you start a run with it.
@@ -162,7 +162,7 @@ built-in one with the same `id` (`claude`, `codex`, `opencode`, `gemini`,
 
 A task, a session or an attempt can pick its agent's `model` and `effort`
 (`berth task … --agent claude` through the API, or the app's agent picker).
-Shipyard passes them with each CLI's own flags, checked against its `--help`:
+Terminal passes them with each CLI's own flags, checked against its `--help`:
 
 | Agent | Model | Effort | Models offered |
 |---|---|---|---|

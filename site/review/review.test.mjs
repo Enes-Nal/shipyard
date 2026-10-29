@@ -1,4 +1,4 @@
-// The bounce page for "Review in Shipyard" buttons (index.html): its script
+// The bounce page for "Review in Terminal" buttons (index.html): its script
 // run against stand-ins for the page, so it tests in Node with no browser.
 // Run from app/ with the app's unit tests (pnpm test).
 
@@ -53,7 +53,7 @@ function run(search) {
       this.sent = v;
     },
   };
-  const document = { title: "Review in Shipyard", getElementById: el };
+  const document = { title: "Review in Terminal", getElementById: el };
   vm.runInNewContext(script, { document, location, URL });
   return { sent: location.sent, el, title: document.title };
 }
@@ -89,7 +89,7 @@ const appKnowsLogin = !!parseReviewLink("berth://review?repo=acme/shop&pr=1&as=p
 
 test("a plain review link opens exactly that berth:// link", () => {
   const r = opens("?repo=acme/shop&pr=42", "berth://review?repo=acme/shop&pr=42");
-  assert.equal(r.el("ok-title").textContent, "Opening #42 of acme/shop in Shipyard…");
+  assert.equal(r.el("ok-title").textContent, "Opening #42 of acme/shop in Terminal…");
   assert.equal(r.el("f-repo").textContent, "acme/shop");
   assert.equal(r.el("f-pr").textContent, "#42");
   assert.equal(r.el("github").attrs.href, "https://github.com/acme/shop/pull/42");
@@ -215,7 +215,7 @@ test("the badge is small, self-contained SVG", () => {
   const svg = readFileSync(new URL("../badges/review.svg", here), "utf8");
   assert.ok(svg.length < 3000, `${svg.length} bytes`);
   assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="\d+" height="2[0-8]"/);
-  assert.ok(svg.includes("Review in Shipyard"));
+  assert.ok(svg.includes("Review in Terminal"));
   // Nothing it loads or runs: no links, images, scripts, styles or fonts
   // from elsewhere.
   for (const bad of ["href", "<image", "<script", "<foreignObject", "@import", "url(http", "<style", "on"]) {

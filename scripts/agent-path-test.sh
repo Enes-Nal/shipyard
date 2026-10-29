@@ -32,7 +32,7 @@ while [ $# -gt 0 ]; do
 done
 export KEEP
 OUT=${OUT:-$REPO/dist/release-test/agent-path-$(date +%Y%m%d-%H%M%S)}
-rt_init "Shipyard agent CLIs from npm (Linux, Docker)" "$OUT"
+rt_init "Terminal agent CLIs from npm (Linux, Docker)" "$OUT"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/berth-agent-path.XXXXXX")
 trap 'linux_cleanup >>"$RT_LOG" 2>&1; rm -rf "$WORK"' EXIT
 trap 'exit 130' INT TERM

@@ -5,12 +5,12 @@ import AxeBuilder from "@axe-core/playwright";
 import { scenes } from "./a11y-scenes";
 import { expect, mockOnly, test } from "./fixtures";
 
-// axe-core over the app's screens (a11y-scenes.ts), in Shipyard Dark: no serious or critical violation of WCAG 2.2 A and AA, or of axe's
+// axe-core over the app's screens (a11y-scenes.ts), in Terminal Dark: no serious or critical violation of WCAG 2.2 A and AA, or of axe's
 // best practices. The user's own page in a Browser or Preview tab is left
 // out (it isn't ours), as are the terminal's canvas rows.
 //
 // A11Y_REPORT=file.jsonl writes every violation, minor ones too, instead of
-// failing; A11Y_FULL=1 adds Shipyard Light and every screen's other states
+// failing; A11Y_FULL=1 adds Terminal Light and every screen's other states
 // (scenes marked extra); A11Y_THEMES=all checks the key screens' contrast in
 // every built-in theme. check:themes covers each theme's contrast on every run.
 

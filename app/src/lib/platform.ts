@@ -1,5 +1,6 @@
 // Which desktop app this is. The Mac app is the main one; the Linux app is
-// an alpha (WebKitGTK instead of WKWebView, no menu bar, Ctrl for ⌘). A
+// an alpha (WebKitGTK instead of WKWebView, no menu bar, Ctrl for ⌘), and
+// Windows uses WebView2 and Terminal's own title bar. A
 // page in a browser keeps the Mac app's look and keys wherever it runs (the
 // e2e suite runs on Linux); ?platform=linux shows the Linux app's instead,
 // for screenshots and tests.
@@ -16,7 +17,8 @@ const tauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 const nav = typeof navigator === "undefined" ? "" : `${navigator.platform} ${navigator.userAgent}`;
 
 export const IS_LINUX = forced ? forced === "linux" : tauri && /Linux/.test(nav);
-export const IS_MAC = !IS_LINUX;
+export const IS_WINDOWS = forced ? forced === "windows" : tauri && /Windows|Win32/.test(nav);
+export const IS_MAC = forced ? forced === "mac" : !IS_LINUX && !IS_WINDOWS;
 
 // The Linux app is an alpha: it says so beside its name.
 export const LINUX_ALPHA = IS_LINUX;
@@ -28,8 +30,8 @@ export const LINUX_TERMINAL_KEYS =
   "Ctrl stands in for ⌘. In a terminal, Ctrl and a letter go to the shell (Ctrl+W, Ctrl+D, Ctrl+K…); add Shift for the app's (Ctrl+Shift+T, Ctrl+Shift+K). Ctrl+Shift+C and Ctrl+Shift+V copy and paste there.";
 
 // thisComputer names the laptop the way its owner would: "this Mac", or
-// "this computer" in the Linux app.
-export const thisComputer = (s: string): string => (IS_LINUX ? s.replaceAll("this Mac", "this computer").replaceAll("This Mac", "This computer") : s);
+// "this computer" on Windows and Linux.
+export const thisComputer = (s: string): string => (IS_MAC ? s : s.replaceAll("this Mac", "this computer").replaceAll("This Mac", "This computer"));
 
 // The key that stands in for ⌘: ⌘ on a Mac, Ctrl everywhere else.
 export const modKey = (e: { metaKey: boolean; ctrlKey: boolean }): boolean => (IS_MAC ? e.metaKey : e.ctrlKey);

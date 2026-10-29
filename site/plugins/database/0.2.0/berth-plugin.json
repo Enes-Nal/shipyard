@@ -5,7 +5,7 @@
   "description": "A worktree's own development database, as a tab on the worktree: browse its tables, edit rows and run SQL, read-only until you unlock it. Postgres for now. Installs berth-database on the boxes you turn it on for.",
   "main": "dist/index.js",
   "defaultEnabled": false,
-  "author": "Shipyard",
+  "author": "Terminal",
   "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/database",
   "box": {
     "helper": {

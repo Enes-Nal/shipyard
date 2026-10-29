@@ -12,18 +12,18 @@ function GitHubIcon() {
 }
 
 // The product header above the docs on a laptop-sized screen: the landing
-// page's lockup (the mark and "shipyard"), "docs", and the way back to
+// page's lockup (the mark and "terminal"), "docs", and the way back to
 // berthd.app. On a phone the docs' own header takes its place
 // (lib/layout.shared.tsx).
 export function SiteHeader() {
   return (
     <header className="berth-site-header">
-      <Link href="/" className="berth-brand berth-site-brand" aria-label="Shipyard docs, home">
+      <Link href="/" className="berth-brand berth-site-brand" aria-label="Terminal docs, home">
         <Mark className="berth-brand-mark" />
-        <span className="berth-brand-word">shipyard</span>
+        <span className="berth-brand-word">terminal</span>
         <span className="berth-brand-docs">docs</span>
       </Link>
-      <nav aria-label="Shipyard" className="berth-site-nav">
+      <nav aria-label="Terminal" className="berth-site-nav">
         <a href={landingUrl}>
           berthd.app
           <ArrowUpRight aria-hidden="true" />
@@ -50,7 +50,7 @@ export function SiteLink({ className }: { className?: string }) {
 // The menu drawer's way out, labelled: the website and the code.
 export function DrawerLinks() {
   return (
-    <nav aria-label="Shipyard" className="berth-drawer-links">
+    <nav aria-label="Terminal" className="berth-drawer-links">
       <a href={landingUrl}>
         <Mark className="berth-drawer-mark" />
         berthd.app

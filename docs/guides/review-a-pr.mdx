@@ -12,25 +12,25 @@ berth://review?repo=acme/shop&pr=42
 ```
 
 Paste one in a chat. GitHub doesn't keep `berth://` links in a PR's
-description, so there the link is a [button](#the-review-in-shipyard-button)
+description, so there the link is a [button](#the-review-in-terminal-button)
 that goes through berthd.app. From the terminal it is
 `berth review acme/shop#42`.
 
-## The Review in Shipyard button
+## The Review in Terminal button
 
 On GitHub, a review link is a button in the PR's description:
 
 ```md
 <!-- shipyard-review-button -->
-[![Review in Shipyard](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=42)
+[![Review in Terminal](https://berthd.app/badges/review.svg)](https://berthd.app/review?repo=acme/shop&pr=42)
 <!-- /shipyard-review-button -->
 ```
 
 It links to `https://berthd.app/review?repo=acme/shop&pr=42`, a static page
 that checks the link and opens `berth://review?repo=acme/shop&pr=42` in
-Shipyard. It shows the repository and PR, an **Open in Shipyard** button in
+Terminal. It shows the repository and PR, an **Open in Terminal** button in
 case the browser asks first, a link to the PR on GitHub, and where to
-install Shipyard. The page:
+install Terminal. The page:
 
 - reads the link as strictly as the app: `repo`, `pr`, and optionally
   `sha` (a commit, only a hint), `as` (a login user's email, at most 254
@@ -174,7 +174,7 @@ confirm. A review with uncommitted changes is not moved.
 
 A review is set up like any worktree of the project: by your team's kit
 and the `.berth/config.json` your box trusts, read from the main checkout,
-never from the PR's own `.berth/`. Git hooks are off while Shipyard checks
+never from the PR's own `.berth/`. Git hooks are off while Terminal checks
 the PR out.
 
 What the PR changes in setup is listed on the sheet, so you can look before
@@ -182,7 +182,7 @@ you start:
 
 | Change | What the sheet says |
 | --- | --- |
-| `.berth/**` | Changes Shipyard's own setup (not used for this review) |
+| `.berth/**` | Changes Terminal's own setup (not used for this review) |
 | `package.json` scripts (`postinstall`, `prepare`, `dev`, …) | Changes package.json scripts, by name |
 | Other `package.json` changes, manifests | Changes dependencies |
 | Lockfiles alone | Lockfile only |
@@ -205,7 +205,7 @@ personal keys out of that file, or have the kit skip them when
 
 ## Containment
 
-The dev server is reachable only through Shipyard's private URL, as any
+The dev server is reachable only through Terminal's private URL, as any
 worktree's is. Its terminals and agents run in their own session scopes, so
 removing the review stops everything it started.
 
@@ -230,8 +230,8 @@ reviewer and the keys policy), `review.updated`, `review.waiting` and
 
 ## For agents
 
-An agent that opens a PR from a Shipyard worktree adds the
-[button](#the-review-in-shipyard-button) to its description, as the berth
+An agent that opens a PR from a Terminal worktree adds the
+[button](#the-review-in-terminal-button) to its description, as the berth
 skill tells it, with `path` set to the main page its change affects and `as`
 to one of the project's login users (`berthd login users` lists them), or
 neither. On the laptop, `berth review link OWNER/NAME#N` prints the

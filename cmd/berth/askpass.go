@@ -20,10 +20,10 @@ func askpass(args []string) error {
 	}
 	var script string
 	if hostKeyQuestion(prompt) {
-		script = `display dialog ` + appleString(prompt) + ` with title "Shipyard: trust this box?" buttons {"Cancel", "Trust and connect"} default button "Cancel" cancel button "Cancel" with icon caution
+		script = `display dialog ` + appleString(prompt) + ` with title "Terminal: trust this box?" buttons {"Cancel", "Trust and connect"} default button "Cancel" cancel button "Cancel" with icon caution
 "yes"`
 	} else {
-		script = `text returned of (display dialog ` + appleString(prompt) + ` with title "Shipyard: SSH" default answer "" with hidden answer buttons {"Cancel", "OK"} default button "OK" cancel button "Cancel")`
+		script = `text returned of (display dialog ` + appleString(prompt) + ` with title "Terminal: SSH" default answer "" with hidden answer buttons {"Cancel", "OK"} default button "OK" cancel button "Cancel")`
 	}
 	out, err := exec.Command("osascript", "-e", script).Output()
 	if err != nil {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish a Shipyard release from this Mac, with the same build the release
+# Publish a Terminal release from this Mac, with the same build the release
 # workflow makes in CI:
 #
 #   make publish VERSION=0.3.0 [NOTES="What changed"]
@@ -104,9 +104,9 @@ assets=(dist/mac/Berth-macos-universal.dmg dist/mac/Berth-macos-universal.app.ta
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release upload "$tag" --repo "$repo" --clobber "${assets[@]}"
 elif [ -n "${NOTES:-}" ]; then
-  gh release create "$tag" --repo "$repo" --verify-tag --draft --title "Shipyard $tag" --notes "$NOTES" "${assets[@]}"
+  gh release create "$tag" --repo "$repo" --verify-tag --draft --title "Terminal $tag" --notes "$NOTES" "${assets[@]}"
 else
-  gh release create "$tag" --repo "$repo" --verify-tag --draft --title "Shipyard $tag" --generate-notes "${assets[@]}"
+  gh release create "$tag" --repo "$repo" --verify-tag --draft --title "Terminal $tag" --generate-notes "${assets[@]}"
 fi
 # Last, so the feed never points at an archive that is not there yet.
 gh release upload "$tag" --repo "$repo" --clobber dist/mac/latest.json

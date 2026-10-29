@@ -2,7 +2,7 @@ import { expect, mockOnly, test } from "./fixtures";
 
 // Settings › Boxes says which agent CLIs each box found, where, and how they
 // were installed: an npm install under nvm reads as such (the mock's devl
-// has Claude Code from npm and Codex from Shipyard's installer), with Look
+// has Claude Code from npm and Codex from Terminal's installer), with Look
 // again for one installed since.
 
 test.beforeEach(() => mockOnly("the box's agent paths are mock fixtures"));

@@ -1,7 +1,7 @@
 import { expect, mockOnly, test } from "./fixtures";
 
 // A box's browsers, in Settings › Boxes (the sidebar's foot opens it): who
-// started each, what it costs, and Stop for those Shipyard or its sessions
+// started each, what it costs, and Stop for those Terminal or its sessions
 // started.
 // The mock's devl runs a session's Playwright tests at 486% CPU, berth's own
 // agent browser, one left by an ended session, an agent-browser session and
@@ -18,11 +18,11 @@ test("the sidebar's foot leads to the box's browsers, and Stop stops one", async
   const playwright = panel.getByTestId("box-browser").filter({ hasText: "Playwright tests in shop/https-linear-app-acme" });
   await expect(playwright).toContainText("486%");
   await expect(playwright).toContainText("1.3 GB");
-  await expect(panel.getByTestId("box-browser").filter({ hasText: "Agent browser for shop/checkout-fix" })).toContainText("Shipyard");
+  await expect(panel.getByTestId("box-browser").filter({ hasText: "Agent browser for shop/checkout-fix" })).toContainText("Terminal");
   await expect(panel.getByTestId("box-browser").filter({ hasText: "left by ended session order-export-claude" })).toContainText("Left behind");
   // The box user's own Chrome is listed, never stoppable.
   const own = panel.locator("[data-testid=box-browser][data-owner=other]");
-  await expect(own).toContainText("Chrome, not started by Shipyard");
+  await expect(own).toContainText("Chrome, not started by Terminal");
   await expect(own.getByRole("button", { name: /^Stop/ })).toHaveCount(0);
   // The session near its memory limit, with the limit.
   await expect(panel.getByTestId("box-session").first()).toContainText("11.8 GB of 12 GB");

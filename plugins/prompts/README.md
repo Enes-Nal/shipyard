@@ -11,7 +11,7 @@ Saved prompts for coding agents, with `{{variables}}`.
 - **Send to several**: from the Agent Dashboard (Select, or ⌘-click cards →
   "Send to N agents…"), the Worktrees view (select rows → "Prompt agents…"),
   ⌘K, or a prompt's "Send to several…". Each agent gets the prompt filled in
-  for it, one after another; optionally Shipyard waits for each turn to end and
+  for it, one after another; optionally Terminal waits for each turn to end and
   shows the last thing each agent said.
 
 ## Variables

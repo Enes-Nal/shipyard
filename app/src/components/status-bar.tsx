@@ -1,4 +1,4 @@
-import { CircleArrowUpIcon, GitBranchIcon, RefreshCwIcon } from "lucide-react";
+import { BookOpenIcon, CircleArrowUpIcon, GitBranchIcon, RefreshCwIcon } from "lucide-react";
 import { useState } from "react";
 
 import { QueueIndicator } from "@/components/queue/queue-indicator";
@@ -6,7 +6,6 @@ import { Tip } from "@/components/tip";
 import { Spinner } from "@/components/ui/spinner";
 import { useUpdateAll } from "@/components/upgrade-box";
 import { useAgentCounts } from "@/hooks/use-agent-counts";
-import { isMock } from "@/hooks/use-berth-connection";
 import { AGENT_WORDS } from "@/lib/state-model";
 import { useStore } from "@/lib/store";
 import { restartToUpdate, useAgentRestart, useUpdater } from "@/lib/updater";
@@ -17,6 +16,7 @@ import { useRegistry } from "@/plugins/registry";
 import { openRenameWorktree } from "@/components/sidebar/rename-worktree";
 import { homeBox, useWorkspaces } from "@/lib/workspaces";
 import { findWorktree } from "@/lib/worktree-names";
+import { openTerminalTutorial } from "@/lib/terminal-tutorial";
 
 // StatusBar is the strip along the bottom: what agents are doing on the
 // left, updates and forwards on the right. Every item goes somewhere when
@@ -41,15 +41,11 @@ export function StatusBar() {
         !new URLSearchParams(location.search).has("shots") && <Tip label="A demo: invented boxes and repositories, and nothing runs">
           <span className="rounded border border-border px-1">demo</span>
         </Tip>
-      ) : isMock() && !new URLSearchParams(location.search).has("shots") && (
-        <Tip label="Showing made-up data (?mock=1)">
-          <span className="rounded border border-warning/40 px-1 text-warning-foreground">mock</span>
-        </Tip>
-      )}
+      ) : null}
       {connection.state === "offline" && restarting ? (
         <span className="flex items-center gap-1.5">
           <Spinner className="size-3" />
-          Restarting the Shipyard agent…
+          Restarting the Terminal agent…
         </span>
       ) : connection.state === "offline" ? (
         <Tip label={connection.error}>
@@ -91,6 +87,12 @@ export function StatusBar() {
             <item.Component berth={pluginContexts.get(plugin)!} />
           </PluginBoundary>
         ))}
+      {!__BERTH_DEMO__ && (
+        <Item tip="Open the guided Terminal tutorial" onClick={openTerminalTutorial}>
+          <BookOpenIcon className="size-3" />
+          Tutorial
+        </Item>
+      )}
       <UpdateItem />
       <OutdatedItem />
       {forwards > 0 && (
@@ -146,7 +148,7 @@ function WorktreeItem() {
   );
 }
 
-// UpdateItem shows once a newer Shipyard is downloaded, and restarts into it
+// UpdateItem shows once a newer Terminal is downloaded, and restarts into it
 // when clicked. Checking and downloading stay out of sight.
 function UpdateItem() {
   const update = useUpdater();
@@ -156,7 +158,7 @@ function UpdateItem() {
     <Item
       className="text-foreground"
       disabled={installing}
-      tip={`Shipyard ${update.version} is downloaded. Restarting reopens this window; agents keep running on their boxes.`}
+      tip={`Terminal ${update.version} is downloaded. Restarting reopens this window; agents keep running on their boxes.`}
       onClick={() => void restartToUpdate()}
     >
       <CircleArrowUpIcon className="size-3 text-success" />
@@ -182,7 +184,7 @@ function OutdatedItem() {
   const n = outdated.length;
   return (
     <span className="flex items-center gap-1.5">
-      <Item tip={`${outdated.join(", ")} ${n === 1 ? "runs" : "run"} an older berthd than this Shipyard ships.`} onClick={() => useStore.getState().setView({ kind: "settings", section: "boxes" })}>
+      <Item tip={`${outdated.join(", ")} ${n === 1 ? "runs" : "run"} an older berthd than this Terminal ships.`} onClick={() => useStore.getState().setView({ kind: "settings", section: "boxes" })}>
         <CircleArrowUpIcon className="size-3 text-info" />
         {n === 1 ? `${outdated[0]} runs` : `${n} boxes run`} an older berthd
       </Item>

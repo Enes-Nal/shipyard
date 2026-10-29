@@ -98,7 +98,7 @@ func (s *systemdScopes) Available(ctx context.Context) bool {
 	s.run, s.ctl = run, ctl
 	cctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	probe := append(s.Wrap("berth-probe-"+strconv.Itoa(os.Getpid())+".scope", "Shipyard checks scopes work", 0), "true")
+	probe := append(s.Wrap("berth-probe-"+strconv.Itoa(os.Getpid())+".scope", "Terminal checks scopes work", 0), "true")
 	s.ok = exec.CommandContext(cctx, probe[0], probe[1:]...).Run() == nil
 	return s.ok
 }
@@ -277,7 +277,7 @@ func (s *Sessions) kill(pid int, sig syscall.Signal) {
 		s.signal(pid, sig)
 		return
 	}
-	syscall.Kill(pid, sig)
+	signalProcess(pid, sig)
 }
 
 // sessionProcs are the processes that belong to session name as berth can

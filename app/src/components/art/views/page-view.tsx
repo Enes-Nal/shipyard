@@ -11,7 +11,7 @@ import type { Theme } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // A page: one HTML file an agent wrote, run on its own origin with no
-// access to Shipyard or the network (internal/proxy/artifact.go). The app
+// access to Terminal or the network (internal/proxy/artifact.go). The app
 // frames the proxy's shell, which frames the page; the theme goes in the
 // URL's fragment (it never reaches a server) and, when it changes, as a
 // message. Thumbnails are a poster, never a live page: a page runs only in

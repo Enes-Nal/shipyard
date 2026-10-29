@@ -438,7 +438,7 @@ function OffCell({ p, onRemove }: { p: Placed; onRemove(): void }) {
       <div className="flex size-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center text-muted-foreground text-meta">
         <p className="text-foreground text-row">{plugin ? "Its plugin is off" : "Not available"}</p>
         <p className="font-mono text-tag">{p.id}</p>
-        <p className="text-balance">{plugin ? `Turn ${plugin} on in Settings → Plugins and it comes back here.` : "This version of Shipyard has no such widget."}</p>
+        <p className="text-balance">{plugin ? `Turn ${plugin} on in Settings → Plugins and it comes back here.` : "This version of Terminal has no such widget."}</p>
         <Button size="xs" variant="outline" className="mt-1" onClick={onRemove}>
           Remove
         </Button>

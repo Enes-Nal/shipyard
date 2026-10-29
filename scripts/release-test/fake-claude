@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A stand-in for Claude Code, for the release tests: it spends no tokens and
 // does the same small task every time, the way the real CLI would be seen
-// by Shipyard. The tests install it as `claude` (on a Mac in ~/.local/bin of
+// by Terminal. The tests install it as `claude` (on a Mac in ~/.local/bin of
 // the test's home, where Claude Code's installer puts it; on a Linux box on
 // PATH), so berthd finds it, installs its hooks and starts it.
 //
@@ -9,13 +9,13 @@
 //  - runs the hooks berthd installed in ~/.claude/settings.json (SessionStart,
 //    UserPromptSubmit, PostToolUse, Stop) with the payload Claude Code sends;
 //  - writes its conversation to ~/.claude/projects/<folder>/<id>.jsonl, in
-//    Claude Code's format, which Shipyard's chat reads;
+//    Claude Code's format, which Terminal's chat reads;
 //  - takes its first prompt as its last argument and later ones typed into
 //    the terminal, one per line.
 //
 // The task, for any prompt: add a /health endpoint and its test to the
 // sample project (examples/hello), commit them, then start its dev server with
-// `node server.js`, which listens on $PORT, the port Shipyard gives the worktree,
+// `node server.js`, which listens on $PORT, the port Terminal gives the worktree,
 // as an agent following the berth-preview skill would. What it saw (its
 // arguments, PORT, BERTH_PORT, the server's pid) goes to
 // $BERTH_RELEASE_TEST_ROOT/fake-claude/<id>.json (or $TMPDIR's) for the test
@@ -30,7 +30,7 @@ const readline = require("node:readline");
 
 const argv = process.argv.slice(2);
 if (argv.includes("--version") || argv.includes("-v")) {
-  console.log("2.1.0 (Claude Code; Shipyard release-test stand-in)");
+  console.log("2.1.0 (Claude Code; Terminal release-test stand-in)");
   process.exit(0);
 }
 // Flags berth passes take a value; the prompt is the one word left over.
@@ -137,14 +137,14 @@ async function turn(text) {
     console.log("● Edited server.js and wrote health.test.js");
     // Committed, as agents are usually asked to: archiving a worktree keeps
     // one with uncommitted work.
-    const git = (...a) => spawnSync("git", ["-c", "user.name=Shipyard release test", "-c", "user.email=release-test@berth.invalid", ...a], { cwd, encoding: "utf8" });
+    const git = (...a) => spawnSync("git", ["-c", "user.name=Terminal release test", "-c", "user.email=release-test@berth.invalid", ...a], { cwd, encoding: "utf8" });
     git("add", "server.js", "health.test.js");
     const c = git("commit", "-q", "-m", "Add a /health endpoint, with a test");
     tool("Bash", { command: "git commit -am 'Add a /health endpoint, with a test'", description: "Commit" }, c.status === 0 ? "committed" : c.stderr);
     report.committed = c.status === 0;
   }
 
-  // The dev server, on whatever port Shipyard gave this worktree.
+  // The dev server, on whatever port Terminal gave this worktree.
   if (!report.server && fs.existsSync(path.join(cwd, "package.json"))) {
     const log = fs.openSync(path.join(reportDir, id + ".server.log"), "a");
     // In the agent's own process group, as a background command of Claude
@@ -164,7 +164,7 @@ async function turn(text) {
 }
 
 (async () => {
-  console.log("✻ Claude Code (Shipyard release-test stand-in) in " + cwd);
+  console.log("✻ Claude Code (Terminal release-test stand-in) in " + cwd);
   saveReport();
   hook("SessionStart", { source: "startup" });
   if (prompt) await turn(prompt);

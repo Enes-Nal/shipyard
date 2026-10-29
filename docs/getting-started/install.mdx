@@ -1,15 +1,15 @@
 ---
 title: Install
-description: One line puts berthd on a box. On your Mac, download the Shipyard app, which carries the berth CLI and updates itself.
+description: One line puts berthd on a box. On your Mac, download the Terminal app, which carries the berth CLI and updates itself.
 ---
 
-Shipyard has two halves: `berthd`, the daemon on each box your agents run on,
-and on your laptop the Shipyard app with the `berth` CLI inside it. The
+Terminal has two halves: `berthd`, the daemon on each box your agents run on,
+and on your laptop the Terminal app with the `berth` CLI inside it. The
 [release](https://github.com/cosscom/shipyard/releases) carries the app
 for macOS, and `berthd` and `berth` for Linux and macOS, amd64 and arm64.
 
 <Callout title="Formerly Berth">
-  Shipyard was called Berth; its commands are still `berth` and `berthd`.
+  Terminal was called Berth; its commands are still `berth` and `berthd`.
 </Callout>
 
 ## What you need
@@ -51,11 +51,11 @@ curl -fsSL https://berthd.app/install | sh
 ==> Installing berthd v0.1.0 to /home/me/.local/bin/berthd
 ==> Starting the service
   Installed /home/me/.config/systemd/user/berthd.service; berthd is serving on 100.101.102.103:7444.
-  Agent integrations (hooks for needs-you, working and done; Shipyard's skills):
+  Agent integrations (hooks for needs-you, working and done; Terminal's skills):
     Claude Code: skills in /home/me/.claude/skills; hooks added in /home/me/.claude/settings.json
     Not found: Codex, Cursor Agent. After installing one, run: /home/me/.local/bin/berthd integrations install codex|cursor
 
-berthd v0.1.0 is running. Paste this link into Shipyard on your laptop
+berthd v0.1.0 is running. Paste this link into Terminal on your laptop
 (Add a box). It works once, for ten minutes:
 
   berth://100.101.102.103:7444?code=…&fp=…
@@ -83,8 +83,8 @@ see [over SSH](/getting-started/add-a-box#over-ssh).
 
 ## Install the app
 
-[Download Shipyard for macOS](https://github.com/cosscom/shipyard/releases/latest/download/Berth-macos-universal.dmg),
-open the disk image, drag **Shipyard** to **Applications**, and open it. It's
+[Download Terminal for macOS](https://github.com/cosscom/shipyard/releases/latest/download/Berth-macos-universal.dmg),
+open the disk image, drag **Terminal** to **Applications**, and open it. It's
 one app for Apple silicon and Intel Macs, signed with a Developer ID and
 notarized by Apple, so it opens like any other.
 
@@ -110,7 +110,7 @@ to install on the laptop. When the [laptop agent](#start-the-laptop-agent)
 isn't running, the app offers to start it.
 
 While no box is paired, it opens on a short setup that gets you to a running
-agent in about a minute. Its first choice is **Start on this Mac**: Shipyard
+agent in about a minute. Its first choice is **Start on this Mac**: Terminal
 installs the `berthd` it carries and pairs with it, with no terminal (see
 [this Mac](/getting-started/add-a-box#this-mac)); agents then run while the
 Mac is awake, and you can add a server later. Then **Use the sample** makes
@@ -129,7 +129,7 @@ The app checks for a new release when it opens and every few hours after,
 and downloads it in the background. When one is ready, **Restart to
 update** shows in the status bar and in **Settings → About**; it never
 restarts by itself. Restarting the app doesn't stop your agents: they run
-on the boxes. The updated app restarts the Shipyard agent once it has finished
+on the boxes. The updated app restarts the Terminal agent once it has finished
 what it's doing, so it runs the new version too, and this Mac's box is
 brought up to date; a note says **Updated to vX.Y.Z**. **Settings → About →
 Check now** checks straight away.
@@ -145,7 +145,7 @@ again.
 To use `berth` in a terminal, open **Settings → General** in the app and,
 under **Command line**, click **Install** next to **The berth command**. It
 asks first, then links `~/.local/bin/berth` to the copy inside the app
-(`Shipyard.app/Contents/MacOS/berth-cli`), so the command updates with the
+(`Terminal.app/Contents/MacOS/berth-cli`), so the command updates with the
 app. If `~/.local/bin` isn't on your `PATH`, add it
 (`export PATH="$HOME/.local/bin:$PATH"` in your shell's profile); these
 pages write `berth`. `berth help` lists every command.
@@ -158,14 +158,14 @@ About** say **Alpha**, and About has **Report a Linux bug**, which opens a
 GitHub issue; please paste **Copy diagnostics** into it.
 
 - **AppImage** (any distribution, updates itself):
-  [Shipyard for Linux (alpha), AppImage](https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.AppImage).
+  [Terminal for Linux (alpha), AppImage](https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.AppImage).
   Make it executable and run it:
 
   ```sh
   mkdir -p ~/Applications
-  curl -fL -o ~/Applications/Shipyard.AppImage https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.AppImage
-  chmod +x ~/Applications/Shipyard.AppImage
-  ~/Applications/Shipyard.AppImage
+  curl -fL -o ~/Applications/Terminal.AppImage https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.AppImage
+  chmod +x ~/Applications/Terminal.AppImage
+  ~/Applications/Terminal.AppImage
   ```
 
   It needs FUSE 2 (`libfuse2` on Debian and Ubuntu, `fuse2` on Arch);
@@ -173,7 +173,7 @@ GitHub issue; please paste **Copy diagnostics** into it.
   registers it for `berth://` links. Updates replace the AppImage in place,
   so keep it somewhere you can write to.
 - **.deb** (Debian, Ubuntu):
-  [Shipyard for Linux (alpha), .deb](https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.deb),
+  [Terminal for Linux (alpha), .deb](https://github.com/cosscom/shipyard/releases/latest/download/Berth-linux-x86_64-alpha.deb),
   then `sudo apt install ./Berth-linux-x86_64-alpha.deb`. It installs
   `berth-app` (and the menu entry) and opens `berth://` links. A .deb install
   updates with a new .deb, not from inside the app.
@@ -253,7 +253,7 @@ berth agent install     # berth agent status | uninstall
 ```
 
 If the agent isn't running when the desktop app opens, the app offers to
-start it: **Start the Shipyard agent** runs `berth agent start`, and ticking
+start it: **Start the Terminal agent** runs `berth agent start`, and ticking
 **Start at login** first runs `berth agent install` instead. Nothing is
 installed unless you tick it. The app runs only the copy of `berth` it
 carries, and only while it is signed by the same team as the app (see
@@ -287,7 +287,7 @@ Each check that fails says how to fix it.
 
 ## Build from source
 
-For working on Shipyard, or a laptop the release doesn't cover. You need
+For working on Terminal, or a laptop the release doesn't cover. You need
 **Go 1.27** for `berth` and `berthd`, and **Node 22, pnpm and Rust** for
 the desktop app.
 
@@ -317,7 +317,7 @@ pnpm tauri dev
 It runs the clone's `bin/berth` for the laptop agent, or the one in
 `~/.local/bin` if you downloaded the CLI instead of building it, so with
 the CLI from the release you can run the app without Go. `make app-build`
-builds `Shipyard.app` and its disk image, with the CLI and the Linux daemons
+builds `Terminal.app` and its disk image, with the CLI and the Linux daemons
 inside, under `app/src-tauri/target/release/bundle/`.
 
 ## Next

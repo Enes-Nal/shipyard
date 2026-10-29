@@ -147,7 +147,7 @@ func TestEnginesAreFoundByAURLsScheme(t *testing.T) {
 	}
 }
 
-// The name a worktree is listed under is the one Shipyard's other helpers
+// The name a worktree is listed under is the one Terminal's other helpers
 // use for it: a tab that shows both must be able to ask each for the same
 // worktree by the same name.
 func TestASourceIsNamedAsLeadlineNamesIt(t *testing.T) {

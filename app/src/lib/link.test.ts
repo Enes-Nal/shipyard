@@ -14,7 +14,7 @@ test("a relayed box names the relay's city, and this computer's nearest when it 
 });
 
 test("a slow box says why, and that it is still connected", () => {
-  assert.equal(slowNote({ slow: true, reason: "health check took 1.9s" }), "Slow: health check took 1.9s. Shipyard stays connected, and requests still go through.");
+  assert.equal(slowNote({ slow: true, reason: "health check took 1.9s" }), "Slow: health check took 1.9s. Terminal stays connected, and requests still go through.");
   assert.equal(slowNote({ slow: false, reason: "health check took 80ms" }), undefined);
   assert.equal(slowNote(undefined), undefined);
 });

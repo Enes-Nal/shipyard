@@ -1,6 +1,6 @@
 ---
 name: berth-visual-diff
-description: Check what your change did to a web app's pages before you say you're done — `berthd shots compare` screenshots your worktree's dev server and the main checkout's at phone, tablet and desktop widths, diffs every pair pixel by pixel, prints which pages changed, where (named by the element), and what broke (a 404, a 500, a page that now scrolls sideways), and shows the result in the user's Shipyard as a visual diff with a before/after slider and a heatmap. Use after any change that can show on a page (CSS, components, layout, copy, dependencies that render), when the user asks what changed visually, or to confirm a refactor changed nothing.
+description: Check what your change did to a web app's pages before you say you're done — `berthd shots compare` screenshots your worktree's dev server and the main checkout's at phone, tablet and desktop widths, diffs every pair pixel by pixel, prints which pages changed, where (named by the element), and what broke (a 404, a 500, a page that now scrolls sideways), and shows the result in the user's Terminal as a visual diff with a before/after slider and a heatmap. Use after any change that can show on a page (CSS, components, layout, copy, dependencies that render), when the user asks what changed visually, or to confirm a refactor changed nothing.
 ---
 
 # Visual before/after
@@ -18,7 +18,7 @@ berthd shots compare --color-scheme both              # light and dark
 
 It prints a few lines (about 450 tokens for 6 pages × 3 sizes) and keeps
 the screenshots, the heatmap and the regions as a visual diff the user sees
-in their Shipyard app, beside your chat. You need a dev server running in your
+in their Terminal app, beside your chat. You need a dev server running in your
 worktree (`$BERTH_PORT`, see berth-preview). The default base is the main
 checkout's dev server; when it isn't running, the compare uses your
 `turn-start` baseline instead and says so on a `note:` line, or, with no
@@ -116,7 +116,7 @@ diff. Prefer the narrowest selector (`time.updated`, not `header`); a mask
 hides real changes too. If a page keeps changing with no change of yours,
 compare with a baseline you just took: what differs is what to mask.
 
-Shipyard already makes loads repeatable: reduced motion, animations settled
+Terminal already makes loads repeatable: reduced motion, animations settled
 (finite ones at their end, endless ones removed), no transitions or caret,
 fonts and images loaded, lazy content scrolled in, the network quiet, UTC
 and en-US, a fixed viewport. `"seed_random": true` makes `Math.random`

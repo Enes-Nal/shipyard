@@ -72,7 +72,7 @@ out="dist/linux"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-step "Building Shipyard $version for Linux ($arch), an alpha"
+step "Building Terminal $version for Linux ($arch), an alpha"
 rm -rf "$bundle"
 make app-build VERSION="$version"
 

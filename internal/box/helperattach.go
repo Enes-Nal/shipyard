@@ -26,12 +26,12 @@ import (
 // would have. What a helper is told, and what it may set, is only the
 // variables its manifest names (attach_env), which the person allowed with
 // the plugin; a variable that names a secret is neither sent nor replaced,
-// and Shipyard's own BERTH_ variables are never changed.
+// and Terminal's own BERTH_ variables are never changed.
 //
 // A project may keep such a variable in the worktree's dotenv files and not
-// in anything Shipyard assembles: its dev server loads .env itself. A helper
+// in anything Terminal assembles: its dev server loads .env itself. A helper
 // is shown that value too, as the service's own (dotenv.go says which files
-// and how they are read), when the environment Shipyard assembled does not
+// and how they are read), when the environment Terminal assembled does not
 // have the variable: the project's own setting always wins. What a helper
 // answers for it goes into the service's environment like any other, so the
 // process starts with it, and a loader that leaves alone a variable that is

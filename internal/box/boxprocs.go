@@ -29,7 +29,7 @@ const (
 	OwnerAgentBrowser = "agent-browser" // a session's agent-browser CLI
 	OwnerSession      = "session"       // started by a running session's programs
 	OwnerOrphan       = "orphan"        // left by a session (or berthd) that has ended
-	OwnerOther        = "other"         // not started by Shipyard
+	OwnerOther        = "other"         // not started by Terminal
 )
 
 // BoxBrowser is one browser: its main process and every helper under it.
@@ -60,7 +60,7 @@ type BoxBrowser struct {
 	Memory     uint64    `json:"memory"`
 	Started    time.Time `json:"started,omitzero"`
 	Exe        string    `json:"exe,omitempty"`
-	// Stoppable is false for a browser Shipyard did not start.
+	// Stoppable is false for a browser Terminal did not start.
 	Stoppable bool `json:"stoppable"`
 
 	procs []procStat
@@ -341,7 +341,7 @@ func owner(b *BoxBrowser, root procStat, byPID map[int]procStat, w procWorld) {
 		b.Label = what + " left by ended session " + session
 	default:
 		b.Owner, b.Stoppable = OwnerOther, false
-		b.Label = what + ", not started by Shipyard"
+		b.Label = what + ", not started by Terminal"
 	}
 }
 
@@ -440,7 +440,7 @@ func (b *Box) sessionsUsage(ctx context.Context, ps []procStat, sessions []Sessi
 }
 
 // errNotOurs refuses to stop what berth didn't start.
-var errNotOurs = errors.New("Shipyard didn't start this browser, so it leaves it alone; stop it on the box if you mean to")
+var errNotOurs = errors.New("Terminal didn't start this browser, so it leaves it alone; stop it on the box if you mean to")
 
 // StopProcess stops one browser or ends one session, by its ID in the
 // list, and says what it did.

@@ -26,11 +26,11 @@ test("the Agent Dashboard's columns start under its title", async ({ app }) => {
   await expect.poll(() => lined(app.page, "Agent Dashboard", "section[aria-label]")).toBe(true);
 });
 
-test("the Worktrees view's filters start under its title", async ({ app }) => {
+test("the Project activity view's filters start under its title", async ({ app }) => {
   mockOnly();
   await app.open();
   await app.page.getByTestId("nav-worktrees").click();
-  await expect.poll(() => lined(app.page, "Worktrees", "header + div > :first-child")).toBe(true);
+  await expect.poll(() => lined(app.page, "Project activity", "header + div > :first-child")).toBe(true);
 });
 
 test("Review's work starts under its title", async ({ app }) => {

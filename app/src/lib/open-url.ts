@@ -11,7 +11,7 @@ export async function openUrl(url: string) {
   window.open(url, "_blank", "noopener");
 }
 
-// DOCS_URL is Shipyard's documentation site, built from the repository's docs/.
+// DOCS_URL is Terminal's documentation site, built from the repository's docs/.
 export const DOCS_URL = "https://docs.berthd.app";
 
 // openDocs opens a page of the docs site, by its path ("/guides/plugins").

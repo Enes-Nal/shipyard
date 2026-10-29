@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Acme team setup for Shipyard: box/init-shop.sh
+# Acme team setup for Terminal: box/init-shop.sh
 #
-# The main shop checkout's one-time setup. Shipyard runs it once in the fresh
+# The main shop checkout's one-time setup. Terminal runs it once in the fresh
 # clone (projects[].init); by hand, run it from the checkout:
 #
 #   cd ~/code/shop && <this folder>/init-shop.sh

@@ -1,7 +1,7 @@
 [package]
 name = "berth"
 version = "0.3.30"
-description = "Shipyard: agents on your boxes"
+description = "Terminal: agents on your boxes"
 authors = ["Sean Brydon"]
 edition = "2021"
 
@@ -19,7 +19,7 @@ tauri-build = { version = "2", features = [] }
 # keeps WebKit's Web Inspector in release builds, for a Browser tab's Inspect
 # button and its page's Inspect Element (browser.rs). On macOS that is a
 # private WebKit API (developerExtrasEnabled), which the App Store refuses;
-# Shipyard ships notarized outside it.
+# Terminal ships notarized outside it.
 tauri = { version = "2", features = ["unstable", "devtools"] }
 tauri-plugin-notification = "2"
 tauri-plugin-shell = "2"

@@ -1,10 +1,12 @@
 import type { Status } from "@/lib/api";
 import type { LocalBoxStatus } from "@/lib/local-box";
+import { IS_WINDOWS } from "@/lib/platform";
 
 // Use this Mac in mock mode (?mock=1): this Mac can be a box until it is
 // one; setting it up plays the agent's steps and pairs a box marked local,
 // whose folders are a Mac's. ?thismac=nosession fails the way a Mac without
-// a login session does; ?thismac=none is an agent with no berthd to install.
+// a login session does; ?thismac=none is an agent with no berthd to install;
+// ?thismac=nowsl is a Windows PC without WSL.
 
 type Deps = {
   status: Status;
@@ -15,18 +17,36 @@ type Deps = {
 let deps: Deps | undefined;
 const mode = new URLSearchParams(location.search).get("thismac");
 const NAME = "my-mac";
-const HOME = "/Users/me";
+// On Windows the box is WSL's: an Ubuntu home, and the PC's drives in /mnt.
+const HOME = IS_WINDOWS ? "/home/me" : "/Users/me";
 const ADDRESS = "127.0.0.1:7445";
 
 const local: LocalBoxStatus = { supported: true, available: mode !== "none", installed: false, owned: false, running: false, name: NAME };
-if (mode === "none") local.reason = "this copy of Shipyard carries no berthd for this computer";
+if (mode === "none") local.reason = "this copy of Terminal carries no berthd for this computer";
+if (mode === "nowsl") Object.assign(local, { supported: false, available: false, reason: "WSL isn't installed. In PowerShell as administrator run: wsl --install -d Ubuntu, restart Windows, then run bash scripts/setup-wsl.sh inside Ubuntu" });
 
 export function initMockLocalBox(d: Deps) {
   deps = d;
 }
 
-// A Mac's folders, for browsing this Mac's box.
-const folders: Record<string, { git?: boolean; slug?: string }> = {
+// A Mac's folders, for browsing this Mac's box; WSL's on Windows.
+const wslFolders: Record<string, { git?: boolean; slug?: string }> = {
+  "/": {},
+  "/home": {},
+  [HOME]: {},
+  [`${HOME}/code`]: {},
+  [`${HOME}/code/notes`]: { git: true, slug: "me/notes" },
+  "/mnt": {},
+  "/mnt/c": {},
+  "/mnt/c/Users": {},
+  "/mnt/e": {},
+  "/mnt/e/Code": {},
+  "/mnt/e/Code/shop": { git: true, slug: "acme/shop" },
+  "/mnt/e/Code/site": { git: true, slug: "me/site" },
+  "/mnt/wsl": {},
+  "/mnt/wslg": {},
+};
+const folders: Record<string, { git?: boolean; slug?: string }> = IS_WINDOWS ? wslFolders : {
   [HOME]: {},
   [`${HOME}/Developer`]: {},
   [`${HOME}/Developer/shop`]: { git: true, slug: "acme/shop" },
@@ -115,7 +135,7 @@ export async function localBoxStream(method: string, path: string, body: unknown
     return true;
   }
   await say(`  Installed ${HOME}/Library/LaunchAgents/dev.berth.berthd.plist; berthd is serving on ${ADDRESS}.`, 1200);
-  await say("  Agent integrations (hooks for needs-you, working and done; Shipyard's skills):", 300);
+  await say("  Agent integrations (hooks for needs-you, working and done; Terminal's skills):", 300);
   await say(`    Claude Code: hooks and 7 skills in ~/.claude`, 300);
   await say("Pairing this laptop with it…", 500);
   d.addBox(NAME, ADDRESS);

@@ -18,7 +18,7 @@ func (a *Agent) serveIndex(w http.ResponseWriter, r *http.Request) {
 		port = ""
 	}
 	var b strings.Builder
-	b.WriteString(`<!doctype html><html lang="en"><meta charset="utf-8"><title>Shipyard</title>` + proxy.PageStyle + `<body><h1>Shipyard</h1>`)
+	b.WriteString(`<!doctype html><html lang="en"><meta charset="utf-8"><title>Terminal</title>` + proxy.PageStyle + `<body><h1>Terminal</h1>`)
 	if len(s.Boxes) == 0 {
 		b.WriteString(`<p>No paired boxes. Run <code>berthd pair</code> on a box, then <code>berth pair '&lt;link&gt;'</code>.</p>`)
 	}

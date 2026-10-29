@@ -64,7 +64,7 @@ func Classify(stderr, host, port string, agent *Agent, keys []string) *Failure {
 	case strings.Contains(stderr, "REMOTE HOST IDENTIFICATION HAS CHANGED"):
 		f.Kind = "host-key-changed"
 		f.Fingerprint = fingerprintRe.FindString(stderr)
-		f.Message = fmt.Sprintf("%s's host key has changed since this computer last connected, so Shipyard did not log in. If the box was rebuilt, remove the old key with `ssh-keygen -R %s` and try again; if not, someone may be in the way, so don't connect.", host, host)
+		f.Message = fmt.Sprintf("%s's host key has changed since this computer last connected, so Terminal did not log in. If the box was rebuilt, remove the old key with `ssh-keygen -R %s` and try again; if not, someone may be in the way, so don't connect.", host, host)
 	case strings.Contains(stderr, "Host key verification failed"):
 		f.Kind = "host-key-unknown"
 		f.Fingerprint = fingerprintRe.FindString(stderr)
@@ -89,7 +89,7 @@ func Classify(stderr, host, port string, agent *Agent, keys []string) *Failure {
 		f.Tried = tried(verbose, agent, keys)
 		if methods != "" && !strings.Contains(methods, "publickey") {
 			f.Kind = "password"
-			f.Message = fmt.Sprintf("%s only accepts passwords, and the login failed. Shipyard logs in with SSH keys: add your public key to ~/.ssh/authorized_keys on the box, or run the install command on the box instead.", host)
+			f.Message = fmt.Sprintf("%s only accepts passwords, and the login failed. Terminal logs in with SSH keys: add your public key to ~/.ssh/authorized_keys on the box, or run the install command on the box instead.", host)
 			break
 		}
 		return AuthFailure(host, port, f.Tried, f.Detail)
@@ -112,7 +112,7 @@ func AuthFailure(host, port string, tried []string, detail string) *Failure {
 	}
 	return &Failure{
 		Kind: "auth", Host: host, Port: port, Tried: tried, Detail: detail,
-		Message: fmt.Sprintf("%s refused the login. Shipyard offered %s. Make the right key available: unlock your key manager's SSH agent, name it with IdentityAgent for this host in ~/.ssh/config, or choose the key file. Or add this computer's public key to ~/.ssh/authorized_keys on the box.", host, offered),
+		Message: fmt.Sprintf("%s refused the login. Terminal offered %s. Make the right key available: unlock your key manager's SSH agent, name it with IdentityAgent for this host in ~/.ssh/config, or choose the key file. Or add this computer's public key to ~/.ssh/authorized_keys on the box.", host, offered),
 	}
 }
 

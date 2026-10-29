@@ -12,8 +12,8 @@ test("a box's routes show with their latency and the one in use, and can be adde
   const boxes = await app.openSettings("boxes");
   const devl = boxes.getByTestId("box-routes").first();
   await expect(devl.getByTestId("box-routes-summary")).toHaveText("via SSH, 24 ms · Tailscale relayed, 140 ms");
-  // Tailscale relays devl, but Shipyard goes over SSH meanwhile.
-  await expect(boxes.getByTestId("box-relayed").first()).toContainText("Shipyard goes via SSH instead");
+  // Tailscale relays devl, but Terminal goes over SSH meanwhile.
+  await expect(boxes.getByTestId("box-relayed").first()).toContainText("Terminal goes via SSH instead");
 
   await devl.getByTestId("box-routes-toggle").click();
   const list = boxes.getByTestId("box-route-list");

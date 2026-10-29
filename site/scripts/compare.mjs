@@ -36,7 +36,7 @@ const { chromium } = await loadPlaywright();
 const tmp = mkdtempSync(join(tmpdir(), "compare-"));
 const browser = await chromium.launch({ channel: process.env.CHROME_CHANNEL ?? "chrome" });
 try {
-  // The film's footage is Shipyard Dark at 1280x800, 2x; so is this.
+  // The film's footage is Terminal Dark at 1280x800, 2x; so is this.
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2, colorScheme: "dark" });
   // Nothing reaches a real laptop agent.
   await ctx.route(/^https?:\/\/[^/]*:(1377|1378|1379)(\/|$)/, (r) => r.abort());

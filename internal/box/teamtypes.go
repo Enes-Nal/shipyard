@@ -18,16 +18,16 @@ type TeamBundle struct {
 	// Script runs the steps (team.Box.Script, inside Files).
 	Script string      `json:"script,omitempty"`
 	Steps  []team.Step `json:"steps"`
-	// GitHub adds Shipyard's own step: gh auth login on the box.
+	// GitHub adds Terminal's own step: gh auth login on the box.
 	GitHub bool `json:"github"`
-	// OnePassword adds Shipyard's other step, after GitHub, when the keys are
+	// OnePassword adds Terminal's other step, after GitHub, when the keys are
 	// 1Password references: op signed in on the box, in its terminal.
 	OnePassword bool `json:"onepassword,omitempty"`
 	// OnePasswordSkipped says the engineer skipped 1Password: the shared
 	// keys' references are kept aside (each project's Deferred), op is
 	// never called for them, and Use 1Password puts them back later.
 	OnePasswordSkipped bool `json:"onepassword_skipped,omitempty"`
-	// Agents adds Shipyard's agents step, after the team's own: these agent
+	// Agents adds Terminal's agents step, after the team's own: these agent
 	// CLIs installed on the box, with their hooks and skills.
 	Agents []string `json:"agents,omitempty"`
 	// Settings are team.json's box.settings, which the script (and each
@@ -58,7 +58,7 @@ type TeamProjectPlan struct {
 	Init      string `json:"init,omitempty"`
 	FirstTask string `json:"first_task,omitempty"`
 	// ReviewButton is team.json's review_button: PRs opened from the
-	// project's worktrees get a "Review in Shipyard" button, unless the
+	// project's worktrees get a "Review in Terminal" button, unless the
 	// box's own config or the repository's says otherwise.
 	ReviewButton bool `json:"review_button,omitempty"`
 	// Env is laid into the project's own config on this box: secret
@@ -77,7 +77,7 @@ type TeamProjectPlan struct {
 	// Use is a clone already on the box to use instead of cloning, as the
 	// engineer chose it on the page; the box checks its origin again first.
 	Use string `json:"use,omitempty"`
-	// Fresh asks for a fresh clone at Path even when a Shipyard location is
+	// Fresh asks for a fresh clone at Path even when a Terminal location is
 	// a clone of the repository already.
 	Fresh bool `json:"fresh,omitempty"`
 }

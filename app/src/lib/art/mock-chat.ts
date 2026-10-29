@@ -19,7 +19,7 @@ export function artChat(): TranscriptItem[] {
   return [
     // Earlier in the turn: the agent's UI change, checked with visual diffs.
     ...vdiffChat(),
-    { kind: "user", id: id(), text: "Show me the numbers here in Shipyard as you go: where the time goes, what you change, and how it moves." },
+    { kind: "user", id: id(), text: "Show me the numbers here in Terminal as you go: where the time goes, what you change, and how it moves." },
     { kind: "crew", id: id(), names: ["Explore: map search"] },
     run('berthd artifact add notes/search-map.mmd --title "How acme search is wired" --by "Explore: map search"'),
     card("a1f3c0d2e4", "How acme search is wired"),

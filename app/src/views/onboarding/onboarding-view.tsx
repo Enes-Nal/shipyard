@@ -85,7 +85,7 @@ export function OnboardingView() {
         </div>
         <div ref={area} className="contents">
           <div key={step.kind} className="onboarding-step">
-            {step.kind === "welcome" && <WelcomeStep local={thisMac} onThisMac={() => setStep({ kind: "mac" })} onRemote={() => setStep({ kind: "box" })} onJoin={() => setStep({ kind: "join" })} />}
+            {step.kind === "welcome" && <WelcomeStep local={thisMac} reason={local.status?.reason} onRecheck={local.recheck} onThisMac={() => setStep({ kind: "mac" })} onRemote={() => setStep({ kind: "box" })} onJoin={() => setStep({ kind: "join" })} />}
             {step.kind === "mac" && local.status && (
               <ThisMacStep status={local.status} onStage={setBoxStage} onDone={(box) => setStep({ kind: "repo", box })} onRemote={() => setStep({ kind: "box" })} onBack={() => setStep({ kind: "welcome" })} />
             )}
@@ -94,7 +94,7 @@ export function OnboardingView() {
             {step.kind === "box" && (
               <AddBoxFlow
                 variant="page"
-                intro={{ title: "Connect a box", description: "Any VPS or dev machine. Shipyard runs one small daemon there, berthd; your code and agents stay as they are." }}
+                intro={{ title: "Connect a box", description: "Any VPS or dev machine. Terminal runs one small daemon there, berthd; your code and agents stay as they are." }}
                 onStage={setBoxStage}
                 onDone={(box) => setStep({ kind: "repo", box })}
                 onExit={() => setStep({ kind: "welcome" })}

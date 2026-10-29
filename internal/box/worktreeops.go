@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/statefile"
@@ -42,12 +41,17 @@ type WorktreeStatus struct {
 	Name     string  `json:"name"`
 	Title    string  `json:"title,omitempty"`
 	Path     string  `json:"path"`
+	Remote   string  `json:"remote,omitempty"`
 	Branch   string  `json:"branch,omitempty"`
 	Main     bool    `json:"main,omitempty"`
 	Port     int     `json:"port,omitempty"`
 	Base     string  `json:"base,omitempty"`
 	Ahead    int     `json:"ahead"`
 	Behind   int     `json:"behind"`
+	Upstream string  `json:"upstream,omitempty"`
+	Outgoing int     `json:"outgoing"`
+	Incoming int     `json:"incoming"`
+	Published bool    `json:"published"`
 	Changed  int     `json:"changed"`
 	Untrack  int     `json:"untracked"`
 	Last     *Commit `json:"last_commit,omitempty"`
@@ -81,7 +85,7 @@ func baseOf(ctx context.Context, wt Worktree, loc Location) string {
 }
 
 func (b *Box) worktreeStatus(ctx context.Context, loc Location, wt Worktree, sessions []Session) WorktreeStatus {
-	st := WorktreeStatus{Location: loc.Name, Name: wt.Name, Title: wt.Title, Path: wt.Path, Branch: wt.Branch, Main: wt.Main, Port: wt.Port}
+	st := WorktreeStatus{Location: loc.Name, Name: wt.Name, Title: wt.Title, Path: wt.Path, Remote: loc.Remote, Branch: wt.Branch, Main: wt.Main, Port: wt.Port}
 	st.Base = baseOf(ctx, wt, loc)
 	if st.Base != "" {
 		if out, err := git(ctx, "-C", wt.Path, "rev-list", "--left-right", "--count", st.Base+"...HEAD"); err == nil {
@@ -91,6 +95,29 @@ func (b *Box) worktreeStatus(ctx context.Context, loc Location, wt Worktree, ses
 				st.Ahead, _ = strconv.Atoi(f[1])
 			}
 		}
+	}
+	// Base drift answers "what changed from main?" while upstream drift
+	// answers the everyday push/pull question. Keep them separate: a feature
+	// branch can be fully pushed and still be several commits ahead of main.
+	if out, err := git(ctx, "-C", wt.Path, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"); err == nil {
+		st.Upstream = strings.TrimSpace(string(out))
+	}
+	if st.Upstream == "" && wt.Branch != "" && branchExists(ctx, wt.Path, "refs/remotes/origin/"+wt.Branch) {
+		st.Upstream = "origin/" + wt.Branch
+	}
+	if st.Upstream != "" {
+		st.Published = true
+		if out, err := git(ctx, "-C", wt.Path, "rev-list", "--left-right", "--count", st.Upstream+"...HEAD"); err == nil {
+			f := strings.Fields(string(out))
+			if len(f) == 2 {
+				st.Incoming, _ = strconv.Atoi(f[0])
+				st.Outgoing, _ = strconv.Atoi(f[1])
+			}
+		}
+	} else if !wt.Main {
+		// An unpublished branch has no remote comparison yet. Its commits
+		// beyond the base are exactly what the first push will publish.
+		st.Outgoing = st.Ahead
 	}
 	if out, err := git(ctx, "-C", wt.Path, "status", "--porcelain=v1"); err == nil {
 		for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
@@ -384,18 +411,7 @@ func (s *Sessions) freezeSession(ctx context.Context, name string, freeze bool) 
 		if err != nil || pid <= 1 {
 			continue
 		}
-		tree := processTree(pid)
-		if !freeze {
-			for _, p := range tree {
-				syscall.Kill(p, syscall.SIGCONT)
-			}
-			continue
-		}
-		// Children first, so none is left running by a parent that stopped.
-		for i := len(tree) - 1; i > 0; i-- {
-			syscall.Kill(tree[i], syscall.SIGSTOP)
-		}
-		syscall.Kill(pid, syscall.SIGTTIN)
+		freezeProcessTree(processTree(pid), freeze)
 	}
 	return nil
 }

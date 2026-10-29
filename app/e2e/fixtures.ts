@@ -40,7 +40,7 @@ const PROXIED = /^https?:\/\/[^/]+\.localhost:1377(?:\/|$)/;
 export const STUB_PAGE = "<!doctype html><title>stub</title><h1>Stub dev server</h1>";
 
 export interface OpenOptions {
-  // berth.prefs as an older Shipyard saved it (lib/prefs.ts), before the app starts.
+  // berth.prefs as an older Terminal saved it (lib/prefs.ts), before the app starts.
   prefs?: Record<string, unknown>;
   // berth.ui's theme (lib/store.ts).
   theme?: string;
@@ -118,7 +118,7 @@ export const test = base.extend<{ app: App }>({
               if (prefs) localStorage.setItem("berth.prefs", JSON.stringify(prefs));
               if (theme) localStorage.setItem("berth.ui", JSON.stringify({ themeId: theme }));
             },
-            // Prefs an older Shipyard saved would get the What's new note
+            // Prefs an older Terminal saved would get the What's new note
             // after an update; it stays away unless a test asks for it
             // (whats-new.spec.ts).
             { prefs: opts.prefs && { whatsNewSeen: "999.0.0", ...opts.prefs }, theme: opts.theme },

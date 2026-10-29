@@ -207,7 +207,7 @@ export interface BerthApi {
   // agent uploads it, and on a box that runs on this computer it resolves to
   // the path as it is, unread (size 0). pasted: true shrinks a pasted
   // screenshot first, as the composer does; a dropped file goes as it is.
-  // An older Shipyard has no attach: check typeof berth.api.attach === "function".
+  // An older Terminal has no attach: check typeof berth.api.attach === "function".
   attach(
     box: string,
     target: { session: string } | { location: string; worktree: string },
@@ -216,7 +216,7 @@ export interface BerthApi {
   ): Promise<Attachment>;
   // Paths to files on this computer that a paste is made of (Finder's copy of
   // a file, a screenshot's /var/folders/… path), or [] for any other text.
-  // Pass them to attach. An older Shipyard has no localPaths either.
+  // Pass them to attach. An older Terminal has no localPaths either.
   localPaths(text: string): string[];
 }
 
@@ -424,7 +424,7 @@ export interface BerthLinear {
   comment(id: string, body: string): Promise<void>;
 }
 
-// A plugin's helper: a program of its own that Shipyard installs and runs on
+// A plugin's helper: a program of its own that Terminal installs and runs on
 // a box the person turns it on for (berth-plugin.json's "box.helper" names
 // it, with its builds and their checksums). The box daemon keeps it running,
 // gives it a folder for its data and passes requests through to its HTTP
@@ -495,7 +495,7 @@ export interface BerthHelper {
   // plugin's manifest names (attach_env), and tell the helper what it found,
   // as it is told before one of the worktree's services starts, with ".env"
   // where the service's name would be: for a project whose dev servers
-  // Shipyard does not start. Looking again replaces what the last look
+  // Terminal does not start. Looking again replaces what the last look
   // found. worktree "" is the location's main checkout.
   //
   // It resolves with what was looked at and never a value. Nothing found is
@@ -504,7 +504,7 @@ export interface BerthHelper {
   // the helper isn't running there, "helper_no_attach" (409) for a helper
   // whose manifest names no attach path, "helper_unreachable" (502) when the
   // helper did not answer, and "refused" (403) when a hook on the box said
-  // no. Absent in a Shipyard from before it: check before calling.
+  // no. Absent in a Terminal from before it: check before calling.
   //
   // With `env`, no file is read: the helper is told those variables, which
   // the person gave (a database's address they pasted), with "manual" where

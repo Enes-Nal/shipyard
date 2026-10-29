@@ -1,10 +1,10 @@
 # hello
 
-A tiny project for trying Shipyard: a web server with one page and a test,
+A tiny project for trying Terminal: a web server with one page and a test,
 in plain Node.js with no dependencies.
 
 ```sh
-npm start    # serves on $PORT (Shipyard sets one per worktree), or 3000
+npm start    # serves on $PORT (Terminal sets one per worktree), or 3000
 npm test     # node --test
 ```
 

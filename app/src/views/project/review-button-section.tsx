@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import type { LocationConfig, RepoConfig } from "@/lib/flows";
 import { Section, SourceBadge } from "@/views/project/parts";
 
-// ReviewButtonSection is the project's "Review in Shipyard" button: when it
+// ReviewButtonSection is the project's "Review in Terminal" button: when it
 // is on, berthd adds the button to the description of each PR opened from
 // one of the project's worktrees, once (box/reviewbutton.go). It is off
 // unless the committed config, the kit or the team's team.json turns it on;
@@ -23,7 +23,7 @@ export function ReviewButtonSection({ config, draft, setDraft, box }: { config: 
       title="Review button"
       description={
         <>
-          Adds a <span className="text-foreground">Review in Shipyard</span> button to the description of each PR opened from this project's worktrees, so a teammate opens it on their own box in one click. Never for a fork's PR or one from outside the org.
+          Adds a <span className="text-foreground">Review in Terminal</span> button to the description of each PR opened from this project's worktrees, so a teammate opens it on their own box in one click. Never for a fork's PR or one from outside the org.
         </>
       }
     >
@@ -54,7 +54,7 @@ export function ReviewButtonSection({ config, draft, setDraft, box }: { config: 
         <Switch
           checked={on}
           onCheckedChange={(v) => setDraft({ ...draft, review_button: st?.inherited_from ? (v === inherited ? undefined : v) : v || undefined })}
-          aria-label="Add the Review in Shipyard button to new PRs"
+          aria-label="Add the Review in Terminal button to new PRs"
           data-testid="review-button-switch"
         />
       </div>

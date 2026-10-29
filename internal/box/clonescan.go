@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -59,7 +58,7 @@ const (
 func (s *cloneScan) run() map[string][]string {
 	s.found = map[string][]string{}
 	s.seen = map[string]bool{}
-	s.uid = os.Getuid()
+	s.uid = currentUID()
 	if s.Budget <= 0 {
 		s.Budget = defaultScanBudget
 	}
@@ -134,8 +133,7 @@ func (s *cloneScan) inside(p string) bool {
 
 // owned reports whether info belongs to the user the scan runs as.
 func (s *cloneScan) owned(info os.FileInfo) bool {
-	st, ok := info.Sys().(*syscall.Stat_t)
-	return !ok || int(st.Uid) == s.uid
+	return ownedByUID(info, s.uid)
 }
 
 // visit looks at dir, depth levels below where it started, and into it

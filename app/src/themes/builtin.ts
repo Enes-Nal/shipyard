@@ -10,7 +10,7 @@ import { vscodeThemes } from "./vscode.ts";
 // rows).
 export const berthDark: Theme = {
   id: "berth-dark",
-  name: "Shipyard Dark",
+  name: "Terminal Dark",
   appearance: "dark",
   colors: {
     background: "#1d1e22",
@@ -66,7 +66,7 @@ export const berthDark: Theme = {
 // text 4.5:1 on popovers and highlighted rows).
 export const berthLight: Theme = {
   id: "berth-light",
-  name: "Shipyard Light",
+  name: "Terminal Light",
   appearance: "light",
   colors: {
     background: "#ffffff",
@@ -235,7 +235,7 @@ export const paper: Theme = {
   },
 };
 
-// Shipyard's own, which the picker lists first.
+// Terminal's own, which the picker lists first.
 export const berthThemes: Theme[] = [berthDark, berthLight, midnight, paper];
 
 export const builtinThemes: Theme[] = [...berthThemes, ...vscodeThemes];

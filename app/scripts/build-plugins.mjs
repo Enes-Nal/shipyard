@@ -1,7 +1,7 @@
 // Builds the plugins that ship with the app: every plugins/<id>/ whose
 // berth-plugin.json says "builtin": true becomes one ES module in
 // public/builtin-plugins/<id>/, listed in public/builtin-plugins/index.json.
-// React and the Shipyard SDK stay external: the app provides them at runtime,
+// React and the Terminal SDK stay external: the app provides them at runtime,
 // as it does for plugins in ~/.berth/plugins.
 //
 // A built-in can also keep heavy code out of its main module: each file in

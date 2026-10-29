@@ -5,7 +5,7 @@ description: Register a repository on a box, branch a worktree off it, and open 
 
 ## Add the repository
 
-Shipyard works with repositories that are already on the box. Register one as a
+Terminal works with repositories that are already on the box. Register one as a
 **location**, a name for a directory on that box:
 
 ```sh
@@ -35,7 +35,7 @@ boxes is one **project** in the sidebar; see
 berth worktree new my-box/app/fix-login
 ```
 
-Shipyard runs `git worktree add` next to the repository, as `~/work/app-fix-login`,
+Terminal runs `git worktree add` next to the repository, as `~/work/app-fix-login`,
 on a branch named `fix-login` (or `--branch B`, from `--base REF`). An
 existing branch, locally or on `origin`, is checked out as it is. Then:
 

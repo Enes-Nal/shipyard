@@ -1,4 +1,4 @@
-// The app's UI kit, shared with plugins so they look like the rest of Shipyard.
+// The app's UI kit, shared with plugins so they look like the rest of Terminal.
 // Components take the same props as in the app (coss ui, built on Base UI);
 // they are typed loosely here so the SDK does not depend on the app's source.
 import type { ComponentType, ReactNode } from "react";
@@ -227,7 +227,7 @@ export declare const HelperBox: ComponentType<{
 // useHelperState is the plugin's helper on a box as HelperBox knows it,
 // read again while active (every second while it installs or starts,
 // otherwise every fifteen). status is undefined until the first answer;
-// fault is why it could not be read; old is a Shipyard on this computer
+// fault is why it could not be read; old is a Terminal on this computer
 // from before helpers. refresh reads now: call it when a request to the
 // helper says it has gone ("helper_off").
 export declare function useHelperState(
@@ -274,7 +274,7 @@ export interface DiffsModule {
 }
 export declare function loadDiffs(): Promise<DiffsModule>;
 
-// For Home widgets (berth.addHomeWidget), so one reads like Shipyard's own.
+// For Home widgets (berth.addHomeWidget), so one reads like Terminal's own.
 // WidgetRow: one 36px line, a button when it has onClick (label names it
 // for screen readers when its text doesn't say enough).
 export declare const WidgetRow: ComponentType<{ children?: ReactNode; onClick?: () => void; className?: string; label?: string }>;

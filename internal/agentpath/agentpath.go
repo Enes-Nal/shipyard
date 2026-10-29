@@ -2,7 +2,7 @@
 // the person's own terminal would.
 //
 // berthd runs as a systemd user service or a launchd agent, with the PATH it
-// was installed with. Shipyard's own installer puts agents in ~/.local/bin,
+// was installed with. Terminal's own installer puts agents in ~/.local/bin,
 // which that PATH has; but `npm i -g @anthropic-ai/claude-code` under nvm,
 // fnm, volta, a custom npm prefix, bun or Homebrew puts the CLI in a folder
 // only the person's interactive shell knows (nvm lives in ~/.bashrc, which a
@@ -16,7 +16,7 @@
 //     default alias (then its other versions), fnm's default, volta, bun,
 //     pnpm, ~/.npm-global and Homebrew.
 //
-// The shell's answer wins when both an npm install and Shipyard's exist, as it
+// The shell's answer wins when both an npm install and Terminal's exist, as it
 // does in the person's terminal. What is found is kept per command, with the
 // PATH to launch it with (the folder it is in, then the shell's PATH, so an
 // npm CLI's `#!/usr/bin/env node` finds the node beside it), until Refresh
@@ -38,11 +38,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
-// Commands are the agent CLIs Shipyard starts, looked for together.
+// Commands are the agent CLIs Terminal starts, looked for together.
 var Commands = []string{"claude", "codex", "opencode", "gemini", "cursor-agent", "pi", "omp"}
 
 // Found is where an agent's command is.
@@ -416,7 +415,7 @@ func agentDirs(home, name string) []string {
 }
 
 // Dirs are the folders agents are installed to, in the order they are
-// looked in after the shell and berthd's PATH: Shipyard's own (~/.local/bin),
+// looked in after the shell and berthd's PATH: Terminal's own (~/.local/bin),
 // npm's global prefix, nvm's default and then its other Node versions,
 // fnm's likewise, volta, bun, pnpm, ~/.npm-global, then Homebrew and the
 // system's.
@@ -688,7 +687,7 @@ func (f *Finder) version(ctx context.Context, r Found) string {
 	cmd.Env = setEnv(f.env(), "PATH", r.PATH)
 	cmd.Dir = f.home()
 	cmd.WaitDelay = time.Second
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	isolateCommand(cmd)
 	out, _ := cmd.Output()
 	v := ""
 	sc := bufio.NewScanner(bytes.NewReader(out))
@@ -779,17 +778,17 @@ func AskShell(ctx context.Context, shell string, names []string, env []string, t
 	case posixShells[base]:
 		args = append([]string{"-l", "-i", "-c", posixScript, "berth"}, names...)
 	default:
-		return ShellAnswer{}, fmt.Errorf("%s is not a shell Shipyard knows how to ask", base)
+		return ShellAnswer{}, fmt.Errorf("%s is not a shell Terminal knows how to ask", base)
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, shell, args...)
 	cmd.Env = env
 	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	isolateCommand(cmd)
 	cmd.Cancel = func() error {
 		// The shell and anything its rc files started.
-		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		return killCommandTree(cmd.Process)
 	}
 	cmd.WaitDelay = time.Second
 	var stdout bytes.Buffer

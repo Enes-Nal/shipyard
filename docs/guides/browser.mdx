@@ -28,7 +28,7 @@ Two layers, both in the Browser tab's toolbar.
 
 **Inspect** opens WebKit's Web Inspector for the page (Elements, Console,
 Network, Sources, Storage…), in a window of its own. Right-click the page
-for **Inspect Element** too. It is the Shipyard app's: a Browser tab in a plain
+for **Inspect Element** too. It is the Terminal app's: a Browser tab in a plain
 browser shows the page in a frame, which has none.
 
 **Console and network** (⌘⌥I, or **View → Console and network**) opens a
@@ -60,7 +60,7 @@ without marking them seen for the agent.
 <Callout title="A private WebKit setting">
 The Web Inspector in a release build of the Mac app uses a private WebKit
 setting (`developerExtrasEnabled`, through Tauri's `devtools` feature),
-which the Mac App Store refuses. Shipyard is notarized and distributed outside
+which the Mac App Store refuses. Terminal is notarized and distributed outside
 it, so that is fine. The inspector always opens in its own window: docked,
 WebKit would size it as if the page filled the window.
 </Callout>
@@ -70,7 +70,7 @@ How the drawer gets its data: the page runs a small script
 runs it at the start of every page and asks it twice a second for what's
 new. In a frame (a plain browser), the page is asked for with
 `?__berth_devtools=1`, and the proxy puts the same script in, as it does
-the Preview tab's; it only goes into a frame Shipyard named, and the flag never
+the Preview tab's; it only goes into a frame Terminal named, and the flag never
 reaches your dev server. Requests come from the proxy's own log
 (`GET /v1/proxy/requests?host=` on the laptop agent's API), which sees
 every request a worktree's page makes, including ones that never reach the
@@ -160,7 +160,7 @@ iframes never get it. For a Preview frame the proxy also:
   would be logged out in its frames. Log in in a Browser tab, or in any
   frame, and every frame is logged in.
 
-A frame whose page didn't get the script (a site not served through Shipyard's
+A frame whose page didn't get the script (a site not served through Terminal's
 proxy, or a laptop agent from before Preview: restart it) still shows, with
 an amber dot: it doesn't sync or switch themes. A site that isn't a
 worktree's or a box port's, such as `https://example.com`, says it can't be

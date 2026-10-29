@@ -41,13 +41,13 @@ var usageSections = []struct {
 		{"%[1]s location config %[2]sNAME [--json] [--trust HASH|--untrust]", "The repo's, the box's and the effective config; trust the repo's to run it"},
 		{"%[1]s services%[3]s [--json]", "Which worktree each running server belongs to"},
 		{"%[1]s service list|start|stop|restart|log %[2]sLOC/WORKTREE [SERVICE]", "A worktree's services from the repo's config"},
-		{"%[1]s preview %[2]s[LOC/WORKTREE] [PORT] [--path /x]", "Open a worktree's page in the Shipyard app"},
+		{"%[1]s preview %[2]s[LOC/WORKTREE] [PORT] [--path /x]", "Open a worktree's page in the Terminal app"},
 		{"%[1]s worktree new %[2]sLOC/NAME [--branch B] [--base REF] [--pr N [--ref REF]] [--parent NAME] [--no-setup]", "Create a git worktree and run its setup; --pr checks out a\npull request (BRANCH should be its head branch; a fork's head\nis fetched from REF, default pull/N/head); --parent nests it\nunder another worktree of the location; --no-setup skips setup\nand autostart (the worktree shows setup_pending)"},
 		{"%[1]s worktree setup %[2]sLOC/NAME [--wait]", "Run the location's setup script and autostart services in a\nworktree; --wait blocks until it finishes and fails if setup does"},
 		{"%[1]s worktree rm %[2]sLOC/NAME [--force]", "Remove a worktree"},
 		{"%[1]s worktree rename %[2]sLOC/NAME [TITLE]", "Give a worktree a display name (its branch and folder keep\ntheir names; no TITLE clears it)"},
 		{"%[1]s reviews%[3]s [--idle-days N] [--json]", "Pull requests opened for review here; --idle-days sets how long\none may sit unused before it is cleaned up (0: never)"},
-		{"%[1]s review-button %[2]s[LOC/WT] [--as EMAIL] [--path /x] [--clear] [--json]", "The \"Review in Shipyard\" button on the worktree's PR; --as and\n--path set what it opens with"},
+		{"%[1]s review-button %[2]s[LOC/WT] [--as EMAIL] [--path /x] [--clear] [--json]", "The \"Review in Terminal\" button on the worktree's PR; --as and\n--path set what it opens with"},
 		{"%[1]s login users %[2]s[LOC[/WT]] [--json]", "Who the project's worktrees can be logged in as"},
 	}},
 	{"Agent sessions", [][2]string{
@@ -65,7 +65,7 @@ var usageSections = []struct {
 		{"%[1]s session kill %[2]sNAME", "Stop a session"},
 	}},
 	{"Artifacts (what agents make for you to look at)", [][2]string{
-		{"%[1]s artifact add FILE --title T [--kind chart|table|diagram|page|notes] [--id ID] [--note N]\n         [--by HELPER] [--in LOC/WT]", "Show a berth.chart JSON, CSV, Mermaid, Markdown or one HTML file in\nthe Shipyard app; rewriting the file updates it live"},
+		{"%[1]s artifact add FILE --title T [--kind chart|table|diagram|page|notes] [--id ID] [--note N]\n         [--by HELPER] [--in LOC/WT]", "Show a berth.chart JSON, CSV, Mermaid, Markdown or one HTML file in\nthe Terminal app; rewriting the file updates it live"},
 		{"%[1]s artifact list [%[2]sLOC/WT] [--json]", "A worktree's artifacts"},
 		{"%[1]s artifact show ID [--content [--version N]] [--json]", "One artifact and its versions, or its content"},
 		{"%[1]s artifact rm ID", "Forget an artifact"},
@@ -1031,7 +1031,7 @@ func sessionNew(ctx context.Context, c *box.Client, args []string, out io.Writer
 	fs.StringVar(&req.Name, "name", "", "session name (default: location, command, and a suffix)")
 	fs.StringVar(&req.Agent, "agent", "", "start this agent (see: agents) instead of a command")
 	fs.StringVar(&req.Prompt, "prompt", "", "the agent's first prompt")
-	fs.StringVar(&req.Open, "open", "", "show it in the Shipyard app: split (beside the current terminal) or tab")
+	fs.StringVar(&req.Open, "open", "", "show it in the Terminal app: split (beside the current terminal) or tab")
 	fs.StringVar(&req.Title, "title", "", "name the work (default: the prompt's first line)")
 	pos, err := parse(fs, args)
 	if err != nil || len(pos) != 1 {
@@ -1248,7 +1248,7 @@ func taskNew(ctx context.Context, c *box.Client, args []string, out io.Writer) e
 	fs, asJSON := flags(args)
 	fs.StringVar(&req.Agent, "agent", "", "agent to start (see: agents)")
 	fs.StringVar(&req.Prompt, "prompt", "", "the agent's first prompt")
-	fs.StringVar(&req.Open, "open", "", "show it in the Shipyard app: split or tab")
+	fs.StringVar(&req.Open, "open", "", "show it in the Terminal app: split or tab")
 	fs.StringVar(&req.Branch, "branch", "", "branch to create (default: the worktree name)")
 	fs.StringVar(&req.Base, "base", "", "ref to branch from")
 	fs.StringVar(&req.Title, "title", "", "name the work (default: the prompt's first line)")

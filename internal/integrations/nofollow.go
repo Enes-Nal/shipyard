@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 // writeNoFollow writes data to rel, a path below root, making the folders it
@@ -46,7 +45,7 @@ func writeNoFollow(root, rel string, data []byte, perm fs.FileMode) error {
 	if fi, err := r.Lstat(name); err == nil && !fi.Mode().IsRegular() {
 		return fmt.Errorf("%s is not a regular file; refusing to write through it", filepath.Join(root, name))
 	}
-	f, err := r.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, perm)
+	f, err := r.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|openNoFollow, perm)
 	if err != nil {
 		return err
 	}

@@ -146,7 +146,7 @@ const minimal = `{"schema":"berth.team/v1","id":"acme","name":"Acme","org":"acme
 
 func TestParseRejects(t *testing.T) {
 	cases := []struct{ from, to, want string }{
-		{`"berth.team/v1"`, `"berth.team/v2"`, "this version of Shipyard reads"},
+		{`"berth.team/v1"`, `"berth.team/v2"`, "this version of Terminal reads"},
 		{`"id":"acme"`, `"id":"Acme Co"`, "lowercase"},
 		{`"name":"Acme"`, `"name":" "`, "name is empty"},
 		{`"org":"acme"`, `"org":"ac me"`, "not a GitHub org"},
@@ -345,7 +345,7 @@ func TestAgents(t *testing.T) {
 			t.Errorf("agents %s: %v", in, err)
 		}
 	}
-	// A team's own step can't take Shipyard's name for its step.
+	// A team's own step can't take Terminal's name for its step.
 	doc = strings.Replace(minimal, `{"id":"db","title":"Database"}`, `{"id":"agents","title":"Agents"}`, 1)
 	if _, _, err := Parse([]byte(doc)); err == nil || !strings.Contains(err.Error(), "reserved") {
 		t.Errorf("a step named agents: %v", err)

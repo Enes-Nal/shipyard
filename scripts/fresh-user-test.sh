@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The fresh-user release test, on this Mac: the whole first run of the
-# release app, as a new user has it, with nothing of this Mac's own Shipyard
+# release app, as a new user has it, with nothing of this Mac's own Terminal
 # touched. Not part of releasing: run it by hand now and then, alone or
 # with the other release tests (make release-check).
 #
@@ -69,7 +69,7 @@ export KEEP
 	exit 2
 }
 OUT=${OUT:-$REPO/dist/release-test/fresh-user-$(date +%Y%m%d-%H%M%S)}
-rt_init "Shipyard fresh-user test (macOS)" "$OUT"
+rt_init "Terminal fresh-user test (macOS)" "$OUT"
 trap 'mac_cleanup >>"$RT_LOG" 2>&1' EXIT
 trap 'exit 130' INT TERM
 
@@ -87,7 +87,7 @@ s_prepare() {
 	# The dmg must be a release build of what is being tested: a stale one
 	# left in target/ once made this test check months-old code.
 	check_dmg "$DMG" "${ANY:-$TAG}" 2>"$ROOT/dmg.check" || fail "$(cat "$ROOT/dmg.check")" || return 1
-	detail "$(basename "$DMG"): Shipyard $DMG_VERSION built from ${DMG_REVISION:0:9}; agent on 127.0.0.1:$UI_PORT, proxy :$PROXY_PORT; home $THOME"
+	detail "$(basename "$DMG"): Terminal $DMG_VERSION built from ${DMG_REVISION:0:9}; agent on 127.0.0.1:$UI_PORT, proxy :$PROXY_PORT; home $THOME"
 }
 
 s_install() {
@@ -101,15 +101,15 @@ s_install() {
 	fi
 	if [ "$SIGNED" = 1 ]; then
 		spctl -a -vv -t exec "$app" 2>&1 | grep -q 'source=Notarized Developer ID' ||
-			fail "Shipyard $v is not accepted by Gatekeeper as notarized: $(spctl -a -vv -t exec "$app" 2>&1 | tr '\n' ' ')" || return 1
+			fail "Terminal $v is not accepted by Gatekeeper as notarized: $(spctl -a -vv -t exec "$app" 2>&1 | tr '\n' ' ')" || return 1
 	fi
 	for f in Contents/MacOS/berth Contents/MacOS/berth-cli Contents/Resources/berthd; do
 		[ -x "$app/$f" ] || fail "the app has no $f" || return 1
 	done
-	APP_UNDER_TEST="$ROOT/app/Shipyard Test.app"
+	APP_UNDER_TEST="$ROOT/app/Terminal Test.app"
 	mkdir -p "$ROOT/app"
 	test_copy "$app" "$APP_UNDER_TEST" || fail "could not make the test's copy of the app" || return 1
-	detail "Shipyard $v, $sig"
+	detail "Terminal $v, $sig"
 }
 
 s_app_start() {
@@ -118,14 +118,14 @@ s_app_start() {
 	# A new Mac has no agent running: the app offers to start it.
 	local i=0 seen=""
 	while [ $i -lt 60 ]; do
-		if ax wait "Welcome to Shipyard" --timeout 1 >/dev/null 2>&1; then seen=welcome && break; fi
-		if ax wait "Start the Shipyard agent" --timeout 1 >/dev/null 2>&1; then seen=offline && break; fi
+		if ax wait "Welcome to Terminal" --timeout 1 >/dev/null 2>&1; then seen=welcome && break; fi
+		if ax wait "Start the Terminal agent" --timeout 1 >/dev/null 2>&1; then seen=offline && break; fi
 		i=$((i + 1))
 	done
 	[ -n "$seen" ] || fail "the app showed neither the welcome nor the agent's start screen" || return 1
 	if [ "$seen" = offline ]; then
-		ax press "Start the Shipyard agent" --role AXButton || return 1
-		ax wait "Welcome to Shipyard" --timeout 30 || fail "the agent started, but the welcome never showed" || return 1
+		ax press "Start the Terminal agent" --role AXButton || return 1
+		ax wait "Welcome to Terminal" --timeout 30 || fail "the agent started, but the welcome never showed" || return 1
 	fi
 	api GET /v1/status >/dev/null || fail "the agent does not answer on 127.0.0.1:$UI_PORT" || return 1
 	detail "agent started from the app (${seen} screen first); the welcome shows"
@@ -351,7 +351,7 @@ s_isolation() {
 			lsof -nP -a -p "$ours" -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1 && bad="$bad $p"
 		done
 	fi
-	[ -z "$bad" ] || fail "the test's processes listen on this Mac's Shipyard ports:$bad" || return 1
+	[ -z "$bad" ] || fail "the test's processes listen on this Mac's Terminal ports:$bad" || return 1
 	if grep -q REFUSED "$ROOT/launchctl.log" 2>/dev/null; then
 		fail "something tried launchd outside the test's labels: $(grep REFUSED "$ROOT/launchctl.log" | head -3 | tr '\n' ' ')"
 		return 1
@@ -376,5 +376,5 @@ step "Worktree URL in the Browser tab" s_url_browser
 step "The Diff panel opens" s_diff
 step "Built-in plugins listed and loaded" s_plugins
 step "Archive the worktree" s_archive
-step "Nothing of this Mac's Shipyard touched" s_isolation
+step "Nothing of this Mac's Terminal touched" s_isolation
 rt_finish

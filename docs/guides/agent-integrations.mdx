@@ -1,14 +1,14 @@
 ---
 title: Agent integrations
-description: Claude Code, Codex, Cursor, Gemini CLI, OpenCode and oh-my-pi hooks, the skills Shipyard teaches agents, and announcing events from any tool.
+description: Claude Code, Codex, Cursor, Gemini CLI, OpenCode and oh-my-pi hooks, the skills Terminal teaches agents, and announcing events from any tool.
 ---
 
-Shipyard works with the tools around it in both directions: tools drive
-Shipyard through its CLI, `berth`, and Shipyard drives tools through hooks. Every event
+Terminal works with the tools around it in both directions: tools drive
+Terminal through its CLI, `berth`, and Terminal drives tools through hooks. Every event
 records the tool it came from, so a change never bounces back and forth
 between two tools.
 
-## Agent tools → Shipyard
+## Agent tools → Terminal
 
 ### Claude Code, Codex, Cursor, Gemini CLI, OpenCode
 
@@ -25,14 +25,14 @@ first starts that agent on the box, and `berth doctor BOX` (or
 `berthd doctor` on the box) warns about each agent CLI without its hooks,
 with the command that installs them.
 
-- **Claude Code**: installs Shipyard's skills in `~/.claude/skills/` and
+- **Claude Code**: installs Terminal's skills in `~/.claude/skills/` and
   `SessionStart` / `UserPromptSubmit` / `PostToolUse` / `PermissionRequest` /
   `Notification` / `Stop` / `StopFailure` / `SessionEnd` hooks in
   `~/.claude/settings.json`. Only permission and question notifications mean
   "needs you"; the idle reminder and login notices are ignored.
 - **Cursor**: appends `sessionStart`, `beforeSubmitPrompt` and `stop` hooks to
   `~/.cursor/hooks.json`, after any hooks already there (Orca's are kept).
-- **Codex**: installs Shipyard's skills in `~/.agents/skills/`, where Codex
+- **Codex**: installs Terminal's skills in `~/.agents/skills/`, where Codex
   reads user skills (a copy an older version left in `~/.codex/skills/` is
   removed), adds `SessionStart` / `UserPromptSubmit` / `PreToolUse` /
   `PostToolUse` / `PermissionRequest` / `Stop` hooks to `~/.codex/hooks.json`
@@ -42,10 +42,10 @@ with the command that installs them.
   Notify comes at the end of each of Codex's messages, not only the turn's:
   once a session's hooks have said a prompt started, its `Stop` hook alone
   ends the turn. Codex runs a single notify program, so when the config
-  already sets one to something else, Shipyard leaves it and prints the line to
+  already sets one to something else, Terminal leaves it and prints the line to
   change yourself. Codex can run every session from one shared background
   daemon, which runs hooks with the environment of the session that started
-  it, so every session's hooks would report as that one. Shipyard starts
+  it, so every session's hooks would report as that one. Terminal starts
   Codex with `--no-daemon` when the installed Codex has the flag, and for a
   Codex hook from another session's folder, or about a conversation another
   session holds, goes by the folder and the conversation, not the name.
@@ -65,7 +65,7 @@ A box can have several logins per agent (the [Usage & accounts](/guides/plugins)
 each Claude Code account is a config folder that `CLAUDE_CONFIG_DIR` picks,
 each Codex account a home that `CODEX_HOME` picks, and an agent reads its
 hooks (and Claude Code its skills and MCP servers) from that folder alone.
-So Shipyard installs them in every account folder:
+So Terminal installs them in every account folder:
 
 - the default, `~/.claude` and `~/.codex` (or berthd's own
   `CLAUDE_CONFIG_DIR` and `CODEX_HOME`);
@@ -91,24 +91,24 @@ in the folder it makes, and when berthd starts a session whose
 `CLAUDE_CONFIG_DIR` or `CODEX_HOME` names a folder without them, it installs
 them there before the agent starts (a file read when they're there
 already). That happens only for an agent whose default account has
-Shipyard's hooks, and the new account gets the skills the default has.
+Terminal's hooks, and the new account gets the skills the default has.
 Installing or removing user skills (`berthd skills`, Settings → Agents) does
 it for every Claude Code account.
 
 An account folder other than `~/.claude` or `~/.codex` may be one a project
-names, so Shipyard never writes there through a symbolic link: a
+names, so Terminal never writes there through a symbolic link: a
 `settings.json` that is a link is left as it is, and that account is
 reported as not installed.
 
 ### After an upgrade
 
 berthd brings hooks it installed before up to date when it starts, in every
-account, and gives an account added since the default's hooks and skills. Every session Shipyard starts has `BERTH_SESSION` (and, for an agent
-preset, `BERTH_AGENT`) in its environment; the hook sends it along, so Shipyard
+account, and gives an account added since the default's hooks and skills. Every session Terminal starts has `BERTH_SESSION` (and, for an agent
+preset, `BERTH_AGENT`) in its environment; the hook sends it along, so Terminal
 knows which session a hook came from when agents share a worktree. When
 berthd is down, `berthd hook` keeps the event in `~/.berth/box/spool/` and
 berthd publishes it, in order, when it starts. What each agent can report,
-and how Shipyard fills the gaps, is in
+and how Terminal fills the gaps, is in
 [turns](/concepts/sessions-and-agents#turns).
 
 Installs are idempotent, keep every existing setting, back up the previous
@@ -121,15 +121,15 @@ leave the tool. A hook never fails or blocks the tool that called it.
 
 ### Skills
 
-Shipyard ships its skills embedded in the binary:
+Terminal ships its skills embedded in the binary:
 
 | Skill | Teaches agents to |
 | --- | --- |
 | `berth` | find their way around: boxes, repos, worktrees, tasks, sessions, the worktree's `$BERTH_*` variables and ports, `.berth/config.json`, services |
 | `berth-orchestrate` | prompt, wait for, check, loop, hand off to and review with other agents, and never answer for the human |
-| `berth-preview` | run the dev server on the worktree's port and open it in the user's Shipyard app (`berthd preview`) |
+| `berth-preview` | run the dev server on the worktree's port and open it in the user's Terminal app (`berthd preview`) |
 | `berth-hooks` | write hooks and gates at the right scope, with the event catalog |
-| `berth-artifacts` | show you a chart, table, diagram, notes or a small page in Shipyard instead of a wall of text, and update it live ([Artifacts](/guides/artifacts)) |
+| `berth-artifacts` | show you a chart, table, diagram, notes or a small page in Terminal instead of a wall of text, and update it live ([Artifacts](/guides/artifacts)) |
 | `berth-visual-diff` | check what a change did to the app's pages before saying done (`berthd shots compare`): phone, tablet and desktop shots of the worktree and main, diffed, with what broke ([Visual diffs](/guides/visual-diffs)) |
 
 Install them for the box's user, or inside one repository for just that
@@ -151,21 +151,21 @@ berth skills devl install                             # the same from a laptop
 
 Project skills are listed in the repository's `.git/info/exclude` so they are
 not committed, unless installed with `--commit`. `berthd skills` reports each
-copy as installed, outdated (Shipyard has a newer version: install again) or
+copy as installed, outdated (Terminal has a newer version: install again) or
 missing; the app shows the same in Settings → Agents and in a project's
-settings. Removing only deletes a folder whose `SKILL.md` is Shipyard's skill of
+settings. Removing only deletes a folder whose `SKILL.md` is Terminal's skill of
 that name.
 
 #### The sidebar's reminder
 
 When a box is online, has Claude Code or Codex, and its user's skills are
 missing or out of date (as they are after a box upgrade, until installed
-again), the app says so at the foot of the sidebar: "devl: Shipyard's skills
+again), the app says so at the foot of the sidebar: "devl: Terminal's skills
 aren't installed for Claude Code", or "gpu: 3 skills are out of date". One
 box shows and the others fold under "2 more boxes"; with the sidebar folded
 it is one button that opens the same notices.
 
-- **Install now** (or **Update now**) installs all of Shipyard's skills for
+- **Install now** (or **Update now**) installs all of Terminal's skills for
   the box's user, for the agents the box has, as `berthd skills install`
   does. If a `before:skills.install` gate refuses, or the box goes offline
   on the way, the notice says why, with **Retry** and **Settings**, which
@@ -206,13 +206,13 @@ berthd emit deploy.done url=https://… --origin mytool      # on a box
 ## Worktrees from any tool
 
 berthd watches its locations. A worktree created by another app, an agent,
-or plain `git worktree add` shows up in Shipyard and produces a
+or plain `git worktree add` shows up in Terminal and produces a
 `worktree.created` event with origin `detected`. Nothing needs configuring in
 those tools.
 
-## Shipyard → tools
+## Terminal → tools
 
-Shipyard drives other tools through hooks and plugins rather than adapters
+Terminal drives other tools through hooks and plugins rather than adapters
 built into it: a hook on `worktree.created` can register the worktree with
 any tool that has a CLI, and a plugin can ship those hooks along with its UI.
 See [hooks](/guides/hooks) and [plugins](/guides/plugins).

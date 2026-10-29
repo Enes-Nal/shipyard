@@ -35,7 +35,7 @@ test("searching Settings for permissions finds Agents and models", async ({ app,
   await expect(found.getByRole("option")).toHaveCount(0);
 });
 
-test("the Labs switch an older Shipyard saved is dropped and changes nothing", async ({ app }) => {
+test("the Labs switch an older Terminal saved is dropped and changes nothing", async ({ app }) => {
   await app.open({ prefs: { structuredClaude: false, approvals: "ask", version: 3 } });
   await expect.poll(async () => (await app.stored("berth.prefs")) as Saved).toMatchObject({ approvals: "ask" });
   expect(((await app.stored("berth.prefs")) as Saved).structuredClaude).toBeUndefined();

@@ -40,7 +40,7 @@ mkdir -p "$w/box" "$w/kits/api"
 cat > "$w/team.json" <<'J'
 {
   "schema": "berth.team/v1", "id": "acme", "name": "Acme", "org": "acme",
-  "description": "A synthetic team setup for Shipyard's tests.", "contact": "#onboarding",
+  "description": "A synthetic team setup for Terminal's tests.", "contact": "#onboarding",
   "box": { "script": "box/setup.sh", "settings": { "ACME_PG": "16", "$why": "a comment" }, "steps": [
     { "id": "tools", "title": "Tools", "detail": "/opt/acme, made with sudo", "sudo": true },
     { "id": "db", "title": "Database", "detail": "a stand-in" },

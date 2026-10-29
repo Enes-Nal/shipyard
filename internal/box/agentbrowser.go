@@ -24,7 +24,7 @@ import (
 // agents forget. On a box that runs agents all day they pile up, each Chrome
 // burning CPU rendering in software.
 //
-// Shipyard keeps them in check from both ends. Every session it starts gets
+// Terminal keeps them in check from both ends. Every session it starts gets
 // AGENT_BROWSER_IDLE_TIMEOUT_MS, so an idle daemon closes its browser and
 // exits by itself; and when a berth session ends (stopped, its program
 // exited, its worktree archived), the agent-browser sessions it started are
@@ -144,7 +144,7 @@ func tmuxSocketPath() string {
 	if r, err := filepath.EvalSymlinks(dir); err == nil {
 		dir = r
 	}
-	return filepath.Join(dir, "tmux-"+strconv.Itoa(os.Getuid()), tmuxSocket)
+	return filepath.Join(dir, "tmux-"+strconv.Itoa(currentUID()), tmuxSocket)
 }
 
 // sameSocket says whether a pane's TMUX value (socket,pid,index) names the
@@ -175,8 +175,7 @@ func tmuxServerRuns(tmux string) bool {
 	if err != nil || pid <= 0 {
 		return false
 	}
-	err = syscall.Kill(pid, 0)
-	return err == nil || errors.Is(err, syscall.EPERM)
+	return processAlive(pid)
 }
 
 func (a *AgentBrowsers) procs() ([]proc, error) {
@@ -356,7 +355,7 @@ func (a *AgentBrowsers) kill(pid int, sig syscall.Signal) {
 		a.signal(pid, sig)
 		return
 	}
-	syscall.Kill(pid, sig)
+	signalProcess(pid, sig)
 }
 
 // remaining is which of s's processes still run, looked up again by their
@@ -465,7 +464,7 @@ func (b *Box) browserReap(w http.ResponseWriter, r *http.Request) error {
 		found, err = b.AgentBrowsers.Reap(r.Context(), "")
 	}
 	if errors.Is(err, errNoProcs) {
-		writeJSON(w, map[string]any{"sessions": []AgentBrowserSession{}, "text": "Shipyard can't see other processes' environment on this system, so it can't find agent-browser sessions."})
+		writeJSON(w, map[string]any{"sessions": []AgentBrowserSession{}, "text": "Terminal can't see other processes' environment on this system, so it can't find agent-browser sessions."})
 		return nil
 	}
 	if err != nil {

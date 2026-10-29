@@ -1,7 +1,7 @@
 {
   "name": "@berth/plugin",
   "version": "0.1.0",
-  "description": "Types for writing Shipyard plugins. The runtime is provided by the Shipyard app.",
+  "description": "Types for writing Terminal plugins. The runtime is provided by the Terminal app.",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {

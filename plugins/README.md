@@ -1,6 +1,6 @@
 # Plugins
 
-Each folder here is a Shipyard plugin. The ones whose `berth-plugin.json` says
+Each folder here is a Terminal plugin. The ones whose `berth-plugin.json` says
 `"builtin": true` ship inside the app; `hello-ports` is the smallest example
 of the SDK and is not built in. The ones that say `"marketplace": true`
 (`hello-ports`, and [`leadline`](leadline) and [`database`](database), which

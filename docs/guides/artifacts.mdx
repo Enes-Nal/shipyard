@@ -7,7 +7,7 @@ An artifact is something an agent made for you to look at instead of a
 wall of text: before and after numbers as a bar chart, test results as a
 table, a map of the system as a diagram, a plan as notes, a long job's
 progress as a small page. The agent writes a file and registers it with
-`berthd artifact add`; Shipyard shows it in the chat where it was made, opens
+`berthd artifact add`; Terminal shows it in the chat where it was made, opens
 it as a tab, keeps the worktree's artifacts on a board, and shows each new
 version live when the agent rewrites the file.
 
@@ -45,13 +45,13 @@ the board like any other artifact. See [visual diffs](/guides/visual-diffs).
 
 | Kind | The file | Drawn by |
 | --- | --- | --- |
-| chart | `berth.chart/v1` JSON | Shipyard, with [bklit UI](https://ui.bklit.com)'s charts, in your theme |
-| table | `.csv`, `.tsv`, or a JSON array of objects | Shipyard: sortable, a `status` column colours rows and filters failures |
-| diagram | Mermaid (`.mmd`) | Shipyard draws flowcharts; other Mermaid diagrams show as source |
-| notes | Markdown (`.md`) | Shipyard, without raw HTML |
+| chart | `berth.chart/v1` JSON | Terminal, with [bklit UI](https://ui.bklit.com)'s charts, in your theme |
+| table | `.csv`, `.tsv`, or a JSON array of objects | Terminal: sortable, a `status` column colours rows and filters failures |
+| diagram | Mermaid (`.mmd`) | Terminal draws flowcharts; other Mermaid diagrams show as source |
+| notes | Markdown (`.md`) | Terminal, without raw HTML |
 | page | one `.html` file | the page itself, sandboxed on its own origin |
 
-| visualdiff | made by `berthd shots compare`, never added by hand | Shipyard: a before/after slider, heatmap and regions ([visual diffs](/guides/visual-diffs)) |
+| visualdiff | made by `berthd shots compare`, never added by hand | Terminal: a before/after slider, heatmap and regions ([visual diffs](/guides/visual-diffs)) |
 
 The kind comes from the file, or `--kind`. Data artifacts may be 1 MB and
 5,000 rows; a page 2 MB.
@@ -106,7 +106,7 @@ the worktree is removed. Events: `artifact.added`, `artifact.updated`,
 ## Safety
 
 A page an agent wrote is untrusted: a prompt-injected agent could write a
-hostile one. Shipyard runs each at its own origin,
+hostile one. Terminal runs each at its own origin,
 `http://art-<id>.<box>.localhost:1377`, answered by the laptop's proxy from
 the box over your paired connection, so the page never holds a token:
 
@@ -119,7 +119,7 @@ the box over your paired connection, so the page never holds a token:
   marked) that the proxy fetches by their exact CDN address, checks against
   a hash, and serves from the page's own origin: the page reaches no CDN,
   so nothing it adds to an address goes anywhere.
-- **It can't leave.** The app frames a small shell of Shipyard's, which frames
+- **It can't leave.** The app frames a small shell of Terminal's, which frames
   the page and allows only that origin's pages: a page that navigates
   itself elsewhere is stopped.
 - **No cookies, none of Preview's machinery**: the proxy reads and sets
@@ -132,7 +132,7 @@ the box over your paired connection, so the page never holds a token:
   (private keys, cloud and API tokens, passwords in URLs, `.env`-style
   lines): a pattern check, so the skill also says never to include any.
 
-Charts, tables, diagrams and notes run no code of the agent's at all: Shipyard
+Charts, tables, diagrams and notes run no code of the agent's at all: Terminal
 draws them from their data, as text.
 
 Thumbnails of pages are a poster, not the running page: a page runs only

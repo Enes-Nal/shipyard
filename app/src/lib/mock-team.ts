@@ -143,7 +143,7 @@ const agentsStep = (ids: string[]): PlanStep => {
   return {
     id: "agents",
     title: `${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0]} on the box`,
-    detail: "the team's agent CLIs, in ~/.local/bin without sudo, with Shipyard's hooks and skills; you sign in to each",
+    detail: "the team's agent CLIs, in ~/.local/bin without sudo, with Terminal's hooks and skills; you sign in to each",
     sudo: false,
     berth: true,
     commands: [`berthd agents install --integrations ${ids.join(" ")}   # each is skipped when it is already there`],
@@ -234,14 +234,14 @@ const SCANNED = { looked: ["~/code", "~/work", "~/src", "~/projects", "~/dev", "
 const pulled = new Set<string>();
 const clonesOf = (repo: string): ExistingClone[] | undefined => (withClones ? CLONES[repo]?.map((c) => (pulled.has(c.path) ? { ...c, behind: 0 } : c)) : undefined);
 
-// existingOn is what the box reports for a repo: its Shipyard projects of
+// existingOn is what the box reports for a repo: its Terminal projects of
 // it first (the box always lists those), then the clones it found.
 function existingOn(box: string | undefined, repo: string): ExistingClone[] | undefined {
   if (!box) return undefined;
   const own = (ctx?.locations[box] ?? [])
     .filter((l) => l.slug?.toLowerCase() === repo.toLowerCase())
     .map((l): ExistingClone => ({ path: l.path, display: l.path.replace(/^\/home\/me/, "~"), branch: l.worktrees?.find((w) => w.main)?.branch ?? "main", dirty: 0, location: l.name, last_commit: ago(45), worktrees: (l.worktrees ?? []).filter((w) => !w.main).length || undefined }));
-  // A folder is listed once: as the Shipyard project it is, if it is one.
+  // A folder is listed once: as the Terminal project it is, if it is one.
   const all = [...own, ...(clonesOf(repo) ?? []).filter((c) => !own.some((o) => o.path === c.path))];
   return all.length ? all : undefined;
 }
@@ -489,7 +489,7 @@ async function play(r: TeamStatus, from = 0, again = false) {
       s.url = undefined;
       say(key, "✓ Authentication complete.\r\n✓ Logged in as sean-brydon\r\n\x1b[2m$ gh auth setup-git\x1b[0m\r\n");
     } else if (s.id === "1password") {
-      say(key, "\r\n\x1b[1m==> 1Password on this box\x1b[0m\r\n    The team's shared keys are 1Password references (op://...). Sign op in\r\n    here, once, so Shipyard can read them when a worktree needs them.\r\n\r\n");
+      say(key, "\r\n\x1b[1m==> 1Password on this box\x1b[0m\r\n    The team's shared keys are 1Password references (op://...). Sign op in\r\n    here, once, so Terminal can read them when a worktree needs them.\r\n\r\n");
       await wait(400);
       s.state = "waiting";
       say(key, "Enter the password for sean@acme.test at my.1password.com: ");
@@ -502,7 +502,7 @@ async function play(r: TeamStatus, from = 0, again = false) {
       if (s.sudo && !askedSudo) {
         askedSudo = true;
         s.state = "waiting";
-        say(key, "\x1b[1m==> The next step needs root. sudo asks for your password; Shipyard never sees or keeps it.\x1b[0m\r\n[sudo] password for me: ");
+        say(key, "\x1b[1m==> The next step needs root. sudo asks for your password; Terminal never sees or keeps it.\x1b[0m\r\n[sudo] password for me: ");
         touch(r, "team.step", { step: s.id, state: s.state });
         await gate("sudo");
         say(key, "\r\n");
@@ -513,7 +513,7 @@ async function play(r: TeamStatus, from = 0, again = false) {
       if (s.id === "postgres" && teamScenario === "fail" && !retried) {
         say(
           key,
-          "docker: Error response from daemon: driver failed programming external connectivity on endpoint shop-postgres:\r\n  Bind for 127.0.0.1:5433 failed: port is already allocated.\r\n\x1b[31merror:\x1b[0m Postgres did not start; see: docker logs shop-postgres\r\n\r\nBerth: stopped at postgres (exit 1). Fix it, then Retry from Postgres in Shipyard.\r\n",
+          "docker: Error response from daemon: driver failed programming external connectivity on endpoint shop-postgres:\r\n  Bind for 127.0.0.1:5433 failed: port is already allocated.\r\n\x1b[31merror:\x1b[0m Postgres did not start; see: docker logs shop-postgres\r\n\r\nBerth: stopped at postgres (exit 1). Fix it, then Retry from Postgres in Terminal.\r\n",
         );
         s.state = "failed";
         s.error = "Bind for 127.0.0.1:5433 failed: port is already allocated.\nerror: Postgres did not start; see: docker logs shop-postgres";
@@ -531,7 +531,7 @@ async function play(r: TeamStatus, from = 0, again = false) {
     say(key, `\x1b[32m    ✓ ${s.id}\x1b[0m\r\n`);
     touch(r, "team.step", { step: s.id, state: s.state, secs: s.secs });
   }
-  say(key, "\r\nShipyard: the box is set up. The repos are next; you can close this tab.\r\n");
+  say(key, "\r\nTerminal: the box is set up. The repos are next; you can close this tab.\r\n");
   const sess = ctx?.sessions[r.box]?.find((x) => x.name === session);
   if (sess) sess.exited = true;
   r.phase = "projects";

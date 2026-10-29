@@ -32,7 +32,7 @@ func TestTeamSetupUseFlags(t *testing.T) {
 	if line != "~/work/acme-web (on feat/x, 3 uncommitted changes, 2 behind)" {
 		t.Fatalf("cloneLine = %q", line)
 	}
-	if line := cloneLine(box.ExistingClone{Display: "~/code/web", Branch: "main", Location: "web"}); !strings.Contains(line, "clean") || !strings.Contains(line, "Shipyard project web") {
+	if line := cloneLine(box.ExistingClone{Display: "~/code/web", Branch: "main", Location: "web"}); !strings.Contains(line, "clean") || !strings.Contains(line, "Terminal project web") {
 		t.Fatalf("cloneLine = %q", line)
 	}
 }

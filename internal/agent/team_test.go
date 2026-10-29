@@ -165,7 +165,7 @@ func TestTeamViewReadsTheSetupAndChecksAccessPerRepo(t *testing.T) {
 	if v.Keys.Shared != 2 || len(v.Keys.Ask) != 1 || v.Keys.Ask[0].Key != "MAIL_KEY" {
 		t.Fatalf("keys: %+v", v.Keys)
 	}
-	// The plan has the team's steps, then Shipyard's own GitHub sign-in on the
+	// The plan has the team's steps, then Terminal's own GitHub sign-in on the
 	// box and, since the shared keys are op:// references, its 1Password
 	// sign-in, each with its exact commands.
 	if len(v.Steps) != 4 || v.Steps[0].ID != "tools" || !v.Steps[0].Sudo || v.Steps[2].ID != "github" || !v.Steps[2].Berth ||
@@ -341,7 +341,7 @@ func TestSetupSendsTheReviewedCommitToTheBoxAndTrustsAtIt(t *testing.T) {
 	b.server.Handle("POST /v1/team/{id}/retry", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if noTmux.Load() {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			json.NewEncoder(w).Encode(map[string]string{"error": "tmux is not installed on this box, and Shipyard runs the team setup's steps in a terminal there (tmux): install it with `sudo apt install tmux`, then set up again", "code": "tmux_missing"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "tmux is not installed on this box, and Terminal runs the team setup's steps in a terminal there (tmux): install it with `sudo apt install tmux`, then set up again", "code": "tmux_missing"})
 			return
 		}
 		raw, _ := io.ReadAll(r.Body)

@@ -9,7 +9,7 @@ export function Switch({
   ...props
 }: SwitchPrimitive.Root.Props): React.ReactElement {
   return (
-    // Shipyard: off, in dark themes, the track and thumb are drawn from the
+    // Terminal: off, in dark themes, the track and thumb are drawn from the
     // foreground: --input and the background are too close to tell apart.
     <SwitchPrimitive.Root
       className={cn(

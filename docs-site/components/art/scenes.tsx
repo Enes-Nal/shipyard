@@ -9,7 +9,7 @@ import { useCallback, useId } from "react";
 
 const cn = (...classes: unknown[]) => classes.filter(Boolean).join(" ");
 
-// Scenes are Shipyard's small line drawings for quiet states, all in one
+// Scenes are Terminal's small line drawings for quiet states, all in one
 // drawing language: a 160 x 52 harbour, lines in currentColor (muted unless
 // the caller says otherwise), and exactly one amber point, the logo's dot, as
 // a buoy, a lamp or the sun. Motion is CSS only (transforms and opacity),

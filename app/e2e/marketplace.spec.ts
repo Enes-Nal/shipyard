@@ -61,7 +61,7 @@ test("an installed plugin shows under Installed, off, until the consent dialog t
 
   // Turning it on is the usual consent: what it can do, and its hash.
   await toggle.click();
-  await expect(consent).toContainText("This plugin isn't part of Shipyard.");
+  await expect(consent).toContainText("This plugin isn't part of Terminal.");
   await expect(consent).toContainText("~/.berth/plugins/acme-standup");
   await expect(consent).toContainText("sha256:");
   await consent.getByRole("button", { name: "Allow and turn on" }).click();
@@ -100,7 +100,7 @@ test("an update replaces a plugin that was on, and asks before the new code runs
   await expect(toggle).toHaveAttribute("aria-checked", "true");
 
   await listed(section, "acme-deploys").getByRole("button", { name: "Update", exact: true }).click();
-  // The new version is not what was allowed: it is off, and Shipyard asks.
+  // The new version is not what was allowed: it is off, and Terminal asks.
   const changed = app.page.getByRole("dialog", { name: "Deploy board has changed" });
   await expect(changed).toContainText("acme-deploys 1.2.0");
   await expect(row).toContainText("1.2.0");
@@ -156,7 +156,7 @@ test("when the listing can't be reached, Browse says so and reads it again on re
   const section = await app.openSettings("plugins");
 
   const error = section.getByTestId("market-error");
-  await expect(error).toContainText("Shipyard couldn't reach the plugin listing.");
+  await expect(error).toContainText("Terminal couldn't reach the plugin listing.");
   // What is installed doesn't need the listing.
   await expect(installed(section, "acme-deploys")).toBeVisible();
   await expect(section.getByTestId("market-plugin")).toHaveCount(0);

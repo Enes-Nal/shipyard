@@ -25,10 +25,10 @@ func Script(o Options, p Probe, run []string) string {
 		listen = "--listen " + shellQuote(o.Listen)
 	}
 	fmt.Fprintf(&b, `#!/bin/sh
-# Shipyard's guided install, on this box, as you. berth add ssh wrote this and
+# Terminal's guided install, on this box, as you. berth add ssh wrote this and
 # runs it; running it again is safe: each step checks before it changes
 # anything. Steps that need root ask for your password with sudo, here, on
-# the box: Shipyard never sees it or keeps it.
+# the box: Terminal never sees it or keeps it.
 B="$HOME/.local/bin"
 BERTHD="$B/berthd"
 PATH="$B:$PATH"
@@ -64,14 +64,14 @@ asroot() {
   if [ -z "$told" ]; then
     m "$CUR" sudo
     note "This needs root: sudo asks for $(id -un)'s password on this box."
-    note "Type it and press Enter. It goes to sudo here; Shipyard never sees it or keeps it."
+    note "Type it and press Enter. It goes to sudo here; Terminal never sees it or keeps it."
     told=1
   fi
   sudo "$@"
 }
 if [ "$(id -u)" -eq 0 ]; then
-  m %[3]s fail "Shipyard installs as the user your agents run as, not root"
-  echo "Shipyard installs as the user your agents will run as, not as root. Log in as that"
+  m %[3]s fail "Terminal installs as the user your agents run as, not root"
+  echo "Terminal installs as the user your agents will run as, not as root. Log in as that"
   echo "user (make one with: adduser me && usermod -aG sudo me) and set the box up again."
   exit 1
 fi
@@ -101,7 +101,7 @@ elif loginctl enable-linger "$u" >/dev/null 2>&1 && [ "$(loginctl show-user "$u"
 else
   asroot loginctl enable-linger "$u"
   c=$?
-  [ "$c" != 99 ] || by_hand linger "Turning lingering on needs root, and sudo asks for a password, which Shipyard can't type without a terminal." "sudo loginctl enable-linger $u"
+  [ "$c" != 99 ] || by_hand linger "Turning lingering on needs root, and sudo asks for a password, which Terminal can't type without a terminal." "sudo loginctl enable-linger $u"
   [ "$c" != 98 ] || by_hand linger "Turning lingering on needs root, and this box has no sudo." "loginctl enable-linger $u   (as root)"
   [ "$c" = 0 ] || { m linger cmd "sudo loginctl enable-linger $u"; failed linger "Turning lingering on didn't finish (exit $c); the terminal says why"; }
   note "Lingering is on: berthd keeps running when you log out."
@@ -139,7 +139,7 @@ func firstOr(run []string, def string) string {
 	return def
 }
 
-// writeTools is the tools step: Shipyard's tmux (uploaded already) checked,
+// writeTools is the tools step: Terminal's tmux (uploaded already) checked,
 // and what is still missing installed with the package manager.
 func writeTools(b *strings.Builder, o Options, p Probe) {
 	upload, pkgs := toolsNeed(o, p)
@@ -149,8 +149,8 @@ title "tmux and git"
 `)
 	if upload {
 		b.WriteString(`if [ -x "$B/tmux" ]; then
-  v=$("$B/tmux" -V 2>&1) || failed tools "Shipyard's tmux in $B does not run on this box: $v"
-  note "tmux: Shipyard's own build, $v, in $B (no sudo needed)"
+  v=$("$B/tmux" -V 2>&1) || failed tools "Terminal's tmux in $B does not run on this box: $v"
+  note "tmux: Terminal's own build, $v, in $B (no sudo needed)"
 fi
 `)
 	}
@@ -170,7 +170,7 @@ command -v %[1]s >/dev/null 2>&1 || [ -x "$B/%[1]s" ] || need="$need %[1]s"`, t)
 	b.WriteString(missing + "\n")
 	if steps == nil {
 		fmt.Fprintf(b, `if [ -n "$need" ]; then
-  failed tools "Shipyard needs$need here, and knows no package manager on this box: install$need, then retry"
+  failed tools "Terminal needs$need here, and knows no package manager on this box: install$need, then retry"
 fi
 m tools done
 `)
@@ -194,7 +194,7 @@ m tools done
   [ "$c" != 98 ] || by_hand tools %s %s
   [ "$c" = 0 ] || { m tools cmd %s; failed tools %s; }
 `, argv,
-			shellQuote("Installing"+" "+strings.Join(pkgs, " and ")+" needs root, and sudo asks for a password, which Shipyard can't type without a terminal."), shellQuote(strings.Join(lines, " && ")),
+			shellQuote("Installing"+" "+strings.Join(pkgs, " and ")+" needs root, and sudo asks for a password, which Terminal can't type without a terminal."), shellQuote(strings.Join(lines, " && ")),
 			shellQuote("Installing "+strings.Join(pkgs, " and ")+" needs root, and this box has no sudo."), shellQuote(strings.Join(lines, " && ")+"   (as root, without sudo)"),
 			shellQuote(CommandLines([][]string{s}, false)[0]), shellQuote("Installing "+strings.Join(pkgs, " and ")+" with "+p.Manager+" didn't finish; the terminal says why"))
 	}

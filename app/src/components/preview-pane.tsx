@@ -400,7 +400,7 @@ function Frames({ worktree, base, address, frames, paused, onGo, onReload, onNav
       />
       {plain && !__BERTH_DEMO__ && (
         <p role="status" className="shrink-0 border-b bg-warning/8 px-3 py-1 text-warning-foreground text-meta">
-          Some frames aren't connected, so they don't sync or switch themes. Pages from Shipyard's proxy (*.localhost:1377) connect once the Shipyard agent is up to date: restart it from the status bar.
+          Some frames aren't connected, so they don't sync or switch themes. Pages from Terminal's proxy (*.localhost:1377) connect once the Terminal agent is up to date: restart it from the status bar.
         </p>
       )}
       <div
@@ -883,7 +883,7 @@ function statusHelp(status: Status, synced: boolean): string {
     case "live":
       return synced ? "Connected and synced" : "Connected, on its own";
     case "plain":
-      return "Not connected: this page has no Shipyard preview script, so it doesn't sync or switch themes";
+      return "Not connected: this page has no Terminal preview script, so it doesn't sync or switch themes";
     case "loading":
       return "Loading";
     default:
@@ -906,7 +906,7 @@ function CantFrame({ url, worktree }: { url: string; worktree: string }) {
       <div className="flex max-w-sm flex-col items-center gap-2 text-center">
         <GlobeIcon className="size-6 text-muted-foreground" />
         <p className="text-row">{host} can't be framed</p>
-        <p className="text-muted-foreground text-meta">Preview shows pages through Shipyard's proxy, a worktree's dev server or a box port. Most other sites refuse to be shown inside another page.</p>
+        <p className="text-muted-foreground text-meta">Preview shows pages through Terminal's proxy, a worktree's dev server or a box port. Most other sites refuse to be shown inside another page.</p>
         <div className="mt-2 flex gap-2">
           <Button size="sm" onClick={() => openBrowserAt(url, { kind: "tab" }, worktree)}>
             <AppWindowIcon />
@@ -1038,7 +1038,7 @@ function ShotDialog({ shot, worktree, onClose }: { shot?: { blob: Blob; url: str
     try {
       const file = new File([shot!.blob], name, { type: "image/png" });
       const at = await uploadAttachment(client, { box: ref.box, session: session.name }, file);
-      await sendPrompt(ref.box, session.name, withAttachments(note || "Here is the page at each size (Shipyard Preview).", [at.path]), { when: "idle" });
+      await sendPrompt(ref.box, session.name, withAttachments(note || "Here is the page at each size (Terminal Preview).", [at.path]), { when: "idle" });
       toastManager.add({ type: "success", title: "Sent to the agent" });
       onClose();
     } catch (err) {

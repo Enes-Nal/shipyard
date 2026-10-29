@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "@/lib/api";
 
 // Starting the laptop agent from the "not running" screen. The Tauri shell
-// finds the berth command (bundled in Shipyard.app, or bin/berth in a dev
+// finds the berth command (bundled in Terminal.app, or bin/berth in a dev
 // build) and runs it; a plain browser cannot, so it gets the terminal
 // instructions instead. ?mock=offline acts the whole thing out without an
 // agent: the screen first, then the mock app once "started".
@@ -14,6 +14,7 @@ export interface AgentBinary {
 }
 
 const mockOffline = () => new URLSearchParams(location.search).get("mock") === "offline";
+const mockMissingBinary = () => mockOffline() && new URLSearchParams(location.search).get("binary") === "missing";
 let mockStarted = false;
 
 // mockAgentDown is true while ?mock=offline has not "started" its agent.
@@ -23,7 +24,7 @@ export const mockAgentDown = () => mockOffline() && !mockStarted;
 // null when there is none to run.
 export async function findAgentBinary(): Promise<AgentBinary | null> {
   if (isTauri()) return invoke<AgentBinary | null>("agent_binary");
-  if (mockOffline()) return { path: "/Applications/Shipyard.app/Contents/MacOS/berth-cli", source: "bundled" };
+  if (mockOffline()) return mockMissingBinary() ? null : { path: "/Applications/Terminal.app/Contents/MacOS/berth-cli", source: "bundled" };
   return null;
 }
 
@@ -36,7 +37,7 @@ export async function startAgent(atLogin: boolean): Promise<string> {
     mockStarted = true;
     return atLogin ? "Installed ~/Library/LaunchAgents/dev.berth.agent.plist" : "The berth agent is running.";
   }
-  throw new Error("Only the Shipyard app can start the agent. Run berth agent in a terminal instead.");
+  throw new Error("Only the Terminal app can start the agent. Run berth agent in a terminal instead.");
 }
 
 const RETRY = "berth:retry-connection";

@@ -188,7 +188,7 @@ func printPlan(w io.Writer, steps []guided.Step, color bool) {
 		return "\033[" + code + "m" + s + "\033[0m"
 	}
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, paint("1", "Shipyard will set this box up:"))
+	fmt.Fprintln(w, paint("1", "Terminal will set this box up:"))
 	n := 0
 	for _, s := range steps {
 		if s.ID == guided.StepConnect {
@@ -220,7 +220,7 @@ func printPlan(w io.Writer, steps []guided.Step, color bool) {
 			fmt.Fprintf(w, "%d steps need root (%s)", len(sudo), strings.Join(sudo, "; "))
 		}
 		fmt.Fprintln(w, ": sudo asks for your password on the box, in this terminal.")
-		fmt.Fprintln(w, "Shipyard never sees it or keeps it.")
+		fmt.Fprintln(w, "Terminal never sees it or keeps it.")
 	}
 }
 

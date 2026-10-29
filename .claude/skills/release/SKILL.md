@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a Shipyard release (vX.Y.Z) - version bump, changelog, tag, and checking the published app and update feed. Use when asked to release, retag, or check a release.
+description: Cut a Terminal release (vX.Y.Z) - version bump, changelog, tag, and checking the published app and update feed. Use when asked to release, retag, or check a release.
 ---
 
 # Releasing
@@ -33,7 +33,7 @@ If the release has an entry in `app/src/lib/whats-new-releases.ts`, its version 
 The release PR runs no CI of its own (no `run-ci` label needed): the tag's run checks everything before anything is published. Once it is merged, the user tags the merged commit:
 
 ```sh
-git fetch origin && git tag -a "v$V" -m "Shipyard v$V" origin/main && git push origin "v$V"
+git fetch origin && git tag -a "v$V" -m "Terminal v$V" origin/main && git push origin "v$V"
 ```
 
 ## Retag after a failure
@@ -43,7 +43,7 @@ Nothing is published until the macos job finishes, so a failed run leaves at mos
 ```sh
 gh run cancel <run-id>                 # if still running
 gh release delete "v$V" --yes || true     # only if a draft exists
-git push origin :refs/tags/v$V && git tag -f -a "v$V" -m "Shipyard v$V" <sha> && git push origin "v$V"
+git push origin :refs/tags/v$V && git tag -f -a "v$V" -m "Terminal v$V" <sha> && git push origin "v$V"
 ```
 
 ## Check it's live

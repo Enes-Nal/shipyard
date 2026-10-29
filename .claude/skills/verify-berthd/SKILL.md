@@ -1,11 +1,11 @@
 ---
 name: verify-berthd
-description: Prove a change to the Shipyard app works the way a person sees it - build the app, serve it on its mock fixtures, drive a scenario in a real Chromium (optionally with a test plugin loaded beside the built-in ones), and keep screenshots, an ARIA snapshot and the console as evidence. Use before calling an app change done, to show a reviewer what changed, or when a plugin-facing API needs a plugin to exercise it.
+description: Prove a change to the Terminal app works the way a person sees it - build the app, serve it on its mock fixtures, drive a scenario in a real Chromium (optionally with a test plugin loaded beside the built-in ones), and keep screenshots, an ARIA snapshot and the console as evidence. Use before calling an app change done, to show a reviewer what changed, or when a plugin-facing API needs a plugin to exercise it.
 ---
 
-# Verify the Shipyard app
+# Verify the Terminal app
 
-The app (`app/`) is what people touch. Its production build runs in a browser on the mock fixtures (`?mock=1`, `src/lib/mock*.ts`, synthetic "acme" data), with no laptop agent and no box. That is the surface this skill drives. The Go daemons (`berthd`, `berth`) are verified by `go test -race ./...`; a box-side change also needs a run on a real box: `scripts/dev-box.sh up` starts a box and an agent of this checkout beside whatever Shipyard already runs on the machine, and `drive.mjs --agent` drives the same build against it (see [features/chat-questions.md](features/chat-questions.md)).
+The app (`app/`) is what people touch. Its production build runs in a browser on the mock fixtures (`?mock=1`, `src/lib/mock*.ts`, synthetic "acme" data), with no laptop agent and no box. That is the surface this skill drives. The Go daemons (`berthd`, `berth`) are verified by `go test -race ./...`; a box-side change also needs a run on a real box: `scripts/dev-box.sh up` starts a box and an agent of this checkout beside whatever Terminal already runs on the machine, and `drive.mjs --agent` drives the same build against it (see [features/chat-questions.md](features/chat-questions.md)).
 
 The e2e suite (`app/e2e`, see `.claude/skills/e2e-tests`) asserts. This skill **shows**: it drives the same build through a scenario and keeps the evidence for a PR or a person.
 

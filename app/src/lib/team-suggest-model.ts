@@ -51,7 +51,7 @@ export const sentence = (s: string) => (/[.…!?]$/.test(s) ? s : `${s}.`);
 // orgName is how the org is named in a sentence: its setup's own name.
 export const orgName = (s: Pick<TeamSuggestion, "org" | "name">) => s.name || s.org;
 
-// teamLink is the link that opens an org's team setup in Shipyard.
+// teamLink is the link that opens an org's team setup in Terminal.
 export const teamLink = (org: string) => `berth://team?org=${encodeURIComponent(org)}`;
 
 // setsUpLine is Project settings' line: what the setup brings this

@@ -10,7 +10,7 @@
 .cv-md .cv-pre-toggle svg { width: 0.8125rem; height: 0.8125rem; }
 .cv-md .cv-pre-toggle:hover { color: var(--foreground); background: var(--accent); }
 .cv-md .cv-pre-toggle:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
-/* Mermaid Shipyard doesn't draw (a sequence diagram, say), said quietly. */
+/* Mermaid Terminal doesn't draw (a sequence diagram, say), said quietly. */
 .cv-md .cv-pre-note { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.8; }
 
 /* A flowchart: centred, at its own size where it fits; wider than the

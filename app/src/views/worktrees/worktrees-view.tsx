@@ -1,7 +1,8 @@
-import { SearchIcon } from "lucide-react";
+import { GitBranchIcon, LayoutDashboardIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Scene } from "@/components/art/scenes";
+import { PickOne } from "@/components/pick-one";
 import { BoxFilter, shownBoxes as shownOf } from "@/components/box-filter";
 import { FilterChip } from "@/components/filter-chip";
 import { SimpleSelect } from "@/components/simple-select";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queueRemoval } from "@/lib/remove-worktree";
 import { load, save } from "@/lib/storage";
+import { useStore } from "@/lib/store";
 import { ViewHeader } from "@/views/view-header";
 import { BulkBar } from "@/views/worktrees/bulk-bar";
 import { ArchiveDialog } from "@/views/worktrees/archive-dialog";
@@ -19,9 +21,11 @@ import { type BulkAction, useBulk } from "@/views/worktrees/use-bulk";
 import { type Row, useWorktrees } from "@/views/worktrees/use-worktrees";
 import { type Group, WorktreeTable } from "@/views/worktrees/worktree-table";
 import { BoxError } from "@/components/upgrade-box";
+import { ActivityBoard } from "@/views/worktrees/activity-board";
 
 type Flag = "behind" | "changes" | "paused";
 type Sort = "recent" | "behind" | "changes" | "name";
+type Mode = "board" | "branches";
 
 const SORTS: { value: Sort; label: string }[] = [
   { value: "recent", label: "Last commit" },
@@ -45,6 +49,7 @@ export function WorktreesView() {
   const [project, setProject] = useState("");
   const [flags, setFlags] = useState<Flag[]>([]);
   const [sort, setSort] = useState<Sort>(() => load("berth.worktrees.sort", "recent"));
+  const [mode, setMode] = useState<Mode>(() => load("berth.activity.mode", "board"));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [anchor, setAnchor] = useState<string>();
   const [openKey, setOpenKey] = useState<string>();
@@ -172,8 +177,28 @@ export function WorktreesView() {
   return (
     <div className="relative flex h-full flex-col">
       <ViewHeader
-        title="Worktrees"
+        title="Project activity"
         description={loaded ? [`${rows.length} on ${boxes.length} box${boxes.length === 1 ? "" : "es"}`, behind && `${behind} behind their base`, paused && `${paused} paused`].filter(Boolean).join(" · ") : undefined}
+        actions={
+          <>
+            <PickOne<Mode>
+              label="Activity view"
+              value={mode}
+              onChange={(next) => {
+                setMode(next);
+                save("berth.activity.mode", next);
+              }}
+              options={[
+                { value: "board", label: "Todo board", icon: <LayoutDashboardIcon /> },
+                { value: "branches", label: "Branches", icon: <GitBranchIcon /> },
+              ]}
+            />
+            <Button size="xs" variant="outline" onClick={() => useStore.getState().openAddProject()}>
+              <PlusIcon />
+              Connect GitLab
+            </Button>
+          </>
+        }
       />
 
       {/* One row of filters, search first; it stays one row down to 1100px. */}
@@ -240,8 +265,8 @@ export function WorktreesView() {
                     passing the filters, a beam finding nothing. */}
                 <Scene name={filtered ? "lighthouse" : "ended"} />
               </EmptyMedia>
-              <EmptyTitle>{filtered ? "No worktrees match" : "No worktrees yet"}</EmptyTitle>
-              <EmptyDescription>{filtered ? "Nothing here passes every filter." : "Worktrees you make on any box show up here."}</EmptyDescription>
+              <EmptyTitle>{filtered ? "No branches match" : "No project activity yet"}</EmptyTitle>
+              <EmptyDescription>{filtered ? "Nothing here passes every filter." : "Connect a GitLab repository or start a task. Its branch and agent activity will show here."}</EmptyDescription>
             </EmptyHeader>
             {filtered && (
               <Button size="sm" variant="outline" onClick={clearFilters}>
@@ -249,6 +274,8 @@ export function WorktreesView() {
               </Button>
             )}
           </Empty>
+        ) : mode === "board" ? (
+          <ActivityBoard rows={flat} onOpen={(r) => setOpenKey(r.key)} />
         ) : (
           <WorktreeTable
             groups={groups}

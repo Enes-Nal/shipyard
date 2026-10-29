@@ -14,7 +14,7 @@ import type { HarbourLight } from "@/components/art/harbour-art";
 import type { PlateId } from "@/lib/header-picture";
 
 // The plates' paintings (lib/header-picture.ts names them), generated with
-// Codex for Shipyard: the days in the harbour's style, and each night from
+// Codex for Terminal: the days in the harbour's style, and each night from
 // its day, painted like the harbour's night, so the composition never
 // moves and a dark theme gets the night as the harbour does. They are
 // separate files, fetched only when shown.

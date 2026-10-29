@@ -57,8 +57,8 @@ export const BOX_WORDS: Record<BoxState, { word: string; lower: string; hint: st
   online: { word: "Online", lower: "online", hint: "Connected" },
   slow: { word: "Slow", lower: "slow", hint: "Connected over a slow link; requests still go through" },
   outdated: { word: "Outdated", lower: "outdated", hint: "Connected, but runs an older berthd; update it" },
-  offline: { word: "Offline", lower: "offline", hint: "Not answering; Shipyard reconnects on its own when it's back" },
-  unreachable: { word: "Unreachable", lower: "unreachable", hint: "Answers, but Shipyard can't use it" },
+  offline: { word: "Offline", lower: "offline", hint: "Not answering; Terminal reconnects on its own when it's back" },
+  unreachable: { word: "Unreachable", lower: "unreachable", hint: "Answers, but Terminal can't use it" },
   connecting: { word: "Connecting", lower: "connecting", hint: "Reaching it now" },
 };
 
@@ -82,12 +82,12 @@ export function boxState(b: Pick<BoxStatus, "state" | "link"> | undefined, data?
 
 // boxWhy is a sentence on why a box is in its state, for tooltips.
 export function boxWhy(name: string, b: Pick<BoxStatus, "state" | "error" | "link"> | undefined, state: BoxState): string {
-  if (b?.state === "untrusted") return `${name} answered with a different identity than when it was paired, so Shipyard won't talk to it. Pair it again if it was rebuilt.`;
-  if (state === "outdated") return `${name} runs an older berthd than this Shipyard ships. Updating keeps its agents running.`;
+  if (b?.state === "untrusted") return `${name} answered with a different identity than when it was paired, so Terminal won't talk to it. Pair it again if it was rebuilt.`;
+  if (state === "outdated") return `${name} runs an older berthd than this Terminal ships. Updating keeps its agents running.`;
   if (state === "unreachable") return `${name} is connected, but its API isn't answering.`;
-  if (state === "offline") return `${name} is offline. Its agents keep running there; Shipyard reconnects on its own.`;
+  if (state === "offline") return `${name} is offline. Its agents keep running there; Terminal reconnects on its own.`;
   if (state === "connecting") return `Connecting to ${name}…`;
-  if (state === "slow") return `${name} is answering slowly${b?.link?.reason ? ` (${b.link.reason})` : ""}. Shipyard stays connected, and requests still go through.`;
+  if (state === "slow") return `${name} is answering slowly${b?.link?.reason ? ` (${b.link.reason})` : ""}. Terminal stays connected, and requests still go through.`;
   return `${name} is online.`;
 }
 

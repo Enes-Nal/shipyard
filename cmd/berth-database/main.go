@@ -1,5 +1,5 @@
 // Command berth-database runs on a box beside its dev servers and lets
-// Shipyard's Database tab browse and edit a worktree's own development
+// Terminal's Database tab browse and edit a worktree's own development
 // database: its schema, a table's rows, one statement at a time, and edits
 // to rows by their primary key. It reads nothing unless the box daemon asks
 // with the token only the two of them hold, and writes nothing unless

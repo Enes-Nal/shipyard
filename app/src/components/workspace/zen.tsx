@@ -58,7 +58,7 @@ function useHere() {
   if (view.kind === "project") return { kind: "view" as const, label: `${view.location} settings`, icon: <SettingsIcon /> };
   if (view.kind !== "workspace") {
     const item = nav.find((n) => n.active);
-    return { kind: "view" as const, label: item?.label ?? "Shipyard", icon: item?.icon };
+    return { kind: "view" as const, label: item?.label ?? "Terminal", icon: item?.icon };
   }
   // A box's home terminal is on Home.
   if (!ws || !key || homeBox(key)) return { kind: "home" as const };

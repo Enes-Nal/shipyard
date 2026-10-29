@@ -8,6 +8,8 @@ import { AttachmentChips, useAttachments } from "@/components/conversation/attac
 import { Scene, type SceneName } from "@/components/art/scenes";
 import { ChatBackground } from "@/components/conversation/chat-background";
 import { ChatControls } from "@/components/conversation/chat-controls";
+import { AgentSwitcher } from "@/components/conversation/agent-switcher";
+import { GitWorkstream } from "@/components/conversation/git-workstream";
 import { ConversationView, type EditActions, QueuedBubble } from "@/components/conversation/conversation-view";
 import { FileLinks } from "@/components/conversation/file-links";
 import { ChatScope } from "@/components/conversation/notice-card";
@@ -362,7 +364,7 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
         title={feed === "none" ? `${agent ? agentLabel(agent) : "This agent"} works in its terminal` : `${box} needs an update for this`}
         description={
           feed === "none"
-            ? "Shipyard can show Claude Code's and Codex's conversations here. This agent's work is in its terminal."
+            ? "Terminal can show Claude Code's and Codex's conversations here. This agent's work is in its terminal."
             : `${box} runs an older berthd that doesn't stream agents' conversations. Updating keeps your agents running.`
         }
       >
@@ -569,6 +571,8 @@ export function ConversationPane({ box, session, agent: remembered, visible, onS
     // composer rises above the loops pill instead.
     <div data-testid="chat" className="@container relative isolate flex min-h-0 flex-1 flex-col bg-background">
       <ChatBackground />
+      <AgentSwitcher box={box} session={session} dir={s?.dir} />
+      <GitWorkstream box={box} dir={s?.dir} visible={visible} />
       <div className="min-h-0 flex-1 overflow-y-auto pt-6 pr-6 pb-4 pl-6 @[900px]:pr-[max(24px,var(--berth-loops-w,0px))]">
         {!mock && feed === "loading" && !items.length ? (
           <div className="flex h-full items-center justify-center text-body">

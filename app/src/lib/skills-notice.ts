@@ -26,7 +26,7 @@ import { NONE, useStore } from "@/lib/store";
 
 type AppState = ReturnType<typeof useStore.getState>;
 
-// The sidebar's quiet word that a box's Shipyard skills aren't installed or
+// The sidebar's quiet word that a box's Terminal skills aren't installed or
 // are out of date (components/sidebar/skills-notice.tsx), with Install now
 // and Snooze. The rule and the snooze's timing are in skills-notice-model.
 //
@@ -202,7 +202,7 @@ export function useSkillsNotices(): ShownNotice[] {
 
 // ---- Install now -----------------------------------------------------------
 
-// installSkills installs or updates all of Shipyard's skills for the box's
+// installSkills installs or updates all of Terminal's skills for the box's
 // user, for the agents the box has, with the call Settings → Agents makes.
 export async function installSkills(n: SkillsNotice) {
   const client = useStore.getState().client;
@@ -220,11 +220,11 @@ export async function installSkills(n: SkillsNotice) {
     asked.set(box, (asked.get(box) ?? 0) + 1);
     settle(box);
     setReport(box, report);
-    announce(`Shipyard's skills are ${n.kind === "outdated" ? "up to date" : "installed"} on ${box}.`);
+    announce(`Terminal's skills are ${n.kind === "outdated" ? "up to date" : "installed"} on ${box}.`);
   } catch (err) {
     const e = explain(err, { box });
     useSkillsNotice.setState((s) => ({ failed: { ...s.failed, [box]: { notice: n, title: e.title, message: e.message, details: e.details } } }));
-    announce(`Couldn't ${n.kind === "outdated" ? "update" : "install"} Shipyard's skills on ${box}. ${e.title}.`);
+    announce(`Couldn't ${n.kind === "outdated" ? "update" : "install"} Terminal's skills on ${box}. ${e.title}.`);
     // Some of it may have gone through before the failure.
     void checkSkills(box);
   } finally {
@@ -282,7 +282,7 @@ export async function snoozeSkillsNotice(n: Pick<SkillsNotice, "box" | "kind">, 
   const until = snoozeUntil(choice, now);
   if (!(await savePrefs(withSnooze(useSkillsNotice.getState().prefs, n.box, n.kind, until, now.getTime()), "snooze that"))) return;
   settle(n.box);
-  announce(`Snoozed. Shipyard reminds you about ${n.box}'s skills again ${choice === "tomorrow" ? "tomorrow" : choice === "week" ? "in a week" : "in a month"}.`);
+  announce(`Snoozed. Terminal reminds you about ${n.box}'s skills again ${choice === "tomorrow" ? "tomorrow" : choice === "week" ? "in a week" : "in a month"}.`);
 }
 
 // endSnooze is Settings' "Remind me now".

@@ -5,7 +5,7 @@
   "description": "What your code did in development, as tabs on a worktree: database queries with their N+1s, request traces, logs and endpoints. Installs berth-leadline on the boxes you turn it on for.",
   "main": "dist/index.js",
   "defaultEnabled": false,
-  "author": "Shipyard",
+  "author": "Terminal",
   "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/leadline",
   "marketplace": true,
   "box": {

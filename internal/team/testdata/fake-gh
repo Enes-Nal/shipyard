@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""A stand-in for GitHub's gh CLI, for Shipyard's team setup tests. It never
-touches the network: it answers the gh commands Shipyard uses from bare git
+"""A stand-in for GitHub's gh CLI, for Terminal's team setup tests. It never
+touches the network: it answers the gh commands Terminal uses from bare git
 repositories on disk.
 
   $GH_FAKE_ROOT/<owner>/<name>.git    a repository (bare); GH_FAKE_ROOT defaults to ~/.fake-gh

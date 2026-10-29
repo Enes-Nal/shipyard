@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { basename, classify, dirname, type Intent, join, type Link, validFolder } from "@/components/add-project/intent";
+import { basename, classify, dirname, hasTrailingPathSeparator, type Intent, isPathRoot, join, type Link, pathSeparator, trimTrailingPathSeparators, validFolder } from "@/components/add-project/intent";
 import { shortPath, uniqueName } from "@/components/add-project/unique-name";
 import type { Location } from "@/lib/api";
 import { type FsEntry, type FsListing, locationName, projectsApi } from "@/lib/projects";
@@ -145,9 +145,9 @@ async function resolve(intent: Intent, ctx: Ctx): Promise<{ plan?: Plan; rows: R
 
 async function resolvePath(text: string, ctx: Ctx): Promise<{ plan?: Plan; rows: Row[] }> {
   const { box, ls } = ctx;
-  const norm = text.replace(/\/+$/, "") || "/";
-  const drill = text !== norm;
-  if (norm === "~" || norm === "/") {
+  const norm = trimTrailingPathSeparators(text) || "/";
+  const drill = hasTrailingPathSeparator(text) && text !== norm;
+  if (norm === "~" || isPathRoot(norm)) {
     return { rows: await folderRows(ctx, norm, () => true) };
   }
   const parent = dirname(norm);
@@ -231,7 +231,8 @@ function rowsFrom(ctx: Ctx, l: FsListing, keep: (e: FsEntry) => boolean, likely 
     .map((e): Row => {
       const loc = ctx.locs.find((x) => x.path === e.path);
       const kind = loc ? "project" : e.git ? "repo" : "folder";
-      return { key: e.path, kind, group, title: e.name, detail: e.slug, badge: loc ? "added" : undefined, fill: kind === "folder" ? `${join(where, e.name)}/` : join(where, e.name), entry: e, loc };
+      const path = join(where, e.name);
+      return { key: e.path, kind, group, title: e.name, detail: e.slug, badge: loc ? "added" : undefined, fill: kind === "folder" ? `${path}${pathSeparator(path)}` : path, entry: e, loc };
     })
     .sort((a, b) => rank(a) - rank(b));
 }

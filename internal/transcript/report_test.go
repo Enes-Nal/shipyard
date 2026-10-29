@@ -9,7 +9,7 @@ import (
 // A notification as berth types it (internal/box/notify_text.go), with
 // two reports: a task that finished and one waiting for a person.
 const sampleNotification = `<berth-notification>
-This comes from Shipyard, not from the user: news of agent work you started. Carry on with your task using it. If an agent waits for a person, tell the user who and why; never answer for them.
+This comes from Terminal, not from the user: news of agent work you started. Carry on with your task using it. If an agent waits for a person, tell the user who and why; never answer for them.
 <report kind="task" session="shop-checkout-fix-claude-k3" worktree="shop/checkout-fix" branch="checkout-fix" status="finished" duration="4m12s" files="3" added="12" removed="2">
 <summary>shop/checkout-fix finished its turn.</summary>
 <answer>

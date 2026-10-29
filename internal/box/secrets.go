@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 	"unicode/utf8"
 
@@ -340,7 +339,7 @@ func (s *Secrets) opCommand(ctx context.Context, bin string, opEnv []string, arg
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Env = append(append(os.Environ(), opEnv...), ReadOpSession(s.SessionFile)...)
 	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	detachProcess(cmd)
 	cmd.WaitDelay = time.Second
 	return cmd
 }

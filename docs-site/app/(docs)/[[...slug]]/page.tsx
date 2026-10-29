@@ -22,7 +22,7 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
     <DocsPage toc={page.data.toc} full={page.data.full} footer={{ children: <PageFoot /> }}>
       <header className="berth-page-head" data-home={home || undefined} data-section={page.slugs[0]}>
         {eyebrow && <p className="berth-eyebrow">{eyebrow}</p>}
-        <DocsTitle>{home ? 'Shipyard documentation' : page.data.title}</DocsTitle>
+        <DocsTitle>{home ? 'Terminal documentation' : page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
       </header>
       <DocsBody>
@@ -37,11 +37,11 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
   );
 }
 
-// The end of every page, after prev and next: where Shipyard lives.
+// The end of every page, after prev and next: where Terminal lives.
 function PageFoot() {
   return (
     <footer className="berth-foot">
-      <span>Shipyard is open source.</span>
+      <span>Terminal is open source.</span>
       <nav aria-label="Elsewhere">
         <a href={landingUrl}>berthd.app</a>
         <a href={githubUrl}>GitHub</a>

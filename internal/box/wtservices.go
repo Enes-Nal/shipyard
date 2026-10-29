@@ -55,7 +55,7 @@ func loginShell() string {
 	}
 	if f, err := os.Open("/etc/passwd"); err == nil {
 		defer f.Close()
-		me := strconv.Itoa(os.Getuid())
+		me := strconv.Itoa(currentUID())
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
 			fields := strings.Split(sc.Text(), ":")

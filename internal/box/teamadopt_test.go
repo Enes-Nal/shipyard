@@ -477,7 +477,7 @@ func TestExistingListsCandidatesForThePage(t *testing.T) {
 	if out := adoptGit(t, dir, "status", "--porcelain"); strings.Count(out, "\n") != 2 {
 		t.Fatalf("status: %q", out)
 	}
-	// Once a Shipyard location, it says which.
+	// Once a Terminal location, it says which.
 	f.b.Locations.Add(context.Background(), "my-api", dir)
 	w = httptest.NewRecorder()
 	f.b.getExisting(w, r)

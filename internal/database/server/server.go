@@ -156,7 +156,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 // 0600: this user's alone) and sends it with everything it relays.
 //
 //   - The Host must be loopback, which stops DNS rebinding.
-//   - A request from a page is refused, whatever the page: Shipyard's own
+//   - A request from a page is refused, whatever the page: Terminal's own
 //     window reaches the helper through the box daemon, which sends no
 //     Origin. There are no CORS headers here to get wrong.
 //   - Every route but /api/health needs the token.
@@ -167,7 +167,7 @@ func (s *Server) guard(next http.Handler) http.Handler {
 			return
 		}
 		if r.Header.Get("Origin") != "" {
-			writeProblem(w, forbidden("The helper does not answer pages: it is reached through Shipyard's box daemon."))
+			writeProblem(w, forbidden("The helper does not answer pages: it is reached through Terminal's box daemon."))
 			return
 		}
 		if !(r.Method == http.MethodGet && r.URL.Path == "/api/health") && !s.authorized(r) {

@@ -397,7 +397,7 @@ func (s *Sessions) create(ctx context.Context, name, location, dir, command, age
 	var scopeArgs []string
 	if s.Scopes != nil && s.Scopes.Available(ctx) {
 		scope = scopeUnit(name, time.Now())
-		scopeArgs = s.Scopes.Wrap(scope, "Shipyard session "+name, s.memoryHigh())
+		scopeArgs = s.Scopes.Wrap(scope, "Terminal session "+name, s.memoryHigh())
 		// systemd-run finds the user's manager by these.
 		for _, k := range []string{"XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"} {
 			if v := os.Getenv(k); v != "" {

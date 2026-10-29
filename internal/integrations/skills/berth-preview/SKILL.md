@@ -1,12 +1,12 @@
 ---
 name: berth-preview
-description: Run a worktree's dev server on its own port and show the page to the user in their Shipyard app — start the app on $BERTH_PORT, check it answers, and open it as a browser tab next to your terminal with `berthd preview`. Use when you change UI or anything with a page, when the user asks to see, preview, open or check something in the browser, or when you want them to look at your work.
+description: Run a worktree's dev server on its own port and show the page to the user in their Terminal app — start the app on $BERTH_PORT, check it answers, and open it as a browser tab next to your terminal with `berthd preview`. Use when you change UI or anything with a page, when the user asks to see, preview, open or check something in the browser, or when you want them to look at your work.
 ---
 
 # Previewing with berth
 
 Every worktree has its own ports (`$BERTH_PORT`, `$BERTH_PORT_1`, …). The
-user's Shipyard app reaches whatever listens in that block at the worktree's own
+user's Terminal app reaches whatever listens in that block at the worktree's own
 address, e.g. `http://fix-login.shop.devl.localhost:1377/`. No forwarding or
 tunnels are needed.
 
@@ -47,7 +47,7 @@ berthd preview                         # this worktree's port, its home page
 berthd preview $BERTH_PORT --path /account/orders
 ```
 
-This opens the page as a browser tab in the user's Shipyard app, in this
+This opens the page as a browser tab in the user's Terminal app, in this
 worktree's workspace, beside your terminal. It does nothing visible when the
 app is closed, so also tell the user what to look at and where. From a laptop:
 `berth preview BOX/LOC/WORKTREE [PORT] [--path /x]`.

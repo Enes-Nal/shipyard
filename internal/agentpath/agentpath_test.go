@@ -45,7 +45,7 @@ func TestLayouts(t *testing.T) {
 		install string
 		sys     func(home string) []string
 	}{
-		{"local bin (Shipyard's installer)", func(t *testing.T, h string) string { return filepath.Join(h, ".local", "bin") }, "", nil},
+		{"local bin (Terminal's installer)", func(t *testing.T, h string) string { return filepath.Join(h, ".local", "bin") }, "", nil},
 		{"nvm default alias", func(t *testing.T, h string) string {
 			root := filepath.Join(h, ".nvm", "versions", "node")
 			os.MkdirAll(filepath.Join(root, "v18.20.0", "bin"), 0o755)
@@ -161,7 +161,7 @@ alias claude='claude --dangerously-skip-permissions'
 	}
 }
 
-// Without the shell's answer, Shipyard's own install is found all the same.
+// Without the shell's answer, Terminal's own install is found all the same.
 func TestShellTimeout(t *testing.T) {
 	bash, err := exec.LookPath("bash")
 	if err != nil {

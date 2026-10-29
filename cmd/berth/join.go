@@ -110,7 +110,7 @@ func invite(l laptop, args []string) error {
 	}
 	fmt.Printf("Join link (each box's code works once, until %s):\n\n  %s\n\n", out.Expires.Local().Format("15:04"), out.Link)
 	fmt.Printf("On the other computer:  berth join '%s'\n", out.Link)
-	fmt.Println("or in the Shipyard app there: I already use Shipyard on another computer.")
+	fmt.Println("or in the Terminal app there: I already use Terminal on another computer.")
 	fmt.Println()
 	var in []string
 	for _, b := range out.Boxes {
@@ -338,7 +338,7 @@ func confirm(question string, yesByDefault bool) bool {
 	return false
 }
 
-// networkTailnets maps this computer's Shipyard networks to their tailnets'
+// networkTailnets maps this computer's Terminal networks to their tailnets'
 // names, from the agent.
 func networkTailnets(l laptop) map[string]string {
 	out := map[string]string{}
@@ -369,7 +369,7 @@ type JoinResult struct {
 	Status  string `json:"status"`
 	Error   string `json:"error,omitempty"`
 	Address string `json:"address,omitempty"`
-	// Network is the Shipyard network the box is (or would be) reached
+	// Network is the Terminal network the box is (or would be) reached
 	// through, Tailnet that network's tailnet.
 	Network string `json:"network,omitempty"`
 	Tailnet string `json:"tailnet,omitempty"`
@@ -505,7 +505,7 @@ func readInvite(text string, now time.Time) (pairing.Invite, error) {
 	return inv, nil
 }
 
-// localNetworks is the state of this computer's Shipyard networks the link's
+// localNetworks is the state of this computer's Terminal networks the link's
 // boxes are reached through, by name; nothing when none is named.
 func localNetworks(l laptop, inv pairing.Invite) map[string]network.Info {
 	out := map[string]network.Info{}

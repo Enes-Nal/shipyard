@@ -10,7 +10,7 @@ import (
 )
 
 // The review sheet lists the changes in a pull request that touch how a
-// worktree is set up or what runs in it: Shipyard's own .berth/, install and
+// worktree is set up or what runs in it: Terminal's own .berth/, install and
 // dev scripts, dependencies, Dockerfiles, compose files, migrations, .env
 // files, git hooks, and the files the project's kit says it watches. They
 // are shown, in plain words, for the reviewer to weigh before anything runs.
@@ -288,10 +288,10 @@ func describe(kind string, files, scripts []string, manifestChanged bool) (strin
 	n := len(files)
 	switch kind {
 	case KindBerth:
-		return "Changes Shipyard's own setup (.berth/)", "Not used for this review: setup comes from your team's kit and the default branch's config, never from the PR"
+		return "Changes Terminal's own setup (.berth/)", "Not used for this review: setup comes from your team's kit and the default branch's config, never from the PR"
 	case KindScripts:
 		if len(scripts) == 0 {
-			return "Changes package.json", "Shipyard couldn't read its diff; check its scripts on GitHub"
+			return "Changes package.json", "Terminal couldn't read its diff; check its scripts on GitHub"
 		}
 		return "Changes package.json scripts: " + strings.Join(scripts, ", "), "They run when setup installs dependencies or starts the dev server"
 	case KindDocker:
@@ -303,7 +303,7 @@ func describe(kind string, files, scripts []string, manifestChanged bool) (strin
 	case KindEnv:
 		return "Changes " + plural(n, "an environment file", fmt.Sprintf("%d environment files", n)), "Your box's keys still apply; the file can set defaults"
 	case KindGitHooks:
-		return "Changes git hooks", "Off while Shipyard checks the PR out; they would run on a commit made in it"
+		return "Changes git hooks", "Off while Terminal checks the PR out; they would run on a commit made in it"
 	case KindKit:
 		return "Changes " + plural(n, "a file", fmt.Sprintf("%d files", n)) + " the kit watches", "The kit's setup reads these"
 	case KindDependencies:

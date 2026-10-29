@@ -33,7 +33,7 @@ const check = process.argv.includes("--check");
 const SCENE_COPY = {
   moored: ["Boat tied up.", "Ready to set off. A worktree with nothing open yet.", "rides the swell · 5.2s"],
   ended: ["Empty berth.", "What ran here has left: a slack line, a bobbing buoy.", "buoy bob 4.4s · glint"],
-  offline: ["Fog.", "The box is out of sight; Shipyard keeps looking.", "light pulse 3.6s · fog drift 12–16s"],
+  offline: ["Fog.", "The box is out of sight; Terminal keeps looking.", "light pulse 3.6s · fog drift 12–16s"],
   lighthouse: ["Lighthouse.", "Searching. The beam sweeps the water and finds nothing yet.", "sweep ±7° 7s · lamp 3.5s"],
   dawn: ["Harbour at dawn.", "Nothing here yet, and the start of something.", "sun lifts 3px 10s · gulls 5s"],
   "setting-out": ["Setting out.", "A boat under sail leaving the jetty: work beginning.", "pitch 4.8s · wake 2.4s"],
@@ -53,12 +53,12 @@ const SCENE_COPY = {
 // why this scene, and (when it can't be seen with ?mock=1) why not.
 const PLACES = {
   "App.tsx#dawn": ["No worktree selected · Pick a worktree", "The first thing you see when nothing is open: an empty harbour, morning."],
-  "components/agent-offline.tsx#lighthouse": ["Finding the Shipyard agent…", "Looking for the laptop agent; replaces a spinner.", "Only without ?mock=1, for a moment while the app connects."],
-  "components/agent-offline.tsx#offline": ["The Shipyard agent is not running", "The same fog as an offline box: out of sight, not gone.", "Only without ?mock=1, when the laptop agent is stopped."],
+  "components/agent-offline.tsx#lighthouse": ["Finding the Terminal agent…", "Looking for the laptop agent; replaces a spinner.", "Only without ?mock=1, for a moment while the app connects."],
+  "components/agent-offline.tsx#offline": ["The Terminal agent is not running", "The same fog as an offline box: out of sight, not gone.", "Only without ?mock=1, when the laptop agent is stopped."],
   "components/error-boundary.tsx#storm": ["Something broke (error boundary)", "The only alarming scene, kept for real errors.", "Needs a real render error."],
   "components/workspace/launcher.tsx#moored": ["Worktree launcher", "A worktree with nothing open is a boat tied up, ready to set off."],
   "components/workspace/pane-state.tsx#ended": ["Terminal pane · session ended", "What ran here has left: an empty berth.", "The demo's exited session opens as a live terminal."],
-  "components/workspace/pane-state.tsx#offline": ["Terminal pane · box offline", "The session keeps running out there, in the fog; Shipyard reattaches when the box is back."],
+  "components/workspace/pane-state.tsx#offline": ["Terminal pane · box offline", "The session keeps running out there, in the fog; Terminal reattaches when the box is back."],
   "components/add-project/add-project-dialog.tsx#offline": ["Add a project · box offline", "Projects are added on a box that is online; this one is in the fog.", "Only when every box is offline: the dialog picks an online box."],
   "components/add-project/add-project-dialog.tsx#dock": ["Add a project · no boxes yet", "A quay with an empty hook: there's nothing to load a project onto until there is a box."],
   "components/new-worktree/new-worktree-dialog.tsx#dock": ["New worktree · no boxes, or no projects", "Nothing loaded yet: add a box, or a project on one, first."],

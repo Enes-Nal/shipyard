@@ -55,7 +55,7 @@ test("the drawer shows the page's console and requests, filters them, and sends 
   // failed requests (the 500 and the 404): the toolbar and the tab say 4.
   await expect(pane.getByTestId("devtools-badge")).toHaveText("4");
   await expect(page.locator("[data-tab-strip] [data-tab]").filter({ hasText: "Browser" }).getByTestId("tab-devtools-badge")).toHaveText("4");
-  // Outside the Shipyard app there is no Web Inspector to open.
+  // Outside the Terminal app there is no Web Inspector to open.
   await expect(pane.getByRole("button", { name: "Inspect" })).toBeDisabled();
 
   // ⌘⌥I opens the drawer on its Console.
@@ -150,7 +150,7 @@ test("a reload starts the console afresh, and a page outside the proxy has no re
   await address.press("Enter");
   await expect(pane.locator("iframe")).toHaveAttribute("src", "http://localhost:4000/");
   await pane.getByTestId("devtools-drawer").getByRole("tab", { name: /Network/ }).click();
-  await expect(pane.getByTestId("devtools-network")).toContainText("goes through Shipyard's proxy");
+  await expect(pane.getByTestId("devtools-network")).toContainText("goes through Terminal's proxy");
 });
 
 test("the agent's view has the agent's browser's console and failed requests", async ({ app }) => {

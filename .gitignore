@@ -1,10 +1,12 @@
 /bin/
+/.tools/
 /dist/
 /app/src-tauri/binaries/
 /app/src-tauri/target/
 /app/node_modules/
 /app/dist/
 .e2e/
+/app/test-results/
 /app/src-tauri/gen/
 /packages/*/node_modules/
 /plugins/*/node_modules/

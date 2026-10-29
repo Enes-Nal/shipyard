@@ -11,7 +11,7 @@
 // only ever what the sources build.
 //
 // The bundle is built as a plugin in ~/.berth/plugins is: React and the
-// Shipyard SDK stay external, and it is not minified, so the code a person is
+// Terminal SDK stay external, and it is not minified, so the code a person is
 // asked to allow can be read.
 //
 // A plugin's helper ("box": {"helper": …}, a program it runs on a box) goes

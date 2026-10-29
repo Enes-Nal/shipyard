@@ -75,7 +75,7 @@ func Diff(old, new *Setup, oldFiles, newFiles map[string]string) []Change {
 	for _, a := range new.Agents {
 		has[a] = true
 		if !had[a] {
-			out = append(out, Change{Kind: "add", Area: "agent", ID: a, Text: agentcli.Names([]string{a}), Detail: "installed on the box by Shipyard, without sudo"})
+			out = append(out, Change{Kind: "add", Area: "agent", ID: a, Text: agentcli.Names([]string{a}), Detail: "installed on the box by Terminal, without sudo"})
 		}
 	}
 	for _, a := range old.Agents {

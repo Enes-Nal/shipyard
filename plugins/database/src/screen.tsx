@@ -54,8 +54,8 @@ export function DatabaseScreen({ berth }: ScreenProps) {
         </FrameHeader>
         <FramePanel>
           <ol className="space-y-3 text-sm">
-            <Step n={1} title="From a service Shipyard starts in the worktree">
-              With Database on for a box, Shipyard tells it about each service it starts there: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to be noticed.
+            <Step n={1} title="From a service Terminal starts in the worktree">
+              With Database on for a box, Terminal tells it about each service it starts there: the ones under <code>services</code> in the repository's <code>.berth/config.json</code>. A service that was already running needs a restart to be noticed.
             </Step>
             <Step n={2} title="Or from the worktree's .env files">
               When you open a worktree's Database tab and no service has said, the box reads <code>.env</code>, <code>.env.development</code>, <code>.env.local</code> and <code>.env.development.local</code> in the worktree's own folder, a later file winning, and takes the <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> it finds. So a server you start by hand in a terminal works too. Reading the tables again looks in the files again.

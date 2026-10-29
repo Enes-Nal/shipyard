@@ -11,7 +11,7 @@ import { CommandLog } from "@/views/settings/command-log";
 import { IS_LINUX, thisComputer } from "@/lib/platform";
 
 // RemoveLocalBoxDialog stops using this Mac as a box (Use this Mac,
-// undone): Shipyard forgets the box, stops berthd here and removes its launch
+// undone): Terminal forgets the box, stops berthd here and removes its launch
 // agent. Its data stays unless asked: the box's keys, projects list and
 // session records. Repositories are never touched.
 export function RemoveLocalBoxDialog({ box, open, onOpenChange }: { box: string; open: boolean; onOpenChange(open: boolean): void }) {
@@ -43,7 +43,7 @@ export function RemoveLocalBoxDialog({ box, open, onOpenChange }: { box: string;
         <AlertDialogHeader>
           <AlertDialogTitle>{thisComputer("Stop using this Mac as a box?")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Shipyard forgets {box}, stops berthd on {thisComputer("this Mac")} and removes its {IS_LINUX ? "systemd user unit" : "launch agent"}. Your repositories and files stay where they are, and agents still running here keep going until they finish.
+            Terminal forgets {box}, stops berthd on {thisComputer("this Mac")} and removes its {IS_LINUX ? "systemd user unit" : "launch agent"}. Your repositories and files stay where they are, and agents still running here keep going until they finish.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="px-6">

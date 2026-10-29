@@ -3,7 +3,7 @@ title: Orchestration
 description: Agents driving agents. Prompt, wait, check, loop, hand off and broadcast, from the app, the CLI, the API or another agent.
 ---
 
-Agents in Shipyard can drive each other, and so can you, a hook, a flow or a
+Agents in Terminal can drive each other, and so can you, a hook, a flow or a
 plugin. Four pieces on every box do it, the same from the app, the CLI and
 the API:
 
@@ -78,7 +78,7 @@ A wait that times out reports the last state it saw.
 
 ## Hearing back
 
-An agent that starts work through Shipyard doesn't have to wait for it. When it
+An agent that starts work through Terminal doesn't have to wait for it. When it
 makes a task, sends a prompt, starts a run or a detached `exec` from its own
 session, the box remembers who asked. When that work finishes, fails or
 exits, waits for a person, or a run reaches a gate, the box types one short
@@ -87,7 +87,7 @@ Claude Code tells an agent a background task is done:
 
 ```
 <berth-notification>
-This comes from Shipyard, not from the user: news of agent work you started. …
+This comes from Terminal, not from the user: news of agent work you started. …
 <report kind="task" session="shop-checkout-fix-claude-k3" worktree="shop/checkout-fix" branch="checkout-fix" status="finished" duration="4m12s" files="3" added="12" removed="2">
 <summary>shop/checkout-fix finished its turn.</summary>
 <answer>Fixed the rounding in totals.ts and added a test…</answer>
@@ -181,7 +181,7 @@ berth run start devl --template handoff --param session=shop-checkout-claude \
 ```
 
 The source agent is asked to write `.berth/handoff/<run>.md` (Done, Left,
-Decisions, Gotchas; at most 30 lines). Shipyard adds the diffstat, the commits,
+Decisions, Gotchas; at most 30 lines). Terminal adds the diffstat, the commits,
 the last check's failing tail and the turn log, caps it at about 2 KB, and
 carries uncommitted work over. The new agent's first prompt only points at
 the file. With `--param native=true` and the same vendor on the same box,
@@ -248,7 +248,7 @@ notify you), use a [flow](/guides/automations).
 
 ## From an agent
 
-The skills Shipyard installs (`berthd integrations install claude`) teach
+The skills Terminal installs (`berthd integrations install claude`) teach
 agents these commands, so an agent can split work across worktrees, ask
 another agent for a review, or loop on a check by itself. The
 `berth-orchestrate` skill also tells them never to answer another agent's
@@ -276,9 +276,9 @@ except for "needs you", and by reading the terminal for anything else. See
 ## Agents driving agents, cheaply
 
 An orchestrating agent pays in tokens for everything it reads, and so does
-every agent it prompts. Shipyard keeps both small: waits are event-driven (wait
+every agent it prompts. Terminal keeps both small: waits are event-driven (wait
 on the turn; never poll `session screen` or rerun `sessions`), `--json`
-output is compact, prompts Shipyard writes (loop feedback, GitHub comments in
+output is compact, prompts Terminal writes (loop feedback, GitHub comments in
 flows, handoff packets, the judge's summaries) are short and capped, and
 idempotency keys mean a resumed caller never sends the same prompt twice.
 Each [template's budget](/guides/runs#templates) is in its description

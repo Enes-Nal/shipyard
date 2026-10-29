@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cosscom/shipyard/internal/agenthost"
@@ -137,8 +136,7 @@ func (b *Box) launchClaudeIn(p AgentPreset, model, effort, mode, resume, dir, so
 
 // ownedByMe says the box user owns a file.
 func ownedByMe(st os.FileInfo) bool {
-	sys, ok := st.Sys().(*syscall.Stat_t)
-	return ok && int(sys.Uid) == os.Getuid()
+	return ownedByUID(st, currentUID())
 }
 
 // agentHostCommand is the command that runs `berthd agent-host`.
@@ -177,7 +175,7 @@ func newConvID() string {
 // is limited to about 100 bytes and a state folder's can be longer. The
 // folder is the box user's alone.
 func hostSocket(id string) (string, error) {
-	dir := filepath.Join("/tmp", "berth-"+strconv.Itoa(os.Getuid()))
+	dir := filepath.Join(os.TempDir(), "berth-"+strconv.Itoa(currentUID()))
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}

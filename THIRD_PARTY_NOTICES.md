@@ -1,17 +1,17 @@
 # Third-party notices
 
-Code in Shipyard derived from other projects, with their copyright notices.
+Code in Terminal derived from other projects, with their copyright notices.
 The themes ported from VS Code themes are listed in
 [THIRD_PARTY_THEMES.md](THIRD_PARTY_THEMES.md).
 
 ## Beautiful UI
 
-| Used in Shipyard | Source | Author | Licence |
+| Used in Terminal | Source | Author | Licence |
 |---|---|---|---|
 | The pixel-grid loader (`app/src/components/pixel-loader.tsx`, `pixel-loader.css`): the 3×3 grid, its chevron delays and timing | Loading State, [beautifului.dev](https://www.beautifului.dev/) ([licence](https://www.beautifului.dev/license)) | Copyright (c) 2026 Shane Levine | MIT |
 
-Shipyard's version is written for its own tokens and motion rules; only the
-grid's design and timing come from Beautiful UI. Shipyard's code block head
+Terminal's version is written for its own tokens and motion rules; only the
+grid's design and timing come from Beautiful UI. Terminal's code block head
 and the bar offered by selected words in a chat take visual ideas from
 Beautiful UI's Code Block and Selection Actions, with no code from them.
 
@@ -40,16 +40,16 @@ Beautiful UI's Code Block and Selection Actions, with no code from them.
 
 ## bklit UI
 
-| Used in Shipyard | Source | Author | Licence |
+| Used in Terminal | Source | Author | Licence |
 |---|---|---|---|
 | The chart components that draw `berth.chart/v1` artifacts (`app/src/components/charts/`): bar, line, area, funnel, sankey, gauge, pie and ring charts and their shared parts | [bklit UI](https://ui.bklit.com), [github.com/bklit/bklit-ui](https://github.com/bklit/bklit-ui), installed from its shadcn registry (`@bklit`) | Copyright (c) 2026 uixmat | MIT |
 
-The sources are vendored the shadcn way and are Shipyard's to maintain. Shipyard's
+The sources are vendored the shadcn way and are Terminal's to maintain. Terminal's
 changes: `shimmering-text.tsx` lives beside the charts (the registry's
 import path pointed outside the folder), and a line or area chart may label
 its x axis from the data (`__label`) instead of a date, and a horizontal
 bar chart's category names may be up to 160px wide (from 70). The registry's edits
-to `index.css` were not taken; Shipyard sets bklit's `--chart-*` variables
+to `index.css` were not taken; Terminal sets bklit's `--chart-*` variables
 from the active theme (`app/src/lib/art/theme.ts`). Bklit Studio is not
 used.
 
@@ -75,7 +75,7 @@ used.
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
 
-## Shipyard's tmux for Linux boxes
+## Terminal's tmux for Linux boxes
 
 `berth` and the app carry a static tmux for Linux boxes (`tmux-linux-amd64`,
 `tmux-linux-arm64`), which `berth add ssh` uploads to a box that has no tmux.
@@ -246,11 +246,11 @@ tarballs by `scripts/build-tmux.sh` and linked statically against musl libc.
 
 ## pixelmatch
 
-| Used in Shipyard | Source | Author | Licence |
+| Used in Terminal | Source | Author | Licence |
 |---|---|---|---|
 | The pixel diff of visual diffs (`internal/box/pixeldiff.go`): the weighted YIQ colour distance and the anti-aliased-pixel test, ported to Go | [pixelmatch](https://github.com/mapbox/pixelmatch) | Copyright (c) 2019, Mapbox | ISC |
 
-Shipyard's port adds masks, row alignment (content that only moved isn't
+Terminal's port adds masks, row alignment (content that only moved isn't
 counted), regions and a heatmap of its own; the colour distance (after
 Kotsarenko and Ramos, 2010) and the anti-aliasing detector (after
 Vysniauskas, 2009) follow pixelmatch.

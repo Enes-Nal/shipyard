@@ -1,6 +1,6 @@
 ---
 title: Releasing
-description: How a Shipyard release is cut, built, signed and published, from a tag or from a Mac.
+description: How a Terminal release is cut, built, signed and published, from a tag or from a Mac.
 ---
 
 For maintainers. A release is a GitHub release on
@@ -36,7 +36,7 @@ which downloads from the latest release.
 The bugs new users hit showed only on a fresh install of the release: the
 release CSP blocking the built-in plugins, launchd's PATH without Homebrew's
 tmux, no `PORT` for worktree servers, App Transport Security blocking the
-Browser tab, tmux 3.7 without a locale. A set of tests goes through Shipyard the
+Browser tab, tmux 3.7 without a locale. A set of tests goes through Terminal the
 way a new user meets it. They aren't part of releasing: run them by hand
 now and then, for instance before a release that changes installing,
 onboarding or upgrading:
@@ -58,7 +58,7 @@ refused by name, rather than tested as if it were this one.
 
 [`scripts/release-check.sh`](https://github.com/cosscom/shipyard/blob/main/scripts/release-check.sh)
 runs three tests, each in its own home, ports and launchd labels, removed
-afterwards, so they never touch the Shipyard you use (ports 1377-1379,
+afterwards, so they never touch the Terminal you use (ports 1377-1379,
 `~/.berth`, `~/Library/Application Support/berth`, `dev.berth.berthd`):
 
 | Test | What it does |
@@ -194,5 +194,5 @@ must not be published.
 - Boxes pick up the new berthd with `berth upgrade BOX`, or by running the
   install command again.
 - Without the signing credentials, `make app-build` still builds an
-  unsigned `Shipyard.app` and dmg for trying locally; see
+  unsigned `Terminal.app` and dmg for trying locally; see
   [build from source](/getting-started/install#build-from-source).

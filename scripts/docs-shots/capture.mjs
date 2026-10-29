@@ -2,7 +2,7 @@
 // capture.mjs takes the docs' screenshots (docs.berthd.app) from the app in
 // mock mode: Vite on app/ (plain dev, made-up boxes and agents with
 // ?mock=1&shots=1), staged by clicking through the real UI in headless
-// Chromium at 2x, in Shipyard Light and Shipyard Dark. It writes
+// Chromium at 2x, in Terminal Light and Terminal Dark. It writes
 //
 //   docs-site/public/shots/<scene>-<light|dark>.webp   the pictures
 //   docs-site/lib/shots.json                           each scene's size in CSS px
@@ -75,7 +75,7 @@ const QUIET = "[role=region][aria-label=Loops] > :not([aria-label=Crew]), [data-
 // (berth.prefs, berth.ui) before it starts. Each scene × theme starts afresh.
 const scenes = [
   {
-    // Settings → Appearance → Theme: Shipyard's four, then the VS Code ports.
+    // Settings → Appearance → Theme: Terminal's four, then the VS Code ports.
     name: "themes",
     page: "/guides/themes",
     viewport: { width: 1180, height: 1100 },
@@ -502,7 +502,7 @@ async function main() {
           if (devServerPage && r.resourceType() === "document") return route.fulfill({ status: 200, contentType: "text/html", body: devServerPage(r.url()) });
           return route.abort();
         });
-        // Shipyard Light or Shipyard Dark, and the scene's own settings, before the
+        // Terminal Light or Terminal Dark, and the scene's own settings, before the
         // app reads them.
         await ctx.addInitScript(
           ({ origin, ui, prefs }) => {

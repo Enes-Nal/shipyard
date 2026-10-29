@@ -1,6 +1,6 @@
 import { expect, mockOnly, test } from "./fixtures";
 
-// Linear in Shipyard: a personal API key added in Settings → Integrations
+// Linear in Terminal: a personal API key added in Settings → Integrations
 // (the laptop keeps it), and the Issues screen's Linear side: what is
 // assigned to you or a team's open issues, each one's thread, and an agent
 // on any of them in the project you choose.

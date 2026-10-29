@@ -110,7 +110,7 @@ func TestAttach(t *testing.T) {
 		t.Errorf("the main checkout: %+v", main)
 	}
 
-	// No worktree at all is a mistake, and a page that is not Shipyard's
+	// No worktree at all is a mistake, and a page that is not Terminal's
 	// may not attach anything.
 	if code, raw := send(t, "POST", r.URL+"/api/attach", "", map[string]any{"env": map[string]string{}}); code != 400 || !strings.Contains(raw, `"bad_request"`) {
 		t.Errorf("attach with no project: %d %s", code, raw)

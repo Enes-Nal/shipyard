@@ -5,7 +5,7 @@
 // keeps both in one SQLite file, and answers a JSON API on localhost.
 //
 // It is Leadline's collector (github.com/sean-brydon/leadline) as a helper
-// of Shipyard's. internal/leadline/API.md describes the API.
+// of Terminal's. internal/leadline/API.md describes the API.
 package main
 
 import (

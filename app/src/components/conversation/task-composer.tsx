@@ -1,4 +1,4 @@
-import { ArrowUpIcon, FolderIcon, GitBranchIcon, SendIcon, ServerIcon, ShieldAlertIcon, SlidersHorizontalIcon } from "lucide-react";
+import { ArrowUpIcon, FolderIcon, GitBranchIcon, SendIcon, ServerIcon, ShieldAlertIcon, SlidersHorizontalIcon, SparklesIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AgentIcon, StatusDot } from "@/components/agent-glyph";
@@ -33,6 +33,8 @@ import { boxHasRuns } from "@/lib/runs";
 import { AGENT_WORDS } from "@/lib/state-model";
 import { type StartDraft, sendWork, startWork } from "@/lib/start-work";
 import { load, save } from "@/lib/storage";
+import { routeTask, type ModelRoute } from "@/lib/model-router";
+import { usePrefs } from "@/lib/prefs";
 import { NONE, useStore } from "@/lib/store";
 import { fill as fillTemplate, templateVariables } from "@/lib/templates";
 import { type InstalledKitOn, kitsApi } from "@/lib/kits";
@@ -187,10 +189,26 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
   }, [agentPlace]);
   const pickAgents = (c: Chosen) => {
     agentsTouched.current = true;
+    setAutoRoute(undefined);
     setChosen(c);
   };
   const [copies, setCopies] = useState(1);
   const [noAgent, setNoAgent] = useState(!!draft.noAgent);
+  const routing = usePrefs((p) => p.modelRouting);
+  const routeKey = presets.map((p) => `${p.id}:${p.models?.join(",") ?? ""}:${p.efforts?.join(",") ?? ""}`).join("|");
+  const routed = useMemo(() => routeTask(text, presets, routing), [text, routeKey, routing.enabled, routing.mode, routing.preferFree]);
+  const [autoRoute, setAutoRoute] = useState<ModelRoute>();
+  useEffect(() => {
+    if (!routed || noAgent || from || draft.agents?.length || draft.attempts || agentsTouched.current) {
+      setAutoRoute(undefined);
+      return;
+    }
+    const next: Chosen = { [routed.agent]: { models: [routed.model ?? ""], effort: routed.effort ?? "" } };
+    setChosen((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next));
+    setAutoRoute((current) =>
+      current?.agent === routed.agent && current.model === routed.model && current.effort === routed.effort && current.lane === routed.lane ? current : routed,
+    );
+  }, [routed, noAgent, from, draft.agents, draft.attempts]);
   const live: Chosen = Object.fromEntries(Object.entries(chosen).filter(([id, c]) => c.models.length && presets.some((p) => p.id === id)));
   const sel: Chosen = Object.keys(live).length ? live : presets[0] ? { [presets[0].id]: { models: [""], effort: "" } } : {};
   const picks = noAgent ? [] : expand(sel, from ? 1 : copies).slice(0, from ? 1 : undefined);
@@ -608,6 +626,14 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
           )}
           {(!pinned || from?.kind === "handoff") && !attempts && <Pick label="Where" icon={<GitBranchIcon />} value={where} options={whereOptions} onPick={(v) => setWhere(v as "new" | "main" | "here")} />}
           <div className="ml-auto flex min-w-0 items-center gap-1">
+            {autoRoute && !noAgent && (
+              <Tip label={autoRoute.reason}>
+                <span className="inline-flex h-7 max-w-44 items-center gap-1.5 rounded-md border border-info/25 bg-info/5 px-2 text-info-foreground text-tag">
+                  <SparklesIcon className="size-3 shrink-0" />
+                  <span className="truncate">Auto · {autoRoute.lane === "lead" ? "Lead" : "Worker"}</span>
+                </span>
+              </Tip>
+            )}
             <AgentsPicker
               presets={presets}
               sel={sel}
@@ -617,7 +643,10 @@ function StartBody({ draft, text, setText, tabs, fixed, dialog, autoFocus, place
               allowNone={fresh && !from && !fixed}
               onChange={pickAgents}
               onCopies={setCopies}
-              onNone={setNoAgent}
+              onNone={(none) => {
+                if (none) setAutoRoute(undefined);
+                setNoAgent(none);
+              }}
             />
             <SendButton label={action} dialog={dialog} blocker={blocker} busy={busy} onClick={() => void submit()} />
           </div>

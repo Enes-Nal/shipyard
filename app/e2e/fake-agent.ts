@@ -152,7 +152,7 @@ export async function fakeAgent(): Promise<FakeAgent> {
     }
     if (req.method === "GET" && p === "/v1/status") return send(res, 200, status());
     if (req.method === "POST" && p === "/v1/refresh") return send(res, 200, status());
-    if (agent.away && p.startsWith(`/v1/boxes/${BOX}/api/`)) return send(res, 503, { error: `${BOX} is offline; Shipyard is reconnecting`, code: "box_unreachable" });
+    if (agent.away && p.startsWith(`/v1/boxes/${BOX}/api/`)) return send(res, 503, { error: `${BOX} is offline; Terminal is reconnecting`, code: "box_unreachable" });
     if (req.method === "POST" && p === `/v1/boxes/${BOX}/api/sessions/${SESSION}/send`) {
       let raw = "";
       for await (const c of req) raw += c;

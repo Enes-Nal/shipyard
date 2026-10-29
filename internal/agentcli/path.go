@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-// profileMark marks the line Shipyard adds to a login profile.
+// profileMark marks the line Terminal adds to a login profile.
 const profileMark = "# Added by Berth: agent CLIs and tmux live in ~/.local/bin"
 
 // EnsureLoginPATH makes ~/.local/bin part of the login shell's PATH, where
-// the agents (and Shipyard's own tmux) go: loginPATH is that shell's PATH now
+// the agents (and Terminal's own tmux) go: loginPATH is that shell's PATH now
 // and shell its path. Ubuntu's ~/.profile adds the folder once it exists,
 // so most boxes need nothing; otherwise one marked line goes at the end of
 // the profile the shell reads. It reports the file it changed, if any.

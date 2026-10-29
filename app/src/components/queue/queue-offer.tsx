@@ -23,7 +23,7 @@ export function QueueOffer({ failure, box, className }: { failure: SendFailure; 
         <p className="font-medium">{failure.message}</p>
         <p className="text-muted-foreground text-meta">
           {offline
-            ? `Shipyard can keep the prompt on this Mac and type it in when ${box} is back, after the agent's current turn. It's listed under Queued in the status bar.`
+            ? `Terminal can keep the prompt on this Mac and type it in when ${box} is back, after the agent's current turn. It's listed under Queued in the status bar.`
             : "Queue it only if you're sure it didn't arrive; otherwise the agent gets it twice."}
         </p>
       </div>

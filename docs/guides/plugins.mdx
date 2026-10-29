@@ -6,9 +6,9 @@ description: Add screens, worktree panels, commands, status bar items and themes
 A plugin is an ES module whose default export receives a
 `BerthPluginContext`, registers what it adds, and may return a cleanup
 function. Plugin components are ordinary React components in the app's own
-tree, using the app's own UI kit, so they look like the rest of Shipyard.
+tree, using the app's own UI kit, so they look like the rest of Terminal.
 
-Shipyard's built-ins are written the same way, against the same SDK: Git
+Terminal's built-ins are written the same way, against the same SDK: Git
 changes, Diff, Pull request, Dev servers, Box monitor, Activity, Notes, Issues
 (GitHub's and [Linear](/guides/linear)'s) and Prompt library (see
 [`plugins/`](https://github.com/cosscom/shipyard/tree/main/plugins)).
@@ -18,7 +18,7 @@ yours with the same id replaces a built-in.
 
 <Callout type="warn" title="Plugins run with the app's access">
   Plugins are not sandboxed. A plugin can do anything the app can, on every
-  box, and its hooks run on your computer. Shipyard asks before a plugin you
+  box, and its hooks run on your computer. Terminal asks before a plugin you
   installed first runs, and again whenever its code changes. Allow only
   plugins you trust. See [Trust and consent](#trust-and-consent).
 </Callout>
@@ -27,7 +27,7 @@ yours with the same id replaces a built-in.
 
 **Settings → Plugins → Browse** lists plugins that aren't built in.
 **Install** puts one in `~/.berth/plugins/<id>/`, and it shows under
-**Installed**, off. Turn it on there: Shipyard shows what it will be able to
+**Installed**, off. Turn it on there: Terminal shows what it will be able to
 do and a hash of its code, and it runs only once you choose **Allow and turn
 on** (see [Trust and consent](#trust-and-consent)). Installing never turns a
 plugin on.
@@ -40,14 +40,14 @@ plugin on.
   installed and forgets that you allowed it.
 - A plugin that runs a program on your boxes, such as Leadline, has that
   program [stopped and removed there](#a-helper-does-not-outlive-its-plugin)
-  when you turn the plugin off or remove it. Shipyard asks first, and names
+  when you turn the plugin off or remove it. Terminal asks first, and names
   the boxes.
 - **Replace…** shows instead of Install when `~/.berth/plugins` already has
   a plugin with that id that the listing didn't install: a folder or a link
-  you put there, or a listed plugin whose files you changed. Shipyard never
+  you put there, or a listed plugin whose files you changed. Terminal never
   installs over one of those without asking, and Remove… leaves them alone.
 
-The app's own page can't reach the web, so the Shipyard agent on your
+The app's own page can't reach the web, so the Terminal agent on your
 computer reads the listing, `https://berthd.app/plugins/index.json`, and
 downloads the files. To browse another listing, start the agent with
 `BERTH_PLUGIN_REGISTRY` set to an `https://` link to its `index.json`. See
@@ -155,13 +155,13 @@ too, once it is allowed there (see below).
 A plugin's code runs inside the app's own page, with the app's own access.
 Once on, a plugin can:
 
-- use the Shipyard agent's API, and its API token, exactly as the app does;
+- use the Terminal agent's API, and its API token, exactly as the app does;
 - run commands and open shells on every box you've paired;
 - read whatever boxes return: files, logs, environment and session output;
 - send anything it can read to any website;
 - run its hooks as you, on this computer and on a box that has it installed.
 
-So Shipyard never turns on a plugin you installed by itself. The first time you
+So Terminal never turns on a plugin you installed by itself. The first time you
 turn one on, the app shows what it can do, its hooks, and a hash of its code,
 and runs it only if you choose **Allow and turn on**. What you allow is that
 exact code: the agent records a SHA-256 hash of the plugin's
@@ -182,7 +182,7 @@ it can install and run that program, by name, on the boxes you turn it on
 for, and its row in Settings → Plugins says the same. Allowing the plugin
 installs nothing: the program reaches a box only when you turn the plugin
 on for that box, and a different program, or a different build of it, is a
-different manifest, so Shipyard asks again.
+different manifest, so Terminal asks again.
 
 On a box, where there is no app to ask, a plugin's hooks run only once it is
 listed in the box's `~/.berth/plugins.json`. An entry without a hash trusts
@@ -218,7 +218,7 @@ served at `berthd.app/plugins/`. To add a plugin to it:
      "version": "0.1.0",
      "description": "An example plugin to copy from.",
      "main": "dist/index.js",
-     "author": "Shipyard",
+     "author": "Terminal",
      "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
      "marketplace": true
    }
@@ -247,7 +247,7 @@ the index:
       "name": "Hello ports (example)",
       "description": "An example plugin to copy from.",
       "version": "0.1.0",
-      "author": "Shipyard",
+      "author": "Terminal",
       "homepage": "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
       "files": [
         { "path": "berth-plugin.json", "url": "hello-ports/0.1.0/berth-plugin.json", "sha256": "b8d54d1d…", "size": 382 },
@@ -291,7 +291,7 @@ boxes is still you: a plugin runs only once you allow it, the consent dialog
 shows the hash of the code that was installed, and that permission is for
 exactly that code. An update is new code, so it is asked about again; when
 an update changes only files other than the manifest and `main`, which the
-permission's hash doesn't cover, Shipyard forgets the permission rather than
+permission's hash doesn't cover, Terminal forgets the permission rather than
 carry it over.
 
 ## Give a plugin a helper
@@ -299,9 +299,9 @@ carry it over.
 A plugin's code runs in the app, on your laptop. Some things can only be
 done where the code under development runs: recording a dev server's
 queries, watching its files, keeping data that should outlive the app. For
-that a plugin can bring a **helper**, a program Shipyard installs on a box
+that a plugin can bring a **helper**, a program Terminal installs on a box
 and keeps running there, with an HTTP API the plugin's panel reads through
-Shipyard. Leadline's `berth-leadline` is one, and so is `berth-database`,
+Terminal. Leadline's `berth-leadline` is one, and so is `berth-database`,
 the database editor's.
 
 A helper is declared in the plugin's manifest:
@@ -379,7 +379,7 @@ From then on berthd sends `Authorization: Bearer <token>` with every request
 it makes of that helper: everything it relays from the app, and its own
 [attach](#attach-what-a-helper-adds-to-a-service) calls. The helper refuses
 a request without it (`401`). The plugin's panel does nothing for this and
-never sees the token: it asks through Shipyard as
+never sees the token: it asks through Terminal as
 [below](#reading-it-from-the-plugin), and berthd adds the header on the box.
 
 - The token is letters, digits and `-._~+/=`, at most 512 characters; a
@@ -407,7 +407,7 @@ The laptop agent does it, on three routes of [its API](/reference/app-api#laptop
 
 `POST` has the laptop download the build for that box's platform, check its
 size and SHA-256 against the manifest, and upload it to the box over
-Shipyard's own connection: the box needs no way out to the internet. berthd
+Terminal's own connection: the box needs no way out to the internet. berthd
 checks the bytes again, keeps the program in the helper's own folder and
 starts it. From then on it runs whenever berthd does, and is started again
 if it exits. `update` in the status says the box runs another helper than
@@ -431,11 +431,11 @@ box that has it:
 | You remove it (**Remove…**) | Stopped and removed | Removed |
 | It changes, and the new manifest names another helper, or none | Stopped and removed | Kept |
 | Its folder is deleted, or its permission is taken away by hand | Stopped and removed | Kept |
-| It changes, and the new manifest names the same helper | Left running while Shipyard asks you about the new version | Kept |
+| It changes, and the new manifest names the same helper | Left running while Terminal asks you about the new version | Kept |
 | You turn it on again | Nothing: it is not installed again | As it was |
 
 "Changes" is an update from the listing, or an edit to a plugin of your
-own: either way the plugin is off until you review it, and Shipyard asks at
+own: either way the plugin is off until you review it, and Terminal asks at
 once. If the new manifest's `box.helper` is the same in every word and
 every build's checksum, the program on the boxes is the one both versions
 name, so it is held rather than removed. Allowing the new version keeps it
@@ -521,7 +521,7 @@ A helper that only needs to know about the service answers `{"env": {}}`:
   the answer that does not match is ignored. It is in the manifest, so it is
   part of what the person allowed.
 - **It matches the worktree's `.env` too.** Many projects keep
-  `DATABASE_URL` in the worktree's dotenv files and nowhere Shipyard
+  `DATABASE_URL` in the worktree's dotenv files and nowhere Terminal
   assembles an environment from: the dev server loads `.env` itself. So a
   variable in `attach_env` that the service's own environment does not
   have is taken from the worktree's `.env`, `.env.development`,
@@ -576,7 +576,7 @@ without a service: see below.
 
 ### attachEnv: a look in the worktree's .env on request
 
-A project whose dev servers Shipyard does not start never reaches
+A project whose dev servers Terminal does not start never reaches
 `attach`. For those, a plugin's panel can have the box look in the
 worktree's dotenv files and tell the helper what it finds:
 
@@ -618,7 +618,7 @@ replaces what the last look found, and what a real service said stays.
   nothing is run. A `${NAME}` nothing sets leaves the variable `unresolved`
   and unsent, and a bare `$NAME` nothing sets stays as it is written.
 - **Ask when the person asks.** Opening your panel is asking; a timer is
-  not. An older box answers `box_outdated` (a 404), and an older Shipyard
+  not. An older box answers `box_outdated` (a 404), and an older Terminal
   has no `berth.helper.attachEnv` at all: check for both, and fall back to
   what you showed before.
 - **Or told what a person gave.** With `env` in the call

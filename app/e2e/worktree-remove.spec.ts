@@ -33,6 +33,7 @@ test("Delete in the Worktrees table removes the selected ones without a dialog",
   await app.open();
   const page = app.page;
   await page.getByTestId("nav-worktrees").click();
+  await page.getByRole("button", { name: "Branches" }).click();
   // The checkbox's cell takes the click; the checkbox itself doesn't.
   await page.getByRole("checkbox", { name: "Select qa-deck" }).locator("xpath=..").click();
   await page.getByRole("checkbox", { name: "Select search-perf" }).locator("xpath=..").click();

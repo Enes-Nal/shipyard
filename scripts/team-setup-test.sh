@@ -11,12 +11,12 @@
 # Acme example's box/setup.sh plan and check subcommands (and that it
 # refuses root); the laptop reads acme/.berth with its gh (access check: 2 of
 # 3 repos); op, not signed in, fails at once and never asks; setup on the
-# box runs the steps in a terminal there, where the password is typed (Shipyard
+# box runs the steps in a terminal there, where the password is typed (Terminal
 # never sees it), with box.settings in the script's environment; the tools
 # step adds dev to a group and the steps after it have it (same terminal,
 # then through sg in terminals berthd starts); a failed step, then Retry from
 # it; berthd restarting mid-step and resuming; the box's own gh sign-in by
-# device code; Shipyard's 1Password step, op's question answered in the
+# device code; Terminal's 1Password step, op's question answered in the
 # terminal; the repos cloned, the web repo's own config trusted at the
 # reviewed hash, the api repo's team kit (its requires found on a login
 # shell's PATH) and init (with BERTH_KIT_DIR); keys on the box; a second run
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
 done
 export KEEP
 OUT=${OUT:-$REPO/dist/release-test/team-setup-$(date +%Y%m%d-%H%M%S)}
-rt_init "Shipyard team setup test (Linux, Docker)" "$OUT"
+rt_init "Terminal team setup test (Linux, Docker)" "$OUT"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/berth-team-test.XXXXXX")
 trap 'linux_cleanup >>"$RT_LOG" 2>&1; rm -rf "$WORK"' EXIT
 trap 'exit 130' INT TERM
@@ -90,7 +90,7 @@ s_install() {
 	local out
 	out=$(box_install 2>&1) && fail "install.sh went ahead without tmux: $out" && return 1
 	echo "$out" | tail -3
-	echo "$out" | grep -q "Shipyard needs tmux on this box, and installing it needs sudo's password" || fail "install.sh said: $out" || return 1
+	echo "$out" | grep -q "Terminal needs tmux on this box, and installing it needs sudo's password" || fail "install.sh said: $out" || return 1
 	echo "$out" | grep -q "sudo apt-get update -q && sudo apt-get install -y -q tmux" || fail "install.sh named no command: $out" || return 1
 	bx "test ! -e ~/.local/bin/berthd" || fail "berthd was installed all the same" || return 1
 	# Where sudo needs no password, berthd install gets tmux itself.
@@ -215,7 +215,7 @@ s_box_github() {
 	detail "the box signed in with its own gh (device code 4F2A-9C1E shown to the laptop); the laptop's credential never left it"
 }
 
-# Shipyard's own 1Password step: op's question waits in the box's terminal.
+# Terminal's own 1Password step: op's question waits in the box's terminal.
 s_op_signin() {
 	until_ok 60 team_is 'j["steps"][4]["id"] == "1password" and j["steps"][4]["state"] == "waiting"' || fail "1Password never waited: $(team_json); $(screen | tail -5)" || return 1
 	screen | tail -2
@@ -365,7 +365,7 @@ RT_CRITICAL=1 step "sudo asks in the box's terminal" s_sudo
 RT_CRITICAL=1 step "A failing step stops the setup" s_fail
 RT_CRITICAL=1 step "Retry from it; berthd restarts mid-step" s_retry_restart
 RT_CRITICAL=1 step "The box's own GitHub sign-in" s_box_github
-RT_CRITICAL=1 step "Shipyard's 1Password step" s_op_signin
+RT_CRITICAL=1 step "Terminal's 1Password step" s_op_signin
 step "A worktree from the CLI straight after the setup" s_worktree_now
 step "Repos cloned and set up" s_projects
 step "A second run skips what is done" s_rerun

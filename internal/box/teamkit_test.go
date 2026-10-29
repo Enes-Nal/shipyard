@@ -22,7 +22,7 @@ func teamKit() TeamKitRequest {
 	return TeamKitRequest{Kit: in}
 }
 
-// apiLocation is acme/api, added to Shipyard by hand, with a worktree of
+// apiLocation is acme/api, added to Terminal by hand, with a worktree of
 // its own.
 func apiLocation(t *testing.T, f *teamFixture) (dir, wt string) {
 	dir = dirtyAPI(t, f)

@@ -113,7 +113,7 @@ func openReview(ctx context.Context, c *agent.Client, sh agent.ReviewSheet) erro
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\n%s is ready on %s at %s (%s/%s). Its setup and dev server start there now;\nopen it in Shipyard, or: berth attach %s\n", reviewName(sh), out.Box, short(sh.Head.SHA), out.Location, out.Worktree.Name, out.Box)
+	fmt.Printf("\n%s is ready on %s at %s (%s/%s). Its setup and dev server start there now;\nopen it in Terminal, or: berth attach %s\n", reviewName(sh), out.Box, short(sh.Head.SHA), out.Location, out.Worktree.Name, out.Box)
 	if out.Open != "" {
 		fmt.Printf("In a browser on this computer: %s\n", out.Open)
 	}

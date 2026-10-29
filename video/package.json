@@ -2,7 +2,7 @@
   "name": "berth-launch-video",
   "private": true,
   "type": "module",
-  "description": "Shipyard's launch video, as code: an HTML/SVG timeline stepped frame by frame in headless Chrome, cut to the music's beat grid, encoded with ffmpeg.",
+  "description": "Terminal's launch video, as code: an HTML/SVG timeline stepped frame by frame in headless Chrome, cut to the music's beat grid, encoded with ffmpeg.",
   "license": "MIT",
   "scripts": {
     "music": ".venv/bin/python scripts/music.py",

@@ -74,6 +74,7 @@ export function AgentsSection() {
       }
     >
       <Permissions />
+      <ModelRouting />
 
       {online.length === 0 ? (
         <p className="rounded-xl border px-4 py-6 text-center text-muted-foreground text-body">No box is online. Agents are listed once one connects.</p>
@@ -168,6 +169,54 @@ function Permissions() {
           onChange={(v) => setPrefs({ approvals: v })}
         />
       </SettingsRow>
+    </SettingsGroup>
+  );
+}
+
+// ModelRouting is the policy for new tasks. The composer applies it only
+// until the person picks an agent or model themselves, so automatic routing
+// never fights an explicit choice.
+function ModelRouting() {
+  const routing = usePrefs((p) => p.modelRouting);
+  const update = (patch: Partial<typeof routing>) => setPrefs({ modelRouting: { ...routing, ...patch } });
+  return (
+    <SettingsGroup title="Model routing" description="Let strong models lead and hand routine work to lighter workers. Routing only uses agents and models already available on the selected box.">
+      <SettingsRow label="Route new tasks automatically" description="Terminal reads the task while you type and chooses a worker or lead. Picking an agent yourself always overrides it.">
+        <Switch checked={routing.enabled} onCheckedChange={(enabled) => update({ enabled })} aria-label="Route new tasks automatically" />
+      </SettingsRow>
+      <SettingsRow
+        label="Strategy"
+        description={
+          routing.mode === "save"
+            ? "Use workers whenever possible; bring in a lead for difficult work."
+            : routing.mode === "quality"
+              ? "Keep every task with the strongest available model."
+              : "Use workers for routine work and leads for architecture, debugging and high-risk changes."
+        }
+      >
+        <Segmented
+          value={routing.mode}
+          options={[
+            { value: "save", label: "Save" },
+            { value: "balanced", label: "Balanced" },
+            { value: "quality", label: "Quality" },
+          ]}
+          onChange={(mode) => update({ mode })}
+        />
+      </SettingsRow>
+      <SettingsRow label="Prefer free and local workers" description="For routine tasks, prefer models whose configured name identifies them as free, local, Ollama, Qwen, Llama, Mistral, Gemma or DeepSeek.">
+        <Switch checked={routing.preferFree} disabled={!routing.enabled || routing.mode === "quality"} onCheckedChange={(preferFree) => update({ preferFree })} aria-label="Prefer free and local workers" />
+      </SettingsRow>
+      <div className="grid gap-2 pb-3 sm:grid-cols-2">
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <p className="text-row">Worker lane</p>
+          <p className="mt-1 text-desc text-muted-foreground">Formatting, renames, boilerplate, snapshots and mechanical edits use the fastest low-effort option.</p>
+        </div>
+        <div className="rounded-lg border border-info/25 bg-info/5 p-3">
+          <p className="text-row">Lead lane</p>
+          <p className="mt-1 text-desc text-muted-foreground">Architecture, migrations, security, debugging and system-wide work use the strongest high-effort option.</p>
+        </div>
+      </div>
     </SettingsGroup>
   );
 }

@@ -11,7 +11,9 @@ const testdata = new URL("../../../internal/doctor/testdata/", import.meta.url);
 // are held to the one golden file (internal/doctor/report_test.go).
 test("the app's report is the CLI's, byte for byte", () => {
   const d = JSON.parse(readFileSync(new URL("diagnostics.json", testdata), "utf8")) as Diagnostics;
-  const golden = readFileSync(new URL("diagnostics.golden", testdata), "utf8");
+  // Git may check this fixture out with CRLF on Windows, while the app and Go
+  // formatter intentionally emit portable LF-delimited diagnostics.
+  const golden = readFileSync(new URL("diagnostics.golden", testdata), "utf8").replaceAll("\r\n", "\n");
   const got = formatDiagnostics(d);
   assert.equal(got, golden);
   for (const secret of ["alex", "/home/other", "example.com", "op://Private", "ghp_", "sk-ant", "eyJhbGci"]) assert.ok(!got.includes(secret), `the report still has ${secret}`);

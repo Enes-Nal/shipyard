@@ -22,7 +22,7 @@ guide is in [project config](/guides/project-config).
 | `flows` | array | [Flows](#flows) for this repository's worktrees. |
 | `shots` | object | What `berthd shots compare` [shoots and diffs](#shots) by default. Read from the worktree's own file, trusted or not: it names pages and selectors and runs nothing. |
 | `login` | object | [Dev users](#login) a worktree can be logged in as, and the script that logs one in. |
-| `review_button` | boolean | Add a [Review in Shipyard button](/guides/review-a-pr#the-review-in-shipyard-button) to the description of each PR opened from the project's worktrees. Off by default; from the repository's file it applies once the box trusts it. |
+| `review_button` | boolean | Add a [Review in Terminal button](/guides/review-a-pr#the-review-in-terminal-button) to the description of each PR opened from the project's worktrees. Off by default; from the repository's file it applies once the box trusts it. |
 | `keep_main` | boolean | Keep the default branch current: before a new branch is made from it, fetch it and fast-forward the local one, never past uncommitted changes or local commits ([how](/concepts/projects-and-worktrees)). On by default; `false` turns it off. |
 
 ### `services`

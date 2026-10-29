@@ -23,7 +23,7 @@ import (
 	"github.com/cosscom/shipyard/internal/statefile"
 )
 
-// The "Review in Shipyard" button. GitHub strips berth:// links from PR
+// The "Review in Terminal" button. GitHub strips berth:// links from PR
 // descriptions, so a review link goes through the site: a badge that links
 // to https://berthd.app/review?repo=…&pr=…, a static page that checks the
 // parameters and opens the berth:// link (site/review/index.html).
@@ -187,7 +187,7 @@ func queryEscape(s string) string {
 // markers included.
 func ReviewButtonBlock(repo string, pr int, as, path string, nl string) string {
 	return ReviewButtonMarker + nl +
-		"[![Review in Shipyard](" + ReviewSite + "/badges/review.svg)](" + ReviewButtonLink(repo, pr, as, path) + ")" + nl +
+		"[![Review in Terminal](" + ReviewSite + "/badges/review.svg)](" + ReviewButtonLink(repo, pr, as, path) + ")" + nl +
 		reviewButtonEnd
 }
 
@@ -350,7 +350,7 @@ func (s *ReviewButtons) gh(ctx context.Context, dir string, stdin []byte, out an
 
 // errBodyMoving is a description that changed under berthd twice in a row:
 // it waits for the next look.
-var errBodyMoving = errors.New("the PR's description changed while Shipyard was adding its button")
+var errBodyMoving = errors.New("the PR's description changed while Terminal was adding its button")
 
 // placeReviewButton adds block to the PR's description, or replaces the
 // marked one. GitHub has no compare-and-set for a description, so it reads

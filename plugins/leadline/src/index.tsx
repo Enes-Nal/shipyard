@@ -14,7 +14,7 @@ import { TracesPanel } from "./traces";
 // records leaves the box except to be shown here.
 
 export default definePlugin((berth) => {
-  // A Shipyard from before plugins could carry a helper: say so, add nothing else.
+  // A Terminal from before plugins could carry a helper: say so, add nothing else.
   if (!berth.helper) {
     berth.addScreen({ id: "leadline", title: "Leadline", Component: TooOld });
     berth.addSidebarItem({ id: "leadline", title: "Leadline", icon: "Anchor", screen: "leadline" });
@@ -38,8 +38,8 @@ function TooOld(_: ScreenProps) {
     <Empty className="py-16">
       <EmptyHeader>
         <Icon name="Anchor" className="mx-auto mb-2 size-5 text-muted-foreground" />
-        <EmptyTitle>Leadline needs a newer Shipyard</EmptyTitle>
-        <EmptyDescription>This version can't install a plugin's program on a box. Update Shipyard, then reload plugins in Settings → Plugins.</EmptyDescription>
+        <EmptyTitle>Leadline needs a newer Terminal</EmptyTitle>
+        <EmptyDescription>This version can't install a plugin's program on a box. Update Terminal, then reload plugins in Settings → Plugins.</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

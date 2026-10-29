@@ -33,7 +33,9 @@ import { HomeTabs } from "@/components/workspace/home-tabs";
 import { BoxPicker } from "@/components/box-picker";
 import { FakeTrafficLights, ZenBar } from "@/components/workspace/zen";
 import { Announcer } from "@/components/announcer";
-import { fakeTrafficLights } from "@/lib/api";
+import { WindowsTitlebar } from "@/components/window-titlebar";
+import { TerminalTutorial } from "@/components/terminal-tutorial";
+import { fakeTrafficLights, hasTrafficLights } from "@/lib/api";
 import { useBerthConnection } from "@/hooks/use-berth-connection";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import { useWindowTitle } from "@/hooks/use-window-title";
@@ -79,14 +81,14 @@ const SettingsView = lazyView(() => import("@/views/settings/settings-view").the
 // The live demo's guide and script (pnpm build:demo); not in the app.
 const DemoGuide = __BERTH_DEMO__ ? lazy(() => import("@/demo/guide")) : null;
 
-const viewTitles = { team: "Team setup", dashboard: "Agent Dashboard", review: "Review", worktrees: "Worktrees", automations: "Automations", kits: "Kits", project: "Project settings", settings: "Settings", plugin: "" } as const;
+const viewTitles = { team: "Team setup", dashboard: "Agent Dashboard", review: "Review", worktrees: "Project activity", automations: "Automations", kits: "Kits", project: "Project settings", settings: "Settings", plugin: "" } as const;
 
 export default function App() {
   useApplyTheme();
   useBerthConnection();
   useShortcuts();
   useWindowTitle();
-  // Checks for a newer Shipyard on launch and every few hours (lib/updater.ts).
+  // Checks for a newer Terminal on launch and every few hours (lib/updater.ts).
   useEffect(startUpdater, []);
   // Spinners and shimmers hold still while the window is in the background.
   useEffect(watchStillness, []);
@@ -101,7 +103,7 @@ export default function App() {
   // Agents started without the app (another agent, the CLI, a run) follow
   // the Labs setting too (lib/box-defaults.ts).
   useEffect(() => (connectedToAgent ? startBoxDefaultsSync() : undefined), [connectedToAgent]);
-  // Which boxes' Shipyard skills aren't installed or are out of date, for
+  // Which boxes' Terminal skills aren't installed or are out of date, for
   // the sidebar's notice (lib/skills-notice.ts).
   useEffect(() => (connectedToAgent ? startSkillsNoticeWatch() : undefined), [connectedToAgent]);
   useKitDeepLinks();
@@ -145,8 +147,9 @@ export default function App() {
       <TooltipProvider delay={300}>
         <ToastProvider position="bottom-right" viewportClassName="max-w-88 data-[position=bottom-right]:bottom-3 data-[position=bottom-right]:right-3">
           <div className="flex h-svh flex-col overflow-hidden bg-background text-foreground">
-            {/* Room for the traffic lights; the strip drags the window. */}
-            <div data-tauri-drag-region className="h-bar shrink-0" />
+            <WindowsTitlebar />
+            {/* Room for macOS traffic lights; Windows has its own bar above. */}
+            {hasTrafficLights() && <div data-tauri-drag-region className="h-bar shrink-0" />}
             <main className="relative min-h-0 flex-1">
               <ErrorBoundary scope="onboarding">
                 <Suspense>{view.kind === "team" ? <TeamSetupView org={view.org} from={view.from ?? "onboarding"} box={view.box} onBack={() => useStore.getState().setView({ kind: "workspace" })} /> : <OnboardingView />}</Suspense>
@@ -177,6 +180,7 @@ export default function App() {
           components/ui/toast.tsx. The stack is as wide as the loops panel. */}
       <ToastProvider position="bottom-right" viewportClassName="max-w-88 data-[position=bottom-right]:bottom-[max(calc(var(--berth-status-h,26px)+12px+var(--berth-loops-h,0px)),var(--berth-bar-lift,0px))] data-[position=bottom-right]:right-3 data-[position=bottom-left]:bottom-[calc(var(--berth-status-h,26px)+12px)] data-[position=bottom-left]:left-3 data-[position=top-left]:top-3 data-[position=top-left]:left-3 data-[position=top-right]:top-3 data-[position=top-right]:right-3">
         <div className="flex h-svh flex-col overflow-hidden bg-background text-foreground">
+          <WindowsTitlebar />
           {fakeTrafficLights() && <FakeTrafficLights />}
           <div className="flex min-h-0 flex-1">
             {/* Hidden, not taken away, while Settings is open, so it comes
@@ -255,6 +259,7 @@ export default function App() {
             <DemoGuide />
           </Suspense>
         )}
+        {!__BERTH_DEMO__ && <TerminalTutorial />}
       </ToastProvider>
     </TooltipProvider>
   );

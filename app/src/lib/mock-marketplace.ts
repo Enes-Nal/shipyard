@@ -61,7 +61,7 @@ const listing: Listed[] = [
     name: "Hello ports (example)",
     description: "An example plugin to copy from: every dev server on every box, one click from your browser.",
     version: "0.1.0",
-    author: "Shipyard",
+    author: "Terminal",
     homepage: "https://github.com/cosscom/shipyard/tree/main/plugins/hello-ports",
     command: "Say hello to the ports",
   },

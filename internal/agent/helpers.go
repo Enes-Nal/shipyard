@@ -30,7 +30,7 @@ import (
 // size and SHA-256. The person allowed that manifest (its hash is the
 // plugin's consent), so the checksum is what they allowed, wherever the
 // bytes are fetched from. This computer does the fetching, checks them, and
-// uploads them to the box over Shipyard's own connection: a box needs no
+// uploads them to the box over Terminal's own connection: a box needs no
 // way out to the internet, and never runs what was not checked. Only a
 // plugin that is installed and allowed as it is now gets a helper.
 

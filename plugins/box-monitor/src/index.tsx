@@ -87,13 +87,13 @@ export default definePlugin((berth) => {
   };
 
   void sample();
-  // Not while the window is hidden: nobody is looking, and a hidden Shipyard
+  // Not while the window is hidden: nobody is looking, and a hidden Terminal
   // shouldn't keep the Mac awake. Coming back samples at once.
   const timer = setInterval(() => !document.hidden && void sample(), EVERY);
   const back = () => !document.hidden && void sample();
   document.addEventListener("visibilitychange", back);
 
-  berth.addScreen({ id: "boxes", title: "Box monitor", description: "Memory, disk and load on every online box, sampled every 15 seconds while Shipyard is open.", Component: MonitorScreen });
+  berth.addScreen({ id: "boxes", title: "Box monitor", description: "Memory, disk and load on every online box, sampled every 15 seconds while Terminal is open.", Component: MonitorScreen });
   berth.addSidebarItem({ id: "boxes", title: "Box monitor", icon: "Activity", screen: "boxes" });
   berth.addCommand({ id: "boxes", title: "Show box monitor", group: "Boxes", run: () => berth.openScreen("boxes") });
   return () => {

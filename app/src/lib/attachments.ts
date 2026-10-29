@@ -10,7 +10,7 @@ import type { Client } from "@/lib/api";
 // typed as that path, which Claude Code shows as [Image #1].
 //
 // What else a paste can hold is left to the field: text (however long) and a
-// Shipyard URL paste as they are, and rich text pastes as plain text, as a
+// Terminal URL paste as they are, and rich text pastes as plain text, as a
 // textarea and a terminal only take text. A file copied in Finder uploads
 // too: its path names a file on this computer, which the box can't read.
 

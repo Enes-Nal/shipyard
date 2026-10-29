@@ -3,7 +3,7 @@ import type { Marketplace, MarketPlugin } from "@/lib/marketplace";
 import type { HelperRemoved, PluginHelpers } from "@/lib/plugin-helpers";
 import { invoke } from "@tauri-apps/api/core";
 import { readTimeout, reconnectDelay, STREAM_SILENCE_MS } from "@/lib/net";
-import { IS_LINUX } from "@/lib/platform";
+import { IS_MAC } from "@/lib/platform";
 import type {
   BerthEvent,
   BoxInfo,
@@ -44,7 +44,7 @@ export interface Endpoint {
 }
 
 // OutdatedBox is GET /v1/boxes/outdated's answer for one online box:
-// whether it runs an older berthd than this Shipyard ships. error is set when
+// whether it runs an older berthd than this Terminal ships. error is set when
 // the check couldn't tell.
 export interface OutdatedBox {
   box: string;
@@ -60,8 +60,9 @@ export const isTauri = (): boolean => "__TAURI_INTERNALS__" in window;
 // left (the Tauri window's overlay title bar), so a strip there leaves them
 // room. ?traffic=1 in the mock draws and counts them, for screenshots.
 export const fakeTrafficLights = (): boolean => !isTauri() && new URLSearchParams(location.search).has("mock") && new URLSearchParams(location.search).has("traffic");
-// The Linux app has its window manager's title bar instead.
-export const hasTrafficLights = (): boolean => (isTauri() && !IS_LINUX) || fakeTrafficLights();
+// Windows uses Terminal's custom title bar and Linux uses its window
+// manager's title bar, so neither needs this room.
+export const hasTrafficLights = (): boolean => (isTauri() && IS_MAC) || fakeTrafficLights();
 
 // endpoint finds the agent and its token: from the Tauri shell, which reads
 // the token file, or in a plain browser from ?token= or the Vite env.
@@ -150,7 +151,7 @@ export interface AgentChoice {
   install?: string;
   verified?: string;
   default?: boolean;
-  // false: Shipyard leaves it to the person; why says why.
+  // false: Terminal leaves it to the person; why says why.
   offered: boolean;
   why?: string;
 }
@@ -380,7 +381,7 @@ export interface Discovery {
   // The SSH user to suggest: this computer's.
   user: string;
   machines: Machine[];
-  // This computer's own Tailscale, when not listing a Shipyard network.
+  // This computer's own Tailscale, when not listing a Terminal network.
   tailscale?: "running" | "stopped" | "logged-out" | "missing";
   // Its tailnet's name, while running.
   tailnet?: string;
@@ -421,7 +422,7 @@ export type SshFailure = {
   detail?: string;
 };
 
-// SshPlan is how Shipyard will log in to a host, worked out before connecting
+// SshPlan is how Terminal will log in to a host, worked out before connecting
 // from ~/.ssh/config (ssh -G) and the key agents that answer.
 export type SshPlan = {
   host: string;
@@ -488,7 +489,7 @@ export const laptopApi = {
   removeRoute: (c: Client, box: string, id: string) => c.laptop<BoxRoute[]>("DELETE", `/v1/boxes/${encodeURIComponent(box)}/routes/${encodeURIComponent(id)}`),
   upgrade: (c: Client, box: string, onLine: (line: string) => void, signal?: AbortSignal) =>
     runCommand(c, "POST", `/v1/boxes/${encodeURIComponent(box)}/upgrade`, undefined, onLine, signal),
-  // outdated says which online boxes run an older berthd than this Shipyard
+  // outdated says which online boxes run an older berthd than this Terminal
   // ships (lib/outdated.ts).
   outdated: (c: Client, fresh?: boolean) => c.laptop<{ boxes: OutdatedBox[] }>("GET", `/v1/boxes/outdated${fresh ? "?fresh=1" : ""}`),
   // addSsh installs berthd on a host over SSH and pairs with it. It rejects
@@ -505,7 +506,7 @@ export const laptopApi = {
   // agent CLIs to choose from.
   installPlan: (c: Client, host: string, agents: string[]) =>
     c.laptop<InstallPlan>("GET", `/v1/ssh/install-plan?${new URLSearchParams({ host, agents: agents.join(",") || "none" })}`),
-  // sshPlan says how Shipyard will log in to a host, without connecting.
+  // sshPlan says how Terminal will log in to a host, without connecting.
   sshPlan: (c: Client, host: string, network?: string) =>
     c.laptop<SshPlan>("GET", `/v1/ssh/plan?host=${encodeURIComponent(host)}${network ? `&network=${encodeURIComponent(network)}` : ""}`),
   // sshHosts are the hosts ~/.ssh/config names, for completing a host field.
@@ -576,7 +577,7 @@ export function httpClient(ep: Endpoint): Client {
     } catch (err) {
       if (timer?.aborted && !signal?.aborted) {
         const box = /^\/v1\/boxes\/([^/]+)\//.exec(path)?.[1];
-        throw new ApiError(`${box ? decodeURIComponent(box) : "Shipyard's agent"} didn't answer in ${Math.round(limit! / 1000)}s`, 504, "box_timeout");
+        throw new ApiError(`${box ? decodeURIComponent(box) : "Terminal's agent"} didn't answer in ${Math.round(limit! / 1000)}s`, 504, "box_timeout");
       }
       throw err;
     }
@@ -640,7 +641,7 @@ export function httpClient(ep: Endpoint): Client {
         };
         xhr.onerror = () => {
           done();
-          reject(new ApiError("The upload didn't reach the Shipyard agent", 0));
+          reject(new ApiError("The upload didn't reach the Terminal agent", 0));
         };
         xhr.onabort = () => {
           done();

@@ -2,7 +2,7 @@ import { ArrowRightIcon, CheckIcon, ChevronRightIcon, CloudDownloadIcon, FolderG
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { FolderBrowser } from "@/components/add-project/folder-browser";
-import { dirname } from "@/components/add-project/intent";
+import { dirname, hasTrailingPathSeparator, trimTrailingPathSeparators } from "@/components/add-project/intent";
 import { mergeProgress, type RunResult, runPlan } from "@/components/add-project/run";
 import { shortPath, uniqueName } from "@/components/add-project/unique-name";
 import { type Destination, type Plan, type Row, usePlan } from "@/components/add-project/use-plan";
@@ -205,7 +205,7 @@ export function AddProjectBody({ startBox }: { startBox?: string }) {
     return (
       <>
         <StepHeader onBack={() => setBrowsing(false)} title="Browse folders" description={`Pick a repository or folder on ${box}.`} />
-        <FolderBrowser box={box} start={intent.kind === "path" ? (input.trim().endsWith("/") ? input.trim().replace(/(.)\/+$/, "$1") : dirname(input.trim())) : undefined} onAdded={(loc: Location) => finish({ loc, extras: [] }, { do: "add", path: loc.path, name: loc.name, git: loc.repo })} />
+        <FolderBrowser box={box} start={intent.kind === "path" ? (hasTrailingPathSeparator(input.trim()) ? trimTrailingPathSeparators(input.trim()) : dirname(input.trim())) : undefined} onAdded={(loc: Location) => finish({ loc, extras: [] }, { do: "add", path: loc.path, name: loc.name, git: loc.repo })} />
       </>
     );
   }
@@ -218,7 +218,7 @@ export function AddProjectBody({ startBox }: { startBox?: string }) {
         submit();
       }}
     >
-      <StepHeader title="Add a project" description={boxes.length > 1 ? "Projects live on your boxes. Pick one, then type what to add: the box works out the rest." : `Projects live on your boxes. Type what to add on ${box || "it"}: the box works out the rest.`} />
+      <StepHeader title="Connect a project" description={boxes.length > 1 ? "Pick a box, then paste a GitLab or other Git URL. Existing folders work too." : `Paste a GitLab or other Git URL to clone it on ${box || "this box"}, or choose an existing folder.`} />
       <DialogPanel className="flex flex-col gap-3 px-5 pt-1 pb-4">
         {boxes.length > 0 && <BoxStrip boxes={boxes} value={box} onChange={(b) => !busy && setBox(b)} />}
 
@@ -236,7 +236,7 @@ export function AddProjectBody({ startBox }: { startBox?: string }) {
                 spellCheck={false}
                 autoComplete="off"
                 aria-label="Path, git URL, owner/repo or new name"
-                placeholder={`A path on ${box}, a git URL, owner/repo, or a new name`}
+                placeholder={`A GitLab URL, git remote, path on ${box}, or new name`}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
                   // Enter is handled here, not by the form: a form whose

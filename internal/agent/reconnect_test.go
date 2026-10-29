@@ -60,7 +60,7 @@ func TestAnAwayBoxIsRetriedOnABackoffAndAnsweredForAtOnce(t *testing.T) {
 	}
 	var e struct{ Error, Code string }
 	json.Unmarshal([]byte(body), &e)
-	if resp.StatusCode != http.StatusServiceUnavailable || e.Code != "box_unreachable" || !strings.Contains(e.Error, "devbox is offline; Shipyard is reconnecting") {
+	if resp.StatusCode != http.StatusServiceUnavailable || e.Code != "box_unreachable" || !strings.Contains(e.Error, "devbox is offline; Terminal is reconnecting") {
 		t.Fatalf("away answer %d %s", resp.StatusCode, body)
 	}
 

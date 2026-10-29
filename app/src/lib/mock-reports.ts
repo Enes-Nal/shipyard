@@ -1,7 +1,7 @@
 import type { TranscriptItem } from "@/lib/transcript";
 
 // The demo's reports back: order-export-claude handed two pieces of work to
-// other agents and ended its turn; Shipyard told it how each went, as one
+// other agents and ended its turn; Terminal told it how each went, as one
 // <berth-notification> (internal/box/notify_text.go), and it carried on.
 export function mockReports(session: string): TranscriptItem[] {
   if (session !== "order-export-claude") return [];

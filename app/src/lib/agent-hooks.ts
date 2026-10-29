@@ -22,7 +22,7 @@ interface IntegrationsReport {
   output?: string;
 }
 
-// The commands Shipyard has hooks for, by the tool they install for.
+// The commands Terminal has hooks for, by the tool they install for.
 const TOOLS: Record<string, string> = { claude: "claude", codex: "codex", "cursor-agent": "cursor", cursor: "cursor" };
 
 // hookToolFor is the tool an agent preset ID or command line needs hooks for.
@@ -100,7 +100,7 @@ export async function offerAgentHooks(box: string, agentOrCommand: string, sessi
   if (!t || t.hooked || asked.has(key)) return;
   remember(key);
   const id = toastManager.add({
-    title: `Shipyard can't see when ${t.name} needs you on ${box}`,
+    title: `Terminal can't see when ${t.name} needs you on ${box}`,
     description: `${t.name}'s hooks aren't installed there, so its agents show no working, done or needs-you state. Installing takes a second and keeps your agents running.`,
     type: "warning",
     // Stays until answered: 0 turns off the timer.

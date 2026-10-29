@@ -81,7 +81,7 @@ type WorktreeFile struct {
 
 var (
 	errPathOutside = httpError{http.StatusForbidden, "that path is outside the worktree"}
-	errPathGit     = httpError{http.StatusForbidden, "Shipyard doesn't open or write git's own files (.git)"}
+	errPathGit     = httpError{http.StatusForbidden, "Terminal doesn't open or write git's own files (.git)"}
 	errDangling    = httpError{http.StatusForbidden, "that path is a link to something that isn't there"}
 )
 
@@ -249,7 +249,7 @@ func readWorktreeFile(abs, rel string, withContent bool) (WorktreeFile, error) {
 	if st.Size() > maxEditableFile {
 		f.Etag, f.TooLarge = bigEtag(st), true
 		f.Binary = f.Image != ""
-		f.Reason = fmt.Sprintf("%s is %s, more than the %s Shipyard opens. Open it in your editor.", filepath.Base(rel), sizeWords(st.Size()), sizeWords(maxEditableFile))
+		f.Reason = fmt.Sprintf("%s is %s, more than the %s Terminal opens. Open it in your editor.", filepath.Base(rel), sizeWords(st.Size()), sizeWords(maxEditableFile))
 		return f, nil
 	}
 	data, err := os.ReadFile(abs)
@@ -304,14 +304,14 @@ func (b *Box) getWorktreeFile(w http.ResponseWriter, r *http.Request) error {
 func serveImage(w http.ResponseWriter, abs, rel string) error {
 	typ := imageType(rel)
 	if typ == "" {
-		return httpError{http.StatusUnsupportedMediaType, rel + " isn't a picture Shipyard shows"}
+		return httpError{http.StatusUnsupportedMediaType, rel + " isn't a picture Terminal shows"}
 	}
 	st, err := os.Stat(abs)
 	if err != nil || !st.Mode().IsRegular() {
 		return httpError{http.StatusNotFound, rel + " isn't in this worktree (any more)"}
 	}
 	if st.Size() > maxRawFile {
-		return httpError{http.StatusRequestEntityTooLarge, fmt.Sprintf("%s is %s, more than the %s Shipyard shows", filepath.Base(rel), sizeWords(st.Size()), sizeWords(maxRawFile))}
+		return httpError{http.StatusRequestEntityTooLarge, fmt.Sprintf("%s is %s, more than the %s Terminal shows", filepath.Base(rel), sizeWords(st.Size()), sizeWords(maxRawFile))}
 	}
 	data, err := os.ReadFile(abs)
 	if err != nil {
@@ -356,7 +356,7 @@ func (b *Box) putWorktreeFile(w http.ResponseWriter, r *http.Request) error {
 		return badRequest("the request has no content")
 	}
 	if len(*in.Content) > maxEditableFile {
-		return httpError{http.StatusRequestEntityTooLarge, fmt.Sprintf("that is %s, more than the %s Shipyard writes", sizeWords(int64(len(*in.Content))), sizeWords(maxEditableFile))}
+		return httpError{http.StatusRequestEntityTooLarge, fmt.Sprintf("that is %s, more than the %s Terminal writes", sizeWords(int64(len(*in.Content))), sizeWords(maxEditableFile))}
 	}
 	abs, rel, err := worktreeFile(wt.Path, r.URL.Query().Get("path"))
 	if err != nil {

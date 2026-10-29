@@ -39,7 +39,7 @@ type GuardConfig struct {
 	PauseAgents  *bool `json:"pause_agents,omitempty"`
 	// SessionMemoryGB is a memory ceiling for each session's processes, in
 	// GB (0: none). It applies where sessions run in a systemd scope (Linux
-	// with systemd): near it a session is slowed down and Shipyard says so;
+	// with systemd): near it a session is slowed down and Terminal says so;
 	// nothing is killed. It holds whether or not the guard is on.
 	SessionMemoryGB int `json:"session_memory_gb,omitempty"`
 }

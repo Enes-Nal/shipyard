@@ -68,7 +68,7 @@ var (
 )
 
 // ErrBadLink is every refusal of a link: what is wrong goes after it.
-var ErrBadLink = errors.New("this isn't a review link Shipyard can open")
+var ErrBadLink = errors.New("this isn't a review link Terminal can open")
 
 func bad(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrBadLink, fmt.Sprintf(format, args...))
@@ -329,7 +329,7 @@ func CheckRepo(repo string, p Policy) Verdict {
 	if has(p.TeamRepos, repo) || has(p.BoxRepos, repo) {
 		return Allow
 	}
-	return refuse(CodeNotAProject, "%s isn't one of your team's projects or on any of your boxes, so Shipyard won't open it. Review it by hand", repo)
+	return refuse(CodeNotAProject, "%s isn't one of your team's projects or on any of your boxes, so Terminal won't open it. Review it by hand", repo)
 }
 
 // Authorize decides whether pr, in repo, may be opened for review in one

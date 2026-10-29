@@ -28,7 +28,7 @@ const MINUTES = Math.round(WRITES_FOR_MS / 60_000);
 export function Lock({ writes, now, busy, onLock }: { writes: Writes; now: number; busy: boolean; onLock(): void }) {
   if (!writes.can) {
     return (
-      <Tip label="This database takes no writes through Shipyard: its tables can be read and queried, not changed.">
+      <Tip label="This database takes no writes through Terminal: its tables can be read and queried, not changed.">
         <Badge variant="outline" size="sm" className="shrink-0 gap-1 font-normal" data-testid="database-lock" data-writes="never">
           <Icon name="Lock" className="size-3" />
           Read-only

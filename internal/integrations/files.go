@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"syscall"
 
 	"github.com/cosscom/shipyard/internal/statefile"
 )
@@ -47,7 +46,7 @@ func (f files) read(rel string) ([]byte, error) {
 		return nil, err
 	}
 	defer r.Close()
-	file, err := r.OpenFile(path.Clean(filepath.ToSlash(rel)), os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	file, err := r.OpenFile(path.Clean(filepath.ToSlash(rel)), os.O_RDONLY|openNoFollow, 0)
 	if err != nil {
 		return nil, err
 	}

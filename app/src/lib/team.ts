@@ -59,7 +59,7 @@ export interface TeamSetup {
   docs?: string;
   // settings reach the box script as BERTH_SETTING_<NAME>.
   box?: { os?: string[]; script?: string; steps?: TeamStep[]; settings?: Record<string, string> };
-  // The agent CLIs Shipyard installs on the box, as a step of its own.
+  // The agent CLIs Terminal installs on the box, as a step of its own.
   agents?: string[];
   projects?: TeamProjectSpec[];
   keys?: Record<string, TeamKeys>;
@@ -75,7 +75,7 @@ export interface TeamFile {
   text?: string;
 }
 
-// A box step as the plan shows it, with Shipyard's own steps among them:
+// A box step as the plan shows it, with Terminal's own steps among them:
 // "github" (the box's own gh auth login) and, when the keys are 1Password
 // references, "1password" (op signed in on the box).
 export interface PlanStep {
@@ -89,7 +89,7 @@ export interface PlanStep {
 
 export type ProjectSource = "repo" | "kit" | "none";
 
-// A clone of a project's repo already on the box: a Shipyard project, or
+// A clone of a project's repo already on the box: a Terminal project, or
 // one the box found in the usual folders (~/code, ~/work, …), matched by
 // its origin. The page offers to use it instead of cloning a second copy.
 export interface ExistingClone {
@@ -103,7 +103,7 @@ export interface ExistingClone {
   dirty: number;
   // Commits its upstream has that it lacks, as of its last fetch.
   behind?: number;
-  // Its Shipyard project's name, when it is one already.
+  // Its Terminal project's name, when it is one already.
   location?: string;
   last_commit?: string;
   used?: string;
@@ -356,7 +356,7 @@ export const teamApi = {
 };
 
 // defaultUse is which clone each project uses before anyone chooses: a
-// Shipyard project of the same repo (the box's preferred one), else the
+// Terminal project of the same repo (the box's preferred one), else the
 // only clone found when it is clean; otherwise a fresh clone (""). Nothing
 // the box merely found is used unless it is that one clean clone.
 export function defaultUse(existing: ExistingClone[] | undefined): string {

@@ -14,7 +14,7 @@ export { handoffPrompt, reviewPrompt } from "@/lib/orchestrate-core";
 
 const call: core.BoxCaller = (box, method, path, body) => {
   const c = useStore.getState().client;
-  if (!c) return Promise.reject(new Error("not connected to the Shipyard agent"));
+  if (!c) return Promise.reject(new Error("not connected to the Terminal agent"));
   return c.box(box, method, path, body);
 };
 

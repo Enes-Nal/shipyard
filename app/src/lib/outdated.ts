@@ -5,13 +5,13 @@ import { explain } from "@/lib/errors";
 import { usePrefs } from "@/lib/prefs";
 import { useStore } from "@/lib/store";
 
-// Boxes that run an older berthd than this Shipyard ships. The laptop agent
+// Boxes that run an older berthd than this Terminal ships. The laptop agent
 // answers (GET /v1/boxes/outdated, which asks `berth upgrade BOX --check`);
 // the app says so once, calmly, in the status bar and Settings → Boxes, and
 // Update all runs the same upgrade as Settings → Boxes → Update, one box at
 // a time. Sessions keep running through an upgrade: berthd replaces itself
 // in place. With "Update boxes automatically" on, each outdated box is
-// updated once per build Shipyard ships.
+// updated once per build Terminal ships.
 
 // lines is the upgrade's output so far (the last 40), line its newest.
 export type UpdateState = { state: "queued" | "running" | "done" | "failed"; line?: string; lines?: string[]; error?: string; details?: string };
@@ -132,7 +132,7 @@ async function announce(todo: string[], failed: string[]) {
   if (ok.length) toastManager.add({ type: "success", title: ok.length === 1 ? `${ok[0]} is up to date` : `${ok.length} boxes are up to date`, description: ok.length === 1 ? "Its agents kept running." : "Their agents kept running." });
 }
 
-// Each box is updated automatically once per build Shipyard ships, so a box
+// Each box is updated automatically once per build Terminal ships, so a box
 // whose update fails is not retried in a loop.
 const tried = new Set<string>();
 

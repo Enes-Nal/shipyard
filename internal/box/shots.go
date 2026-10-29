@@ -346,7 +346,7 @@ func (b *Box) planShots(ctx context.Context, locName, wtName string, req ShotsRe
 	p.savedDir = b.baselineDir(loc, p.wt, p.base)
 	saved, err := readBaseline(p.savedDir)
 	if err != nil {
-		return nil, badRequest("%s/%s has no %q baseline yet; take one with `berthd shots baseline --name %s` (or Accept as baseline in Shipyard, for accepted)", loc.Name, p.wt.Name, p.base, p.base)
+		return nil, badRequest("%s/%s has no %q baseline yet; take one with `berthd shots baseline --name %s` (or Accept as baseline in Terminal, for accepted)", loc.Name, p.wt.Name, p.base, p.base)
 	}
 	p.saved = saved
 	return p, nil

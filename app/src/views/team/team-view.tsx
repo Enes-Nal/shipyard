@@ -124,7 +124,7 @@ function ConnectGitHub({ github, org }: { github: GitHubState; org: string }) {
       const r = await teamApi.githubLogin(client);
       setCommand(r.command);
       setWaiting(true);
-      if (!r.opened) toastManager.add({ title: "Run it in a terminal", description: r.error ?? `Shipyard couldn't open one here: ${r.command}` });
+      if (!r.opened) toastManager.add({ title: "Run it in a terminal", description: r.error ?? `Terminal couldn't open one here: ${r.command}` });
     } catch (err) {
       toastManager.add({ type: "error", title: "Couldn't start the sign-in", description: errorMessage(err) });
     }
@@ -138,7 +138,7 @@ function ConnectGitHub({ github, org }: { github: GitHubState; org: string }) {
         </span>
         <h1 className="mt-5 text-title">{missing ? "Install GitHub's CLI first" : "Connect GitHub"}</h1>
         <p className="mt-2 text-muted-foreground leading-relaxed">
-          Shipyard reads {org ? <span className="font-mono text-foreground">{isLink(org) ? org : `${org}/.berth`}</span> : "your org's team setup"} and the repos it lists with <span className="font-mono text-foreground">gh</span>, GitHub's own CLI, signed in as you. Private setups and private repos need it. Shipyard has no GitHub app of its own and keeps no token.
+          Terminal reads {org ? <span className="font-mono text-foreground">{isLink(org) ? org : `${org}/.berth`}</span> : "your org's team setup"} and the repos it lists with <span className="font-mono text-foreground">gh</span>, GitHub's own CLI, signed in as you. Private setups and private repos need it. Terminal has no GitHub app of its own and keeps no token.
         </p>
         {missing ? (
           <div className="mt-6 rounded-xl border bg-card p-4">
@@ -200,7 +200,7 @@ function AskOrg({ onOrg, initial = "", note }: { onOrg(org: string): void; initi
       {note}
       <h1 className="text-title">Which GitHub org?</h1>
       <p className="mt-2 text-muted-foreground leading-relaxed">
-        If your team publishes a team setup (a repo called .berth), Shipyard sets your box up the same way the team's are. If not, you pick its repos. A link to a setup in any repo, branch or folder works too.
+        If your team publishes a team setup (a repo called .berth), Terminal sets your box up the same way the team's are. If not, you pick its repos. A link to a setup in any repo, branch or folder works too.
       </p>
       <form
         className="mt-5 flex gap-2"
@@ -262,7 +262,7 @@ function OrgPage({ org, from, wantBox, wantUpdate, github, onOrg }: { org: strin
       const v = await teamApi.view(client, org, { box, from: from === "link" ? "link" : undefined });
       setView(v);
       setPicked((p) => p ?? new Set(v.state === "none" ? (v.repos ?? []).filter((r) => r.has_berth).map((r) => r.full_name) : v.projects.filter((x) => x.access).map((x) => x.id)));
-      // Each repo starts on the clone it would use anyway (a Shipyard
+      // Each repo starts on the clone it would use anyway (a Terminal
       // project of it, or its one clean clone), else a fresh clone.
       const found: [string, ExistingClone[]][] = v.state === "none" ? (v.repos ?? []).map((r) => [r.full_name, r.existing ?? []]) : v.projects.map((x) => [x.id, x.existing ?? []]);
       setUse((u) => {
@@ -562,7 +562,7 @@ function OrgSwitch({ onOrg }: { onOrg(org: string): void }) {
 }
 
 // NoBerth: the org publishes no team setup (or none this account can read).
-// Its repos you can reach, the ones that carry their own Shipyard setup picked.
+// Its repos you can reach, the ones that carry their own Terminal setup picked.
 function NoBerth({
   view,
   github,
@@ -663,7 +663,7 @@ function NoBerth({
               </div>
             </Section>
           ) : (
-            <Section title="Repos you can reach" aside={`${withBerth} have Shipyard setup and are picked`}>
+            <Section title="Repos you can reach" aside={`${withBerth} have Terminal setup and are picked`}>
               <div className="mb-2">
                 <label className="flex items-center gap-2 rounded-lg border bg-background px-2.5 text-body dark:bg-input/32">
                   <SearchIcon className="size-3.5 text-muted-foreground" />

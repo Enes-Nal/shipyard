@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 
 import { type Client, CommandError, type StreamLine } from "@/lib/api";
+import { IS_WINDOWS } from "@/lib/platform";
 import { useStore } from "@/lib/store";
 
 // Use this Mac: this computer as a box of its own. The agent installs the
@@ -16,7 +17,7 @@ export interface LocalBoxStatus {
   supported: boolean;
   available: boolean;
   reason?: string;
-  // A berthd service is installed for this user; owned: Shipyard installed it
+  // A berthd service is installed for this user; owned: Terminal installed it
   // (rather than the install script).
   installed: boolean;
   owned: boolean;
@@ -76,6 +77,14 @@ export function useIsLocalBox(box: string): boolean {
   return flagged || justSetUp;
 }
 
+// isWslBox is whether a box is this PC's own on Windows, which runs in WSL
+// and sees the PC's drives under /mnt (lib/wsl-path.ts).
+export const isWslBox = (box: string): boolean => IS_WINDOWS && !!useStore.getState().status?.boxes.find((b) => b.name === box)?.local;
+
+export function useIsWslBox(box: string): boolean {
+  return useIsLocalBox(box) && IS_WINDOWS;
+}
+
 // How long Add a box waits for the answer before laying itself out without
 // the option; the agent answers from local files, well within it.
 const WAIT_MS = 1500;
@@ -83,10 +92,13 @@ const WAIT_MS = 1500;
 // useLocalBox reads whether this computer can be set up as a box. ready
 // turns true once it knows (or stops waiting), so the screen is laid out
 // once.
-export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus } {
+// recheck asks again, for a computer that was just made ready (WSL set up
+// on Windows).
+export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus; recheck(): void } {
   const client = useStore((s) => s.client);
   const [status, setStatus] = useState<LocalBoxStatus>();
   const [settled, setSettled] = useState(false);
+  const [asked, setAsked] = useState(0);
   useEffect(() => {
     if (!client) return;
     let live = true;
@@ -100,8 +112,8 @@ export function useLocalBox(): { ready: boolean; status?: LocalBoxStatus } {
       live = false;
       clearTimeout(t);
     };
-  }, [client]);
-  return { ready: settled, status };
+  }, [client, asked]);
+  return { ready: settled, status, recheck: () => setAsked((n) => n + 1) };
 }
 
 // offerLocalBox is whether Add a box offers Use this Mac: it can be one,
