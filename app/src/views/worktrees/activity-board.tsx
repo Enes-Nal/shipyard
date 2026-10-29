@@ -7,10 +7,14 @@ import { agentLabel, agentOf, sessionState } from "@/lib/derive";
 import { activityStage, type ActivityStage } from "@/lib/activity-stage";
 import { openComposer } from "@/lib/composer";
 import { forgeOf } from "@/lib/forge";
+import { mrForBranch } from "@/lib/forge-view";
+import { openUrl } from "@/lib/open-url";
+import { useForgeView } from "@/lib/use-forge-view";
 import { ago } from "@/lib/format";
 import { NONE, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ProjectLabel } from "@/views/automations/flows/project-label";
+import { PipelineBadge } from "@/views/worktrees/gitlab-panel";
 import { openWorktree, type Row } from "@/views/worktrees/use-worktrees";
 
 const columns: { stage: ActivityStage; title: string; description: string; Icon: typeof CircleDashedIcon }[] = [
@@ -84,6 +88,9 @@ function TaskCard({ row, onOpen }: { row: Row; onOpen(): void }) {
   const sessions = useMemo(() => all.filter((s) => s.dir === row.path && !s.exited && !s.service && agentOf(s)), [all, row.path]);
   const forge = forgeOf(row.remote);
   const files = row.changed + row.untracked;
+  // A GitLab branch's merge request, and the pipeline for its head.
+  const { view } = useForgeView(row.box, row.location, forge.kind === "gitlab");
+  const mr = row.main ? undefined : mrForBranch(view, row.branch);
   return (
     <article className="rounded-lg border bg-background p-3 shadow-xs/5">
       <div className="flex items-start gap-2">
@@ -119,6 +126,15 @@ function TaskCard({ row, onOpen }: { row: Row; onOpen(): void }) {
           <span className="inline-flex items-center gap-0.5 rounded bg-warning/12 px-1.5 py-0.5 text-warning-foreground"><ArrowDownIcon className="size-3" />{row.incoming} to pull</span>
         )}
         {row.published === true && (row.outgoing ?? 0) === 0 && (row.incoming ?? 0) === 0 && <span className="rounded bg-success/10 px-1.5 py-0.5 text-success-foreground">Synced</span>}
+        {mr && (
+          <>
+            <button type="button" onClick={() => void openUrl(mr.url)} className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground hover:text-foreground">
+              !{mr.iid}
+              {mr.state === "merged" ? " merged" : ""}
+            </button>
+            <PipelineBadge pipeline={mr.pipeline} />
+          </>
+        )}
       </div>
 
       <div className="mt-3 flex min-h-7 items-center gap-1 border-t pt-2">

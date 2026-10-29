@@ -35,6 +35,7 @@ import { BENCH, benchFleet, benchTerm, noisyTerm, seedBenchChats } from "@/lib/m
 import { mockAnswer, mockToolDetailSync, WEBHOOK_TEST } from "@/lib/mock-conversation";
 import { crowd } from "@/lib/mock-crowd";
 import { IS_WINDOWS } from "@/lib/platform";
+import { mockForge } from "@/lib/mock-forge";
 
 // Mock mode (?mock=1) runs the whole UI on fixtures, so it can be worked on
 // without an agent or a box. State is mutable: new tasks and sessions appear,
@@ -461,10 +462,11 @@ function mockProjects(box: string, method: string, path: string, body?: unknown)
     setTimeout(() => emit({ type: "location.added", box, data: { location: r.name, path: dir } }), 30);
     return delay(loc);
   }
-  const m = /^locations\/([^/]+)\/(resolve|branches|worktrees)$/.exec(route);
+  const m = /^locations\/([^/]+)\/(resolve|branches|worktrees|forge)$/.exec(route);
   if (!m) return undefined;
   const loc = locations[box]?.find((l) => l.name === decodeURIComponent(m[1]));
   if (!loc) return Promise.reject(new Error("no location with that name"));
+  if (m[2] === "forge" && method === "GET") return delay(mockForge(loc));
   if (m[2] === "branches" && method === "GET") {
     return delay({ default: "main", branches: [...mockBranches.map((name) => ({ name, current: name === "main" })), { name: "release/v2.8", remote: true }] });
   }

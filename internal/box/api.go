@@ -174,6 +174,7 @@ func (b *Box) Mount(s *wire.Server) {
 	route("POST /v1/locations/new", b.newLocation)
 	route("POST /v1/locations/{name}/resolve", b.resolve)
 	route("GET /v1/locations/{name}/branches", b.listBranches)
+	route("GET /v1/locations/{name}/forge", b.getForgeView)
 	route("GET /v1/fs", b.listFolder)
 	route("GET /v1/guard", b.getGuard)
 	route("PUT /v1/guard", b.putGuard)
