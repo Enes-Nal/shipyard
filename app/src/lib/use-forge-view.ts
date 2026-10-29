@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { create } from "zustand";
 
 import type { Client } from "@/lib/api";
@@ -46,6 +46,13 @@ async function load(box: string, location: string, refresh = false) {
 }
 
 export const refreshForge = (box: string, location: string) => void load(box, location, true);
+
+// useForgeViews reads the forge views already loaded for several projects
+// (each kept current by a useForgeView elsewhere), by "box/location".
+export function useForgeViews(keys: string[]): Record<string, ForgeView | undefined> {
+  const entries = useForgeStore((s) => s.entries);
+  return useMemo(() => Object.fromEntries(keys.map((k) => [k, entries[k]?.view])), [entries, keys]);
+}
 
 // useForgeView reads a project's forge view, and keeps it current while
 // the caller is mounted (and enabled).

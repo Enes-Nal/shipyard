@@ -82,7 +82,7 @@ type RemoteBranch struct {
 const (
 	forgeFresh      = time.Minute
 	forgeFetchStale = 5 * time.Minute
-	forgeBranches   = 30
+	forgeBranches   = 60
 )
 
 var errGlabMissing = errors.New("glab is not installed on this box")
@@ -205,7 +205,7 @@ func askGitLab(ctx context.Context, dir string, v *ForgeView) {
 		into     any
 	}{
 		{"projects/:fullpath/pipelines?per_page=30", &pipelines},
-		{"projects/:fullpath/merge_requests?state=opened&order_by=updated_at&per_page=30", &open},
+		{"projects/:fullpath/merge_requests?state=opened&order_by=updated_at&per_page=50", &open},
 		{"projects/:fullpath/merge_requests?state=merged&order_by=updated_at&per_page=10", &merged},
 	} {
 		if err := glabJSON(ctx, dir, q.endpoint, q.into); err != nil {

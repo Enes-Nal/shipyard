@@ -30,10 +30,16 @@ test("the GitLab tab shows merge requests, pipelines, branches and who committed
   await expect(page.getByRole("region", { name: "notes on GitLab" })).toContainText("notes isn't on GitLab");
   await expect(app.stored("berth.activity.mode")).resolves.toBe("gitlab");
 
-  // The board's card for the branch has its merge request and pipeline.
+  // The board's card for the branch has its merge request and pipeline, and
+  // an open merge request with no task here yet waits in Todo.
   await page.getByRole("button", { name: "Todo board" }).click();
   const doing = page.getByRole("region", { name: "In progress" });
   await expect(doing.getByRole("button", { name: "!12" })).toBeVisible();
+  const waiting = page.getByRole("region", { name: "Todo" }).getByRole("article", { name: /!10 Draft: Cache eval datasets/ });
+  await expect(waiting).toContainText("me/cache-datasets");
+  await expect(waiting).toContainText("Failed");
+  await expect(waiting.getByRole("button", { name: "Work on it" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Todo" }).getByRole("article", { name: /!12 / })).toHaveCount(0);
 });
 
 test("a box whose glab isn't signed in says how to sign in", async ({ app }) => {
