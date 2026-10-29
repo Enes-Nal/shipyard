@@ -80,6 +80,34 @@ test("Windows with WSL offers this computer as the box", async ({ app }) => {
   await expect(app.page.getByRole("button", { name: "Start on this computer" })).toBeEnabled();
 });
 
+test("this PC's box on Windows browses the PC's drives, in Windows paths", async ({ app }) => {
+  mockOnly("this PC's WSL box is a mock fixture (?platform=windows)");
+  const page = app.page;
+  await page.goto("/?mock=1&fresh=1&platform=windows");
+  await page.getByRole("button", { name: "Start on this computer" }).click();
+  await page.getByRole("button", { name: /Browse folders/ }).click({ timeout: 20_000 });
+
+  // It starts at This PC: the drives, not Linux's own folders or WSL's.
+  const folders = page.getByRole("listbox", { name: "Folders" });
+  await expect(folders.getByRole("option")).toHaveText(["C:", "E:"]);
+  await expect(page.getByRole("navigation", { name: "Folder" })).toHaveText("This PC");
+  await expect(page.getByRole("button", { name: "Add C:" })).toBeVisible();
+
+  await folders.getByRole("option", { name: "E:" }).dblclick();
+  await folders.getByRole("option", { name: "Code" }).dblclick();
+  await expect(page.getByRole("textbox", { name: "Path" })).toHaveValue("E:\\Code");
+  await expect(page.getByRole("navigation", { name: "Folder" })).toContainText("This PC");
+  await expect(folders.getByRole("option")).toHaveText([/shop/, /site/]);
+
+  // A typed Windows path goes there too, and Ubuntu's home is a click away.
+  await page.getByRole("textbox", { name: "Path" }).fill("C:\\Users");
+  await page.getByRole("textbox", { name: "Path" }).press("Enter");
+  await expect(page.getByRole("navigation", { name: "Folder" })).toContainText("Users");
+  await page.getByRole("button", { name: "Ubuntu" }).click();
+  await expect(page.getByRole("textbox", { name: "Path" })).toHaveValue("~");
+  await expect(folders.getByRole("option", { name: "code" })).toBeVisible();
+});
+
 test("Windows without a native agent reports the missing build instead of opening placeholders", async ({ app }) => {
   mockOnly("the missing Windows helper is a mock startup state");
   await app.page.goto("/?mock=offline&binary=missing&platform=windows");

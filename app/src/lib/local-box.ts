@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 
 import { type Client, CommandError, type StreamLine } from "@/lib/api";
+import { IS_WINDOWS } from "@/lib/platform";
 import { useStore } from "@/lib/store";
 
 // Use this Mac: this computer as a box of its own. The agent installs the
@@ -74,6 +75,14 @@ export function useIsLocalBox(box: string): boolean {
   const flagged = useStore((s) => !!s.status?.boxes.find((b) => b.name === box)?.local);
   const justSetUp = useLocalBoxName((s) => s.name === box);
   return flagged || justSetUp;
+}
+
+// isWslBox is whether a box is this PC's own on Windows, which runs in WSL
+// and sees the PC's drives under /mnt (lib/wsl-path.ts).
+export const isWslBox = (box: string): boolean => IS_WINDOWS && !!useStore.getState().status?.boxes.find((b) => b.name === box)?.local;
+
+export function useIsWslBox(box: string): boolean {
+  return useIsLocalBox(box) && IS_WINDOWS;
 }
 
 // How long Add a box waits for the answer before laying itself out without

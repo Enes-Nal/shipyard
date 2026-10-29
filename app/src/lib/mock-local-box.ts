@@ -1,5 +1,6 @@
 import type { Status } from "@/lib/api";
 import type { LocalBoxStatus } from "@/lib/local-box";
+import { IS_WINDOWS } from "@/lib/platform";
 
 // Use this Mac in mock mode (?mock=1): this Mac can be a box until it is
 // one; setting it up plays the agent's steps and pairs a box marked local,
@@ -16,7 +17,8 @@ type Deps = {
 let deps: Deps | undefined;
 const mode = new URLSearchParams(location.search).get("thismac");
 const NAME = "my-mac";
-const HOME = "/Users/me";
+// On Windows the box is WSL's: an Ubuntu home, and the PC's drives in /mnt.
+const HOME = IS_WINDOWS ? "/home/me" : "/Users/me";
 const ADDRESS = "127.0.0.1:7445";
 
 const local: LocalBoxStatus = { supported: true, available: mode !== "none", installed: false, owned: false, running: false, name: NAME };
@@ -27,8 +29,24 @@ export function initMockLocalBox(d: Deps) {
   deps = d;
 }
 
-// A Mac's folders, for browsing this Mac's box.
-const folders: Record<string, { git?: boolean; slug?: string }> = {
+// A Mac's folders, for browsing this Mac's box; WSL's on Windows.
+const wslFolders: Record<string, { git?: boolean; slug?: string }> = {
+  "/": {},
+  "/home": {},
+  [HOME]: {},
+  [`${HOME}/code`]: {},
+  [`${HOME}/code/notes`]: { git: true, slug: "me/notes" },
+  "/mnt": {},
+  "/mnt/c": {},
+  "/mnt/c/Users": {},
+  "/mnt/e": {},
+  "/mnt/e/Code": {},
+  "/mnt/e/Code/shop": { git: true, slug: "acme/shop" },
+  "/mnt/e/Code/site": { git: true, slug: "me/site" },
+  "/mnt/wsl": {},
+  "/mnt/wslg": {},
+};
+const folders: Record<string, { git?: boolean; slug?: string }> = IS_WINDOWS ? wslFolders : {
   [HOME]: {},
   [`${HOME}/Developer`]: {},
   [`${HOME}/Developer/shop`]: { git: true, slug: "acme/shop" },

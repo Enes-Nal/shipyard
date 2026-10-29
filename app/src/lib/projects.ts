@@ -1,4 +1,11 @@
 import type { Client, Location } from "@/lib/api";
+import { isWslBox } from "@/lib/local-box";
+import { toWslPath } from "@/lib/wsl-path";
+
+// onBox is a path as the box knows it: E:\Code on this PC's WSL box is
+// /mnt/e/Code there.
+const onBox = (box: string, path: string) => (isWslBox(box) ? toWslPath(path) : path);
+const onBoxMaybe = (box: string, path?: string) => (path ? onBox(box, path) : path);
 
 // The box calls behind adding projects and making worktrees: browse folders,
 // clone, create, list branches, and resolve what someone typed (a name, a
@@ -47,9 +54,9 @@ export interface Branch {
 }
 
 export const projectsApi = {
-  list: (c: Client, box: string, path: string, hidden = false) => c.box<FsListing>(box, "GET", `fs?${new URLSearchParams({ path, ...(hidden ? { hidden: "1" } : {}) })}`),
-  create: (c: Client, box: string, name: string, parent?: string) => c.box<Location>(box, "POST", "locations/new", { name, parent: parent || undefined }),
-  add: (c: Client, box: string, name: string, path: string) => c.box<Location>(box, "POST", "locations", { name, path }),
+  list: (c: Client, box: string, path: string, hidden = false) => c.box<FsListing>(box, "GET", `fs?${new URLSearchParams({ path: onBox(box, path), ...(hidden ? { hidden: "1" } : {}) })}`),
+  create: (c: Client, box: string, name: string, parent?: string) => c.box<Location>(box, "POST", "locations/new", { name, parent: onBoxMaybe(box, parent) || undefined }),
+  add: (c: Client, box: string, name: string, path: string) => c.box<Location>(box, "POST", "locations", { name, path: onBox(box, path) }),
   resolve: (c: Client, box: string, location: string, input: string, kind: ResolveKind) => c.box<Resolution>(box, "POST", `locations/${enc(location)}/resolve`, { input, kind }),
   branches: (c: Client, box: string, location: string) => c.box<{ default?: string; branches: Branch[] | null }>(box, "GET", `locations/${enc(location)}/branches`),
 
@@ -61,7 +68,7 @@ export const projectsApi = {
     await c.stream(
       "POST",
       `/v1/boxes/${enc(box)}/api/locations/clone`,
-      req,
+      { ...req, parent: onBoxMaybe(box, req.parent) },
       (v) => {
         const m = v as { line?: string; done?: boolean; error?: string; location?: Location };
         if (m.line !== undefined) onLine(m.line);
