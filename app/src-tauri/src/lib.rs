@@ -6,6 +6,7 @@ use tauri::Manager;
 mod agent;
 mod browser;
 mod cli_link;
+mod desk;
 #[cfg(target_os = "linux")]
 mod linux;
 mod menu;
@@ -114,6 +115,7 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         // berth://kit?src=… links someone shares open a kit's review.
         .plugin(tauri_plugin_deep_link::init())
         // Updates come from the latest GitHub release's latest.json and must
@@ -127,6 +129,7 @@ pub fn run() {
         // terminals before the page sees them. The webview handles the keys
         // there (hooks/use-shortcuts.ts).
         .setup(|app| {
+            desk::start();
             #[cfg(target_os = "macos")]
             {
                 let menu = menu::build(app.handle())?;
@@ -139,6 +142,8 @@ pub fn run() {
         .on_menu_event(|app, event| menu::on_event(app, event.id().as_ref()))
         .invoke_handler(tauri::generate_handler![
             ui_endpoint,
+            desk::desk_endpoint,
+            desk::pick_folder,
             open_devtools,
             restart_app,
             open_terminal,
@@ -162,6 +167,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app, _event| {
+            if let tauri::RunEvent::Exit = _event {
+                desk::stop();
+            }
             // A dev build wears an orange icon in the Dock, so it is never
             // taken for the installed app. Tauri puts the app's own there as
             // it gets ready, just before this.

@@ -23,6 +23,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["unstable", "devtools"] }
 tauri-plugin-notification = "2"
 tauri-plugin-shell = "2"
+# The folder picker for adding a project (desk.rs).
+tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

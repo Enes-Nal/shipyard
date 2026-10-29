@@ -11,6 +11,16 @@ again.
 
 ## Unreleased
 
+- **Shipyard runs natively on Windows, as chats.** The window is now a list
+  of your projects on the left, each with its chats, and the chat you open
+  on the right, where Claude Code's replies, tool calls and edits show as
+  cards. Agents work right in the project's folder on your PC, with no WSL,
+  box or worktree. A new chat can stay on the folder's branch or start a new
+  one (named from your first message), and the chat and the sidebar show
+  the branch it made or moved to. Each project runs one chat at a time; a
+  message to another chat there waits its turn and then sends itself.
+  **Full access** or **Edits only** sets what the agent may do without
+  asking.
 - **Tasks on a Windows drive work from Windows and WSL alike.** For a
   project on a Windows drive, Shipyard's box (in WSL) now makes worktrees
   with relative paths, so Windows tools such as Codex, Claude Code or your

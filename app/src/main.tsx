@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import App from "@/App";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { DeskApp } from "@/desk/desk-app";
 import { showingTabRescues } from "@/components/workspace/pane-guard";
 // Error toasts in plain English, with the box's own words behind Details.
 import "@/components/error-note";
@@ -31,7 +31,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     {/* The last guard: what broke was most likely the tab showing, so its
         ways out are offered here too, rather than a window with no way on. */}
     <ErrorBoundary window rescues={showingTabRescues}>
-      <App />
+      {/* Shipyard on Windows: the desk (src/desk). The box-based app in App.tsx
+          is no longer shown and goes as its parts are replaced. */}
+      <DeskApp />
     </ErrorBoundary>
   </React.StrictMode>,
 );
