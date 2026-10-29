@@ -106,6 +106,16 @@ test("this PC's box on Windows browses the PC's drives, in Windows paths", async
   await page.getByRole("button", { name: "Ubuntu" }).click();
   await expect(page.getByRole("textbox", { name: "Path" })).toHaveValue("~");
   await expect(folders.getByRole("option", { name: "code" })).toBeVisible();
+
+  // A project with no tasks yet is on Project activity, with how to start one.
+  await page.getByRole("textbox", { name: "Path" }).fill("E:\\Code");
+  await page.getByRole("textbox", { name: "Path" }).press("Enter");
+  await folders.getByRole("option", { name: /shop/ }).dblclick();
+  await page.getByRole("button", { name: "Skip setup" }).click();
+  await page.getByTestId("nav-worktrees").click();
+  await expect(page.getByRole("region", { name: "Projects" })).toContainText("main folder");
+  await expect(page.getByText("No tasks yet.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "New task" }).last()).toBeVisible();
 });
 
 test("Windows without a native agent reports the missing build instead of opening placeholders", async ({ app }) => {

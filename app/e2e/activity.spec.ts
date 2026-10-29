@@ -11,6 +11,10 @@ test("Project activity visualizes GitLab branches and their agent and sync state
   await expect(page.getByRole("heading", { name: "Project activity" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect GitLab" })).toBeVisible();
 
+  // Each project's own folder is on the board too, with the branch it is on.
+  await expect(page.getByRole("region", { name: "Projects" })).toContainText("main folder");
+  await expect(page.getByText("No tasks yet.")).toHaveCount(0);
+
   const todo = page.getByRole("region", { name: "Todo" });
   const doing = page.getByRole("region", { name: "In progress" });
   const done = page.getByRole("region", { name: "Done" });

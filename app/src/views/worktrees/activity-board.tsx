@@ -1,10 +1,11 @@
-import { ArrowDownIcon, ArrowUpIcon, CircleCheckBigIcon, CircleDashedIcon, CircleDotIcon, GitBranchIcon, GitCommitHorizontalIcon, PauseIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, CircleCheckBigIcon, CircleDashedIcon, CircleDotIcon, FolderGit2Icon, GitBranchIcon, GitCommitHorizontalIcon, PauseIcon, PlusIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { AgentIcon } from "@/components/agent-glyph";
 import { Button } from "@/components/ui/button";
 import { agentLabel, agentOf, sessionState } from "@/lib/derive";
 import { activityStage, type ActivityStage } from "@/lib/activity-stage";
+import { openComposer } from "@/lib/composer";
 import { forgeOf } from "@/lib/forge";
 import { ago } from "@/lib/format";
 import { NONE, useStore } from "@/lib/store";
@@ -18,10 +19,35 @@ const columns: { stage: ActivityStage; title: string; description: string; Icon:
   { stage: "done", title: "Done", description: "Committed and ready to review", Icon: CircleCheckBigIcon },
 ];
 
+// ActivityBoard is each project's own folder (its main checkout: the branch
+// it is on, what changed, what to push or pull), then the tasks, a branch in
+// a worktree of its own each, by how far along they are.
 export function ActivityBoard({ rows, onOpen }: { rows: Row[]; onOpen(row: Row): void }) {
   const tasks = rows.filter((r) => !r.main);
+  const mains = rows.filter((r) => r.main);
   return (
-    <div className="grid min-h-full grid-cols-1 items-start gap-3 px-page py-4 lg:grid-cols-3">
+    <div className="min-h-full px-page py-4">
+      {mains.length > 0 && (
+        <section aria-label="Projects" className="mb-4">
+          <h2 className="mb-2 text-label text-muted-foreground">Projects</h2>
+          <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
+            {mains.map((row) => (
+              <TaskCard key={row.key} row={row} onOpen={() => onOpen(row)} />
+            ))}
+          </div>
+          {tasks.length === 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-dashed px-4 py-3">
+              <p className="min-w-0 flex-1 text-desc text-muted-foreground">
+                No tasks yet. A task is a branch in a worktree of its own, with an agent working in it; it moves across the board below as the agent works.
+              </p>
+              <Button size="sm" onClick={() => openComposer({ box: mains[0].box, location: mains[0].location })}>
+                <PlusIcon /> New task
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
       {columns.map((column) => {
         const inColumn = tasks.filter((r) => stageOf(r) === column.stage);
         return (
@@ -40,6 +66,7 @@ export function ActivityBoard({ rows, onOpen }: { rows: Row[]; onOpen(row: Row):
           </section>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -66,8 +93,9 @@ function TaskCard({ row, onOpen }: { row: Row; onOpen(): void }) {
             {forge.kind === "gitlab" && <span className="rounded bg-[#fc6d26]/12 px-1.5 py-px text-[#c94f16] dark:text-[#fc8b52]">GitLab</span>}
           </span>
           <span className="mt-1 flex items-center gap-1.5">
-            <GitBranchIcon className="size-3.5 shrink-0 text-info-foreground" />
-            <span className="truncate font-medium text-body">{row.title?.trim() || row.branch || row.name}</span>
+            {row.main ? <FolderGit2Icon className="size-3.5 shrink-0 text-muted-foreground" /> : <GitBranchIcon className="size-3.5 shrink-0 text-info-foreground" />}
+            <span className="truncate font-medium text-body">{row.main ? row.branch || row.name : row.title?.trim() || row.branch || row.name}</span>
+            {row.main && <span className="shrink-0 rounded border px-1.5 text-tag text-muted-foreground">main folder</span>}
           </span>
         </button>
         {row.paused && <PauseIcon className="mt-1 size-3.5 text-warning-foreground" aria-label="Paused" />}
