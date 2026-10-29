@@ -11,13 +11,13 @@
         {
           "path": "berth-plugin.json",
           "url": "database/0.2.0/berth-plugin.json",
-          "sha256": "e1d51b5e87499526d29201dc82c2295f9a0f92504f7f0caf1ffda4684c653a7b",
+          "sha256": "71611b852d6636e31ab8ab5043709f41d51de9aaf45faecefaaca460d3eab119",
           "size": 1965
         },
         {
           "path": "dist/index.js",
           "url": "database/0.2.0/dist/index.js",
-          "sha256": "5045707d80d0548d38e17f1ab463ee825bfdcc05f8634175b29980e6c6c61788",
+          "sha256": "b0d64608a1f3aaeed3c941b2c4db8c3bf78b4ceac1cad9c10bd3f4474becf8e8",
           "size": 144542
         }
       ]
@@ -33,7 +33,7 @@
         {
           "path": "berth-plugin.json",
           "url": "hello-ports/0.1.0/berth-plugin.json",
-          "sha256": "b8d54d1dd7757044e0c566b786dc8ea0fc0be6b8b400cfd760935958ba43e9e4",
+          "sha256": "05615ad9ce5ffb63180f6b74b9b5274948fa9980f5f46206620a4ed034b323fa",
           "size": 382
         },
         {
@@ -55,13 +55,13 @@
         {
           "path": "berth-plugin.json",
           "url": "leadline/0.1.1/berth-plugin.json",
-          "sha256": "ae7ebf156c627c80d7b8da14f48a9551b2515162515d411d5868e93961ca7c0e",
+          "sha256": "716853f7ff12cdacaf0f994774ed7cb506ca267154bac13685cad3477607862e",
           "size": 1959
         },
         {
           "path": "dist/index.js",
           "url": "leadline/0.1.1/dist/index.js",
-          "sha256": "d978386b101fe527e3dfde7b098413fb29921521c5ea50fade2c6008bdea39c0",
+          "sha256": "508ebfe41cfab77cbc8a722e428cfecf5a87213c8bd47aec464d26acec118756",
           "size": 106940
         }
       ]
